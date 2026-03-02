@@ -4,8 +4,11 @@
 
 - Install Herd
 - Clone project into Herd's project file
+- Run `composer install` inside the project folder (installs PHP dependencies)
 - Install Xampp, turn on Xampp's MySQL, press Admin
 - Create new database named digital_sat, pick utf8mb4_unicode_ci
+- Copy `.env.example` to `.env` and run `php artisan key:generate`
+- Run `php artisan migrate`
 
 How to run: go to digital-sat.test (Herd must be on)
 
