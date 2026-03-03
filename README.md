@@ -9,8 +9,10 @@
 - Create new database named digital_sat, pick utf8mb4_unicode_ci
 - Copy `.env.example` to `.env` and run `php artisan key:generate`
 - Run `php artisan migrate`
+- Run `npm install`
 
 How to run: go to digital-sat.test (Herd must be on)
+To edit frontend: Must run `npm run dev` (Start Vite)
 
 ## Git rules
 
