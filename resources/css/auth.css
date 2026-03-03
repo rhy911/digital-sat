@@ -1,0 +1,130 @@
+/* ─────────────────────────────────────────────────────────
+   auth.css  –  Shared styles for all authentication pages
+   (authentication.php, student_signin.php, student_signup.php)
+   ───────────────────────────────────────────────────────── */
+
+header {
+    background-color: #324dc7;
+    padding: 20px 40px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.bluebook-logo {
+    color: white;
+    font-size: 28px;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.test-device-btn {
+    background-color: #7e96dd;
+    color: white;
+    border: 2px solid white;
+    padding: 10px 24px;
+    border-radius: 25px;
+    font-weight: 600;
+    transition: all 0.3s ease;
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+}
+
+.test-device-btn:hover {
+    background-color: white;
+    color: #324dc7;
+}
+
+main {
+    background-color: #324dc7;
+    flex: 1;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 40px 20px clamp(20px, 8vh, 80px);
+}
+
+/* ── Auth card ── */
+.signin-container {
+    background: white;
+    border-radius: 20px;
+    padding: 40px;
+    max-width: 500px;
+    width: 100%;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15);
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+/* ── Shared form elements (signin & signup) ── */
+.back-link {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    color: #1a1a1a;
+    text-decoration: none;
+    font-weight: 600;
+    font-size: 15px;
+    width: fit-content;
+}
+
+.back-link:hover {
+    text-decoration: underline;
+    color: #1a1a1a;
+}
+
+.signin-title {
+    font-weight: 700;
+    font-size: 1.6rem;
+    text-align: center;
+    margin: 0;
+}
+
+.form-label {
+    font-weight: 600;
+    font-size: 15px;
+    margin-bottom: 6px;
+}
+
+.form-control {
+    border: 1.5px solid #b0b0b0;
+    border-radius: 8px;
+    padding: 12px 14px;
+    font-size: 15px;
+    transition: border-color 0.2s;
+}
+
+.form-control:focus {
+    border-color: #324dc7;
+    box-shadow: 0 0 0 3px rgba(50, 77, 199, 0.15);
+}
+
+.submit-btn {
+    background-color: #e0e0e0;
+    color: #888;
+    border: none;
+    padding: 14px 24px;
+    border-radius: 2rem;
+    font-weight: 600;
+    font-size: 16px;
+    width: 100%;
+    transition: all 0.3s ease;
+    cursor: not-allowed;
+}
+
+.submit-btn.active {
+    background-color: #fedb00;
+    color: #1a1a1a;
+    box-shadow: 0 0 0 1px #000;
+    cursor: pointer;
+}
+
+.submit-btn.active:hover {
+    box-shadow: 0 0 0 2px #000;
+}
