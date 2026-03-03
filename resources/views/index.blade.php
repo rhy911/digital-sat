@@ -85,7 +85,7 @@
 
         <div class="signin-footer-links">
             <a href="#educator">I'm an educator</a>
-            <a href="#help">Need help signing in?</a>
+            <a href="/signup">Don't have an account?</a>
         </div>
     </div>
 </x-layouts.auth>

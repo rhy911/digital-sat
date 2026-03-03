@@ -35,6 +35,11 @@
 
             emailInput.addEventListener("input", checkFormValidity);
             passwordInput.addEventListener("input", checkFormValidity);
+
+            checkFormValidity();
+            if (typeof window.initPasswordToggles === "function") {
+                window.initPasswordToggles();
+            }
         </script>
     @endpush
     <div class="signin-container">
@@ -58,7 +63,10 @@
 
         <div class="mb-2">
             <label for="password" class="form-label">Password</label>
-            <input type="password" class="form-control" id="password" name="password" autocomplete="current-password">
+            <div class="password-field">
+                <input type="password" class="form-control" id="password" name="password" autocomplete="current-password">
+                <button type="button" class="password-toggle" id="passwordToggle" data-password-target="password" aria-label="Show password"></button>
+            </div>
         </div>
 
         <div class="mb-4">
@@ -69,6 +77,6 @@
     </form>
 
     <!-- Help -->
-    <a href="#" class="help-link">Need help signing in?</a>
+    <a href="/signup" class="help-link">Don't have an account?</a>
 </div>
 </x-layouts.auth>
