@@ -1,26 +1,4 @@
 <x-layouts.auth>
-    @push('styles')
-
-    <style>
-        .form-control.is-invalid { border-color: #dc3545; }
-        .form-control.is-invalid:focus { box-shadow: 0 0 0 3px rgba(220,53,69,0.15); }
-
-        .invalid-feedback {
-            font-size: 13px;
-            color: #dc3545;
-            margin-top: 5px;
-        }
-
-        .name-row { display: flex; gap: 14px; }
-        .name-row .form-group { flex: 1; }
-
-        .signin-link { text-align: center; font-size: 15px; }
-        .signin-link a { color: #324dc7; text-decoration: none; font-weight: 600; }
-        .signin-link a:hover { text-decoration: underline; }
-    </style>
-
-    @endpush
-
     @push('scripts')
 
     <script>

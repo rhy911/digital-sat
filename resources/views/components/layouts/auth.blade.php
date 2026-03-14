@@ -34,7 +34,7 @@
                 }
 
                 toggleEl.dataset.bound = '1';
-                toggleEl.innerHTML = eyeIcon;
+                toggleEl.innerHTML = eyeOffIcon;
                 toggleEl.setAttribute('aria-label', 'Show password');
                 toggleEl.setAttribute('aria-pressed', 'false');
 
@@ -44,7 +44,7 @@
 
                     if (!hasValue) {
                         inputEl.type = 'password';
-                        toggleEl.innerHTML = eyeIcon;
+                        toggleEl.innerHTML = eyeOffIcon;
                         toggleEl.setAttribute('aria-label', 'Show password');
                         toggleEl.setAttribute('aria-pressed', 'false');
                     }
@@ -53,7 +53,7 @@
                 toggleEl.addEventListener('click', function () {
                     const isHidden = inputEl.type === 'password';
                     inputEl.type = isHidden ? 'text' : 'password';
-                    toggleEl.innerHTML = isHidden ? eyeOffIcon : eyeIcon;
+                    toggleEl.innerHTML = isHidden ? eyeIcon : eyeOffIcon;
                     toggleEl.setAttribute('aria-label', isHidden ? 'Hide password' : 'Show password');
                     toggleEl.setAttribute('aria-pressed', isHidden ? 'true' : 'false');
                     inputEl.focus();

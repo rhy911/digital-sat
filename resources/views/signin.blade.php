@@ -1,26 +1,4 @@
 <x-layouts.auth title="Sign In">
-    @push('styles')
-        <style>
-        .forgot-link {
-            color: #324dc7;
-            text-decoration: none;
-            font-size: 14px;
-            font-weight: 600;
-        }
-        .forgot-link:hover { text-decoration: underline; }
-
-        .help-link {
-            text-align: center;
-            color: #324dc7;
-            text-decoration: none;
-            font-weight: 600;
-            font-size: 15px;
-            display: block;
-        }
-        .help-link:hover { text-decoration: underline; }
-        </style>
-    @endpush
-
     @push('scripts')
         <script>
             const emailInput    = document.getElementById("email");
