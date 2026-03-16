@@ -44,7 +44,6 @@
     @endpush
 
     @push('scripts')
-
     <script>
         const nameInput = document.getElementById("name");
         const emailInput = document.getElementById("email");
@@ -52,6 +51,8 @@
         const rePasswordInput = document.getElementById("password_confirmation");
         const submitBtn = document.getElementById("submitBtn");
         const mismatchMsg = document.getElementById("passwordMismatch");
+        const signupForm = document.getElementById("signupForm");
+        const errorMsg = document.getElementById("errorMessage");
 
         function checkFormValidity() {
             if (!nameInput || !emailInput || !passwordInput || !rePasswordInput) return;
@@ -85,8 +86,51 @@
         if (typeof window.initPasswordToggles === "function") {
             window.initPasswordToggles();
         }
-    </script>
 
+        // Handle Signup Submission
+        signupForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            const originalBtnText = submitBtn.textContent;
+            submitBtn.textContent = 'Creating Account...';
+            submitBtn.disabled = true;
+            errorMsg.style.display = 'none';
+
+            try {
+                const formData = new FormData(signupForm);
+                const response = await fetch('{{ route("register") }}', {
+                    method: 'POST',
+                    headers: {
+                        'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                        'Accept': 'application/json'
+                    },
+                    body: formData
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    // Registration successful
+                    if (data.token) {
+                        localStorage.setItem('api_token', data.token);
+                    }
+                    window.location.href = data.redirect || '{{ route("verify.email.notice") }}';
+                } else {
+                    // Error response
+                    errorMsg.textContent = data.message || 'Registration failed. Please try again.';
+                    errorMsg.style.display = 'block';
+                }
+            } catch (error) {
+                console.error('Registration error:', error);
+                errorMsg.textContent = 'A connection error occurred. Please check your internet.';
+                errorMsg.style.display = 'block';
+            } finally {
+                submitBtn.textContent = originalBtnText;
+                submitBtn.disabled = false;
+                checkFormValidity();
+            }
+        });
+    </script>
     @endpush
     <div class="signin-container">
         <!-- Back -->
@@ -107,8 +151,10 @@
         </div>
         @endif
 
+        <div id="errorMessage" class="alert alert-error" style="display: none; margin-bottom: 20px;"></div>
+
         <!-- Form -->
-        <form id="signupForm" method="POST" novalidate>
+        <form id="signupForm" action="{{ route('register') }}" method="POST" novalidate>
             @csrf
 
             <div class="mb-3">
@@ -140,6 +186,8 @@
 
             <button type="submit" class="submit-btn" id="submitBtn">Create Account</button>
         </form>
+
+
 
         <!-- Sign in link -->
         <p class="signin-link">Already have an account? <a href="/login">Sign in</a></p>

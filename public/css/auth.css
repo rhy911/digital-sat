@@ -175,7 +175,7 @@ body {
     font-size: 0.875rem;
 }
 
-.alert-danger {
+.alert-danger, .alert-error {
     background: rgba(239, 68, 68, 0.1);
     border: 1px solid rgba(239, 68, 68, 0.2);
     color: #fca5a5;

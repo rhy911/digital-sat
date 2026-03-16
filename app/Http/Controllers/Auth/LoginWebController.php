@@ -45,14 +45,17 @@ class LoginWebController extends Controller
                     ->with('warning', 'Email của bạn chưa được xác minh.');
             }
 
-            // Return JSON response with token for successful login
-            /** @var \App\Models\User $user */
-            return response()->json([
-                'message' => 'Đăng nhập thành công.',
-                'user' => $user,
-                'email_verified' => $user->hasVerifiedEmail(),
-                'token' => $user->createToken('api-token')->plainTextToken,
-            ], 200);
+            // Return JSON response for AJAX or redirect for web
+            if ($request->wantsJson()) {
+                return response()->json([
+                    'message' => 'Đăng nhập thành công.',
+                    'user' => $user,
+                    'email_verified' => $user->hasVerifiedEmail(),
+                    'token' => $user->createToken('api-token')->plainTextToken,
+                ], 200);
+            }
+
+            return redirect()->intended(route('dashboard'));
         } catch (\Exception $e) {
             $message = $e->getMessage();
             if ($e instanceof ValidationException) {
