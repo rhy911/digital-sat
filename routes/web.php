@@ -16,14 +16,26 @@ Route::get('/', function () {
 
 Route::middleware('guest')->group(function () {
     Route::get('/login', function () {
-        return view('signin');
+        return view('auth.signin');
     })->name('login');
 
     Route::post('/login', LoginWebController::class);
 });
 
 Route::get('/register', function () {
-    return view('signup');
+    return view('auth.signup');
+});
+
+Route::get('/forget', function () {
+    return view('auth.forgot');
+});
+
+Route::get('/reset-password', function () {
+    return view('auth.reset-password');
+});
+
+Route::get('/email-verify', function () {
+    return view('auth.email-verify');
 })->name('register');
 
 Route::post('/register', RegisterWebController::class);
