@@ -18,7 +18,9 @@
         </button>
     </header>
     <main>
-        {{ $slot }}
+        <div class="signin-container">
+            {{ $slot }}
+        </div>
     </main>
     <footer>
         

@@ -7,9 +7,21 @@ Route::get('/', function () {
 });
 
 Route::get('/signin', function () {
-    return view('signin');
+    return view('auth.signin');
 });
 
 Route::get('/signup', function () {
-    return view('signup');
+    return view('auth.signup');
+});
+
+Route::get('/forget', function () {
+    return view('auth.forgot');
+});
+
+Route::get('/reset-password', function () {
+    return view('auth.reset-password');
+});
+
+Route::get('/email-verify', function () {
+    return view('auth.email-verify');
 });
