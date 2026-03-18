@@ -1,71 +1,15 @@
 <x-layouts.auth title="Sign In">
     @push('scripts')
     <script>
-        const emailInput = document.getElementById("email");
-        const passwordInput = document.getElementById("password");
-        const submitBtn = document.getElementById("submitBtn");
-        const signinForm = document.getElementById("signinForm");
-        const errorMsg = document.getElementById("errorMessage");
-
-        function checkFormValidity() {
-            const filled = emailInput.value.trim() !== "" && passwordInput.value.trim() !== "";
-            submitBtn.disabled = !filled;
-            submitBtn.classList.toggle("active", filled);
-        }
-
-        emailInput.addEventListener("input", checkFormValidity);
-        passwordInput.addEventListener("input", checkFormValidity);
-
-        checkFormValidity();
-        if (typeof window.initPasswordToggles === "function") {
-            window.initPasswordToggles();
-        }
-
-        // Handle form submission
-        signinForm.addEventListener('submit', async (e) => {
-            e.preventDefault();
-
-            const originalBtnText = submitBtn.textContent;
-            submitBtn.textContent = 'Processing...';
-            submitBtn.disabled = true;
-            errorMsg.style.display = 'none';
-
-            try {
-                const formData = new FormData(signinForm);
-                const response = await fetch('{{ route("login") }}', {
-                    method: 'POST',
-                    headers: {
-                        'X-CSRF-TOKEN': '{{ csrf_token() }}',
-                        'Accept': 'application/json'
-                    },
-                    body: formData
-                });
-
-                const data = await response.json();
-
-                if (response.ok) {
-                    // Login successful
+        document.addEventListener('DOMContentLoaded', () => {
+            new AuthForm('signinForm', {
+                onSuccess: (data) => {
                     if (data.token) {
                         localStorage.setItem('api_token', data.token);
                     }
                     window.location.href = '{{ route("dashboard") }}';
-                } else if (response.status === 403 && data.redirect) {
-                    // Email not verified - redirect to verification page
-                    window.location.href = data.redirect;
-                } else {
-                    // Error response (Validation errors, etc)
-                    errorMsg.textContent = data.message || 'Login failed. Please try again.';
-                    errorMsg.style.display = 'block';
                 }
-            } catch (error) {
-                console.error('Login error:', error);
-                errorMsg.textContent = 'A connection error occurred. Please check your internet.';
-                errorMsg.style.display = 'block';
-            } finally {
-                submitBtn.textContent = originalBtnText;
-                submitBtn.disabled = false;
-                checkFormValidity();
-            }
+            });
         });
     </script>
     @endpush
@@ -91,7 +35,7 @@
         @endif
 
         <!-- Form -->
-        <form id="signinForm" action="{{ route('login') }}" method="POST" novalidate>
+        <form id="signinForm" action="{{ route('signin') }}" method="POST" novalidate>
             @csrf
 
             <div class="mb-3">
@@ -111,7 +55,7 @@
             <a href="/forget" class="forgot-link">Forgot password?</a>
         </div>
 
-        <button type="submit" class="submit-btn" id="submitBtn" disabled>Submit</button>
+        <button type="submit" class="submit-btn" id="submitBtn" data-processing-text="Processing..." disabled>Submit</button>
     </form>
 
     <!-- Help -->

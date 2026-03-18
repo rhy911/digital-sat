@@ -1,47 +1,40 @@
 <x-layouts.auth title="Sign Up">
     @push('scripts')
-
     <script>
-        const firstNameInput  = document.getElementById("firstName");
-        const lastNameInput   = document.getElementById("lastName");
-        const emailInput      = document.getElementById("email");
-        const passwordInput   = document.getElementById("password");
-        const rePasswordInput = document.getElementById("rePassword");
-        const submitBtn       = document.getElementById("submitBtn");
-        const mismatchMsg     = document.getElementById("passwordMismatch");
+        document.addEventListener('DOMContentLoaded', () => {
+            const firstNameInput = document.getElementById("firstName");
+            const lastNameInput = document.getElementById("lastName");
+            const passwordInput = document.getElementById("password");
+            const passwordConfirmInput = document.getElementById("password_confirmation");
+            const mismatchMsg = document.getElementById("passwordMismatch");
 
-        function checkFormValidity() {
-            const allFilled =
-                firstNameInput.value.trim()  !== "" &&
-                lastNameInput.value.trim()   !== "" &&
-                emailInput.value.trim()      !== "" &&
-                passwordInput.value.trim()   !== "" &&
-                rePasswordInput.value.trim() !== "";
-
-            const passwordsMatch = passwordInput.value === rePasswordInput.value;
-
-            if (rePasswordInput.value.trim() !== "" && !passwordsMatch) {
-                rePasswordInput.classList.add("is-invalid");
-                mismatchMsg.style.display = "block";
-            } else {
-                rePasswordInput.classList.remove("is-invalid");
-                mismatchMsg.style.display = "none";
-            }
-
-            const isValid = allFilled && passwordsMatch;
-            submitBtn.disabled = !isValid;
-            submitBtn.classList.toggle("active", isValid);
-        }
-
-        [firstNameInput, lastNameInput, emailInput, passwordInput, rePasswordInput]
-            .forEach(el => el.addEventListener("input", checkFormValidity));
-
-        checkFormValidity();
-        if (typeof window.initPasswordToggles === "function") {
-            window.initPasswordToggles();
-        }
+            new AuthForm('signupForm', {
+                validate: () => {
+                    const passwordsMatch = passwordInput.value === passwordConfirmInput.value;
+                    if (passwordConfirmInput.value.trim() !== "" && !passwordsMatch) {
+                        passwordConfirmInput.classList.add("is-invalid");
+                        mismatchMsg.style.display = "block";
+                    } else {
+                        passwordConfirmInput.classList.remove("is-invalid");
+                        mismatchMsg.style.display = "none";
+                    }
+                    return passwordsMatch;
+                },
+                prepareData: (formData) => {
+                    const name = firstNameInput.value.trim() + ' ' + lastNameInput.value.trim();
+                    formData.set('name', name);
+                    formData.delete('firstName');
+                    formData.delete('lastName');
+                    return formData;
+                },
+                onSuccess: (data) => {
+                    if (data.redirect) {
+                        window.location.href = data.redirect;
+                    }
+                }
+            });
+        });
     </script>
-
     @endpush
     <!-- Back -->
     <a href="/" class="back-link">
@@ -55,7 +48,7 @@
     <h2 class="signin-title">Create a Student Account</h2>
 
     <!-- Form -->
-    <form id="signupForm" novalidate>
+    <form id="signupForm" action="{{ route('signup') }}" method="POST" novalidate>
         <div class="name-row mb-3">
             <div class="form-group">
                 <label for="firstName" class="form-label">First Name</label>
@@ -81,15 +74,17 @@
         </div>
 
         <div class="mb-4">
-            <label for="rePassword" class="form-label">Re-enter Password</label>
+            <label for="password_confirmation" class="form-label">Re-enter Password</label>
             <div class="password-field">
-                <input type="password" class="form-control" id="rePassword" name="rePassword" autocomplete="new-password">
-                <button type="button" class="password-toggle" id="rePasswordToggle" data-password-target="rePassword" aria-label="Show password"></button>
+                <input type="password" class="form-control" id="password_confirmation" name="password_confirmation" autocomplete="new-password">
+                <button type="button" class="password-toggle" id="rePasswordToggle" data-password-target="password_confirmation" aria-label="Show password"></button>
             </div>
             <div class="invalid-feedback" id="passwordMismatch">Passwords do not match.</div>
         </div>
 
-        <button type="submit" class="submit-btn" id="submitBtn" disabled>Create Account</button>
+        <div id="errorMessage" style="display: none; color: #dc3545; margin-bottom: 1rem; padding: 0.75rem; background-color: #f8d7da; border-radius: 4px;"></div>
+
+        <button type="submit" class="submit-btn" id="submitBtn" data-processing-text="Processing..." disabled>Create Account</button>
     </form>
 
     <!-- Sign in link -->

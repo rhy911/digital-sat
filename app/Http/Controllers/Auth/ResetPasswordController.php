@@ -33,8 +33,23 @@ class ResetPasswordController extends Controller
             }
         );
 
-        return $status === Password::PASSWORD_RESET
-            ? redirect()->route('login')->with('status', __($status))
-            : back()->withErrors(['email' => [__($status)]]);
+        if ($status === Password::PASSWORD_RESET) {
+            if ($request->wantsJson()) {
+                return response()->json([
+                    'message' => 'Password reset successfully!',
+                    'status' => $status,
+                    'redirect' => route('login')
+                ], 200);
+            }
+            return redirect()->route('login')->with('status', __($status));
+        } else {
+            if ($request->wantsJson()) {
+                return response()->json([
+                    'message' => __($status),
+                    'errors' => ['email' => [__($status)]]
+                ], 422);
+            }
+            return back()->withErrors(['email' => [__($status)]]);
+        }
     }
 }
