@@ -1,0 +1,119 @@
+<x-layouts.auth title="Sign In">
+    @push('scripts')
+    <script>
+        const emailInput = document.getElementById("email");
+        const passwordInput = document.getElementById("password");
+        const submitBtn = document.getElementById("submitBtn");
+        const signinForm = document.getElementById("signinForm");
+        const errorMsg = document.getElementById("errorMessage");
+
+        function checkFormValidity() {
+            const filled = emailInput.value.trim() !== "" && passwordInput.value.trim() !== "";
+            submitBtn.disabled = !filled;
+            submitBtn.classList.toggle("active", filled);
+        }
+
+        emailInput.addEventListener("input", checkFormValidity);
+        passwordInput.addEventListener("input", checkFormValidity);
+
+        checkFormValidity();
+        if (typeof window.initPasswordToggles === "function") {
+            window.initPasswordToggles();
+        }
+
+        // Handle form submission
+        signinForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            const originalBtnText = submitBtn.textContent;
+            submitBtn.textContent = 'Processing...';
+            submitBtn.disabled = true;
+            errorMsg.style.display = 'none';
+
+            try {
+                const formData = new FormData(signinForm);
+                const response = await fetch('{{ route("login") }}', {
+                    method: 'POST',
+                    headers: {
+                        'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                        'Accept': 'application/json'
+                    },
+                    body: formData
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    // Login successful
+                    if (data.token) {
+                        localStorage.setItem('api_token', data.token);
+                    }
+                    window.location.href = '{{ route("dashboard") }}';
+                } else if (response.status === 403 && data.redirect) {
+                    // Email not verified - redirect to verification page
+                    window.location.href = data.redirect;
+                } else {
+                    // Error response (Validation errors, etc)
+                    errorMsg.textContent = data.message || 'Login failed. Please try again.';
+                    errorMsg.style.display = 'block';
+                }
+            } catch (error) {
+                console.error('Login error:', error);
+                errorMsg.textContent = 'A connection error occurred. Please check your internet.';
+                errorMsg.style.display = 'block';
+            } finally {
+                submitBtn.textContent = originalBtnText;
+                submitBtn.disabled = false;
+                checkFormValidity();
+            }
+        });
+    </script>
+    @endpush
+    <!-- Back -->
+    <a href="/" class="back-link">
+        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="15 18 9 12 15 6"></polyline>
+        </svg>
+        Back
+    </a>
+
+        <!-- Title -->
+        <h2 class="signin-title">Sign In with a Student Account</h2>
+
+        @if ($errors->any())
+        <div class="alert alert-error">
+            <ul>
+                @foreach ($errors->all() as $error)
+                <li>{{ $error }}</li>
+                @endforeach
+            </ul>
+        </div>
+        @endif
+
+        <!-- Form -->
+        <form id="signinForm" action="{{ route('login') }}" method="POST" novalidate>
+            @csrf
+
+            <div class="mb-3">
+                <label for="email" class="form-label">Email Address</label>
+                <input type="email" class="form-control" id="email" name="email" autocomplete="email">
+            </div>
+
+        <div class="mb-2">
+            <label for="password" class="form-label">Password</label>
+            <div class="password-field">
+                <input type="password" class="form-control" id="password" name="password" autocomplete="current-password">
+                <button type="button" class="password-toggle" id="passwordToggle" data-password-target="password" aria-label="Show password"></button>
+            </div>
+        </div>
+
+        <div class="mb-4">
+            <a href="/forget" class="forgot-link">Forgot password?</a>
+        </div>
+
+        <button type="submit" class="submit-btn" id="submitBtn" disabled>Submit</button>
+    </form>
+
+    <!-- Help -->
+    <a href="/signup" class="help-link">Don't have an account?</a>
+</x-layouts.auth>
