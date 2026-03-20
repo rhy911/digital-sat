@@ -5,6 +5,7 @@ use App\Http\Controllers\Auth\RegisterController;
 use App\Http\Controllers\Auth\LogoutController;
 use App\Http\Controllers\Auth\VerifyEmailController;
 use App\Http\Controllers\Auth\ResendVerificationController;
+use App\Http\Controllers\UserController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
@@ -24,3 +25,7 @@ Route::middleware('auth:sanctum')->group(function () {
     // Email verification routes
     Route::post('/email/verification-notification', ResendVerificationController::class);
 });
+
+// Student routes (incoming database changes)
+Route::get('/students', [UserController::class, 'get_data']);
+Route::post('/students', [UserController::class, 'insert_data']);
