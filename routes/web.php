@@ -34,7 +34,7 @@ Route::get('/forget', function () {
 
 Route::get('/email-verify', function () {
     return view('auth.email-verify');
-})->name('email-verify');
+})->name('verify.email.notice');
 
 // Email verification route - public access (hash is the security)
 Route::get('/email/verify/{id}/{hash}', VerifyEmailWebController::class)->name('verification.verify');
@@ -56,7 +56,7 @@ Route::middleware('guest')->group(function () {
 
     Route::get('/reset-password/{token}', function (Request $request, $token) {
         return view('auth.reset-password', ['token' => $token, 'email' => $request->email]);
-    })->name('reset-password');
+    })->name('password.reset');
 
-    Route::post('/reset-password', ResetPasswordController::class)->name('reset-password');
+    Route::post('/reset-password', ResetPasswordController::class)->name('password.update');
 });

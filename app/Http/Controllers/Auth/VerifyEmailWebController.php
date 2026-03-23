@@ -20,7 +20,7 @@ class VerifyEmailWebController extends Controller
                 sha1($user->getEmailForVerification())
             )) {
                 // Invalid hash - redirect to login with error
-                return redirect()->route('login')
+                return redirect()->route('signin')
                     ->with('error', 'Link xác minh không hợp lệ hoặc đã hết hạn.');
             }
 
@@ -50,7 +50,7 @@ class VerifyEmailWebController extends Controller
                 'id' => $request->route('id'),
             ]);
 
-            return redirect()->route('login')
+            return redirect()->route('signin')
                 ->with('error', 'Đã xảy ra lỗi khi xác minh email. Vui lòng thử lại.');
         }
     }

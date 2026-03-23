@@ -49,6 +49,7 @@
 
     <!-- Form -->
     <form id="signupForm" action="{{ route('signup') }}" method="POST" novalidate>
+        @csrf
         <div class="name-row mb-3">
             <div class="form-group">
                 <label for="firstName" class="form-label">First Name</label>

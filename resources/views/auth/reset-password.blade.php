@@ -11,7 +11,8 @@
     <h2 class="signin-title">Reset Your Password</h2>
 
     <!-- Form -->
-    <form id="resetForm" action="{{ route('reset-password') }}" method="POST" novalidate>
+    <form id="resetForm" action="{{ route('password.update') }}" method="POST" novalidate>
+        @csrf
         <!-- Hidden fields for token and email from the URL -->
         <input type="hidden" name="token" value="{{ $token }}">
         <input type="hidden" name="email" value="{{ $email }}">
