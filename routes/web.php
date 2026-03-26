@@ -60,3 +60,7 @@ Route::middleware('guest')->group(function () {
 
     Route::post('/reset-password', ResetPasswordController::class)->name('password.update');
 });
+
+Route::get('/home', function () {
+    return view('home');
+});

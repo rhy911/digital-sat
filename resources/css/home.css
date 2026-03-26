@@ -1,0 +1,196 @@
+header {
+    background-color: #d9e3f0;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1.25rem
+}
+
+header h1 {
+    color: #324dc7;
+    margin-top: 3.125rem;
+    font-weight: 400;
+    font-size: 3.125rem;
+}
+
+header .bluebook-logo {
+    color: #324dc7;
+    font-size: 40px;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+header .user {
+    font-size: 1.125rem;
+    font-weight: bold;
+    display: flex;
+    align-items: center;
+    cursor: pointer;
+}
+
+header .user .avatar {
+    width: 2.5rem;
+    height: 2.5rem;
+    margin-left: 0.625rem;
+}
+
+header .user .avatar img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    border-radius: 50%;
+}
+
+/* ── Main content ── */
+
+main {
+    padding: 1.25rem;
+}
+
+main section {
+    padding: 16px;
+    margin-bottom: 20px;
+}
+
+main h2 {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    margin-bottom: 1.25rem;
+}
+
+main a {
+    margin-left: auto;
+    font-size: 1.25rem;
+    color: #324dc7;
+}
+
+main h4 {
+    margin: 1rem 0;
+}
+
+main p {
+    font-size: 1.125rem;
+    margin: 1rem 0;
+}
+
+/* Utility Classes */
+
+header .user .avatar {
+  width: 2.5rem;
+  height: 2.5rem;
+  margin-left: 0.625rem;
+}
+
+header .user .avatar img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    border-radius: 50%;
+}
+
+/* Button Styles */
+main h2 .btn-group .btn {
+  width: 5.625rem;
+  border-radius: 0.75rem;
+}
+
+main h2 .btn-outline-primary {
+  --btn-color: #444;
+  border-color: var(--btn-color);
+  color: #333;
+}
+
+main h2 .btn-group .btn-check:checked + .btn-outline-primary {
+  background-color: var(--btn-color);
+  border-color: var(--btn-color);
+}
+
+main h2 .btn-outline-primary:hover {
+  background-color: #4444441e;
+  border-color: var(--btn-color);
+  color: #333;
+}
+
+main h2 .btn-group .btn-check:focus + .btn-outline-primary,
+main h2 .btn-outline-primary:focus {
+  box-shadow: none;
+}
+
+
+
+main section .test-box,
+main section .option,
+main section .bigfuture-content {
+  width: 31.25rem;
+  text-align: center;
+  background: #fff;
+  padding: 1rem 2rem;
+  border-radius: 1rem;
+  box-shadow: 0 0 0.625rem rgba(0, 0, 0, 0.2);
+}
+
+main section .practice-options a {
+    text-decoration: none;
+    color: inherit;
+    display: flex;
+    margin: 0;
+}
+
+main section .option {
+    width: 17.5rem;
+    justify-items: center;
+    padding: 1.5rem 3.125rem 0;
+    cursor: pointer;
+}
+
+main section .option img {
+  width: 6.25rem;
+}
+
+/* BigFuture Section */
+main section .bigfuture-content {
+  width: 100%;
+  height: 15.625rem;
+  display: flex;
+  padding: 0;
+  text-align: start;
+}
+
+main section .bigfuture-content img {
+  width: 18.75rem;
+  height: 100%;
+  border-radius: 1rem 0 0 1rem;
+  object-fit: cover;
+  object-position: top;
+}
+
+main section .bigfuture-content .info {
+  padding: 1rem 2rem;
+}
+
+main section .bigfuture-content .info .btn {
+  border: 1px solid #333;
+  border-radius: 2.5rem;
+  font-weight: 600;
+  font-size: 1.125rem;
+  padding: 1rem 1.75rem;
+  transition: all 0.3s ease;
+}
+
+main section .bigfuture-content .info .btn:hover {
+  background-color: #4444441e;
+  border-color: #444;
+}
+
+/* Footer
+.footer {
+  width: 100%;
+  position: fixed;
+  bottom: 0;
+  text-align: end;
+  font-size: 0.625rem;
+  color: gray;
+} */
