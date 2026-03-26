@@ -40,6 +40,29 @@
                     }
                 }
             });
+
+            // Handle logout form
+            const logoutForm = document.getElementById('logoutForm');
+            if (logoutForm) {
+                logoutForm.addEventListener('submit', async (e) => {
+                    e.preventDefault();
+                    try {
+                        const response = await fetch(logoutForm.action, {
+                            method: 'POST',
+                            headers: {
+                                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content ||
+                                               logoutForm.querySelector('input[name="_token"]')?.value,
+                                'Accept': 'application/json'
+                            }
+                        });
+                        if (response.ok) {
+                            window.location.href = '/';
+                        }
+                    } catch (error) {
+                        console.error('Logout error:', error);
+                    }
+                });
+            }
         });
     </script>
     @endpush

@@ -28,6 +28,9 @@
                     return formData;
                 },
                 onSuccess: (data) => {
+                    if (data.token) {
+                        localStorage.setItem('api_token', data.token);
+                    }
                     if (data.redirect) {
                         window.location.href = data.redirect;
                     }

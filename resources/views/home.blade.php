@@ -13,13 +13,29 @@
                 <div class="bluebook-logo">
                     <span>Bluebook™</span>
                 </div>
-                <div class="user">Luu Minh
-                    <div class="avatar">
-                        <img src="{{ asset('images/default_avt.jpg') }}" alt="User">
+                <div class="user-dropdown">
+                    <div class="user" id="userDropdown">
+                        {{ $user->name ?? 'Guest' }}
+                        <div class="avatar">
+                            <img src="{{ asset('images/default_avt.jpg') }}" alt="User">
+                        </div>
+                    </div>
+                    <div class="dropdown-menu" id="dropdownMenu">
+                        <form action="{{ route('logout') }}" method="POST">
+                            @csrf
+                            <button type="submit" class="dropdown-item">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+                                    <polyline points="16 17 21 12 16 7"></polyline>
+                                    <line x1="21" y1="12" x2="9" y2="12"></line>
+                                </svg>
+                                Sign Out
+                            </button>
+                        </form>
                     </div>
                 </div>
             </div>
-            <h1>Welcome, Luu! Good luck on test day!</h1>
+            <h1>Welcome, {{ explode(' ', $user->name)[0] ?? 'User' }}! Good luck on test day!</h1>
         </div>
     </header>
     <main>
@@ -39,7 +55,7 @@
                 </h2>
                 <div class="test-box">
                     <h4>You Have No Upcoming Tests</h4>
-                    <p>Tests appear here a few weeks before test day. <strong>If you got a paper ticket from your school, <a href="#">sign out</a> and sign in with it.</strong></p>
+                    <p>Tests appear here a few weeks before test day. <strong>If you got a paper ticket from your school, <a href="/logout">sign out</a> and sign in with it.</strong></p>
                 </div>
             </section>
 
@@ -85,5 +101,44 @@
             </section>
         </div>
     </main>
+
+    <script>
+        // Dropdown toggle
+        const userDropdown = document.getElementById('userDropdown');
+        const dropdownMenu = document.getElementById('dropdownMenu');
+        const logoutForm = dropdownMenu.querySelector('form');
+
+        userDropdown.addEventListener('click', (e) => {
+            e.stopPropagation();
+            dropdownMenu.classList.toggle('show');
+        });
+
+        // Close dropdown when clicking outside
+        document.addEventListener('click', (e) => {
+            if (!userDropdown.contains(e.target)) {
+                dropdownMenu.classList.remove('show');
+            }
+        });
+
+        // Handle logout
+        logoutForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            try {
+                const response = await fetch(logoutForm.action, {
+                    method: 'POST',
+                    headers: {
+                        'X-CSRF-TOKEN': logoutForm.querySelector('input[name="_token"]')?.value,
+                        'Accept': 'application/json'
+                    }
+                });
+                if (response.ok) {
+                    localStorage.removeItem('api_token');
+                    window.location.href = '/';
+                }
+            } catch (error) {
+                console.error('Logout error:', error);
+            }
+        });
+    </script>
 </body>
 </html>
