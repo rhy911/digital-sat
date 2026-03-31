@@ -1,21 +1,18 @@
 header {
+    position: sticky;
+    top: 0;
+    left: 0;
     background-color: #d9e3f0;
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 1.25rem
-}
-
-header h1 {
-    color: #324dc7;
-    margin-top: 3.125rem;
-    font-weight: 400;
-    font-size: 3.125rem;
+    padding: 1.25rem;
+    z-index: 10;
 }
 
 header .bluebook-logo {
     color: #324dc7;
-    font-size: 40px;
+    font-size: 28px;
     font-weight: 700;
     display: flex;
     align-items: center;
@@ -46,12 +43,18 @@ header .user .avatar img {
 /* ── Main content ── */
 
 main {
-    padding: 1.25rem;
+    overflow: auto;
+    scroll-behavior: smooth;
 }
 
 main section {
     padding: 16px;
     margin-bottom: 20px;
+}
+
+main h1 {
+    color: #324dc7;
+    font-weight: 400;
 }
 
 main h2 {
@@ -63,7 +66,7 @@ main h2 {
 
 main a {
     margin-left: auto;
-    font-size: 1.25rem;
+    font-size: 1.125rem;
     color: #324dc7;
 }
 
@@ -79,9 +82,9 @@ main p {
 /* Utility Classes */
 
 header .user .avatar {
-  width: 2.5rem;
-  height: 2.5rem;
-  margin-left: 0.625rem;
+    width: 2.5rem;
+    height: 2.5rem;
+    margin-left: 0.625rem;
 }
 
 header .user .avatar img {
@@ -156,6 +159,12 @@ header .user-dropdown .dropdown-menu .dropdown-item svg {
     stroke: currentColor;
 }
 
+.welcome {
+    margin-bottom: 2rem;
+    background-color: #d9e3f0;
+    padding: 1.25rem;
+}
+
 /* Button Styles */
 main h2 .btn-group .btn {
   width: 5.625rem;
@@ -212,7 +221,7 @@ main section .option {
 }
 
 main section .option img {
-  width: 6.25rem;
+    width: 5rem;
 }
 
 /* BigFuture Section */

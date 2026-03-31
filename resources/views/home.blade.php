@@ -35,10 +35,14 @@
                     </div>
                 </div>
             </div>
-            <h1>Welcome, {{ explode(' ', $user->name)[0] ?? 'User' }}! Good luck on test day!</h1>
         </div>
     </header>
     <main>
+        <div class="welcome">
+            <div class="container">
+                <h1>Welcome, {{ explode(' ', $user->name)[0] ?? 'User' }}! Good luck on test day!</h1>
+            </div>        
+        </div>
         <div class="container">
             <section class="your-tests">
                 <h2>Your Tests
@@ -53,9 +57,13 @@
                         Don't see your test here?
                     </a>
                 </h2>
-                <div class="test-box">
+                <div class="test-box" id="active-tests">
                     <h4>You Have No Upcoming Tests</h4>
                     <p>Tests appear here a few weeks before test day. <strong>If you got a paper ticket from your school, <a href="/logout">sign out</a> and sign in with it.</strong></p>
+                </div>
+                <div class="test-box d-none" id="past-tests">
+                    <h4>You Haven't Taken Any Digital Tests Yet</h4>
+                    <p>After you take a test, it will appear here with your scores and feedback.</p>
                 </div>
             </section>
 
@@ -68,23 +76,28 @@
                         <input type="radio" class="btn-check" name="btnradio2" id="btnradio4" autocomplete="off">
                         <label class="btn btn-outline-primary" for="btnradio4">Past</label>
                     </div>
-                    <a href="#">
-                        <p>Learn more about Bluebook practice</p>
+                    <a href="">
+                        Learn more about Bluebook practice
                     </a>
                 </h2>
-                <div class="practice-options d-flex gap-4">
-                    <a href="">
+                <div class="practice-options d-flex gap-4" id="practice-active">
+                    <a href="{{ route('test.preview') }}">
                         <div class="option">
                             <img src="{{ asset('images/test_preview.png') }}" alt="Test Preview">
                             <h4>Test Preview</h4>
                         </div>
                     </a>
-                    <a href="test_preview.php">
+                    <a href="">
                         <div class="option">
                             <img src="{{ asset('images/test.png') }}" alt="Full-Length Practice">
                             <h4>Full-Length Practice</h4>
                         </div>
                     </a>
+                </div>
+                <div class="test-box d-none" id="practice-past">
+                    <h4>Ready to Practice?</h4>
+                    <p>Go to <strong>Active</strong> and select <strong>Full-Length Practice</strong>.</p>
+                    <p>Once you take any full-length practice test, it will appear here with your scores and feedback.</p>
                 </div>
             </section>
 
@@ -138,6 +151,50 @@
             } catch (error) {
                 console.error('Logout error:', error);
             }
+        });
+
+        // Radio button toggle for test boxes
+        const radioActive = document.getElementById('btnradio1');
+        const radioPast = document.getElementById('btnradio2');
+        const activeTests = document.getElementById('active-tests');
+        const pastTests = document.getElementById('past-tests');
+        const labelActive = document.querySelector('label[for="btnradio1"]');
+        const labelPast = document.querySelector('label[for="btnradio2"]');
+
+        radioActive.addEventListener('change', () => {
+            activeTests.classList.remove('d-none');
+            pastTests.classList.add('d-none');
+            labelActive.textContent = '✓ Active';
+            labelPast.textContent = 'Past';
+        });
+
+        radioPast.addEventListener('change', () => {
+            activeTests.classList.add('d-none');
+            pastTests.classList.remove('d-none');
+            labelActive.textContent = 'Active';
+            labelPast.textContent = '✓ Past';
+        });
+
+        // Radio button toggle for practice section
+        const radioPracticeActive = document.getElementById('btnradio3');
+        const radioPracticePast = document.getElementById('btnradio4');
+        const practiceActive = document.getElementById('practice-active');
+        const practicePast = document.getElementById('practice-past');
+        const labelPracticeActive = document.querySelector('label[for="btnradio3"]');
+        const labelPracticePast = document.querySelector('label[for="btnradio4"]');
+
+        radioPracticeActive.addEventListener('change', () => {
+            practiceActive.classList.remove('d-none');
+            practicePast.classList.add('d-none');
+            labelPracticeActive.textContent = '✓ Active';
+            labelPracticePast.textContent = 'Past';
+        });
+
+        radioPracticePast.addEventListener('change', () => {
+            practiceActive.classList.add('d-none');
+            practicePast.classList.remove('d-none');
+            labelPracticeActive.textContent = 'Active';
+            labelPracticePast.textContent = '✓ Past';
         });
     </script>
 </body>

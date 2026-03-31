@@ -63,3 +63,12 @@ Route::middleware('guest')->group(function () {
 
     Route::post('/reset-password', ResetPasswordController::class)->name('password.update');
 });
+
+Route::get('/test-preview', function () {
+    return view('tests.preview');
+})->name('test.preview');
+
+
+Route::get('choose-test', function (){
+    return view('tests.choose');
+})->name('choose-test');
