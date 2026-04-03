@@ -1,9 +1,11 @@
+@props(['title' => 'Digital SAT', 'nextUrl' => '#', 'backUrl' => '/home'])
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{{ $title ?? 'Digital SAT' }}</title>
+    <title>{{ $title }}</title>
     @vite(['resources/css/app.css', 'resources/sass/app.scss', 'resources/js/app.js'])
     @stack('styles')
     <style>
@@ -72,10 +74,10 @@
     </main>
     <footer>
         <div class="buttons">
-            <a href=" /choose-test">
+            <a href="{{ $nextUrl }}">
                 <div class="btn">Next</div>
             </a>
-            <a href="{{ url()->previous() }}">
+            <a href="{{ $backUrl }}">
                 <div class="btn">Back</div>
             </a>
         </div>

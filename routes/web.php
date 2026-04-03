@@ -72,3 +72,7 @@ Route::get('/test-preview', function () {
 Route::get('choose-test', function (){
     return view('tests.choose');
 })->name('choose-test');
+
+Route::get('/take-test', function () {
+    return view('tests.take.test-reading');
+})->name('take-test');

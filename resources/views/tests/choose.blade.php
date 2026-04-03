@@ -1,4 +1,4 @@
-<x-layouts.portal title="Choose a Preview">
+<x-layouts.portal title="Choose a Preview" nextUrl="/take-test" backUrl="/test-preview">
     @push('styles')
     <style>
         h3 {
