@@ -38,10 +38,10 @@ class ResetPasswordController extends Controller
                 return response()->json([
                     'message' => 'Password reset successfully!',
                     'status' => $status,
-                    'redirect' => route('login')
+                    'redirect' => route('signin')
                 ], 200);
             }
-            return redirect()->route('login')->with('status', __($status));
+            return redirect()->route('signin')->with('status', __($status));
         } else {
             if ($request->wantsJson()) {
                 return response()->json([

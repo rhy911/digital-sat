@@ -55,7 +55,7 @@ class LoginWebController extends Controller
                 ], 200);
             }
 
-            return redirect()->intended(route('dashboard'));
+            return redirect()->intended(route('home'));
         } catch (\Exception $e) {
             $message = $e->getMessage();
             if ($e instanceof ValidationException) {

@@ -1,9 +1,11 @@
+@props(['title' => 'Digital SAT'])
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{{ $title ?? 'Digital SAT' }}</title>
+    <title>{{ $title }}</title>
     @vite(['resources/css/app.css', 'resources/css/auth.css','resources/sass/app.scss', 'resources/js/app.js', 'resources/js/auth.js'])
     @stack('styles')
 </head>

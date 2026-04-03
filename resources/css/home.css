@@ -1,0 +1,270 @@
+header {
+    position: sticky;
+    top: 0;
+    left: 0;
+    background-color: #d9e3f0;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1.25rem;
+    z-index: 10;
+}
+
+header .bluebook-logo {
+    color: #324dc7;
+    font-size: 28px;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+header .user {
+    font-size: 1.125rem;
+    font-weight: bold;
+    display: flex;
+    align-items: center;
+    cursor: pointer;
+}
+
+header .user .avatar {
+    width: 2.5rem;
+    height: 2.5rem;
+    margin-left: 0.625rem;
+}
+
+header .user .avatar img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    border-radius: 50%;
+}
+
+/* ── Main content ── */
+
+main {
+    overflow: auto;
+    scroll-behavior: smooth;
+}
+
+main section {
+    padding: 16px;
+    margin-bottom: 20px;
+}
+
+main h1 {
+    color: #324dc7;
+    font-weight: 400;
+}
+
+main h2 {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    margin-bottom: 1.25rem;
+}
+
+main a {
+    margin-left: auto;
+    font-size: 1.125rem;
+    color: #324dc7;
+}
+
+main h4 {
+    margin: 1rem 0;
+}
+
+main p {
+    font-size: 1.125rem;
+    margin: 1rem 0;
+}
+
+/* Utility Classes */
+
+header .user .avatar {
+    width: 2.5rem;
+    height: 2.5rem;
+    margin-left: 0.625rem;
+}
+
+header .user .avatar img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    border-radius: 50%;
+}
+
+/* User Dropdown */
+header .user-dropdown {
+    position: relative;
+}
+
+header .user-dropdown .user {
+    font-size: 1.125rem;
+    font-weight: bold;
+    display: flex;
+    align-items: center;
+    cursor: pointer;
+    padding: 0.5rem 1rem;
+    border-radius: 0.5rem;
+    transition: background-color 0.2s ease;
+}
+
+header .user-dropdown .user:hover {
+    background-color: rgba(0, 0, 0, 0.05);
+}
+
+header .user-dropdown .dropdown-menu {
+    position: absolute;
+    top: 100%;
+    right: 0;
+    margin-top: 0.5rem;
+    background: white;
+    border-radius: 0.5rem;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    min-width: 180px;
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(-10px);
+    transition: all 0.2s ease;
+    z-index: 1000;
+}
+
+header .user-dropdown .dropdown-menu.show {
+    opacity: 1;
+    visibility: visible;
+    transform: translateY(0);
+}
+
+header .user-dropdown .dropdown-menu .dropdown-item {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    width: 100%;
+    padding: 0.75rem 1rem;
+    border: none;
+    background: none;
+    font-size: 0.95rem;
+    color: #333;
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+}
+
+header .user-dropdown .dropdown-menu .dropdown-item:hover {
+    background-color: rgba(239, 68, 68, 0.1);
+    color: #ef4444;
+}
+
+header .user-dropdown .dropdown-menu .dropdown-item svg {
+    stroke: currentColor;
+}
+
+.welcome {
+    margin-bottom: 2rem;
+    background-color: #d9e3f0;
+    padding: 1.25rem;
+}
+
+/* Button Styles */
+main h2 .btn-group .btn {
+  width: 5.625rem;
+  border-radius: 0.75rem;
+}
+
+main h2 .btn-outline-primary {
+  --btn-color: #444;
+  border-color: var(--btn-color);
+  color: #333;
+}
+
+main h2 .btn-group .btn-check:checked + .btn-outline-primary {
+  background-color: var(--btn-color);
+  border-color: var(--btn-color);
+}
+
+main h2 .btn-outline-primary:hover {
+  background-color: #4444441e;
+  border-color: var(--btn-color);
+  color: #333;
+}
+
+main h2 .btn-group .btn-check:focus + .btn-outline-primary,
+main h2 .btn-outline-primary:focus {
+  box-shadow: none;
+}
+
+
+
+main section .test-box,
+main section .option,
+main section .bigfuture-content {
+  width: 31.25rem;
+  text-align: center;
+  background: #fff;
+  padding: 1rem 2rem;
+  border-radius: 1rem;
+  box-shadow: 0 0 0.625rem rgba(0, 0, 0, 0.2);
+}
+
+main section .practice-options a {
+    text-decoration: none;
+    color: inherit;
+    display: flex;
+    margin: 0;
+}
+
+main section .option {
+    width: 17.5rem;
+    justify-items: center;
+    padding: 1.5rem 3.125rem 0;
+    cursor: pointer;
+}
+
+main section .option img {
+    width: 5rem;
+}
+
+/* BigFuture Section */
+main section .bigfuture-content {
+  width: 100%;
+  height: 15.625rem;
+  display: flex;
+  padding: 0;
+  text-align: start;
+}
+
+main section .bigfuture-content img {
+  width: 18.75rem;
+  height: 100%;
+  border-radius: 1rem 0 0 1rem;
+  object-fit: cover;
+  object-position: top;
+}
+
+main section .bigfuture-content .info {
+  padding: 1rem 2rem;
+}
+
+main section .bigfuture-content .info .btn {
+  border: 1px solid #333;
+  border-radius: 2.5rem;
+  font-weight: 600;
+  font-size: 1.125rem;
+  padding: 1rem 1.75rem;
+  transition: all 0.3s ease;
+}
+
+main section .bigfuture-content .info .btn:hover {
+  background-color: #4444441e;
+  border-color: #444;
+}
+
+/* Footer
+.footer {
+  width: 100%;
+  position: fixed;
+  bottom: 0;
+  text-align: end;
+  font-size: 0.625rem;
+  color: gray;
+} */

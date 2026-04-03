@@ -7,6 +7,7 @@ use App\Http\Controllers\Auth\VerifyEmailWebController;
 use App\Http\Controllers\Auth\ResendVerificationController;
 use App\Http\Controllers\Auth\ForgotPasswordController;
 use App\Http\Controllers\Auth\ResetPasswordController;
+use App\Http\Controllers\HomeController;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Http\Request;
 
@@ -34,7 +35,7 @@ Route::get('/forget', function () {
 
 Route::get('/email-verify', function () {
     return view('auth.email-verify');
-})->name('email-verify');
+})->name('verify.email.notice');
 
 // Email verification route - public access (hash is the security)
 Route::get('/email/verify/{id}/{hash}', VerifyEmailWebController::class)->name('verification.verify');
@@ -48,6 +49,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
         return view('dashboard');
     })->name('dashboard');
 
+    Route::get('/home', HomeController::class)->name('home');
+
     Route::post('/logout', LogoutController::class)->name('logout');
 });
 
@@ -56,7 +59,20 @@ Route::middleware('guest')->group(function () {
 
     Route::get('/reset-password/{token}', function (Request $request, $token) {
         return view('auth.reset-password', ['token' => $token, 'email' => $request->email]);
-    })->name('reset-password');
+    })->name('password.reset');
 
-    Route::post('/reset-password', ResetPasswordController::class)->name('reset-password');
+    Route::post('/reset-password', ResetPasswordController::class)->name('password.update');
 });
+
+Route::get('/test-preview', function () {
+    return view('tests.preview');
+})->name('test.preview');
+
+
+Route::get('choose-test', function (){
+    return view('tests.choose');
+})->name('choose-test');
+
+Route::get('/take-test', function () {
+    return view('tests.take.test-reading');
+})->name('take-test');

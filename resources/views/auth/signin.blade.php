@@ -7,7 +7,7 @@
                     if (data.token) {
                         localStorage.setItem('api_token', data.token);
                     }
-                    window.location.href = '{{ route("dashboard") }}';
+                    window.location.href = '{{ route("home") }}';
                 }
             });
         });
@@ -23,16 +23,6 @@
 
         <!-- Title -->
         <h2 class="signin-title">Sign In with a Student Account</h2>
-
-        @if ($errors->any())
-        <div class="alert alert-error">
-            <ul>
-                @foreach ($errors->all() as $error)
-                <li>{{ $error }}</li>
-                @endforeach
-            </ul>
-        </div>
-        @endif
 
         <!-- Form -->
         <form id="signinForm" action="{{ route('signin') }}" method="POST" novalidate>
@@ -54,6 +44,8 @@
         <div class="mb-4">
             <a href="/forget" class="forgot-link">Forgot password?</a>
         </div>
+
+        <div id="errorMessage" style="display: none; margin-bottom: 1rem;"></div>
 
         <button type="submit" class="submit-btn" id="submitBtn" data-processing-text="Processing..." disabled>Submit</button>
     </form>

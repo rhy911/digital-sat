@@ -15,10 +15,13 @@
                 <h1>Xin chào, {{ Auth::user()->name }}!</h1>
                 <p>Bạn đã đăng nhập thành công vào hệ thống.</p>
             </div>
-            <form action="{{ route('logout') }}" method="POST">
-                @csrf
-                <button type="submit" class="btn" style="width: auto; padding: 0.5rem 1.5rem; margin-top: 0; background: rgba(239, 68, 68, 0.2); border: 1px solid rgba(239, 68, 68, 0.2);">Đăng xuất</button>
-            </form>
+            <div style="display: flex; gap: 0.5rem;">
+                <a href="{{ route('home') }}" class="btn" style="width: auto; padding: 0.5rem 1.5rem; margin-top: 0; background: rgba(34, 197, 94, 0.2); border: 1px solid rgba(34, 197, 94, 0.2); text-decoration: none;">Go to Home</a>
+                <form action="{{ route('logout') }}" method="POST">
+                    @csrf
+                    <button type="submit" class="btn" style="width: auto; padding: 0.5rem 1.5rem; margin-top: 0; background: rgba(239, 68, 68, 0.2); border: 1px solid rgba(239, 68, 68, 0.2);">Đăng xuất</button>
+                </form>
+            </div>
         </div>
 
         <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 1.5rem;">
