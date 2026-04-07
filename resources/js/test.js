@@ -1,29 +1,25 @@
+// Import Bootstrap
+import * as bootstrap from 'bootstrap';
+window.bootstrap = bootstrap;
+
 // ============================================================================
 // CONFIGURATION & STATE
 // ============================================================================
 
-// DOM Elements - Navigation
-const backButton = document.getElementById("backButton");
-const nextButton = document.getElementById("nextButton");
+// DOM Elements - Navigation (initialized in DOMContentLoaded)
+let backButton;
+let nextButton;
 
-// DOM Elements - Questions
-const questionElements = Array.from(document.querySelectorAll('[id^="question"]'));
-const questionNumberSpan = document.querySelector(".popover-btn span:first-child");
-const totalQuestionsSpan = document.querySelector(".popover-btn #total");
+// DOM Elements - Questions (initialized in DOMContentLoaded)
+let questionElements = [];
+let questionNumberSpan;
+let totalQuestionsSpan;
 
 // State Variables
 let currentQuestionIndex = 0;
-const totalQuestions = questionElements.length;
+let totalQuestions = 0;
 let highlightMode = false;
 let persistentPopover = null;
-
-// Initialize display
-if (totalQuestionsSpan) {
-  totalQuestionsSpan.textContent = totalQuestions;
-}
-if (questionNumberSpan) {
-  questionNumberSpan.textContent = currentQuestionIndex + 1;
-}
 
 // ============================================================================
 // QUESTION BUTTON GENERATION
@@ -394,8 +390,21 @@ function hidePopover(trigger) {
 function initializeDropdown() {
   const dropdownButton = document.getElementById("dropdownMenuButton");
   const dropdownOverlay = document.getElementById("dropdownOverlay");
+  const dropdownMenu = document.getElementById("dropdownMenu");
 
   if (!dropdownButton) return;
+
+  // Close button handler
+  if (dropdownMenu) {
+    const closeButton = dropdownMenu.querySelector('.btn-secondary');
+    if (closeButton) {
+      closeButton.addEventListener("click", function (e) {
+        e.preventDefault();
+        const dropdown = bootstrap.Dropdown.getInstance(dropdownButton);
+        if (dropdown) dropdown.hide();
+      });
+    }
+  }
 
   // Listen for dropdown shown event
   dropdownButton.addEventListener("shown.bs.dropdown", function () {
@@ -430,21 +439,35 @@ function initializeDropdown() {
 function initializeQuestionTracking() {
   const questions = document.querySelectorAll('[id^="question"]');
   
+  if (questions.length === 0) {
+    console.warn('No question elements found in DOM');
+    return;
+  }
+
+  console.log(`Initializing tracking for ${questions.length} question(s)`);
+
   questions.forEach((question) => {
     // Bookmark toggle handler
     const bookmark = question.querySelector(".bookmark");
     if (bookmark) {
-      bookmark.addEventListener("click", function () {
+      bookmark.addEventListener("click", function (e) {
+        e.preventDefault();
+        e.stopPropagation();
         this.classList.toggle("marked");
+        console.log('Bookmark toggled:', this.classList.contains('marked') ? 'marked' : 'unmarked');
         updateQuestionButtonStatesInTemplate();
         updateQuestionButtonStates();
       });
+      console.log('Bookmark handler attached');
+    } else {
+      console.warn('No bookmark element found in question');
     }
 
     // Answer selection handler
     const radioButtons = question.querySelectorAll('input[type="radio"]');
     radioButtons.forEach((radio) => {
       radio.addEventListener("change", function () {
+        console.log('Answer changed for radio:', this.name);
         updateQuestionButtonStatesInTemplate();
         updateQuestionButtonStates();
       });
@@ -478,6 +501,10 @@ function toggleTimer() {
 
 // Expose to global scope for inline onclick handlers
 window.toggleTimer = toggleTimer;
+window.nextQuestion = nextQuestion;
+window.prevQuestion = prevQuestion;
+window.showQuestion = showQuestion;
+window.showReviewSection = showReviewSection;
 
 // ============================================================================
 // HIGHLIGHT FUNCTIONALITY
@@ -488,19 +515,30 @@ window.toggleTimer = toggleTimer;
  */
 function toggleHighlightMode() {
   highlightMode = !highlightMode;
-  
+
   const highlightBtn = document.getElementById('highlightNotesBtn');
   const contentAreas = document.querySelectorAll('.resizable-panel');
-  
+
+  console.log('Highlight mode toggled:', highlightMode ? 'ON' : 'OFF');
+  console.log('Content areas found:', contentAreas.length);
+
   if (highlightMode) {
-    if (highlightBtn) highlightBtn.classList.add('highlight-mode-active');
+    if (highlightBtn) {
+      highlightBtn.classList.add('highlight-mode-active');
+      console.log('Highlight button activated');
+    } else {
+      console.warn('Highlight button not found');
+    }
     contentAreas.forEach(area => area.classList.add('highlight-mode'));
-    console.log('Highlight mode activated');
+    console.log('Highlight mode added to', contentAreas.length, 'panels');
   } else {
-    if (highlightBtn) highlightBtn.classList.remove('highlight-mode-active');
+    if (highlightBtn) {
+      highlightBtn.classList.remove('highlight-mode-active');
+      console.log('Highlight button deactivated');
+    }
     contentAreas.forEach(area => area.classList.remove('highlight-mode'));
+    console.log('Highlight mode removed from', contentAreas.length, 'panels');
   }
-  console.log(`Highlight mode toggled: ${highlightMode ? "ON" : "OFF"}`);
 }
 
 /**
@@ -508,30 +546,34 @@ function toggleHighlightMode() {
  */
 function highlightSelection() {
   if (!highlightMode) return;
-  
+
   const selection = window.getSelection();
   if (!selection.rangeCount || selection.isCollapsed) return;
-  
+
   const range = selection.getRangeAt(0);
-  
+
   // Validate selection is within content area
   const contentAreas = document.querySelectorAll('.resizable-panel');
-  const isValidArea = Array.from(contentAreas).some(area => 
+  const isValidArea = Array.from(contentAreas).some(area =>
     area.contains(range.commonAncestorContainer)
   );
-  
-  if (!isValidArea) return;
-  
+
+  if (!isValidArea) {
+    console.log('Selection not in valid content area');
+    return;
+  }
+
   // Don't highlight if already highlighted
   const parentElement = range.commonAncestorContainer.parentElement;
   if (parentElement && parentElement.classList.contains('highlighted-text')) return;
-  
+
   try {
     const highlightSpan = document.createElement('span');
     highlightSpan.className = 'highlighted-text';
     highlightSpan.appendChild(range.extractContents());
     range.insertNode(highlightSpan);
     selection.removeAllRanges();
+    console.log('Text highlighted successfully');
   } catch (e) {
     console.error('Error highlighting text:', e);
   }
@@ -542,18 +584,21 @@ function highlightSelection() {
  */
 function initializeHighlightFeature() {
   const highlightBtn = document.getElementById('highlightNotesBtn');
-  
+
   if (highlightBtn) {
     highlightBtn.addEventListener('click', toggleHighlightMode);
+    console.log('Highlight button click handler attached');
+  } else {
+    console.warn('Highlight button not found!');
   }
-  
+
   // Apply highlights on mouseup
   document.addEventListener('mouseup', function() {
     if (highlightMode) {
       setTimeout(highlightSelection, 10);
     }
   });
-  
+
   // Remove highlight on double-click
   document.addEventListener('dblclick', function(e) {
     if (e.target.classList.contains('highlighted-text')) {
@@ -562,6 +607,7 @@ function initializeHighlightFeature() {
         parent.insertBefore(e.target.firstChild, e.target);
       }
       parent.removeChild(e.target);
+      console.log('Highlight removed on double-click');
     }
   });
   console.log("Highlight feature initialized");
@@ -615,15 +661,16 @@ function preventNormalCursorBehavior() {
  * Handles question button clicks via event delegation
  */
 function handleQuestionButtonClick(e) {
-  if (!e.target.classList.contains("question-btn")) return;
-  
+  const button = e.target.closest(".question-btn");
+  if (!button) return;
+
   e.preventDefault();
-  const questionNumber = parseInt(e.target.getAttribute("data-question"));
+  const questionNumber = parseInt(button.getAttribute("data-question"));
   if (questionNumber) {
     console.log(`Jumping to question ${questionNumber}`);
     currentQuestionIndex = questionNumber - 1;
     showQuestion(currentQuestionIndex);
-    
+
     const popoverTrigger = document.querySelector('[data-bs-toggle="popover"]');
     if (popoverTrigger) hidePopover(popoverTrigger);
   }
@@ -633,12 +680,12 @@ function handleQuestionButtonClick(e) {
  * Handles review button clicks
  */
 function handleReviewButtonClick(e) {
-  if (!e.target.classList.contains("btn-outline-primary") && 
-      !e.target.closest(".go-review-btn button")) return;
-  
+  const button = e.target.closest(".go-review-btn button, .btn-outline-primary");
+  if (!button) return;
+
   e.preventDefault();
   showReviewSection();
-  
+
   const popoverTrigger = document.querySelector('[data-bs-toggle="popover"]');
   if (popoverTrigger) hidePopover(popoverTrigger);
 }
@@ -652,8 +699,15 @@ function handleReviewButtonClick(e) {
  */
 function initializeResizablePanels() {
   const resizers = document.querySelectorAll('.resizer');
-  
-  resizers.forEach(resizer => {
+
+  if (resizers.length === 0) {
+    console.warn('No resizer elements found in DOM');
+    return;
+  }
+
+  console.log(`Initializing ${resizers.length} resizer(s)`);
+
+  resizers.forEach((resizer, index) => {
     let isResizing = false;
     let startX = 0;
     let startLeftWidth = 0;
@@ -662,43 +716,51 @@ function initializeResizablePanels() {
     let leftPanel = null;
     let rightPanel = null;
 
+    console.log(`Setting up resizer ${index + 1}`);
+
     resizer.addEventListener('mousedown', function(e) {
+      console.log('Resizer mousedown triggered');
       isResizing = true;
       startX = e.clientX;
-      
+
       container = resizer.parentElement;
       leftPanel = resizer.previousElementSibling;
       rightPanel = resizer.nextElementSibling;
-      
+
       if (leftPanel && rightPanel) {
         startLeftWidth = leftPanel.offsetWidth;
         startRightWidth = rightPanel.offsetWidth;
+        console.log(`Panel widths - Left: ${startLeftWidth}px, Right: ${startRightWidth}px`);
+      } else {
+        console.error('Could not find left or right panel for resizer');
+        return;
       }
-      
+
       // Add class to body to prevent text selection during drag
       document.body.style.cursor = 'col-resize';
       document.body.style.userSelect = 'none';
-      
+
       e.preventDefault();
+      e.stopPropagation();
     });
 
     document.addEventListener('mousemove', function(e) {
       if (!isResizing || !leftPanel || !rightPanel || !container) return;
-      
+
       const deltaX = e.clientX - startX;
       const containerWidth = container.offsetWidth;
-      
+
       // Calculate new widths
       const newLeftWidth = startLeftWidth + deltaX;
       const newRightWidth = startRightWidth - deltaX;
-      
+
       // Set minimum widths (20% of container)
       const minWidth = containerWidth * 0.2;
-      
+
       if (newLeftWidth >= minWidth && newRightWidth >= minWidth) {
         const leftPercentage = (newLeftWidth / containerWidth) * 100;
         const rightPercentage = (newRightWidth / containerWidth) * 100;
-        
+
         leftPanel.style.flex = `0 0 ${leftPercentage}%`;
         rightPanel.style.flex = `0 0 ${rightPercentage}%`;
       }
@@ -706,6 +768,7 @@ function initializeResizablePanels() {
 
     document.addEventListener('mouseup', function() {
       if (isResizing) {
+        console.log('Resizer mouseup - resize complete');
         isResizing = false;
         document.body.style.cursor = '';
         document.body.style.userSelect = '';
@@ -716,9 +779,49 @@ function initializeResizablePanels() {
 }
 
 /**
+ * Initializes DOM elements and state
+ */
+function initializeDOMElements() {
+  // DOM Elements - Navigation
+  backButton = document.getElementById("backButton");
+  nextButton = document.getElementById("nextButton");
+
+  // DOM Elements - Questions
+  questionElements = Array.from(document.querySelectorAll('[id^="question"]'));
+  questionNumberSpan = document.querySelector(".popover-btn span:first-child");
+  totalQuestionsSpan = document.querySelector(".popover-btn #total");
+
+  // Update state
+  totalQuestions = questionElements.length;
+
+  // Initialize display
+  if (totalQuestionsSpan) {
+    totalQuestionsSpan.textContent = totalQuestions;
+  }
+  if (questionNumberSpan) {
+    questionNumberSpan.textContent = currentQuestionIndex + 1;
+  }
+  
+  console.log(`Initialized with ${totalQuestions} questions`);
+}
+
+/**
  * Main initialization function
  */
 document.addEventListener("DOMContentLoaded", function () {
+  console.log('=== DOM CONTENT LOADED ===');
+  console.log('Document ready state:', document.readyState);
+
+  // Debug: Check if key elements exist
+  console.log('Resizers found:', document.querySelectorAll('.resizer').length);
+  console.log('Bookmark elements found:', document.querySelectorAll('.bookmark').length);
+  console.log('Highlight button found:', document.getElementById('highlightNotesBtn') ? 'YES' : 'NO');
+  console.log('Resizable panels found:', document.querySelectorAll('.resizable-panel').length);
+  console.log('Questions found:', document.querySelectorAll('[id^="question"]').length);
+
+  // Initialize DOM elements first
+  initializeDOMElements();
+
   // Initialize all components
   generateQuestionButtons();
   initializePopover();
@@ -726,13 +829,13 @@ document.addEventListener("DOMContentLoaded", function () {
   initializeQuestionTracking();
   initializeHighlightFeature();
   initializeResizablePanels();
-  
+
   // Enable security restrictions
   preventNormalCursorBehavior();
-  
+
   // Show first question
   showQuestion(currentQuestionIndex);
-  
+
   // Setup global event delegation
   document.addEventListener("click", handleQuestionButtonClick);
   document.addEventListener("click", handleReviewButtonClick);

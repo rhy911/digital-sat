@@ -15,6 +15,8 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->alias([
             'verified' => \App\Http\Middleware\EnsureEmailIsVerified::class,
         ]);
+
+        $middleware->redirectGuestsTo('/signin');
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         //

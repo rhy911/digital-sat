@@ -2,8 +2,7 @@
     @push('scripts')
     <script>
         document.addEventListener('DOMContentLoaded', () => {
-            const firstNameInput = document.getElementById("firstName");
-            const lastNameInput = document.getElementById("lastName");
+            const usernameInput = document.getElementById("username");
             const passwordInput = document.getElementById("password");
             const passwordConfirmInput = document.getElementById("password_confirmation");
             const mismatchMsg = document.getElementById("passwordMismatch");
@@ -21,10 +20,6 @@
                     return passwordsMatch;
                 },
                 prepareData: (formData) => {
-                    const name = firstNameInput.value.trim() + ' ' + lastNameInput.value.trim();
-                    formData.set('name', name);
-                    formData.delete('firstName');
-                    formData.delete('lastName');
                     return formData;
                 },
                 onSuccess: (data) => {
@@ -53,20 +48,14 @@
     <!-- Form -->
     <form id="signupForm" action="{{ route('signup') }}" method="POST" novalidate>
         @csrf
-        <div class="name-row mb-3">
-            <div class="form-group">
-                <label for="firstName" class="form-label">First Name</label>
-                <input type="text" class="form-control" id="firstName" name="firstName" autocomplete="given-name">
-            </div>
-            <div class="form-group">
-                <label for="lastName" class="form-label">Last Name</label>
-                <input type="text" class="form-control" id="lastName" name="lastName" autocomplete="family-name">
-            </div>
+        <div class="mb-3">
+            <label for="username" class="form-label">Username</label>
+            <input type="text" class="form-control" id="username" name="username" autocomplete="username" required>
         </div>
 
         <div class="mb-3">
             <label for="email" class="form-label">Email Address</label>
-            <input type="email" class="form-control" id="email" name="email" autocomplete="email">
+            <input type="email" class="form-control" id="email" name="email" autocomplete="email" required>
         </div>
 
         <div class="mb-3">

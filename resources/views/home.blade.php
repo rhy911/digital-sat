@@ -15,7 +15,7 @@
                 </div>
                 <div class="user-dropdown">
                     <div class="user" id="userDropdown">
-                        {{ $user->name ?? 'Guest' }}
+                        {{ $user->username ?? 'Guest' }}
                         <div class="avatar">
                             <img src="{{ asset('images/default_avt.jpg') }}" alt="User">
                         </div>
