@@ -12,6 +12,7 @@ let nextButton;
 
 // DOM Elements - Questions (initialized in DOMContentLoaded)
 let questionElements = [];
+let passageElements = [];
 let questionNumberSpan;
 let totalQuestionsSpan;
 
@@ -219,8 +220,12 @@ function showQuestion(index) {
     currentQuestionIndex = index;
   }
 
-  // Show/hide questions
+  // Show/hide questions and passages
   questionElements.forEach((el, i) => {
+    el.classList.toggle("d-none", i !== index);
+  });
+  
+  passageElements.forEach((el, i) => {
     el.classList.toggle("d-none", i !== index);
   });
 
@@ -244,8 +249,9 @@ function showQuestion(index) {
  * Displays the review section
  */
 function showReviewSection() {
-  // Hide all questions
+  // Hide all questions and passages
   questionElements.forEach(el => el.classList.add("d-none"));
+  passageElements.forEach(el => el.classList.add("d-none"));
 
   // Set current index beyond all questions
   currentQuestionIndex = totalQuestions;
@@ -786,8 +792,10 @@ function initializeDOMElements() {
   backButton = document.getElementById("backButton");
   nextButton = document.getElementById("nextButton");
 
-  // DOM Elements - Questions
-  questionElements = Array.from(document.querySelectorAll('[id^="question"]'));
+  // DOM Elements - Questions and Passages
+  questionElements = Array.from(document.querySelectorAll('.resizable-panel.right-panel .question'));
+  passageElements = Array.from(document.querySelectorAll('.resizable-panel.left-panel .passage-container'));
+  
   questionNumberSpan = document.querySelector(".popover-btn span:first-child");
   totalQuestionsSpan = document.querySelector(".popover-btn #total");
 

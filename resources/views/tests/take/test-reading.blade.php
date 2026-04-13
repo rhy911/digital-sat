@@ -18,12 +18,15 @@
     <div class="overlay" id="dropdownOverlay"></div>
     <div class="resizable-container">
         <div class="resizable-panel left-panel">
-            @php
-                $passages = $questions->pluck('passage')->unique('id');
-            @endphp
-            @foreach($passages as $passage)
-                @if($passage)
-                    {!! $passage->content !!}
+            @foreach($questions as $index => $q)
+                @if($q->passage)
+                    <div class="passage-container @if(!$loop->first) d-none @endif" id="passage{{ $q->question_number }}">
+                        {!! $q->passage->content !!}
+                    </div>
+                @elseif($q->section_type === 'math')
+                    <div class="passage-container @if(!$loop->first) d-none @endif" id="passage{{ $q->question_number }}">
+                        <p class="text-muted italic">Reference formulas or notes for this math question can be found here.</p>
+                    </div>
                 @endif
             @endforeach
         </div>

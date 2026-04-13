@@ -16,6 +16,7 @@ class Question extends Model
         'stem',
         'question_type',
         'difficulty',
+        'is_pretest',
         'section_type',
         'skill_domain',
         'skill_subdomain',
@@ -26,6 +27,7 @@ class Question extends Model
 
     protected $casts = [
         'calculator_allowed' => 'boolean',
+        'is_pretest' => 'boolean',
     ];
 
     public function passage()

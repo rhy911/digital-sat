@@ -9,6 +9,14 @@ class Module extends Model
 {
     use HasFactory;
 
+    // Digital SAT Official Constants
+    const RW_DURATION = 32;
+    const RW_QUESTIONS = 27;
+    const MATH_DURATION = 35;
+    const MATH_QUESTIONS = 22;
+
+    const PRETEST_QUESTIONS_PER_MODULE = 2;
+
     protected $fillable = [
         'section_id',
         'module_number',

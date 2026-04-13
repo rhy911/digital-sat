@@ -144,6 +144,7 @@ class TestDashboardController extends Controller
             'stem' => 'required|string',
             'question_type' => 'required|in:multiple_choice,student_produced_response',
             'difficulty' => 'required|in:easy,medium,hard',
+            'is_pretest' => 'boolean',
             'section_type' => 'required|in:reading_writing,math',
             'skill_domain' => 'required|string|max:255',
             'skill_subdomain' => 'nullable|string|max:255',
@@ -151,6 +152,17 @@ class TestDashboardController extends Controller
             'calculator_allowed' => 'boolean',
             'external_id' => 'nullable|string|max:255',
         ]);
+
+        // Recommendation 4: Enforce 1:1 Passage ratio for Reading & Writing
+        if ($validated['section_type'] === 'reading_writing' && !empty($validated['passage_id'])) {
+            $existingQuestionCount = Question::where('passage_id', $validated['passage_id'])->count();
+            if ($existingQuestionCount > 0) {
+                return response()->json([
+                    'status' => 'error',
+                    'message' => 'Digital SAT Reading & Writing must have exactly one question per passage.'
+                ], 422);
+            }
+        }
 
         $module_id = $validated['module_id'] ?? null;
         $position = $validated['position'] ?? 1;
