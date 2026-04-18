@@ -1,3 +1,13 @@
+@push('styles')
+<link href="https://cdn.jsdelivr.net/npm/tom-select@2.4.1/dist/css/tom-select.bootstrap5.min.css" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/easymde/dist/easymde.min.css">
+<style>
+    .ts-control { border-radius: 0.375rem !important; }
+    .status-select { min-width: 100px; }
+    .math-tex { font-family: 'Cambria Math', 'serif'; background: #f8f9fa; padding: 2px 5px; border-radius: 3px; }
+</style>
+@endpush
+
 <x-layouts.admin :pageTitle="'Test Data Dashboard'">
     <div class="container-fluid py-4">
     <div class="row mb-4">
@@ -48,15 +58,15 @@
                             </div>
                         </div>
                         <div class="row">
-                            <div class="col-md-4 mb-3">
+                            <div class="col-md-4 mb-3 d-none">
                                 <label for="totalDuration" class="form-label">Total Duration (min) <span class="text-danger">*</span></label>
-                                <input type="number" class="form-control" id="totalDuration" name="total_duration_minutes" value="134" required>
+                                <input type="number" class="form-control" id="totalDuration" name="total_duration_minutes" value="0">
                             </div>
-                            <div class="col-md-4 mb-3">
+                            <div class="col-md-6 mb-3">
                                 <label for="breakDuration" class="form-label">Break (min) <span class="text-danger">*</span></label>
                                 <input type="number" class="form-control" id="breakDuration" name="break_duration_minutes" value="10" required>
                             </div>
-                            <div class="col-md-4 mb-3">
+                            <div class="col-md-6 mb-3">
                                 <label for="testStatus" class="form-label">Status <span class="text-danger">*</span></label>
                                 <select class="form-select" id="testStatus" name="status" required>
                                     <option value="active" selected>Active</option>
@@ -96,7 +106,14 @@
                                     <td><span class="badge bg-{{ $test->status === 'active' ? 'success' : 'secondary' }}">{{ ucfirst($test->status) }}</span></td>
                                     <td>{{ $test->total_duration_minutes }}m</td>
                                     <td>
-                                        <button class="btn btn-sm btn-outline-danger delete-test-btn" data-id="{{ $test->id }}">Delete</button>
+                                        <div class="d-flex gap-2">
+                                            <select class="form-select form-select-sm status-select" onchange="updateTestStatus({{ $test->id }}, this.value)">
+                                                <option value="draft" {{ $test->status === 'draft' ? 'selected' : '' }}>Draft</option>
+                                                <option value="active" {{ $test->status === 'active' ? 'selected' : '' }}>Active</option>
+                                                <option value="archived" {{ $test->status === 'archived' ? 'selected' : '' }}>Archived</option>
+                                            </select>
+                                            <button class="btn btn-sm btn-outline-danger delete-test-btn" data-id="{{ $test->id }}">Delete</button>
+                                        </div>
                                     </td>
                                 </tr>
                                 @empty
@@ -123,10 +140,10 @@
                         <div class="row">
                             <div class="col-md-6 mb-3">
                                 <label for="sectionTest" class="form-label">Parent Test <span class="text-danger">*</span></label>
-                                <select class="form-select" id="sectionTest" name="test_id" required>
-                                    <option value="">Select test...</option>
+                                <select class="form-select tom-select" id="sectionTest" name="test_id" required>
+                                    <option value="">Search test...</option>
                                     @foreach($tests as $test)
-                                    <option value="{{ $test->id }}">{{ $test->title }}</option>
+                                    <option value="{{ $test->id }}">{{ $test->title }} (ID:{{ $test->id }})</option>
                                     @endforeach
                                 </select>
                             </div>
@@ -140,17 +157,55 @@
                             </div>
                         </div>
                         <div class="row">
-                            <div class="col-md-6 mb-3">
+                            <div class="col-md-6 mb-3 d-none">
                                 <label for="sectionName" class="form-label">Display Name <span class="text-danger">*</span></label>
-                                <input type="text" class="form-control" id="sectionName" name="name" placeholder="Reading and Writing" required>
+                                <input type="text" class="form-control" id="sectionName" name="name" placeholder="Reading and Writing">
                             </div>
-                            <div class="col-md-6 mb-3">
+                            <div class="col-md-12 mb-3">
                                 <label for="sectionOrder" class="form-label">Order <span class="text-danger">*</span></label>
                                 <input type="number" class="form-control" id="sectionOrder" name="order" min="1" value="1" required>
                             </div>
                         </div>
                         <button type="submit" class="btn btn-success">Create Section</button>
                     </form>
+                </div>
+            </div>
+
+            <div class="card mt-4 shadow-sm">
+                <div class="card-header">
+                    <h5 class="mb-0">Existing Sections</h5>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>ID</th>
+                                    <th>Test Title</th>
+                                    <th>Section Name</th>
+                                    <th>Type</th>
+                                    <th>Order</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach($tests as $test)
+                                    @foreach($test->sections as $section)
+                                    <tr>
+                                        <td>{{ $section->id }}</td>
+                                        <td>{{ $test->title }}</td>
+                                        <td><strong>{{ $section->name }}</strong></td>
+                                        <td>{{ ucfirst(str_replace('_', ' ', $section->type)) }}</td>
+                                        <td>{{ $section->order }}</td>
+                                        <td>
+                                            <button class="btn btn-sm btn-outline-danger delete-section-btn" data-id="{{ $section->id }}">Delete</button>
+                                        </td>
+                                    </tr>
+                                    @endforeach
+                                @endforeach
+                            </tbody>
+                        </table>
+                    </div>
                 </div>
             </div>
         </div>
@@ -167,12 +222,12 @@
                         <div class="row">
                             <div class="col-md-6 mb-3">
                                 <label for="moduleSection" class="form-label">Parent Section <span class="text-danger">*</span></label>
-                                <select class="form-select" id="moduleSection" name="section_id" required onchange="applyModuleDefaults(this)">
-                                    <option value="">Select section...</option>
+                                <select class="form-select tom-select" id="moduleSection" name="section_id" required onchange="applyModuleDefaults(this)">
+                                    <option value="">Search section...</option>
                                     @foreach($tests as $test)
                                         @foreach($test->sections as $section)
                                         <option value="{{ $section->id }}" data-type="{{ $section->type }}">
-                                            {{ $test->title }} - {{ $section->name }}
+                                            {{ $test->title }} - {{ $section->name }} (ID:{{ $section->id }})
                                         </option>
                                         @endforeach
                                     @endforeach
@@ -211,6 +266,52 @@
                         </div>
                         <button type="submit" class="btn btn-info text-white">Create Module</button>
                     </form>
+                </div>
+            </div>
+
+            <div class="card mt-4 shadow-sm">
+                <div class="card-header">
+                    <h5 class="mb-0">Existing Modules</h5>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>ID</th>
+                                    <th>Test - Section</th>
+                                    <th>Module #</th>
+                                    <th>Difficulty</th>
+                                    <th>Duration</th>
+                                    <th>Questions</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach($tests as $test)
+                                    @foreach($test->sections as $section)
+                                        @foreach($section->modules as $module)
+                                        <tr>
+                                            <td>{{ $module->id }}</td>
+                                            <td><small>{{ $test->title }}</small><br><strong>{{ $section->name }}</strong></td>
+                                            <td>{{ $module->module_number }}</td>
+                                            <td>
+                                                <span class="badge bg-{{ $module->difficulty_level === 'hard' ? 'danger' : ($module->difficulty_level === 'easy' ? 'success' : 'primary') }}">
+                                                    {{ ucfirst($module->difficulty_level) }}
+                                                </span>
+                                            </td>
+                                            <td>{{ $module->duration_minutes }}m</td>
+                                            <td>{{ $module->total_questions }}</td>
+                                            <td>
+                                                <button class="btn btn-sm btn-outline-danger delete-module-btn" data-id="{{ $module->id }}">Delete</button>
+                                            </td>
+                                        </tr>
+                                        @endforeach
+                                    @endforeach
+                                @endforeach
+                            </tbody>
+                        </table>
+                    </div>
                 </div>
             </div>
         </div>
@@ -278,12 +379,12 @@
                         <div class="row">
                             <div class="col-md-6 mb-3">
                                 <label for="questionModule" class="form-label">Assign to Module <span class="text-danger">*</span></label>
-                                <select class="form-select" id="questionModule" name="module_id" required>
-                                    <option value="">Select module...</option>
+                                <select class="form-select tom-select" id="questionModule" name="module_id" required onchange="autoFetchSectionType(this)">
+                                    <option value="">Search module...</option>
                                     @foreach($tests as $test)
                                         @foreach($test->sections as $section)
                                             @foreach($section->modules as $module)
-                                            <option value="{{ $module->id }}">
+                                            <option value="{{ $module->id }}" data-section-type="{{ $section->type }}">
                                                 {{ $test->title }} - {{ $section->name }} - Mod {{ $module->module_number }} ({{ ucfirst($module->difficulty_level) }})
                                             </option>
                                             @endforeach
@@ -308,10 +409,10 @@
                         <div class="row">
                             <div class="col-md-8 mb-3">
                                 <label for="questionPassage" class="form-label">Passage (Required for R&W)</label>
-                                <select class="form-select" id="questionPassage" name="passage_id">
-                                    <option value="">No passage (Standalone)</option>
+                                <select class="form-select tom-select" id="questionPassage" name="passage_id">
+                                    <option value="">No passage (Standalone) / Search passage...</option>
                                     @foreach($passages as $passage)
-                                    <option value="{{ $passage->id }}">{{ Str::limit($passage->content, 80) }}</option>
+                                    <option value="{{ $passage->id }}">{{ Str::limit(strip_tags($passage->content), 80) }}</option>
                                     @endforeach
                                 </select>
                             </div>
@@ -378,10 +479,10 @@
                                 @csrf
                                 <div class="mb-3">
                                     <label for="answerQuestionId" class="form-label">Target Question <span class="text-danger">*</span></label>
-                                    <select class="form-select" id="answerQuestionId" name="question_id" required>
-                                        <option value="">Select question...</option>
+                                    <select class="form-select tom-select" id="answerQuestionId" name="question_id" required>
+                                        <option value="">Search question...</option>
                                         @foreach($questions as $question)
-                                        <option value="{{ $question->id }}">ID:{{ $question->id }} - {{ Str::limit($question->stem, 40) }}</option>
+                                        <option value="{{ $question->id }}">ID:{{ $question->id }} - {{ Str::limit(strip_tags($question->stem), 50) }}</option>
                                         @endforeach
                                     </select>
                                 </div>
@@ -421,10 +522,10 @@
                                 @csrf
                                 <div class="mb-3">
                                     <label for="explanationQuestionId" class="form-label">Target Question <span class="text-danger">*</span></label>
-                                    <select class="form-select" id="explanationQuestionId" name="question_id" required>
-                                        <option value="">Select question...</option>
+                                    <select class="form-select tom-select" id="explanationQuestionId" name="question_id" required>
+                                        <option value="">Search question...</option>
                                         @foreach($questions as $question)
-                                        <option value="{{ $question->id }}">ID:{{ $question->id }} - {{ Str::limit($question->stem, 40) }}</option>
+                                        <option value="{{ $question->id }}">ID:{{ $question->id }} - {{ Str::limit(strip_tags($question->stem), 50) }}</option>
                                         @endforeach
                                     </select>
                                 </div>
@@ -506,6 +607,8 @@
 <div id="alertContainer" class="position-fixed top-0 end-0 p-3" style="z-index: 1080;"></div>
 
 @push('scripts')
+<script src="https://cdn.jsdelivr.net/npm/tom-select@2.4.1/dist/js/tom-select.complete.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/easymde/dist/easymde.min.js"></script>
 <script>
 const SKILL_DOMAINS = {
     reading_writing: [
@@ -528,6 +631,40 @@ function updateSectionName(select) {
         nameInput.value = 'Reading and Writing';
     } else if (select.value === 'math') {
         nameInput.value = 'Math';
+    }
+}
+
+function autoFetchSectionType(select) {
+    const selectedOption = select.options[select.selectedIndex];
+    const sectionType = selectedOption.getAttribute('data-section-type');
+    const sectionTypeSelect = document.getElementById('qSectionType');
+    
+    if (sectionType) {
+        sectionTypeSelect.value = sectionType;
+        updateSkillDomains(sectionTypeSelect);
+    }
+}
+
+async function updateTestStatus(testId, status) {
+    try {
+        const response = await fetch(`{{ url('test-dashboard/tests') }}/${testId}`, {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
+            },
+            body: JSON.stringify({ status: status })
+        });
+
+        if (response.ok) {
+            showAlert('success', 'Status updated!');
+            setTimeout(() => window.location.reload(), 500);
+        } else {
+            const res = await response.json();
+            showAlert('danger', res.message || 'Failed to update status');
+        }
+    } catch (error) {
+        showAlert('danger', 'Error: ' + error.message);
     }
 }
 
@@ -563,7 +700,42 @@ function updateSkillDomains(select) {
 }
 
 document.addEventListener('DOMContentLoaded', function() {
+    // Initialize Tom Select
+    document.querySelectorAll('.tom-select').forEach(el => {
+        new TomSelect(el, {
+            create: false,
+            sortField: { field: "text", order: "asc" }
+        });
+    });
+
+    // Initialize EasyMDE for passages and question stems
+    const passageEditor = new EasyMDE({ 
+        element: document.getElementById('passageContent'),
+        spellChecker: false,
+        placeholder: "Type passage content here... Supports Markdown and LaTeX (e.g. $x^2$)",
+        minHeight: "200px"
+    });
+
+    const stemEditor = new EasyMDE({ 
+        element: document.getElementById('questionStem'),
+        spellChecker: false,
+        placeholder: "Type question stem here... Supports Markdown and LaTeX",
+        minHeight: "100px"
+    });
+
     // Form submission handlers
+    const setupFormSubmit = (formId, editor) => {
+        const form = document.getElementById(formId);
+        if (form && editor) {
+            form.addEventListener('submit', () => {
+                editor.element.value = editor.value();
+            });
+        }
+    };
+    
+    setupFormSubmit('passageForm', passageEditor);
+    setupFormSubmit('questionForm', stemEditor);
+
     setupForm('testForm', '{{ route('test-dashboard.tests.store') }}');
     setupForm('sectionForm', '{{ route('test-dashboard.sections.store') }}');
     setupForm('moduleForm', '{{ route('test-dashboard.modules.store') }}');
@@ -574,6 +746,8 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Delete handlers
     setupDelete('.delete-test-btn', '{{ route('test-dashboard.tests.delete', ':id') }}');
+    setupDelete('.delete-section-btn', '{{ route('test-dashboard.sections.delete', ':id') }}');
+    setupDelete('.delete-module-btn', '{{ route('test-dashboard.modules.delete', ':id') }}');
     setupDelete('.delete-question-btn', '{{ route('test-dashboard.questions.delete', ':id') }}');
 });
 

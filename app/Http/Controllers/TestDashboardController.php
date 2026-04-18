@@ -48,10 +48,12 @@ class TestDashboardController extends Controller
             'title' => 'required|string|max:255',
             'description' => 'nullable|string',
             'test_type' => 'required|in:full_length,section_only,mini_quiz',
-            'total_duration_minutes' => 'required|integer|min:1',
             'break_duration_minutes' => 'required|integer|min:0',
             'status' => 'required|in:draft,active,archived',
         ]);
+
+        // Default total_duration_minutes to 0; will be updated as modules are added
+        $validated['total_duration_minutes'] = 0;
 
         $test = Test::create($validated);
 
@@ -63,16 +65,45 @@ class TestDashboardController extends Controller
     }
 
     /**
+     * Update an existing test.
+     */
+    public function updateTest(Request $request, $id)
+    {
+        $test = Test::findOrFail($id);
+        
+        $validated = $request->validate([
+            'title' => 'sometimes|required|string|max:255',
+            'description' => 'nullable|string',
+            'test_type' => 'sometimes|required|in:full_length,section_only,mini_quiz',
+            'break_duration_minutes' => 'sometimes|required|integer|min:0',
+            'status' => 'sometimes|required|in:draft,active,archived',
+        ]);
+
+        $test->update($validated);
+
+        return response()->json([
+            'status' => 'success',
+            'message' => 'Test updated successfully',
+            'data' => $test
+        ]);
+    }
+
+    /**
      * Store a new section.
      */
     public function storeSection(Request $request)
     {
         $validated = $request->validate([
             'test_id' => 'required|exists:tests,id',
-            'name' => 'required|string|max:255',
+            'name' => 'nullable|string|max:255',
             'type' => 'required|in:reading_writing,math',
             'order' => 'required|integer|min:1',
         ]);
+
+        // Auto-generate name if not provided
+        if (empty($validated['name'])) {
+            $validated['name'] = $validated['type'] === 'reading_writing' ? 'Reading and Writing' : 'Math';
+        }
 
         $section = Section::create($validated);
 
@@ -98,6 +129,11 @@ class TestDashboardController extends Controller
         ]);
 
         $module = Module::create($validated);
+        
+        // Update Test total duration
+        if ($module->section && $module->section->test) {
+            $module->section->test->refreshTotalDuration();
+        }
 
         return response()->json([
             'status' => 'success',
@@ -145,13 +181,28 @@ class TestDashboardController extends Controller
             'question_type' => 'required|in:multiple_choice,student_produced_response',
             'difficulty' => 'required|in:easy,medium,hard',
             'is_pretest' => 'boolean',
-            'section_type' => 'required|in:reading_writing,math',
+            'section_type' => 'nullable|in:reading_writing,math',
             'skill_domain' => 'required|string|max:255',
             'skill_subdomain' => 'nullable|string|max:255',
             'spr_hint' => 'nullable|string',
             'calculator_allowed' => 'boolean',
             'external_id' => 'nullable|string|max:255',
         ]);
+
+        // Auto-fetch section type from module if provided
+        if (empty($validated['section_type']) && !empty($validated['module_id'])) {
+            $module = Module::with('section')->find($validated['module_id']);
+            if ($module && $module->section) {
+                $validated['section_type'] = $module->section->type;
+            }
+        }
+
+        if (empty($validated['section_type'])) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Section type is required (could not auto-detect from module).'
+            ], 422);
+        }
 
         // Recommendation 4: Enforce 1:1 Passage ratio for Reading & Writing
         if ($validated['section_type'] === 'reading_writing' && !empty($validated['passage_id'])) {
@@ -256,12 +307,36 @@ class TestDashboardController extends Controller
      */
     public function deleteSection($id)
     {
-        $section = Section::findOrFail($id);
+        $section = Section::with('test')->findOrFail($id);
+        $test = $section->test;
         $section->delete();
+
+        if ($test) {
+            $test->refreshTotalDuration();
+        }
 
         return response()->json([
             'status' => 'success',
             'message' => 'Section deleted successfully'
+        ]);
+    }
+
+    /**
+     * Delete a module.
+     */
+    public function deleteModule($id)
+    {
+        $module = Module::with('section.test')->findOrFail($id);
+        $test = $module->section->test ?? null;
+        $module->delete();
+
+        if ($test) {
+            $test->refreshTotalDuration();
+        }
+
+        return response()->json([
+            'status' => 'success',
+            'message' => 'Module deleted successfully'
         ]);
     }
 

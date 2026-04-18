@@ -103,12 +103,7 @@ class DigitalSatMockSeeder extends Seeder
         ];
 
         foreach ($rw_data as $i => $data) {
-            $p = Passage::create([
-                'content' => $data[2],
-                'passage_type' => 'single',
-                'genre' => 'humanities'
-            ]);
-            
+            $p = Passage::create(['content' => $data[2], 'passage_type' => 'single', 'genre' => 'humanities']);
             $q = Question::create([
                 'passage_id' => $p->id,
                 'question_number' => $i + 1,
@@ -119,15 +114,36 @@ class DigitalSatMockSeeder extends Seeder
                 'section_type' => 'reading_writing',
                 'skill_domain' => str_replace(' ', '_', strtolower($data[0]))
             ]);
-
             $this->createChoices($q->id, [
                 ['A', $data[4][0], $data[5] === 0],
                 ['B', $data[4][1], $data[5] === 1],
                 ['C', $data[4][2], $data[5] === 2],
                 ['D', $data[4][3], $data[5] === 3],
             ]);
-
             $rwM1->questions()->attach($q->id, ['position' => $i + 1]);
+        }
+
+        // --- R&W QUESTIONS (MODULE 2 - Reuse same logic for mock) ---
+        foreach ($rw_data as $i => $data) {
+            $p = Passage::create(['content' => $data[2] . " (Module 2 Version)", 'passage_type' => 'single', 'genre' => 'humanities']);
+            $q = Question::create([
+                'passage_id' => $p->id,
+                'question_number' => $i + 1,
+                'stem' => $data[3],
+                'question_type' => 'multiple_choice',
+                'difficulty' => 'hard',
+                'is_pretest' => false,
+                'section_type' => 'reading_writing',
+                'skill_domain' => str_replace(' ', '_', strtolower($data[0]))
+            ]);
+            $this->createChoices($q->id, [
+                ['A', $data[4][0], $data[5] === 0],
+                ['B', $data[4][1], $data[5] === 1],
+                ['C', $data[4][2], $data[5] === 2],
+                ['D', $data[4][3], $data[5] === 3],
+            ]);
+            $rwM2H->questions()->attach($q->id, ['position' => $i + 1]);
+            $rwM2E->questions()->attach($q->id, ['position' => $i + 1]);
         }
 
         // --- MATH QUESTIONS (MODULE 1) ---
@@ -150,24 +166,31 @@ class DigitalSatMockSeeder extends Seeder
                 'section_type' => 'math',
                 'skill_domain' => str_replace(' ', '_', strtolower($data[0]))
             ]);
-
             if ($data[1] === 'MCQ') {
-                $this->createChoices($q->id, [
-                    ['A', $data[3], true],
-                    ['B', '10', false],
-                    ['C', '15', false],
-                    ['D', '30', false],
-                ]);
+                $this->createChoices($q->id, [['A', $data[3], true], ['B', '10', false], ['C', '15', false], ['D', '30', false]]);
             } else {
-                DB::table('spr_correct_answers')->insert([
-                    'question_id' => $q->id,
-                    'answer' => $data[3],
-                    'answer_type' => 'exact',
-                    'created_at' => now(),
-                ]);
+                DB::table('spr_correct_answers')->insert(['question_id' => $q->id, 'answer' => $data[3], 'answer_type' => 'exact', 'created_at' => now()]);
             }
-
             $mathM1->questions()->attach($q->id, ['position' => $i + 1]);
+        }
+
+        // --- MATH QUESTIONS (MODULE 2) ---
+        foreach ($math_data as $i => $data) {
+            $q = Question::create([
+                'question_number' => $i + 1,
+                'stem' => $data[2] . " (Advanced)",
+                'question_type' => ($data[1] === 'MCQ' ? 'multiple_choice' : 'student_produced_response'),
+                'difficulty' => 'hard',
+                'is_pretest' => false,
+                'section_type' => 'math',
+                'skill_domain' => str_replace(' ', '_', strtolower($data[0]))
+            ]);
+            if ($data[1] === 'MCQ') {
+                $this->createChoices($q->id, [['A', $data[3], true], ['B', '20', false], ['C', '25', false], ['D', '40', false]]);
+            } else {
+                DB::table('spr_correct_answers')->insert(['question_id' => $q->id, 'answer' => $data[3], 'answer_type' => 'exact', 'created_at' => now()]);
+            }
+            $mathM2H->questions()->attach($q->id, ['position' => $i + 1]);
         }
 
         $this->createScoreConversions($test->id);

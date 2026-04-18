@@ -6,12 +6,15 @@
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>{{ $pageTitle ?? 'Test' }}</title>
     @vite(['resources/css/app.css', 'resources/css/test/test-main.css','resources/sass/app.scss', 'resources/js/app.js', 'resources/js/test.js'])
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css">
+    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/auto-render.min.js" onload="renderMathInElement(document.body);"></script>
     @stack('styles')
 </head>
 <body>
     <header>
         <div class="d-flex flex-column justify-content-start"> 
-            <h5>{{ $sectionTitle ?? 'No Section Title Available' }}</h5>
+            <h5>Section {{ $sectionNumber ?? '1' }}, Module {{ $moduleNumber ?? '1' }}: {{ $sectionName ?? ($sectionTitle ?? 'Reading and Writing') }}</h5>
             <div class="dropdown">
                 <button class="btn dropdown-toggle" type="button" id="dropdownMenuButton" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
                     <strong>Directions</strong>
@@ -37,6 +40,7 @@
             </div>
         </div>
         <div class="d-flex justify-content-end">
+            @if(($sectionType ?? '') !== 'math')
             <div class="icon-container" id="highlightNotesBtn">
                 <div class="d-flex icon">
                     <img src="{{ asset('/images/highlight.png') }}" alt="Highlights">
@@ -44,11 +48,24 @@
                 </div>
                 <p class="m-0">Highlights & Notes</p>
             </div>
-            <div class="icon-container">
-                <div class="icon">
-                    <img src="{{ asset('/images/more.png') }}" alt="More">
+            @endif
+            <div class="relative inline-block text-left">
+                <div class="icon-container" id="moreBtn">
+                    <div class="icon">
+                        <img src="{{ asset('/images/more.png') }}" alt="More">
+                    </div>
+                    <p class="m-0">More</p>
                 </div>
-                <p class="m-0">More</p>
+                <div id="moreMenu" class="hidden absolute right-0 mt-2 w-48 bg-white border border-gray-200 rounded-md shadow-lg z-50">
+                    <div class="py-1">
+                        <button class="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100" id="takeBreakBtn">
+                            Take a break
+                        </button>
+                        <button class="block w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50" id="exitExamBtn">
+                            Exit the exam
+                        </button>
+                    </div>
+                </div>
             </div>
         </div>
     </header>
