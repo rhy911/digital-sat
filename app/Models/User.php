@@ -13,6 +13,7 @@ use App\Notifications\ResetPasswordNotification;
 class User extends Authenticatable implements MustVerifyEmail
 {
     /** @use HasFactory<\Database\Factories\UserFactory> */
+    // Traits: HasApiTokens (Sanctum), HasFactory, Notifiable, SoftDeletes
     use HasApiTokens, HasFactory, Notifiable, SoftDeletes;
 
     /**

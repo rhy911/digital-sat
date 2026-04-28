@@ -1,0 +1,345 @@
+@import url('test-header.css');
+@import url('test-footer.css');
+@import url('test-review.css');
+
+body {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  width: 100%;
+  max-width: 100vw;
+  overflow-x: hidden;
+  margin: 0;
+  overscroll-behavior: none;
+}
+
+main {
+    flex: 1;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+}
+
+.overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.3);
+  display: none;
+  z-index: 5;
+}
+
+/* Resizable Container Styles */
+.resizable-container {
+  display: flex;
+  width: 100%;
+  flex: 1;
+  position: relative;
+  overflow: hidden;
+}
+
+.resizable-panel {
+  padding: 40px 60px;
+  box-sizing: border-box;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+  overflow: auto;
+}
+
+.left-panel {
+  flex: 0 0 50%;
+  border-right: 1px solid #e0e0e0;
+}
+
+.right-panel {
+  flex: 0 0 49%;
+}
+
+.resizer {
+  width: 4px;
+  cursor: col-resize;
+  background: #888888;
+  position: relative;
+  transition: background-color 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.resizer svg {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%) scaleY(1.5);
+  background-color: #000;
+  border-radius: 2px;
+  padding: 1px 0;
+  transition: all 0.2s ease;
+}
+
+.resizer:hover svg {
+  background-color: hwb(0 30% 70%);
+  cursor: grab;
+}
+
+.resizer:hover {
+  background: hwb(0 30% 70%);
+}
+
+.resizer:active {
+  background: hwb(0 30% 70%);
+}
+
+.resizer:active svg {
+  background-color: hwb(0 30% 70%);
+  transform: translate(-50%, -50%) scale(1.05);
+  cursor: grabbing;
+}
+
+/* Prevent content from causing horizontal overflow */
+.resizable-container .resizable-panel p,
+.resizable-container .resizable-panel div,
+.resizable-container .resizable-panel label {
+  max-width: 100%;
+  word-break: break-word;
+}
+
+.question {
+  font-size: 1rem;
+}
+
+.question-header {
+  padding-bottom: 2px;
+  background-color: #f0f0f0;
+  border-bottom: 2px dashed #000;
+  border-radius: 8px 8px 0 0;
+}
+
+.question-header .number {
+  padding: 4px 10px;
+  background-color: black;
+  color: white;
+  font-weight: 800;
+}
+
+.question-header span {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+}
+
+.question-header span svg {
+  transition: fill 0.2s;
+}
+
+.question-header span:hover {
+  font-weight: 600;
+}
+
+.question-header span:hover svg {
+  fill: #80808070;
+}
+
+.question-header span.marked {
+  color: #000;
+  font-weight: 600;
+  text-decoration: underline;
+}
+
+.marked svg {
+  fill: #ab2334 !important;
+  outline: #000;
+  stroke: #000;
+}
+
+.question-header span.marked:hover {
+  font-weight: 500;
+}
+
+.question-header span.marked:hover svg {
+  fill: #ab2334 !important;
+}
+
+.question-body input[type="radio"] {
+  display: none;
+}
+
+.answer-option label {
+  position: relative;
+  padding-left: 50px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  width: 100%;
+}
+
+.answer-option label::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 28px;
+  height: 28px;
+  border: 2px solid #000;
+  border-radius: 50%;
+  margin-left: 12px;
+}
+
+.answer-option label::after {
+  position: absolute;
+  left: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-weight: 600;
+  font-size: 0.875rem;
+  z-index: 1;
+  margin-left: 12px;
+}
+
+.answer-option input[value="A"] + label::after {
+  content: "A";
+}
+
+.answer-option input[value="B"] + label::after {
+  content: "B";
+}
+
+.answer-option input[value="C"] + label::after {
+  content: "C";
+}
+
+.answer-option input[value="D"] + label::after {
+  content: "D";
+}
+
+.answer-option input[type="radio"]:checked + label::before {
+  background-color: #324dc7;
+}
+
+.answer-option input[type="radio"]:checked + label::after {
+  color: white;
+}
+
+.answer-option {
+  border: 1px solid #000;
+  border-radius: 8px;
+  transition: border-color 0.3s, background-color 0.3s;
+  cursor: pointer;
+  display: grid;
+}
+
+.answer-option input,
+.answer-option label {
+  grid-area: 1 / 1; /* stack both on the same cell */
+}
+
+.answer-option label {
+  margin: 0;
+  padding: 12px;
+  padding-left: 62px;
+  align-items: center;
+  z-index: 1;
+}
+
+.answer-option label p {
+  margin: 0;
+}
+
+.answer-option:hover {
+  background-color: #80808030;
+}
+
+.answer-option:has(input[type="radio"]:checked) {
+  box-shadow: inset 0 0 0 2px #324dc7;
+}
+
+.answer-input-container {
+  margin-top: 1rem;
+}
+
+.spr-input {
+  max-width: 120px !important;
+  font-family: 'Courier New', Courier, monospace;
+  font-size: 1.5rem !important;
+  font-weight: bold !important;
+  text-align: center;
+  letter-spacing: 2px;
+  border: 1px solid #000 !important;
+  border-radius: 10px !important;
+  padding: 8px !important;
+}
+
+.spr-input:focus {
+  box-shadow: 0 0 0 3px rgba(50, 77, 199, 0.25) !important;
+  outline: none;
+}
+
+/* ==================== RESPONSIVE STYLES ==================== */
+
+@media (max-width: 768px) {
+  .resizable-container {
+    flex-direction: column;
+    height: calc(100vh - 200px);
+  }
+
+  .resizable-panel {
+    padding: 16px 20px;
+  }
+
+  .left-panel,
+  .right-panel {
+    flex: 0 0 100%;
+    border-right: none;
+  }
+
+  .resizer {
+    display: none;
+  }
+
+  .question-navigation-box {
+    padding: 1rem;
+  }
+}
+
+/* ==================== HIGHLIGHT AND NOTES STYLES ==================== */
+
+/* Highlighted text styling */
+.highlighted-text {
+  background-color: #fff4b1;
+  padding: 2px 0;
+  border-radius: 2px;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.highlighted-text:hover {
+  background-color: #fedb00;
+}
+
+/* Cursor style when in highlight mode */
+.highlight-mode {
+  cursor: crosshair !important;
+}
+
+.highlight-mode * {
+  cursor: crosshair !important;
+}
+
+/* Selection color in highlight mode */
+.highlight-mode ::selection {
+  background-color: rgba(255, 235, 59, 0.5);
+}
+
+.highlight-mode ::-moz-selection {
+  background-color: rgba(255, 235, 59, 0.5);
+}
+
+.question-navigation-box .question-btn {
+  width: 40px !important;
+  height: 40px !important; 
+  font-size: 1.5rem !important;
+}

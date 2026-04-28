@@ -12,16 +12,19 @@ class UserSeeder extends Seeder
      */
     public function run(): void
     {
+        \Illuminate\Support\Facades\Schema::disableForeignKeyConstraints();
+        \App\Models\User::truncate();
+        \Illuminate\Support\Facades\Schema::enableForeignKeyConstraints();
+
         \App\Models\User::create([
-            'name' => 'Trần Đức Trí',
-            'username' => 'admin_tri',
-            'email' => 'tri.tran@bluebook.com',
-            'password' => \Illuminate\Support\Facades\Hash::make('12345678'),
+            'username' => 'admin',
+            'email' => 'admin@gmail.com',
+            'password' => \Illuminate\Support\Facades\Hash::make('password'),
             'role' => 'admin',
             'is_active' => true,
             'email_verified_at' => now(),
         ]);
 
-        \App\Models\User::factory(50)->create();
+        \App\Models\User::factory(10)->create();
     }
 }

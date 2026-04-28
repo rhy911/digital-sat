@@ -3,17 +3,21 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>{{ $pageTitle ?? 'Test' }}</title>
-    @vite(['resources/css/app.css', 'resources/css/test.css','resources/sass/app.scss', 'resources/js/app.js', 'resources/js/test.js'])
+    @vite(['resources/css/app.css', 'resources/css/test/test-main.css','resources/sass/app.scss', 'resources/js/app.js', 'resources/js/test.js'])
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css">
+    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/auto-render.min.js" onload="renderMathInElement(document.body);"></script>
     @stack('styles')
 </head>
 <body>
     <header>
         <div class="d-flex flex-column justify-content-start"> 
-            <h5>{{ $sectionTitle ?? 'No Section Title Available' }}</h5>
+            <h5>Section {{ $sectionNumber ?? '1' }}, Module {{ $moduleNumber ?? '1' }}: {{ $sectionName ?? ($sectionTitle ?? 'Reading and Writing') }}</h5>
             <div class="dropdown">
                 <button class="btn dropdown-toggle" type="button" id="dropdownMenuButton" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                    Directions
+                    <strong>Directions</strong>
                 </button>
                 <div class="dropdown-menu" aria-labelledby="dropdownMenuButton" id="dropdownMenu">
                     @if (isset($sectionDirections))
@@ -36,6 +40,7 @@
             </div>
         </div>
         <div class="d-flex justify-content-end">
+            @if(($sectionType ?? '') !== 'math')
             <div class="icon-container" id="highlightNotesBtn">
                 <div class="d-flex icon">
                     <img src="{{ asset('/images/highlight.png') }}" alt="Highlights">
@@ -43,11 +48,24 @@
                 </div>
                 <p class="m-0">Highlights & Notes</p>
             </div>
-            <div class="icon-container">
-                <div class="icon">
-                    <img src="{{ asset('/images/more.png') }}" alt="More">
+            @endif
+            <div class="relative inline-block text-left">
+                <div class="icon-container" id="moreBtn">
+                    <div class="icon">
+                        <img src="{{ asset('/images/more.png') }}" alt="More">
+                    </div>
+                    <p class="m-0">More</p>
                 </div>
-                <p class="m-0">More</p>
+                <div id="moreMenu" class="hidden absolute right-0 mt-2 w-48 bg-white border border-gray-200 rounded-md shadow-lg z-50">
+                    <div class="py-1">
+                        <button class="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100" id="takeBreakBtn">
+                            Take a break
+                        </button>
+                        <button class="block w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50" id="exitExamBtn">
+                            Exit the exam
+                        </button>
+                    </div>
+                </div>
             </div>
         </div>
     </header>
@@ -61,16 +79,16 @@
             </div>
         </div>
         <div class="d-flex justify-content-center">
-            <button type="button" class="btn btn-secondary d-flex align-items-center gap-1" data-bs-toggle="popover" data-bs-placement="top" data-bs-content-id="popover-content">
+            <button type="button" class="popover-btn btn btn-secondary d-flex align-items-center gap-1" data-bs-toggle="popover" data-bs-placement="top" data-bs-content-id="popover-content">
                 Question <span>{{ $currentQuestion ?? '...' }}</span> of <span id="total">{{ $totalQuestions ?? '...' }}</span>
-                <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-chevron-up">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-chevron-up">
                     <polyline points="18 15 12 9 6 15"></polyline>
                 </svg>
             </button>
 
             <div id="popover-content" class="d-none">
                 <div class="d-flex flex-column gap-4">
-                    <h5>{{ $sectionTitle ?? 'No Section Title Available' }}</h5>
+                    <h5 class="m-0 text-center"><strong>{{ $sectionTitle ?? 'No Section Title Available' }} Questions</strong></h5>
                     <div class="row text-center question-nav-row">
                         <div class="col d-flex align-items-center justify-content-center gap-2">
                             <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" class="feather feather-map-pin">

@@ -1,0 +1,134 @@
+footer {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    width: 100%;
+    align-items: center;
+    background-color: #e6edf8;
+    padding: 10px 40px;
+    border-top: 2px dashed black;
+    z-index: 1;
+}
+
+.popover-btn {
+    font-size: 14px !important;
+    font-weight: 600 !important;
+    background-color: #000 !important;
+    color: white !important;
+    border-radius: 6px !important;
+    padding: 4px 6px 4px 12px !important;
+    transition: all 0.1s ease-in-out !important;
+}
+
+.popover-btn:hover {
+    opacity: 0.6 !important;
+}
+
+/* Smooth rotation transition for chevron icon */
+.popover-btn .feather-chevron-up {
+    transition: transform 0.3s ease-in-out;
+}
+
+/* Rotate the up chevron when popover is open */
+.popover-btn.popover-open .feather-chevron-up {
+    transform: rotate(180deg);
+}
+
+.popover-body {
+  padding: 1.25rem !important;
+}
+
+.custom-popover {
+    max-width: 35rem !important;
+    min-width: 30rem !important;
+    border-radius: 10px !important;
+    box-shadow: 0px 0px 6px 2px rgba(0, 0, 0, 0.2) !important;
+}
+
+/* Popover bubble tail */
+.custom-popover .popover-arrow {
+  position: absolute;
+  bottom: -10px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 0;
+  height: 0;
+  border-left: 20px solid transparent;
+  border-right: 20px solid transparent;
+  border-top: 10px solid #f8f9fa;
+}
+
+.question-btn {
+  border: dashed 1px black !important;
+  color: #324dc7 !important;
+  font-weight: 600 !important;
+  font-size: 18px !important;
+  border-radius: 0 !important;
+  width: 30px !important;
+  height: 30px !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  background-color: transparent !important;
+  position: relative;
+  padding: 0 !important;
+}
+
+.question-btn:hover {
+  background-color: #80808030 !important;
+}
+
+/* Current question button */
+.question-btn.current {
+  text-decoration: underline;
+}
+
+.question-btn.current::before {
+  content: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z'%3E%3C/path%3E%3Ccircle cx='12' cy='10' r='3'%3E%3C/circle%3E%3C/svg%3E");
+  position: absolute;
+  top: -22px;
+  left: 50%;
+  transform: translateX(-50%);
+  color: #000;
+}
+
+/* Answered question button */
+.question-btn.answered {
+  background-color: #324dc7 !important;
+  color: white !important;
+  border-color: #324dc7 !important;
+}
+
+/* Marked for review question button */
+.question-btn.marked-for-review::after {
+  content: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='%23ab2334' stroke='%23000' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z'%3E%3C/path%3E%3C/svg%3E");
+  position: absolute;
+  top: -12px;
+  right: -8px;
+}
+
+.go-review-btn button {
+  border-color: #324dc7;
+  color: #324dc7;
+  border-radius: 20px;
+  font-weight: 600;
+  font-size: 0.875rem;
+  transition: background-color 0.3s, color 0.3s;
+}
+
+.navigate-btn {
+  background-color: #324dc7;
+  color: #fff;
+  border: none;
+  padding: 8px 24px;
+  border-radius: 2rem;
+  cursor: pointer;
+  -webkit-user-select: none;
+  user-select: none;
+  font-size: 14px;
+  font-weight: 600;
+  transition: background-color 0.3s ease;
+}
+
+.navigate-btn:hover {
+  background-color: #182662;
+}
