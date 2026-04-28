@@ -30,7 +30,7 @@ class DigitalSatMockSeeder extends Seeder
         Schema::enableForeignKeyConstraints();
 
         $test = Test::create([
-            'title' => 'Digital SAT Practice Test 1',
+            'title' => 'Test Preview',
             'description' => 'Comprehensive mock test with realistic passages and adaptive routing.',
             'test_type' => 'full_length',
             'total_duration_minutes' => 134,
@@ -61,16 +61,16 @@ class DigitalSatMockSeeder extends Seeder
             [
                 'Craft and Structure', 
                 'Vocabulary', 
-                'The bustling marketplace in the heart of the city was characterized by a vibrant atmosphere, where the rhythmic calls of vendors mingled with the aromatic scents of exotic spices. Visitors were often overwhelmed by the sheer intensity of the sensory experience, which seemed to pulsate with a life of its own.',
-                'As used in the text, what does the word "vibrant" most nearly mean?',
-                ['Dull', 'Energetic', 'Noisy', 'Fragile'], 1
+                'The spacecraft OSIRIS-REx briefly made contact with the asteroid 101955 Bennu in 2020. NASA scientist Daniella DellaGiustina reports that despite facing the unexpected obstacle of a surface mostly covered in boulders, OSIRIS-REx successfully ______ a sample of the surface, gathering pieces of it to bring back to Earth.',
+                'Which choice completes the text with the most logical and precise word or phrase?',
+                ['attached', 'collected', 'followed', 'replaced'], 2
             ],
             [
                 'Information and Ideas', 
                 'Central Ideas', 
-                'In a recent study, marine biologists observed that certain species of coral are developing a surprising resilience to rising ocean temperatures. By hosting more heat-tolerant symbiotic algae, these coral colonies are able to survive bleaching events that would have previously been fatal, suggesting a potential for adaptation in the face of climate change.',
-                'Which choice best summarizes the main idea of the text?',
-                ['Coral bleaching is an irreversible process that leads to the total extinction of reefs.', 'Some coral species are adapting to warmer oceans by partnering with specific types of algae.', 'Rising ocean temperatures are the primary cause of the decline in global biodiversity.', 'Marine biologists are struggling to find ways to protect coral from heat-related damage.'], 1
+                "Research conducted by planetary scientist Katarina Miljkovic suggests that the Moon's surface may not accurately ______ early impact events. When the Moon was still forming, its surface was softer, and asteroid or meteoroid impacts would have left less of an impression; thus, evidence of early impacts may no longer be present.",
+                'Which choice completes the text with the most logical and precise word or phrase?',
+                ['reflect', 'receive', 'evaluate', 'mimic'], 1
             ],
             [
                 'Craft and Structure', 

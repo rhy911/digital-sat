@@ -20,7 +20,7 @@ class Test extends Model
 
     public function sections()
     {
-        return $this->hasMany(Section::class);
+        return $this->hasMany(Section::class)->orderBy('order');
     }
 
     /**
@@ -29,10 +29,10 @@ class Test extends Model
     public function refreshTotalDuration()
     {
         $total = 0;
-        
+
         // Load sections and their modules if not already loaded
         $this->loadMissing('sections.modules');
-        
+
         foreach ($this->sections as $section) {
             // Sum duration of unique module numbers in this section
             // In Digital SAT, Section 1 has Mod 1 (32m) and Mod 2 (32m)
@@ -40,14 +40,14 @@ class Test extends Model
             $sectionDuration = $section->modules
                 ->unique('module_number')
                 ->sum('duration_minutes');
-                
+
             $total += $sectionDuration;
         }
-        
+
         // Update the stored value
         $this->total_duration_minutes = $total;
         $this->save();
-        
+
         return $total;
     }
 

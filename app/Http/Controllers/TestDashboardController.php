@@ -2,17 +2,28 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Test;
-use App\Models\Section;
+use App\Models\AnswerChoice;
 use App\Models\Module;
 use App\Models\Passage;
 use App\Models\Question;
-use App\Models\AnswerChoice;
 use App\Models\QuestionExplanation;
+use App\Models\Section;
+use App\Models\Test;
+use App\Services\BulkQuestionCsvImportService;
+use App\Services\BulkQuestionImportService;
+use App\Services\AiClassificationService;
 use Illuminate\Http\Request;
+use Illuminate\Support\Str;
+use Illuminate\Support\Facades\DB;
 
 class TestDashboardController extends Controller
 {
+    private const QUESTIONS_TABLE_PER_PAGE = 25;
+
+    public function __construct(
+        private AiClassificationService $aiClassification
+    ) {}
+
     /**
      * Display the test data input dashboard.
      */
@@ -31,12 +42,127 @@ class TestDashboardController extends Controller
         }
 
         try {
-            $questions = Question::with(['passage', 'answerChoices', 'explanation'])->latest()->get();
+            $questionsTotal = Question::query()->count();
+            $questions = Question::query()
+                ->select(['id', 'section_type', 'stem', 'is_pretest', 'skill_domain'])
+                ->orderByDesc('id')
+                ->limit(self::QUESTIONS_TABLE_PER_PAGE)
+                ->get();
         } catch (\Exception $e) {
+            $questionsTotal = 0;
             $questions = collect();
         }
 
-        return view('test-dashboard', compact('tests', 'passages', 'questions'));
+        $questionsPerPage = self::QUESTIONS_TABLE_PER_PAGE;
+
+        return view('test-dashboard', compact('tests', 'passages', 'questions', 'questionsTotal', 'questionsPerPage'));
+    }
+
+    /**
+     * JSON bundle of dashboard data for client-side refresh without a full page reload.
+     */
+    public function snapshot()
+    {
+        $tests = Test::with('sections.modules')->latest()->get();
+        $passages = Passage::latest()->get();
+
+        return response()->json([
+            'tests' => $tests,
+            'passages' => $passages,
+        ]);
+    }
+
+    /**
+     * Paginated question rows for the dashboard table (lightweight columns only).
+     */
+    public function questionsList(Request $request)
+    {
+        $perPage = min(100, max(5, (int) $request->input('per_page', self::QUESTIONS_TABLE_PER_PAGE)));
+        $page = max(1, (int) $request->input('page', 1));
+        $q = trim((string) $request->input('q', ''));
+        $sectionType = $request->input('section_type');
+
+        $query = Question::query()
+            ->select(['id', 'section_type', 'stem', 'is_pretest', 'skill_domain'])
+            ->orderByDesc('id');
+
+        if ($q !== '') {
+            if (ctype_digit($q)) {
+                $query->where('id', (int) $q);
+            } else {
+                $like = '%'.str_replace(['\\', '%', '_'], ['\\\\', '\\%', '\\_'], $q).'%';
+                $query->where('stem', 'like', $like);
+            }
+        }
+
+        if (in_array($sectionType, ['reading_writing', 'math'], true)) {
+            $query->where('section_type', $sectionType);
+        }
+
+        $paginator = $query->paginate($perPage, ['*'], 'page', $page);
+
+        return response()->json([
+            'data' => $paginator->items(),
+            'total' => $paginator->total(),
+            'current_page' => $paginator->currentPage(),
+            'last_page' => $paginator->lastPage(),
+            'per_page' => $paginator->perPage(),
+        ]);
+    }
+
+    /**
+     * Tom Select remote options: latest / search by stem / optional pinned id.
+     *
+     * @return array<int, array{value: string, text: string}>
+     */
+    private function formatQuestionSearchResults(\Illuminate\Support\Collection $rows): array
+    {
+        return $rows->map(fn (Question $row): array => [
+            'value' => (string) $row->id,
+            'text' => 'ID:'.$row->id.' - '.Str::limit(strip_tags((string) $row->stem), 50),
+        ])->values()->all();
+    }
+
+    /**
+     * Remote search for question pickers (answer choices, explanations).
+     */
+    public function questionsSearch(Request $request)
+    {
+        $id = $request->input('id');
+        $q = trim((string) $request->input('q', ''));
+        $limit = min(50, max(5, (int) $request->input('limit', 20)));
+
+        $pinned = null;
+        if ($id !== null && $id !== '' && ctype_digit((string) $id)) {
+            $pinned = Question::query()->select(['id', 'stem'])->find((int) $id);
+        }
+
+        $query = Question::query()->select(['id', 'stem'])->orderByDesc('id');
+        if ($pinned) {
+            $query->where('id', '!=', $pinned->id);
+        }
+
+        if ($q !== '') {
+            if (ctype_digit($q)) {
+                $query->where('id', (int) $q);
+            } else {
+                $like = '%'.str_replace(['\\', '%', '_'], ['\\\\', '\\%', '\\_'], $q).'%';
+                $query->where('stem', 'like', $like);
+            }
+        }
+
+        $take = $limit - ($pinned ? 1 : 0);
+        $rows = $take > 0 ? $query->limit($take)->get() : collect();
+
+        $merged = collect();
+        if ($pinned) {
+            $merged->push($pinned);
+        }
+        $merged = $merged->concat($rows)->unique('id')->take($limit);
+
+        return response()->json([
+            'data' => $this->formatQuestionSearchResults($merged),
+        ]);
     }
 
     /**
@@ -52,15 +178,13 @@ class TestDashboardController extends Controller
             'status' => 'required|in:draft,active,archived',
         ]);
 
-        // Default total_duration_minutes to 0; will be updated as modules are added
         $validated['total_duration_minutes'] = 0;
-
         $test = Test::create($validated);
 
         return response()->json([
             'status' => 'success',
             'message' => 'Test created successfully',
-            'data' => $test
+            'data' => $test,
         ], 201);
     }
 
@@ -70,7 +194,6 @@ class TestDashboardController extends Controller
     public function updateTest(Request $request, $id)
     {
         $test = Test::findOrFail($id);
-        
         $validated = $request->validate([
             'title' => 'sometimes|required|string|max:255',
             'description' => 'nullable|string',
@@ -78,13 +201,12 @@ class TestDashboardController extends Controller
             'break_duration_minutes' => 'sometimes|required|integer|min:0',
             'status' => 'sometimes|required|in:draft,active,archived',
         ]);
-
         $test->update($validated);
 
         return response()->json([
             'status' => 'success',
             'message' => 'Test updated successfully',
-            'data' => $test
+            'data' => $test,
         ]);
     }
 
@@ -97,20 +219,25 @@ class TestDashboardController extends Controller
             'test_id' => 'required|exists:tests,id',
             'name' => 'nullable|string|max:255',
             'type' => 'required|in:reading_writing,math',
-            'order' => 'required|integer|min:1',
         ]);
 
-        // Auto-generate name if not provided
+        if (Section::where('test_id', $validated['test_id'])->where('type', $validated['type'])->exists()) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'This test already has a section for that type.',
+            ], 422);
+        }
+
+        $validated['order'] = $validated['type'] === 'reading_writing' ? 1 : 2;
         if (empty($validated['name'])) {
             $validated['name'] = $validated['type'] === 'reading_writing' ? 'Reading and Writing' : 'Math';
         }
-
         $section = Section::create($validated);
 
         return response()->json([
             'status' => 'success',
             'message' => 'Section created successfully',
-            'data' => $section
+            'data' => $section,
         ], 201);
     }
 
@@ -125,12 +252,16 @@ class TestDashboardController extends Controller
             'difficulty_level' => 'required|in:standard,easy,hard',
             'duration_minutes' => 'required|integer|min:1',
             'total_questions' => 'required|integer|min:1',
-            'order' => 'required|integer|min:1',
         ]);
 
+        $section = Section::findOrFail($validated['section_id']);
+        $baseOrder = (($section->order - 1) * 2) + (int) $validated['module_number'];
+        $existingMax = Module::where('section_id', $section->id)
+            ->where('module_number', $validated['module_number'])
+            ->max('order');
+        $validated['order'] = $existingMax !== null ? ((int) $existingMax + 1) : $baseOrder;
+
         $module = Module::create($validated);
-        
-        // Update Test total duration
         if ($module->section && $module->section->test) {
             $module->section->test->refreshTotalDuration();
         }
@@ -138,7 +269,7 @@ class TestDashboardController extends Controller
         return response()->json([
             'status' => 'success',
             'message' => 'Module created successfully',
-            'data' => $module
+            'data' => $module,
         ], 201);
     }
 
@@ -147,23 +278,71 @@ class TestDashboardController extends Controller
      */
     public function storePassage(Request $request)
     {
-        $validated = $request->validate([
+        $payload = $request->all();
+        foreach (['word_count', 'source_year'] as $key) {
+            if (array_key_exists($key, $payload) && $payload[$key] === '') {
+                $payload[$key] = null;
+            }
+        }
+
+        $validated = validator($payload, [
             'content' => 'required|string',
             'passage_type' => 'required|in:single,paired',
             'word_count' => 'nullable|integer|min:0',
             'source_title' => 'nullable|string|max:255',
             'source_author' => 'nullable|string|max:255',
             'source_year' => 'nullable|integer',
-            'genre' => 'required|in:literary_narrative,social_science,natural_science,humanities',
-        ]);
+            'genre' => 'nullable|in:literary_narrative,social_science,natural_science,humanities',
+        ])->validate();
 
         $passage = Passage::create($validated);
 
         return response()->json([
             'status' => 'success',
             'message' => 'Passage created successfully',
-            'data' => $passage
+            'data' => $passage,
         ], 201);
+    }
+
+    /**
+     * Attach an existing question to a module.
+     */
+    public function attachQuestionToModule(Request $request)
+    {
+        $validated = $request->validate([
+            'module_id' => 'required|exists:modules,id',
+            'question_id' => 'required|exists:questions,id',
+            'position' => 'nullable|integer|min:1',
+        ]);
+
+        $module = Module::findOrFail($validated['module_id']);
+        if ($module->questions()->where('question_id', $validated['question_id'])->exists()) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Question is already attached to this module.',
+            ], 422);
+        }
+
+        $position = $validated['position'];
+        if (empty($position)) {
+            $max = (int) DB::table('module_questions')->where('module_id', $module->id)->max('position');
+            $position = $max + 1;
+        }
+
+        // Auto-shift: if position taken, push existing ones forward
+        DB::transaction(function () use ($module, $position) {
+            DB::table('module_questions')
+                ->where('module_id', $module->id)
+                ->where('position', '>=', $position)
+                ->increment('position');
+        });
+
+        $module->questions()->attach($validated['question_id'], ['position' => $position]);
+
+        return response()->json([
+            'status' => 'success',
+            'message' => 'Question attached to module successfully (positions auto-shifted if needed).',
+        ]);
     }
 
     /**
@@ -176,21 +355,20 @@ class TestDashboardController extends Controller
             'position' => 'nullable|integer|min:1',
             'passage_id' => 'nullable|exists:passages,id',
             'paired_passage_id' => 'nullable|exists:paired_passages,id',
-            'question_number' => 'required|integer|min:1',
+            'question_number' => 'nullable|integer|min:1',
             'stem' => 'required|string',
             'question_type' => 'required|in:multiple_choice,student_produced_response',
-            'difficulty' => 'required|in:easy,medium,hard',
+            'difficulty' => 'nullable|in:easy,medium,hard',
             'is_pretest' => 'boolean',
             'section_type' => 'nullable|in:reading_writing,math',
-            'skill_domain' => 'required|string|max:255',
+            'skill_domain' => 'nullable|string|max:255',
             'skill_subdomain' => 'nullable|string|max:255',
             'spr_hint' => 'nullable|string',
             'calculator_allowed' => 'boolean',
             'external_id' => 'nullable|string|max:255',
         ]);
 
-        // Auto-fetch section type from module if provided
-        if (empty($validated['section_type']) && !empty($validated['module_id'])) {
+        if (empty($validated['section_type']) && ! empty($validated['module_id'])) {
             $module = Module::with('section')->find($validated['module_id']);
             if ($module && $module->section) {
                 $validated['section_type'] = $module->section->type;
@@ -198,40 +376,105 @@ class TestDashboardController extends Controller
         }
 
         if (empty($validated['section_type'])) {
-            return response()->json([
-                'status' => 'error',
-                'message' => 'Section type is required (could not auto-detect from module).'
-            ], 422);
+            return response()->json(['status' => 'error', 'message' => 'Section type is required.'], 422);
         }
 
-        // Recommendation 4: Enforce 1:1 Passage ratio for Reading & Writing
-        if ($validated['section_type'] === 'reading_writing' && !empty($validated['passage_id'])) {
-            $existingQuestionCount = Question::where('passage_id', $validated['passage_id'])->count();
-            if ($existingQuestionCount > 0) {
-                return response()->json([
-                    'status' => 'error',
-                    'message' => 'Digital SAT Reading & Writing must have exactly one question per passage.'
-                ], 422);
+        if ($validated['section_type'] === 'reading_writing' && $validated['question_type'] === 'student_produced_response') {
+            return response()->json(['status' => 'error', 'message' => 'Reading & Writing does not support SPR.'], 422);
+        }
+
+        if ($validated['section_type'] === 'reading_writing' && ! empty($validated['passage_id'])) {
+            $existing = Question::where('passage_id', $validated['passage_id'])->count();
+            if ($existing > 0) {
+                return response()->json(['status' => 'error', 'message' => 'One question per passage only for R&W.'], 422);
             }
         }
 
+        if (empty($validated['difficulty']) || empty($validated['skill_domain'])) {
+            $passageContent = !empty($validated['passage_id']) ? Passage::find($validated['passage_id'])?->content : null;
+            $classification = $this->aiClassification->classify([
+                'section_type' => $validated['section_type'],
+                'stem' => $validated['stem'],
+                'passage_content' => $passageContent,
+            ]);
+            $validated['difficulty'] = $validated['difficulty'] ?? $classification['difficulty'];
+            $validated['skill_domain'] = $validated['skill_domain'] ?? $classification['skill_domain'];
+        }
+
         $module_id = $validated['module_id'] ?? null;
-        $position = $validated['position'] ?? 1;
-        unset($validated['module_id'], $validated['position']);
+        $position = $validated['position'];
+        if ($module_id && empty($position)) {
+            $max = (int) DB::table('module_questions')->where('module_id', $module_id)->max('position');
+            $position = $max + 1;
+        }
+
+        unset($validated['module_id'], $validated['position'], $validated['question_number']);
 
         $question = Question::create($validated);
-
-        // Link to module if provided
         if ($module_id) {
+            // Auto-shift: if position taken, push existing ones forward
+            DB::transaction(function () use ($module_id, $position) {
+                DB::table('module_questions')
+                    ->where('module_id', $module_id)
+                    ->where('position', '>=', $position)
+                    ->increment('position');
+            });
+
             $module = Module::find($module_id);
             $module->questions()->attach($question->id, ['position' => $position]);
         }
 
         return response()->json([
             'status' => 'success',
-            'message' => 'Question created successfully',
-            'data' => $question
+            'message' => 'Question created successfully (positions auto-shifted if needed).',
+            'data' => $question,
         ], 201);
+    }
+
+    /**
+     * Preview questions from JSON without saving.
+     */
+    public function bulkPreviewQuestions(Request $request, BulkQuestionImportService $bulkQuestionImport)
+    {
+        $payload = $bulkQuestionImport->buildPayloadFromRequest($request);
+        $validated = $bulkQuestionImport->validate($payload);
+        return response()->json(['status' => 'success', 'data' => ['items' => $validated['items'] ?? [], 'module_id' => $validated['module_id'] ?? null]]);
+    }
+
+    /**
+     * Create multiple questions in one request.
+     */
+    public function bulkStoreQuestions(Request $request, BulkQuestionImportService $bulkQuestionImport)
+    {
+        $payload = $bulkQuestionImport->buildPayloadFromRequest($request);
+        $result = $bulkQuestionImport->import($payload);
+        return response()->json(['status' => 'success', 'message' => count($result['question_ids']).' question(s) created.', 'data' => $result], 201);
+    }
+
+    /**
+     * Preview questions from CSV without saving.
+     */
+    public function bulkPreviewQuestionsFromCsv(Request $request, BulkQuestionCsvImportService $csvImport, BulkQuestionImportService $bulkQuestionImport)
+    {
+        $request->validate(['csv_file' => 'required|file|max:5120', 'module_id' => 'nullable|exists:modules,id']);
+        $file = $request->file('csv_file');
+        $raw = (string) file_get_contents($file->getRealPath());
+        $items = $csvImport->parseCsvToItems($raw);
+        $moduleId = $request->input('module_id');
+        if ($moduleId) {
+            $validated = $bulkQuestionImport->validate(['module_id' => $moduleId, 'start_position' => 1, 'items' => $items]);
+            $items = $validated['items'];
+        }
+        return response()->json(['status' => 'success', 'data' => ['items' => $items]]);
+    }
+
+    /**
+     * Bulk import from CSV.
+     */
+    public function bulkStoreQuestionsFromCsv(Request $request, BulkQuestionCsvImportService $csvImport)
+    {
+        $result = $csvImport->importFromRequest($request);
+        return response()->json(['status' => 'success', 'message' => count($result['question_ids']).' question(s) created.', 'data' => $result], 201);
     }
 
     /**
@@ -250,17 +493,10 @@ class TestDashboardController extends Controller
 
         $createdChoices = [];
         foreach ($validated['choices'] as $choiceData) {
-            $choice = AnswerChoice::create(array_merge($choiceData, [
-                'question_id' => $validated['question_id'],
-            ]));
+            $choice = AnswerChoice::create(array_merge($choiceData, ['question_id' => $validated['question_id']]));
             $createdChoices[] = $choice;
         }
-
-        return response()->json([
-            'status' => 'success',
-            'message' => 'Answer choices created successfully',
-            'data' => $createdChoices
-        ], 201);
+        return response()->json(['status' => 'success', 'message' => 'Choices created.', 'data' => $createdChoices], 201);
     }
 
     /**
@@ -278,79 +514,37 @@ class TestDashboardController extends Controller
             'strategy_tip' => 'nullable|string',
             'common_mistakes' => 'nullable|string',
         ]);
-
         $explanation = QuestionExplanation::create($validated);
-
-        return response()->json([
-            'status' => 'success',
-            'message' => 'Explanation created successfully',
-            'data' => $explanation
-        ], 201);
+        return response()->json(['status' => 'success', 'message' => 'Explanation created.', 'data' => $explanation], 201);
     }
 
-    /**
-     * Delete a test.
-     */
     public function deleteTest($id)
     {
-        $test = Test::findOrFail($id);
-        $test->delete();
-
-        return response()->json([
-            'status' => 'success',
-            'message' => 'Test deleted successfully'
-        ]);
+        Test::findOrFail($id)->delete();
+        return response()->json(['status' => 'success', 'message' => 'Test deleted.']);
     }
 
-    /**
-     * Delete a section.
-     */
     public function deleteSection($id)
     {
         $section = Section::with('test')->findOrFail($id);
         $test = $section->test;
         $section->delete();
-
-        if ($test) {
-            $test->refreshTotalDuration();
-        }
-
-        return response()->json([
-            'status' => 'success',
-            'message' => 'Section deleted successfully'
-        ]);
+        if ($test) $test->refreshTotalDuration();
+        return response()->json(['status' => 'success', 'message' => 'Section deleted.']);
     }
 
-    /**
-     * Delete a module.
-     */
     public function deleteModule($id)
     {
         $module = Module::with('section.test')->findOrFail($id);
         $test = $module->section->test ?? null;
         $module->delete();
-
-        if ($test) {
-            $test->refreshTotalDuration();
-        }
-
-        return response()->json([
-            'status' => 'success',
-            'message' => 'Module deleted successfully'
-        ]);
+        if ($test) $test->refreshTotalDuration();
+        return response()->json(['status' => 'success', 'message' => 'Module deleted.']);
     }
 
-    /**
-     * Delete a question.
-     */
     public function deleteQuestion($id)
     {
-        $question = Question::findOrFail($id);
-        $question->delete();
-
-        return response()->json([
-            'status' => 'success',
-            'message' => 'Question deleted successfully'
-        ]);
+        Question::findOrFail($id)->delete();
+        return response()->json(['status' => 'success', 'message' => 'Question deleted.']);
     }
 }

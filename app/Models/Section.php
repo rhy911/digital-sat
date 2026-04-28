@@ -23,6 +23,6 @@ class Section extends Model
 
     public function modules()
     {
-        return $this->hasMany(Module::class);
+        return $this->hasMany(Module::class)->orderBy('module_number')->orderBy('order');
     }
 }

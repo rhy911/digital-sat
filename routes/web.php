@@ -1,16 +1,16 @@
 <?php
 
-use App\Http\Controllers\Auth\LoginWebController;
-use App\Http\Controllers\Auth\RegisterWebController;
-use App\Http\Controllers\Auth\LogoutController;
-use App\Http\Controllers\Auth\VerifyEmailWebController;
-use App\Http\Controllers\Auth\ResendVerificationController;
 use App\Http\Controllers\Auth\ForgotPasswordController;
+use App\Http\Controllers\Auth\LoginWebController;
+use App\Http\Controllers\Auth\LogoutController;
+use App\Http\Controllers\Auth\RegisterWebController;
+use App\Http\Controllers\Auth\ResendVerificationController;
 use App\Http\Controllers\Auth\ResetPasswordController;
+use App\Http\Controllers\Auth\VerifyEmailWebController;
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\TestDashboardController;
-use Illuminate\Support\Facades\Route;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
     return view('index');
@@ -69,18 +69,17 @@ Route::get('/test-preview', function () {
     return view('tests.preview');
 })->name('test.preview');
 
-
-Route::get('choose-test', function (){
+Route::get('choose-test', function () {
     return view('tests.choose');
 })->name('choose-test');
 
 Route::get('/take-test/{module_id?}', function ($module_id = null) {
     $test = \App\Models\Test::with([
         'sections.modules.questions.passage',
-        'sections.modules.questions.answerChoices' => fn($q) => $q->orderBy('order'),
+        'sections.modules.questions.answerChoices' => fn ($q) => $q->orderBy('order'),
     ])->whereIn('status', ['active', 'draft'])->first();
 
-    if (!$test) {
+    if (! $test) {
         abort(404, 'No test available. Please create a test first.');
     }
 
@@ -93,7 +92,7 @@ Route::get('/take-test/{module_id?}', function ($module_id = null) {
         $module = \App\Models\Module::with(['section', 'questions.passage', 'questions.answerChoices'])->find($module_id);
     }
 
-    if (!$module) {
+    if (! $module) {
         // Default to first module of first section
         $section = $test->sections->firstWhere('type', 'reading_writing') ?? $test->sections->first();
         $module = $section->modules->first() ?? null;
@@ -101,7 +100,7 @@ Route::get('/take-test/{module_id?}', function ($module_id = null) {
         $section = $module->section;
     }
 
-    if (!$module) {
+    if (! $module) {
         abort(404, 'No module found. Please add modules first.');
     }
 
@@ -129,7 +128,7 @@ Route::get('/take-test/{module_id?}', function ($module_id = null) {
     $nextModule = null;
     if ($module->module_number == 1) {
         // Find Module 2 in same section (prefer hard for mock)
-        $nextModule = $section->modules->where('module_number', 2)->firstWhere('difficulty_level', 'hard') 
+        $nextModule = $section->modules->where('module_number', 2)->firstWhere('difficulty_level', 'hard')
                     ?? $section->modules->where('module_number', 2)->first();
     } else {
         // Move to next section's first module
@@ -152,14 +151,17 @@ Route::get('/take-test/{module_id?}', function ($module_id = null) {
         'sectionName' => $section->name,
         'sectionType' => $section->type,
         'nextModuleId' => $nextModule ? $nextModule->id : null,
-        'nextModuleName' => $nextModule ? ($nextModule->module_number == 2 ? "Module 2" : "Section " . $nextModule->section->order) : null
+        'nextModuleName' => $nextModule ? ($nextModule->module_number == 2 ? 'Module 2' : 'Section '.$nextModule->section->order) : null,
     ]);
 })->name('take-test');
 
 // Test Dashboard Routes
 Route::middleware(['auth'])->prefix('test-dashboard')->name('test-dashboard.')->group(function () {
     Route::get('/', [TestDashboardController::class, 'index'])->name('index');
-    
+    Route::get('/snapshot', [TestDashboardController::class, 'snapshot'])->name('snapshot');
+    Route::get('/questions/list', [TestDashboardController::class, 'questionsList'])->name('questions.list');
+    Route::get('/questions/search', [TestDashboardController::class, 'questionsSearch'])->name('questions.search');
+
     // API endpoints for creating and updating data
     Route::post('/tests', [TestDashboardController::class, 'storeTest'])->name('tests.store');
     Route::put('/tests/{id}', [TestDashboardController::class, 'updateTest'])->name('tests.update');
@@ -167,9 +169,14 @@ Route::middleware(['auth'])->prefix('test-dashboard')->name('test-dashboard.')->
     Route::post('/modules', [TestDashboardController::class, 'storeModule'])->name('modules.store');
     Route::post('/passages', [TestDashboardController::class, 'storePassage'])->name('passages.store');
     Route::post('/questions', [TestDashboardController::class, 'storeQuestion'])->name('questions.store');
+    Route::post('/questions/bulk', [TestDashboardController::class, 'bulkStoreQuestions'])->name('questions.bulk-store');
+    Route::post('/questions/bulk-preview', [TestDashboardController::class, 'bulkPreviewQuestions'])->name('questions.bulk-preview');
+    Route::post('/questions/bulk-csv', [TestDashboardController::class, 'bulkStoreQuestionsFromCsv'])->name('questions.bulk-csv');
+    Route::post('/questions/bulk-csv-preview', [TestDashboardController::class, 'bulkPreviewQuestionsFromCsv'])->name('questions.bulk-csv-preview');
+    Route::post('/questions/attach', [TestDashboardController::class, 'attachQuestionToModule'])->name('questions.attach');
     Route::post('/answer-choices', [TestDashboardController::class, 'storeAnswerChoices'])->name('answer-choices.store');
     Route::post('/explanations', [TestDashboardController::class, 'storeExplanation'])->name('explanations.store');
-    
+
     // Delete endpoints
     Route::delete('/tests/{id}', [TestDashboardController::class, 'deleteTest'])->name('tests.delete');
     Route::delete('/sections/{id}', [TestDashboardController::class, 'deleteSection'])->name('sections.delete');
