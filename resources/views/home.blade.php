@@ -87,7 +87,7 @@
                             <h4>Test Preview</h4>
                         </div>
                     </a>
-                    <a href="">
+                    <a href="{{ route('choose-test') }}">
                         <div class="option">
                             <img src="{{ asset('images/test.png') }}" alt="Full-Length Practice">
                             <h4>Full-Length Practice</h4>

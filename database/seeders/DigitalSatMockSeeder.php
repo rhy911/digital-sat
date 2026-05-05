@@ -17,18 +17,6 @@ class DigitalSatMockSeeder extends Seeder
 {
     public function run(): void
     {
-        Schema::disableForeignKeyConstraints();
-        $tables = [
-            'tests', 'sections', 'modules', 'module_routing',
-            'passages', 'paired_passages', 'questions', 'module_questions',
-            'question_media', 'answer_choices', 'spr_correct_answers',
-            'question_explanations', 'module_blueprints', 'score_conversions',
-        ];
-        foreach ($tables as $table) {
-            DB::table($table)->truncate();
-        }
-        Schema::enableForeignKeyConstraints();
-
         $test = Test::create([
             'title' => 'Test Preview',
             'description' => 'Comprehensive mock test with realistic passages and adaptive routing.',
@@ -106,7 +94,6 @@ class DigitalSatMockSeeder extends Seeder
             $p = Passage::create(['content' => $data[2], 'passage_type' => 'single', 'genre' => 'humanities']);
             $q = Question::create([
                 'passage_id' => $p->id,
-                'question_number' => $i + 1,
                 'stem' => $data[3],
                 'question_type' => 'multiple_choice',
                 'difficulty' => 'medium',
@@ -123,15 +110,14 @@ class DigitalSatMockSeeder extends Seeder
             $rwM1->questions()->attach($q->id, ['position' => $i + 1]);
         }
 
-        // --- R&W QUESTIONS (MODULE 2 - Reuse same logic for mock) ---
+        // --- R&W QUESTIONS (MODULE 2) ---
         foreach ($rw_data as $i => $data) {
             $p = Passage::create(['content' => $data[2] . " (Module 2 Version)", 'passage_type' => 'single', 'genre' => 'humanities']);
             $q = Question::create([
                 'passage_id' => $p->id,
-                'question_number' => $i + 1,
                 'stem' => $data[3],
                 'question_type' => 'multiple_choice',
-                'difficulty' => 'hard',
+                'difficulty' => 'medium',
                 'is_pretest' => false,
                 'section_type' => 'reading_writing',
                 'skill_domain' => str_replace(' ', '_', strtolower($data[0]))
@@ -149,16 +135,15 @@ class DigitalSatMockSeeder extends Seeder
         // --- MATH QUESTIONS (MODULE 1) ---
         $math_data = [
             ['Algebra', 'MCQ', 'If $2x + 10 = 20$, what is the value of $4x$?', '20'],
-            ['Advanced Math', 'MCQ', 'What is the sum of the roots of the quadratic equation $x^2 - 5x + 6 = 0$?', '5'],
+            ['Advanced Math', 'MCQ', 'What is the sum of the roots of the quadratic equation $$x^2 - 5x + 6 = 0$$?', '5'],
             ['Problem Solving', 'MCQ', 'A bag contains 3 red marbles and 2 blue marbles. If one marble is selected at random, what is the probability that the marble is red?', '3/5'],
-            ['Geometry', 'MCQ', 'A circle has a radius of 3 units. What is the area of the circle in square units?', '9π'],
+            ['Geometry', 'MCQ', 'A circle has a radius of $r = 3$ units. What is the area of the circle in square units?', '$$9\pi$$'],
             ['Algebra', 'SPR', 'Solve for $x$: $5x - 2 = 13$', '3'],
             ['Advanced Math', 'SPR', 'If $f(x) = x^2 + 4x$, what is the value of $f(2)$?', '12']
         ];
 
         foreach ($math_data as $i => $data) {
             $q = Question::create([
-                'question_number' => $i + 1,
                 'stem' => $data[2],
                 'question_type' => ($data[1] === 'MCQ' ? 'multiple_choice' : 'student_produced_response'),
                 'difficulty' => 'medium',
@@ -177,7 +162,6 @@ class DigitalSatMockSeeder extends Seeder
         // --- MATH QUESTIONS (MODULE 2) ---
         foreach ($math_data as $i => $data) {
             $q = Question::create([
-                'question_number' => $i + 1,
                 'stem' => $data[2] . " (Advanced)",
                 'question_type' => ($data[1] === 'MCQ' ? 'multiple_choice' : 'student_produced_response'),
                 'difficulty' => 'hard',

@@ -132,10 +132,18 @@ export function togglePopover(trigger) {
   if (state.persistentPopover.style.display === "none") {
     state.persistentPopover.style.visibility = "hidden";
     state.persistentPopover.style.display = "block";
-    const rect = trigger.getBoundingClientRect();
-    const popoverRect = state.persistentPopover.getBoundingClientRect();
-    const centerX = rect.left + rect.width / 2 - popoverRect.width / 2;
-    const topY = rect.top - popoverRect.height - 10;
+    
+    // Use offset coordinates which are relative to the zoomed body parent
+    const popoverWidth = state.persistentPopover.offsetWidth;
+    const popoverHeight = state.persistentPopover.offsetHeight;
+    
+    const triggerLeft = trigger.offsetLeft;
+    const triggerTop = trigger.offsetTop;
+    const triggerWidth = trigger.offsetWidth;
+    
+    const centerX = triggerLeft + triggerWidth / 2 - popoverWidth / 2;
+    const topY = triggerTop - popoverHeight - 10;
+    
     state.persistentPopover.style.left = centerX + "px";
     state.persistentPopover.style.top = topY + "px";
     state.persistentPopover.style.visibility = "visible";

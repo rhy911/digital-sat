@@ -76,36 +76,20 @@ Hệ thống được chia thành 4 phân hệ chính:
 
 ---
 
-## Current Plan
+## Current Problem (Resolved)
 
-Simplifies workflow by focusing on high-volume entry while fixing the "Bank" management logic.
+### 1. Testing Page [FIXED]
 
-### Analysis of Changes
+- Latex doesnt appear right: Added `$` delimiter to KaTeX config in `test.blade.php`, `navigation.js`, and `test-dashboard.blade.php`.
+- Media doesn't appear: Added JS logic in `navigation.js` and `test-dashboard.blade.php` to replace `[Media:filename]` with `<img>` tags pointing to `/storage/media/`.
+- The content still not display properly: Fixed by adding `white-space: pre-wrap;` to `.stem-text` and `.passage-container` in `test-main.css`. This preserves line breaks for poems and formatted text.
 
-- Remove "Create Question" form: Good. Manual entry is slow. Bulk import (Excel/JSON) is the industry standard for
-  SAT data.
-- Remove "Create Passage" form: Logical for R&W. In Digital SAT, one passage = one question. Bundling them in the
-  import (inline passage) prevents orphaned passages and accidental reuse.
-- Add "Edit Question" function: CRITICAL. Since manual "Create" is gone, users need a way to fix typos or adjust
-  AI-detected domains without re-importing the whole file.
+### 2. Portal Page [FIXED]
 
-### 1. Implementation Strategy
+- Remove Choose a Test from Test Preview: Changed `nextUrl` in `preview.blade.php` to `/take-test`.
+- In Choose a Test, Test Preview is appearing double: Removed redundant manual "Test Preview" option in `choose.blade.php`.
 
-A. Dashboard UI Cleanup
+### 3. Test Dashboard [FIXED]
 
-- Delete the "Create Passage" card.
-- Delete the "Create New Question" card.
-- Keep: "Attach Existing Question from Bank" (still useful to reuse a Math question in a different test).
-- Keep: "Bulk Import" (make this the primary entry point).
-
-B. The "Edit Question" Feature
-
-- Modal: Clicking "Edit" on the Questions Table should open a modal.
-- Fields: Stem, Question Type, Difficulty, Domain, Subdomain, SPR Hint.
-- Passage Edit: If R&W, allow editing the associated passage content directly in the question edit modal.
-- Logic: Updates the global questions table. Changes reflect everywhere that question is used.
-
-C. Backend
-
-- Add updateQuestion method to TestDashboardController.
-- Update BulkQuestionImportService to ensure passage and question remain strictly linked for R&W.
+- Can't update imported questions: Fixed SPR answer validation in `TestDashboardController.php` to handle both string and array inputs (normalizing to comma-separated string).
+- How to turn incomplete questions into completed: **A question is marked "complete" automatically when both `difficulty` and `skill_domain` are assigned values during update.** Imports often leave these blank/default, so editing them in the Dashboard and saving will toggle `is_complete` to true.

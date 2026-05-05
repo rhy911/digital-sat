@@ -214,7 +214,7 @@ main section .practice-options a {
 }
 
 main section .option {
-    width: 17.5rem;
+    width: 15rem;
     justify-items: center;
     padding: 1.5rem 3.125rem 0;
     cursor: pointer;

@@ -28,3 +28,9 @@ body {
     display: flex;
     flex-direction: column;
 }
+
+u {
+    text-decoration: underline;
+    text-underline-offset: 3px;
+}
+

@@ -12,11 +12,11 @@ class Question extends Model
     protected $fillable = [
         'passage_id',
         'paired_passage_id',
-        'question_number',
         'stem',
         'question_type',
         'difficulty',
         'is_pretest',
+        'is_complete',
         'section_type',
         'skill_domain',
         'skill_subdomain',
@@ -28,6 +28,7 @@ class Question extends Model
     protected $casts = [
         'calculator_allowed' => 'boolean',
         'is_pretest' => 'boolean',
+        'is_complete' => 'boolean',
     ];
 
     public function passage()
@@ -48,6 +49,11 @@ class Question extends Model
     public function media()
     {
         return $this->hasMany(QuestionMedia::class);
+    }
+
+    public function sprCorrectAnswers()
+    {
+        return $this->hasMany(SprCorrectAnswer::class);
     }
 
     public function modules()

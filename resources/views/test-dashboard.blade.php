@@ -24,10 +24,10 @@
                     <button class="nav-link" id="modules-tab" data-bs-toggle="tab" data-bs-target="#modules" type="button" role="tab">3. Modules</button>
                 </li>
                 <li class="nav-item" role="presentation">
-                    <button class="nav-link" id="passages-tab" data-bs-toggle="tab" data-bs-target="#passages" type="button" role="tab">4. Passages</button>
+                    <button class="nav-link" id="questions-tab" data-bs-toggle="tab" data-bs-target="#questions" type="button" role="tab">4. Questions & Answers</button>
                 </li>
                 <li class="nav-item" role="presentation">
-                    <button class="nav-link" id="questions-tab" data-bs-toggle="tab" data-bs-target="#questions" type="button" role="tab">5. Questions & Answers</button>
+                    <button class="nav-link" id="builder-tab" data-bs-toggle="tab" data-bs-target="#builder" type="button" role="tab">5. Easy Builder (For Teachers)</button>
                 </li>
             </ul>
         </div>
@@ -320,159 +320,8 @@
             </div>
         </div>
 
-        <!-- Passages Tab -->
-        <div class="tab-pane fade" id="passages" role="tabpanel">
-            <div class="card shadow-sm">
-                <div class="card-header bg-dark text-white">
-                    <h5 class="mb-0">Create New Passage</h5>
-                </div>
-                <div class="card-body">
-                    <form id="passageForm">
-                        @csrf
-                        <div class="mb-3">
-                            <label for="passageContent" class="form-label">Passage Text (HTML Allowed) <span class="text-danger">*</span></label>
-                            <textarea class="form-control" id="passageContent" name="content" rows="6" placeholder="Paste passage text here..."></textarea>
-                        </div>
-                        <div class="row">
-                            <div class="col-md-4 mb-3">
-                                <label for="passageType" class="form-label">Type <span class="text-danger">*</span></label>
-                                <select class="form-select" id="passageType" name="passage_type" required>
-                                    <option value="single" selected>Single Passage</option>
-                                    <option value="paired">Paired Passage</option>
-                                </select>
-                            </div>
-                            <div class="col-md-4 mb-3">
-                                <label for="genre" class="form-label">Genre <span class="text-muted small">(Auto-detect if empty)</span></label>
-                                <select class="form-select" id="genre" name="genre">
-                                    <option value="">Auto-detect...</option>
-                                    <option value="literary_narrative">Literary Narrative</option>
-                                    <option value="social_science">Social Science</option>
-                                    <option value="natural_science">Natural Science</option>
-                                    <option value="humanities">Humanities</option>
-                                </select>
-                            </div>
-                            <div class="col-md-4 mb-3">
-                                <label for="wordCount" class="form-label">Word Count</label>
-                                <input type="number" class="form-control" id="wordCount" name="word_count" placeholder="e.g. 120">
-                            </div>
-                        </div>
-                        <div class="row">
-                            <div class="col-md-6 mb-3">
-                                <label for="sourceTitle" class="form-label">Source / Attribution</label>
-                                <input type="text" class="form-control" id="sourceTitle" name="source_title" placeholder="Author/Work">
-                            </div>
-                            <div class="col-md-6 mb-3">
-                                <label for="sourceYear" class="form-label">Year</label>
-                                <input type="number" class="form-control" id="sourceYear" name="source_year">
-                            </div>
-                        </div>
-                        <button type="submit" class="btn btn-dark">Create Passage</button>
-                    </form>
-                </div>
-            </div>
-        </div>
-
         <!-- Questions Tab -->
         <div class="tab-pane fade" id="questions" role="tabpanel">
-            <div class="card mb-4 shadow-sm">
-                <div class="card-header bg-warning">
-                    <h5 class="mb-0">Create New Question</h5>
-                </div>
-                <div class="card-body">
-                    <form id="questionForm">
-                        @csrf
-                        <div class="row">
-                            <div class="col-md-6 mb-3">
-                               <label for="questionModule" class="form-label">Assign to Module <span class="text-danger">*</span></label>
-                               <select class="form-select tom-select" id="questionModule" name="module_id" required onchange="autoFetchSectionType(this)">
-                                   <option value="">Search module...</option>
-                                   @foreach($tests as $test)
-                                       @foreach($test->sections as $section)
-                                           @foreach($section->modules as $module)
-                                           <option value="{{ $module->id }}" data-section-type="{{ $section->type }}">
-                                               {{ $test->title }} - {{ $section->name }} - Mod {{ $module->module_number }} ({{ ucfirst($module->difficulty_level) }})
-                                           </option>
-                                           @endforeach
-                                       @endforeach
-                                   @endforeach
-                               </select>
-                            </div>
-                            <div class="col-md-3 mb-3">
-                                <label for="questionPosition" class="form-label">Position in Module <span class="text-danger">*</span></label>
-                                <input type="number" class="form-control" id="questionPosition" name="position" min="1" value="1" required>
-                                <p class="form-text text-muted small mb-0">Order within this module. SAT usually goes by difficulty (Math) or skill group (R&W).</p>
-                            </div>
-                            <div class="col-md-3 mb-3 d-flex align-items-end">
-                                <div class="form-check mb-2">
-                                    <input class="form-check-input" type="checkbox" id="isPretest" name="is_pretest" value="1">
-                                    <label class="form-check-label text-danger" for="isPretest">
-                                        <strong>Is Unscored (Pretest)?</strong>
-                                    </label>
-                                </div>
-                            </div>                        </div>
-                        <hr>
-                        <div class="row">
-                            <div class="col-md-8 mb-3">
-                                <label for="questionPassage" class="form-label">Passage (Required for R&W)</label>
-                                <select class="form-select tom-select" id="questionPassage" name="passage_id">
-                                    <option value="">No passage (Standalone) / Search passage...</option>
-                                    @foreach($passages as $passage)
-                                    <option value="{{ $passage->id }}">{{ Str::limit(strip_tags($passage->content), 80) }}</option>
-                                    @endforeach
-                                </select>
-                            </div>
-                            <div class="col-md-4 mb-3">
-                                <label for="questionType" class="form-label">Question Type <span class="text-danger">*</span></label>
-                                <select class="form-select" id="questionType" name="question_type" required>
-                                    <option value="multiple_choice" selected>Multiple Choice</option>
-                                    <option value="student_produced_response">Student Produced (SPR)</option>
-                                </select>
-                            </div>
-                        </div>
-                        <div class="mb-3">
-                            <label for="questionStem" class="form-label">Question Stem / Prompt <span class="text-danger">*</span></label>
-                            <textarea class="form-control" id="questionStem" name="stem" rows="3" placeholder="What is the value of x?"></textarea>
-                        </div>
-                        <div class="row">
-                            <div class="col-md-4 mb-3">
-                                <label for="qSectionType" class="form-label">Section <span class="text-danger">*</span></label>
-                                <select class="form-select" id="qSectionType" name="section_type" required onchange="updateSkillDomains(this)">
-                                    <option value="">Select...</option>
-                                    <option value="reading_writing">Reading & Writing</option>
-                                    <option value="math">Math</option>
-                                </select>
-                            </div>
-                            <div class="col-md-4 mb-3">
-                                <label for="skillDomain" class="form-label">Skill Domain <span class="text-muted small">(Auto-detect if empty)</span></label>
-                                <select class="form-select" id="skillDomain" name="skill_domain">
-                                    <option value="">Auto-detect / Select domain...</option>
-                                </select>
-                            </div>
-                            <div class="col-md-4 mb-3">
-                                <label for="difficulty" class="form-label">Difficulty <span class="text-muted small">(Auto-detect if empty)</span></label>
-                                <select class="form-select" id="difficulty" name="difficulty">
-                                    <option value="">Auto-detect...</option>
-                                    <option value="medium">Medium</option>
-                                    <option value="easy">Easy</option>
-                                    <option value="hard">Hard</option>
-                                </select>
-                            </div>
-                        </div>
-                        <div class="row">
-                            <div class="col-md-6 mb-3">
-                                <label for="skillSubdomain" class="form-label">Skill Subdomain</label>
-                                <input type="text" class="form-control" id="skillSubdomain" name="skill_subdomain" placeholder="e.g. Linear Equations">
-                            </div>
-                            <div class="col-md-6 mb-3" id="sprHintContainer">
-                                <label for="sprHint" class="form-label">SPR Hint (Grid-in helper)</label>
-                                <input type="text" class="form-control" id="sprHint" name="spr_hint" placeholder="e.g. Enter as a fraction">
-                            </div>
-                        </div>
-                        <button type="submit" class="btn btn-warning">Create Question</button>
-                    </form>
-                </div>
-            </div>
-
             <div class="card mb-4 shadow-sm border-primary">
                 <div class="card-header bg-primary text-white">
                     <h5 class="mb-0">Attach Existing Question from Bank</h5>
@@ -489,7 +338,7 @@
                                         @foreach($test->sections as $section)
                                             @foreach($section->modules as $module)
                                             <option value="{{ $module->id }}">
-                                                {{ $test->title }} - {{ $section->name }} - Mod {{ $module->module_number }} ({{ ucfirst($module->difficulty_level) }})
+                                                {{ $test->title }} | {{ $section->type === 'reading_writing' ? 'R&W' : 'Math' }} - Mod {{ $module->module_number }} ({{ $module->difficulty_level }})
                                             </option>
                                             @endforeach
                                         @endforeach
@@ -512,169 +361,130 @@
                 </div>
             </div>
 
-            <div class="card mb-4 shadow-sm border-success">
-                <div class="card-header bg-success text-white d-flex justify-content-between align-items-center flex-wrap gap-2">
-                    <h5 class="mb-0">Bulk import (JSON file or editor)</h5>
-                    <span class="badge bg-light text-dark">Passages + questions in one file</span>
+            <div class="card mb-4 shadow-sm border-warning">
+                <div class="card-header bg-warning text-dark d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0"><i class="bi bi-gear-fill"></i> STEP 1: Global Import Configuration</h5>
+                    <span class="badge bg-dark text-white">Required for all methods</span>
                 </div>
                 <div class="card-body">
-                    <div class="alert alert-info py-2 small mb-3">
-                        <i class="bi bi-robot"></i> <strong>AI Automation:</strong> If you leave <code>difficulty</code>, <code>skill_domain</code>, or <code>passage_genre</code> empty/null, the system will auto-detect them based on the question text.
-                    </div>
-                    <p class="text-muted small mb-3">
-                        <strong>Recommended:</strong> choose a <code>.json</code> file — the same schema works if you paste into the editor instead.
-                        Set <strong>module</strong> and <strong>start position</strong> here (or put <code>module_id</code> / <code>start_position</code> inside the file).
-                        Each row: <code>multiple_choice</code> needs <code>choices</code>; <code>student_produced_response</code> needs <code>spr_correct_answers</code>.
-                        <strong>Reading &amp; Writing:</strong> every item must include a paragraph (always Multiple Choice) — either <code>passage_id</code> (existing passage) or an inline <code>passage</code> object with <code>content</code> (a new passage is created automatically). Optional: <code>passage</code> as a plain string is treated as <code>content</code>.
-                    </p>
                     <div class="row">
-                        <div class="col-lg-5 mb-3">
-                            <label for="bulkQuestionModule" class="form-label">Assign all rows to module <span class="text-danger">*</span></label>
+                        <div class="col-md-8 mb-2">
+                            <label for="bulkQuestionModule" class="form-label fw-bold">Target Module <span class="text-danger">*</span></label>
                             <select class="form-select tom-select" id="bulkQuestionModule" required>
-                                <option value="">Search module...</option>
+                                <option value="">Search module to import into...</option>
                                 @foreach($tests as $test)
                                     @foreach($test->sections as $section)
                                         @foreach($section->modules as $module)
                                         <option value="{{ $module->id }}" data-section-type="{{ $section->type }}">
-                                            {{ $test->title }} - {{ $section->name }} - Mod {{ $module->module_number }} ({{ ucfirst($module->difficulty_level) }})
+                                            {{ $test->title }} | {{ $section->type === 'reading_writing' ? 'R&W' : 'Math' }} - Mod {{ $module->module_number }} ({{ $module->difficulty_level }})
                                         </option>
                                         @endforeach
                                     @endforeach
                                 @endforeach
                             </select>
-                            <label for="bulkStartPosition" class="form-label mt-3">Starting position in module <span class="text-danger">*</span></label>
+                        </div>
+                        <div class="col-md-4 mb-2">
+                            <label for="bulkStartPosition" class="form-label fw-bold">Starting position <span class="text-danger">*</span></label>
                             <input type="number" class="form-control" id="bulkStartPosition" min="1" value="1" required>
-                            <label for="bulkJsonFile" class="form-label mt-3">Import JSON file</label>
-                            <input type="file" class="form-control" id="bulkJsonFile" accept=".json,application/json">
-                            <p class="form-text small text-muted mb-0 mt-1">If a file is selected, it is loaded into the editor below.</p>
-                        </div>
-                        <div class="col-lg-7 mb-3">
-                            <label for="bulkQuestionsJson" class="form-label">Payload (JSON editor)</label>
-                            <textarea class="form-control font-monospace small" id="bulkQuestionsJson" rows="14" spellcheck="false" placeholder='{ "items": [ ... ] }'></textarea>
-                            <p class="form-text small text-muted mb-0 mt-1">Selecting a file loads a preview here (you can edit before importing).</p>
+                            <div class="form-text small">Existing questions will be shifted down.</div>
                         </div>
                     </div>
-                    <div class="d-flex flex-wrap gap-2 align-items-center">
-                        <button type="button" class="btn btn-outline-secondary" id="bulkLoadExampleRwBtn">Insert R&amp;W example (with passage)</button>
-                        <button type="button" class="btn btn-outline-secondary" id="bulkLoadExampleMathBtn">Insert Math example</button>
-                        <button type="button" class="btn btn-outline-primary" id="bulkDownloadRwSampleBtn">Download R&amp;W sample.json</button>
-                        <button type="button" class="btn btn-outline-primary" id="bulkDownloadMathSampleBtn">Download Math sample.json</button>
-                        <div class="ms-auto d-flex gap-2">
-                            <button type="button" class="btn btn-info text-white" id="bulkPreviewBtn">Preview</button>
-                            <button type="button" class="btn btn-success" id="bulkImportSubmitBtn">Import all</button>
-                        </div>
-                    </div>
-                    <p class="form-text text-muted small mb-0 mt-2">Markdown/HTML in <code>stem</code> and <code>passage.content</code> is supported. Reusing <code>passage_id</code> for R&amp;W is only allowed if that passage has no question yet.</p>
                 </div>
             </div>
 
             <div class="card mb-4 shadow-sm border-success">
-                <div class="card-header bg-success bg-opacity-75 text-white d-flex justify-content-between align-items-center flex-wrap gap-2">
-                    <h5 class="mb-0">Bulk import (CSV)</h5>
-                    <span class="badge bg-light text-dark">Spreadsheet-friendly · HTML in cells</span>
+                <div class="card-header bg-success text-white d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">STEP 2: Choose Import Method</h5>
+                    <span class="badge bg-light text-dark">Select one below</span>
                 </div>
                 <div class="card-body">
-                    <p class="text-muted small mb-3">
-                        Use the same <strong>module</strong> and <strong>starting position</strong> as JSON import. Header row is required; column names are lowercase with underscores (see sample downloads).
-                        <strong>Reading &amp; Writing:</strong> include <code>passage_content</code> and/or <code>passage_id</code> per row (always Multiple Choice). <strong>Math MCQ:</strong> fill <code>choice_a_content</code>…<code>choice_d_content</code> and <code>correct_choice</code> (A–D). <strong>Math SPR:</strong> set <code>question_type</code> to <code>student_produced_response</code> and <code>spr_correct_answers</code> with <code>|</code> between accepted values.
-                    </p>
-                    <div class="row align-items-end">
-                        <div class="col-md-6 mb-3">
-                            <label for="bulkCsvFile" class="form-label">CSV file (.csv or .txt) <span class="text-danger">*</span></label>
-                            <input type="file" class="form-control" id="bulkCsvFile" accept=".csv,.txt,text/csv,text/plain">
-                        </div>
-                        <div class="col-md-6 mb-3 d-flex flex-wrap gap-2">
-                            <button type="button" class="btn btn-outline-primary" id="bulkDownloadRwSampleCsvBtn">Download R&amp;W sample.csv</button>
-                            <button type="button" class="btn btn-outline-primary" id="bulkDownloadMathSampleCsvBtn">Download Math sample.csv</button>
-                            <div class="ms-md-auto d-flex gap-2">
-                                <button type="button" class="btn btn-info text-white" id="bulkCsvPreviewBtn">Preview</button>
-                                <button type="button" class="btn btn-success" id="bulkCsvImportSubmitBtn">Import CSV</button>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
+                    <ul class="nav nav-tabs mb-4" id="importMethodTabs" role="tablist">
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link active" id="json-tab" data-bs-toggle="tab" data-bs-target="#import-json" type="button" role="tab"><i class="bi bi-filetype-json"></i> JSON / Editor</button>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link" id="csv-tab" data-bs-toggle="tab" data-bs-target="#import-csv" type="button" role="tab"><i class="bi bi-file-earmark-spreadsheet"></i> CSV Spreadsheet</button>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link" id="zip-tab" data-bs-toggle="tab" data-bs-target="#import-zip" type="button" role="tab"><i class="bi bi-file-earmark-zip"></i> ZIP (with Images)</button>
+                        </li>
+                    </ul>
 
-            <div class="row">
-                <div class="col-md-6">
-                    <!-- Answer Choices Form -->
-                    <div class="card mb-4 shadow-sm border-primary">
-                        <div class="card-header bg-primary text-white">
-                            <h5 class="mb-0">Step 2: Add Answer Choices (MCQ)</h5>
-                        </div>
-                        <div class="card-body">
-                            <form id="answerChoicesForm">
-                                @csrf
-                                <div class="mb-3">
-                                    <label for="answerQuestionId" class="form-label">Target Question <span class="text-danger">*</span></label>
-                                    <select class="form-select tom-select tom-select-remote-question" id="answerQuestionId" name="question_id" required>
-                                        <option value="">Search question (type to load)...</option>
-                                    </select>
-                                </div>
-                                <div id="choicesContainer">
-                                    @foreach(['A', 'B', 'C', 'D'] as $index => $label)
-                                    <div class="choice-row mb-2 pb-2 border-bottom">
-                                        <div class="row align-items-center">
-                                            <div class="col-2 text-center"><strong>{{ $label }}</strong></div>
-                                            <input type="hidden" name="choices[{{ $index }}][label]" value="{{ $label }}">
-                                            <div class="col-7">
-                                                <input type="text" class="form-control form-control-sm" name="choices[{{ $index }}][content]" placeholder="Option content" required>
+                    <div class="tab-content" id="importMethodContent">
+                        <!-- JSON / Editor Tab -->
+                        <div class="tab-pane fade show active" id="import-json" role="tabpanel">
+                            <p class="text-muted small mb-3">
+                                <strong>Recommended:</strong> upload a <code>.json</code> file or paste into the editor. 
+                                Each row must match the SAT schema (passages, stems, choices).
+                            </p>
+                            <div class="row">
+                                <div class="col-lg-5 mb-3">
+                                    <label for="bulkJsonFile" class="form-label fw-bold">Import JSON file</label>
+                                    <input type="file" class="form-control" id="bulkJsonFile" accept=".json,application/json">
+                                    <p class="form-text small text-muted mt-1">Selecting a file loads it into the editor for review.</p>
+                                    
+                                    <div class="mt-4">
+                                        <h6 class="fw-bold small text-uppercase text-muted mb-2">Examples & Samples</h6>
+                                        <div class="d-grid gap-2">
+                                            <button type="button" class="btn btn-sm btn-outline-secondary text-start" id="bulkLoadExampleRwBtn"><i class="bi bi-plus-circle"></i> Insert R&W example</button>
+                                            <button type="button" class="btn btn-sm btn-outline-secondary text-start" id="bulkLoadExampleMathBtn"><i class="bi bi-plus-circle"></i> Insert Math example</button>
+                                            <div class="btn-group">
+                                                <button type="button" class="btn btn-sm btn-outline-primary" id="bulkDownloadRwSampleBtn">R&W sample.json</button>
+                                                <button type="button" class="btn btn-sm btn-outline-primary" id="bulkDownloadMathSampleBtn">Math sample.json</button>
                                             </div>
-                                            <div class="col-3">
-                                                <div class="form-check">
-                                                    <input class="form-check-input" type="radio" name="is_correct_radio" value="{{ $index }}" {{ $index === 0 ? 'checked' : '' }}>
-                                                    <label class="form-check-label small">Correct</label>
-                                                </div>
-                                            </div>
-                                            <input type="hidden" name="choices[{{ $index }}][order]" value="{{ $index + 1 }}">
                                         </div>
                                     </div>
-                                    @endforeach
                                 </div>
-                                <button type="submit" class="btn btn-primary w-100">Save Answers</button>
-                            </form>
+                                <div class="col-lg-7 mb-3">
+                                    <div class="d-flex justify-content-between align-items-center mb-1">
+                                        <label for="bulkQuestionsJson" class="form-label fw-bold mb-0">Payload (JSON editor)</label>
+                                        <button type="button" class="btn btn-link btn-sm text-danger p-0" id="bulkClearEditorBtn">Clear Editor</button>
+                                    </div>
+                                    <textarea class="form-control font-monospace small" id="bulkQuestionsJson" rows="12" spellcheck="false" placeholder='{ "items": [ ... ] }'></textarea>
+                                </div>
+                            </div>
+                            <div class="d-flex justify-content-end gap-2 mt-2">
+                                <button type="button" class="btn btn-info text-white" id="bulkPreviewBtn"><i class="bi bi-eye"></i> Preview</button>
+                                <button type="button" class="btn btn-success" id="bulkImportSubmitBtn"><i class="bi bi-cloud-arrow-up"></i> Import all from Editor</button>
+                            </div>
                         </div>
-                    </div>
-                </div>
-                <div class="col-md-6">
-                    <!-- Question Explanation Form -->
-                    <div class="card mb-4 shadow-sm border-info">
-                        <div class="card-header bg-info text-white">
-                            <h5 class="mb-0">Step 3: Explanation & Rationales</h5>
+
+                        <!-- CSV Tab -->
+                        <div class="tab-pane fade" id="import-csv" role="tabpanel">
+                            <p class="text-muted small mb-3">
+                                Best for importing from Excel or Google Sheets. Header row is required. Column names are lowercase with underscores.
+                            </p>
+                            <div class="row align-items-end">
+                                <div class="col-md-6 mb-3">
+                                    <label for="bulkCsvFile" class="form-label fw-bold">CSV file (.csv or .txt) <span class="text-danger">*</span></label>
+                                    <input type="file" class="form-control" id="bulkCsvFile" accept=".csv,.txt,text/csv,text/plain">
+                                </div>
+                                <div class="col-md-6 mb-3 d-flex flex-wrap gap-2">
+                                    <button type="button" class="btn btn-outline-primary" id="bulkDownloadRwSampleCsvBtn">Download R&W sample.csv</button>
+                                    <button type="button" class="btn btn-outline-primary" id="bulkDownloadMathSampleCsvBtn">Download Math sample.csv</button>
+                                </div>
+                            </div>
+                            <div class="d-flex justify-content-end gap-2 mt-2">
+                                <button type="button" class="btn btn-info text-white" id="bulkCsvPreviewBtn"><i class="bi bi-eye"></i> Preview</button>
+                                <button type="button" class="btn btn-success" id="bulkCsvImportSubmitBtn"><i class="bi bi-cloud-arrow-up"></i> Import CSV</button>
+                            </div>
                         </div>
-                        <div class="card-body">
-                            <form id="explanationForm">
-                                @csrf
-                                <div class="mb-3">
-                                    <label for="explanationQuestionId" class="form-label">Target Question <span class="text-danger">*</span></label>
-                                    <select class="form-select tom-select tom-select-remote-question" id="explanationQuestionId" name="question_id" required>
-                                        <option value="">Search question (type to load)...</option>
-                                    </select>
+
+                        <!-- ZIP Tab -->
+                        <div class="tab-pane fade" id="import-zip" role="tabpanel">
+                            <p class="text-muted small mb-3">
+                                <strong>Power User:</strong> upload a <code>.zip</code> containing <code>.json</code> or <code>.csv</code> files and your images.
+                                Images can be in an <code>images/</code> folder or alongside data. Use <code>[MEDIA:filename.png]</code> placeholders in your text.
+                            </p>
+                            <div class="row align-items-end">
+                                <div class="col-md-8 mb-3">
+                                    <label for="bulkZipFile" class="form-label fw-bold">ZIP file <span class="text-danger">*</span></label>
+                                    <input type="file" class="form-control" id="bulkZipFile" accept=".zip">
                                 </div>
-                                <div class="mb-3">
-                                    <label for="explanation" class="form-label">Correct Answer Explanation <span class="text-danger">*</span></label>
-                                    <textarea class="form-control" id="explanation" name="explanation" rows="3" required></textarea>
+                                <div class="col-md-4 mb-3">
+                                    <button type="button" class="btn btn-info text-white w-100" id="bulkZipImportBtn"><i class="bi bi-file-earmark-zip"></i> Import ZIP</button>
                                 </div>
-                                <div class="row">
-                                    <div class="col-md-6 mb-2">
-                                        <label class="small">Rationale A</label>
-                                        <textarea class="form-control form-control-sm" name="rationale_a" rows="1"></textarea>
-                                    </div>
-                                    <div class="col-md-6 mb-2">
-                                        <label class="small">Rationale B</label>
-                                        <textarea class="form-control form-control-sm" name="rationale_b" rows="1"></textarea>
-                                    </div>
-                                    <div class="col-md-6 mb-2">
-                                        <label class="small">Rationale C</label>
-                                        <textarea class="form-control form-control-sm" name="rationale_c" rows="1"></textarea>
-                                    </div>
-                                    <div class="col-md-6 mb-2">
-                                        <label class="small">Rationale D</label>
-                                        <textarea class="form-control form-control-sm" name="rationale_d" rows="1"></textarea>
-                                    </div>
-                                </div>
-                                <button type="submit" class="btn btn-info w-100 text-white">Save Explanation</button>
-                            </form>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -689,7 +499,33 @@
                 <div class="card-body">
                     <div class="d-flex flex-wrap gap-2 align-items-center mb-2">
                         <label for="questionsTableFilter" class="small mb-0 text-muted">Filter</label>
-                        <input type="text" class="form-control form-control-sm" id="questionsTableFilter" placeholder="ID or text in stem…" style="max-width: 220px;">
+                        <input type="text" class="form-control form-control-sm" id="questionsTableFilter" placeholder="ID or text in stem…" style="max-width: 200px;">
+                        
+                        <select class="form-select form-select-sm" id="questionsTableSectionFilter" style="max-width: 120px;">
+                            <option value="">All Sections</option>
+                            <option value="reading_writing">R&W</option>
+                            <option value="math">Math</option>
+                        </select>
+
+                        <select class="form-select form-select-sm" id="questionsTableStatusFilter" style="max-width: 120px;">
+                            <option value="">All Status</option>
+                            <option value="1">Complete</option>
+                            <option value="0">Incomplete</option>
+                        </select>
+
+                        <select class="form-select form-select-sm" id="questionsTableModuleFilter" style="max-width: 250px;">
+                            <option value="">All Modules</option>
+                            @foreach($tests as $test)
+                                @foreach($test->sections as $section)
+                                    @foreach($section->modules as $module)
+                                    <option value="{{ $module->id }}">
+                                        {{ $test->title }} | {{ $section->type === 'reading_writing' ? 'R&W' : 'Math' }} - Mod {{ $module->module_number }}
+                                    </option>
+                                    @endforeach
+                                @endforeach
+                            @endforeach
+                        </select>
+
                         <button type="button" class="btn btn-sm btn-outline-secondary" id="questionsTableFilterBtn">Apply</button>
                         <button type="button" class="btn btn-sm btn-outline-secondary" id="questionsTableFilterClearBtn">Clear</button>
                     </div>
@@ -698,10 +534,12 @@
                             <thead>
                                 <tr>
                                     <th>ID</th>
+                                    <th>No.</th>
                                     <th>Sec</th>
                                     <th>Stem Snippet</th>
                                     <th>Pretest?</th>
                                     <th>Domain</th>
+                                    <th>Diff</th>
                                     <th>Actions</th>
                                 </tr>
                             </thead>
@@ -709,12 +547,22 @@
                                 @forelse($questions as $question)
                                 <tr>
                                     <td>{{ $question->id }}</td>
+                                    <td>
+                                        <strong>{{ $question->question_number ?? '-' }}</strong>
+                                        @if(!$question->is_complete)
+                                           <span class="badge bg-warning text-dark" title="Missing Domain or Difficulty">Incomplete</span>
+                                        @endif
+                                    </td>
                                     <td><small>{{ $question->section_type === 'reading_writing' ? 'R&W' : 'Math' }}</small></td>
                                     <td>{{ Str::limit($question->stem, 40) }}</td>
                                     <td>{!! $question->is_pretest ? '<span class="text-danger">● Yes</span>' : 'No' !!}</td>
                                     <td><small>{{ $question->skill_domain }}</small></td>
+                                    <td><small class="badge bg-light text-dark border">{{ ucfirst($question->difficulty) }}</small></td>
                                     <td>
-                                        <button class="btn btn-sm btn-outline-danger delete-question-btn" data-id="{{ $question->id }}">×</button>
+                                        <div class="d-flex gap-1">
+                                            <button class="btn btn-sm btn-outline-primary edit-question-btn" data-id="{{ $question->id }}">Edit</button>
+                                            <button class="btn btn-sm btn-outline-danger delete-question-btn" data-id="{{ $question->id }}">×</button>
+                                        </div>
                                     </td>
                                 </tr>
                                 @empty
@@ -726,6 +574,57 @@
                         </table>
                     </div>
                     <div id="questionsPoolPagination" class="mt-2"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Easy Builder Tab -->
+        <div class="tab-pane fade" id="builder" role="tabpanel">
+            <div class="card shadow-sm border-warning mb-4">
+                <div class="card-header bg-warning text-dark d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">Easy Question Builder</h5>
+                    <span class="badge bg-dark">Step-by-Step Mode</span>
+                </div>
+                <div class="card-body">
+                    <div class="alert alert-info py-2 small mb-3">
+                        <i class="bi bi-info-circle"></i> <strong>How to use:</strong> Select a module first, then add as many questions as you want. Each question is a "Block". We will automatically format your text.
+                    </div>
+                    
+                    <div class="row mb-4">
+                        <div class="col-md-6">
+                            <label for="builderModuleId" class="form-label fw-bold">1. Select Target Module <span class="text-danger">*</span></label>
+                            <select class="form-select tom-select" id="builderModuleId" required>
+                                <option value="">Search module...</option>
+                                @foreach($tests as $test)
+                                    @foreach($test->sections as $section)
+                                        @foreach($section->modules as $module)
+                                        <option value="{{ $module->id }}" data-section-type="{{ $section->type }}">
+                                            {{ $test->title }} | {{ $section->type === 'reading_writing' ? 'R&W' : 'Math' }} - Mod {{ $module->module_number }} ({{ $module->difficulty_level }})
+                                        </option>
+                                        @endforeach
+                                    @endforeach
+                                @endforeach
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <label for="builderStartPosition" class="form-label fw-bold">2. Start Position</label>
+                            <input type="number" class="form-control" id="builderStartPosition" value="1" min="1">
+                        </div>
+                    </div>
+
+                    <div id="builderBlocksContainer">
+                        <!-- Question blocks will be added here -->
+                    </div>
+
+                    <div class="d-grid gap-2 d-md-flex justify-content-md-start mt-4">
+                        <button type="button" class="btn btn-outline-warning" id="addBuilderBlockBtn">
+                            <i class="bi bi-plus-circle"></i> Add Another Question
+                        </button>
+                    </div>
+                </div>
+                <div class="card-footer bg-light d-flex justify-content-end gap-2">
+                    <button type="button" class="btn btn-secondary" id="clearBuilderBtn">Clear All</button>
+                    <button type="button" class="btn btn-warning" id="submitBuilderBtn">Save All Questions to Test</button>
                 </div>
             </div>
         </div>
@@ -752,10 +651,246 @@
     </div>
 </div>
 
+<!-- Edit Question Modal -->
+<div class="modal fade" id="editQuestionModal" tabindex="-1" aria-labelledby="editQuestionModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <form id="editQuestionForm">
+                @csrf
+                @method('PUT')
+                <input type="hidden" id="editQuestionId" name="id">
+                <div class="modal-header bg-primary text-white">
+                    <h5 class="modal-title" id="editQuestionModalLabel">Edit Question #<span id="editQuestionIdDisplay"></span></h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div id="editPassageContainer" class="mb-3 d-none">
+                        <label for="editPassageContent" class="form-label fw-bold">Passage Content (Reading & Writing)</label>
+                        <textarea class="form-control" id="editPassageContent" name="passage_content" rows="6"></textarea>
+                    </div>
+                    <div class="mb-3">
+                        <label for="editQuestionStem" class="form-label fw-bold">Question Stem / Prompt</label>
+                        <textarea class="form-control" id="editQuestionStem" name="stem" rows="4" required></textarea>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="editQuestionType" class="form-label">Question Type</label>
+                            <select class="form-select" id="editQuestionType" name="question_type" required>
+                                <option value="multiple_choice">Multiple Choice</option>
+                                <option value="student_produced_response">Student Produced (SPR)</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="editDifficulty" class="form-label">Difficulty</label>
+                            <select class="form-select" id="editDifficulty" name="difficulty">
+                                <option value="easy">Easy</option>
+                                <option value="medium">Medium</option>
+                                <option value="hard">Hard</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="editSkillDomain" class="form-label">Skill Domain</label>
+                            <select class="form-select" id="editSkillDomain" name="skill_domain"></select>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="editSkillSubdomain" class="form-label">Skill Subdomain</label>
+                            <input type="text" class="form-control" id="editSkillSubdomain" name="skill_subdomain">
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6 mb-3" id="editSprHintContainer">
+                            <label for="editSprHint" class="form-label">SPR Hint</label>
+                            <input type="text" class="form-control" id="editSprHint" name="spr_hint">
+                        </div>
+                        <div class="col-md-3 mb-3 d-flex align-items-end">
+                            <div class="form-check mb-2">
+                                <input class="form-check-input" type="checkbox" id="editIsPretest" name="is_pretest" value="1">
+                                <label class="form-check-label" for="editIsPretest">Pretest?</label>
+                            </div>
+                        </div>
+                        <div class="col-md-3 mb-3 d-flex align-items-end">
+                            <div class="form-check mb-2">
+                                <input class="form-check-input" type="checkbox" id="editCalculatorAllowed" name="calculator_allowed" value="1">
+                                <label class="form-check-label" for="editCalculatorAllowed">Calculator?</label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <hr>
+                    <div id="editMcqChoicesContainer">
+                        <h6 class="fw-bold mb-3">Answer Choices (MCQ)</h6>
+                        @foreach(['A', 'B', 'C', 'D'] as $index => $label)
+                        <div class="row mb-2 align-items-center">
+                            <div class="col-1 text-center"><strong>{{ $label }}</strong></div>
+                            <input type="hidden" name="choices[{{ $index }}][label]" value="{{ $label }}">
+                            <div class="col-8">
+                                <input type="text" class="form-control form-control-sm" name="choices[{{ $index }}][content]" id="editChoice{{ $label }}Content" placeholder="Option content">
+                            </div>
+                            <div class="col-3">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="radio" name="correct_choice" value="{{ $label }}" id="editChoice{{ $label }}Correct">
+                                    <label class="form-check-label small">Correct</label>
+                                </div>
+                            </div>
+                        </div>
+                        @endforeach
+                    </div>
+
+                    <div id="editSprAnswersContainer" class="d-none">
+                        <h6 class="fw-bold mb-3">Correct Answers (SPR)</h6>
+                        <div class="mb-3">
+                            <label for="editSprAnswers" class="form-label">Comma-separated accepted values</label>
+                            <input type="text" class="form-control" id="editSprAnswers" name="spr_answers" placeholder="e.g. 12, 12.0, 24/2">
+                        </div>
+                    </div>
+
+                    <hr>
+                    <h6 class="fw-bold mb-3">Explanation</h6>
+                    <div class="mb-3">
+                        <label for="editExplanation" class="form-label">Correct Rationale</label>
+                        <textarea class="form-control" id="editExplanation" name="explanation" rows="3"></textarea>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6 mb-2">
+                            <label class="small">Rationale A</label>
+                            <textarea class="form-control form-control-sm" id="editRationaleA" name="rationale_a" rows="1"></textarea>
+                        </div>
+                        <div class="col-md-6 mb-2">
+                            <label class="small">Rationale B</label>
+                            <textarea class="form-control form-control-sm" id="editRationaleB" name="rationale_b" rows="1"></textarea>
+                        </div>
+                        <div class="col-md-6 mb-2">
+                            <label class="small">Rationale C</label>
+                            <textarea class="form-control form-control-sm" id="editRationaleC" name="rationale_c" rows="1"></textarea>
+                        </div>
+                        <div class="col-md-6 mb-2">
+                            <label class="small">Rationale D</label>
+                            <textarea class="form-control form-control-sm" id="editRationaleD" name="rationale_d" rows="1"></textarea>
+                        </div>
+                    </div>
+
+                    <hr>
+                    <div id="editMediaManagementContainer">
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <h6 class="fw-bold m-0">Media Management</h6>
+                            <div class="d-flex gap-2">
+                                <button type="button" class="btn btn-sm btn-outline-secondary" onclick="refreshEditMediaList()" title="Refresh media list from text fields">
+                                    <i class="bi bi-arrow-clockwise"></i> Refresh
+                                </button>
+                                <input type="file" id="editQuestionMediaUpload" class="d-none" accept="image/*">
+                                <button type="button" class="btn btn-sm btn-outline-primary" onclick="document.getElementById('editQuestionMediaUpload').click()">
+                                    <i class="bi bi-cloud-upload"></i> Upload & Insert
+                                </button>
+                            </div>
+                        </div>
+                        <div id="editMediaList" class="row g-2">
+                            <!-- Existing media items will be listed here -->
+                        </div>
+                        <p class="text-muted small mt-2"><i class="bi bi-info-circle"></i> Media is managed via Markdown <code>![](...)</code> in text fields. Deleting here removes it from text.</p>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Update Question</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
 <!-- Alert Container -->
 <div id="alertContainer" class="position-fixed top-0 end-0 p-3" style="z-index: 1080;"></div>
 
+<template id="builderBlockTemplate">
+    <div class="card mb-4 builder-block border-secondary shadow-sm" data-index="{INDEX}">
+        <div class="card-header bg-light d-flex justify-content-between align-items-center">
+            <span class="fw-bold text-secondary">Question #{DISPLAY_INDEX}</span>
+            <div class="d-flex gap-2">
+                <input type="file" class="d-none builder-image-input" accept="image/*">
+                <button type="button" class="btn btn-sm btn-outline-primary upload-image-btn">
+                    <i class="bi bi-image"></i> Upload Image
+                </button>
+                <button type="button" class="btn btn-sm btn-outline-danger remove-block-btn">Remove</button>
+            </div>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <!-- R&W Passage (Hidden by default, shown if module is R&W) -->
+                <div class="col-12 mb-3 builder-passage-container d-none">
+                    <label class="form-label fw-bold small">Passage (Reading & Writing only)</label>
+                    <textarea class="form-control builder-passage" rows="3" placeholder="Enter passage text..."></textarea>
+                </div>
+                
+                <div class="col-12 mb-3">
+                    <label class="form-label fw-bold small">Question Stem <span class="text-danger">*</span></label>
+                    <textarea class="form-control builder-stem" rows="2" placeholder="e.g. What is the value of x?" required></textarea>
+                </div>
+
+                <div class="col-md-6 mb-3">
+                    <label class="form-label fw-bold small">Domain (Optional)</label>
+                    <select class="form-select builder-domain">
+                        <option value="">Select domain...</option>
+                    </select>
+                </div>
+                <div class="col-md-6 mb-3">
+                    <label class="form-label fw-bold small">Difficulty (Optional)</label>
+                    <select class="form-select builder-difficulty">
+                        <option value="">Select difficulty...</option>
+                        <option value="easy">Easy</option>
+                        <option value="medium">Medium</option>
+                        <option value="hard">Hard</option>
+                    </select>
+                </div>
+
+                <hr>
+                <div class="col-12">
+                    <h6 class="fw-bold small mb-3">Choices (Mark the correct one)</h6>
+                    <div class="builder-choices-container">
+                        <!-- 4 choices -->
+                        <div class="input-group mb-2">
+                            <div class="input-group-text">
+                                <input class="form-check-input mt-0 builder-correct-radio" type="radio" name="correct_{INDEX}" value="A" checked>
+                                <span class="ms-2 fw-bold">A</span>
+                            </div>
+                            <input type="text" class="form-control builder-choice-content" data-label="A" placeholder="Option A content" required>
+                        </div>
+                        <div class="input-group mb-2">
+                            <div class="input-group-text">
+                                <input class="form-check-input mt-0 builder-correct-radio" type="radio" name="correct_{INDEX}" value="B">
+                                <span class="ms-2 fw-bold">B</span>
+                            </div>
+                            <input type="text" class="form-control builder-choice-content" data-label="B" placeholder="Option B content" required>
+                        </div>
+                        <div class="input-group mb-2">
+                            <div class="input-group-text">
+                                <input class="form-check-input mt-0 builder-correct-radio" type="radio" name="correct_{INDEX}" value="C">
+                                <span class="ms-2 fw-bold">C</span>
+                            </div>
+                            <input type="text" class="form-control builder-choice-content" data-label="C" placeholder="Option C content" required>
+                        </div>
+                        <div class="input-group mb-2">
+                            <div class="input-group-text">
+                                <input class="form-check-input mt-0 builder-correct-radio" type="radio" name="correct_{INDEX}" value="D">
+                                <span class="ms-2 fw-bold">D</span>
+                            </div>
+                            <input type="text" class="form-control builder-choice-content" data-label="D" placeholder="Option D content" required>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-12 mt-3">
+                    <label class="form-label fw-bold small text-muted">Explanation (Optional)</label>
+                    <textarea class="form-control builder-explanation" rows="2" placeholder="Why is this answer correct?"></textarea>
+                </div>
+            </div>
+        </div>
+    </div>
+</template>
+
 @push('scripts')
+
 <script src="https://cdn.jsdelivr.net/npm/tom-select@2.4.1/dist/js/tom-select.complete.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/easymde/dist/easymde.min.js"></script>
 <script>
@@ -805,6 +940,11 @@ function escapeHtml(str) {
     const d = document.createElement('div');
     d.textContent = str;
     return d.innerHTML;
+}
+
+function capitalizeFirstLetter(string) {
+    if (!string) return '';
+    return string.charAt(0).toUpperCase() + string.slice(1);
 }
 
 function stripTags(html) {
@@ -1027,6 +1167,15 @@ function questionsListFetchUrl() {
     if (window.__tdQuestionsQuery) {
         u.searchParams.set('q', window.__tdQuestionsQuery);
     }
+    if (window.__tdQuestionsSection) {
+        u.searchParams.set('section_type', window.__tdQuestionsSection);
+    }
+    if (window.__tdQuestionsModule) {
+        u.searchParams.set('module_id', window.__tdQuestionsModule);
+    }
+    if (window.__tdQuestionsStatus !== undefined && window.__tdQuestionsStatus !== '') {
+        u.searchParams.set('is_complete', window.__tdQuestionsStatus);
+    }
     return u.toString();
 }
 
@@ -1196,21 +1345,30 @@ function renderQuestionsTable(questions) {
         return;
     }
     if (!questions.length) {
-        tbody.innerHTML = '<tr><td colspan="6" class="text-center text-muted">No questions found</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="7" class="text-center text-muted">No questions found</td></tr>';
         return;
     }
     tbody.innerHTML = questions.map(function (q) {
         const sec = q.section_type === 'reading_writing' ? 'R&W' : 'Math';
         const pre = q.is_pretest ? '<span class="text-danger">● Yes</span>' : 'No';
+        const status = q.is_complete ? '' : ' <span class="badge bg-warning text-dark" title="Missing Domain or Difficulty">Incomplete</span>';
         const stem = stripTags(q.stem || '');
         const snippet = stem.length <= 40 ? stem : stem.slice(0, 40) + '…';
+        const qNum = q.question_number != null ? '<strong>' + q.question_number + '</strong>' : '-';
         return '<tr>'
             + '<td>' + escapeHtml(q.id) + '</td>'
+            + '<td>' + qNum + status + '</td>'
             + '<td><small>' + escapeHtml(sec) + '</small></td>'
             + '<td>' + escapeHtml(snippet) + '</td>'
             + '<td>' + pre + '</td>'
             + '<td><small>' + escapeHtml(q.skill_domain || '') + '</small></td>'
-            + '<td><button type="button" class="btn btn-sm btn-outline-danger delete-question-btn" data-id="' + escapeHtml(q.id) + '">×</button></td>'
+            + '<td><small class="badge bg-light text-dark border">' + escapeHtml(capitalizeFirstLetter(q.difficulty || '')) + '</small></td>'
+            + '<td>'
+            + '<div class="d-flex gap-1">'
+            + '<button type="button" class="btn btn-sm btn-outline-primary edit-question-btn" data-id="' + escapeHtml(q.id) + '">Edit</button>'
+            + '<button type="button" class="btn btn-sm btn-outline-danger delete-question-btn" data-id="' + escapeHtml(q.id) + '">×</button>'
+            + '</div>'
+            + '</td>'
             + '</tr>';
     }).join('');
 }
@@ -1247,7 +1405,13 @@ async function refreshTestDashboardData(preserveTomSelects) {
     if (!snapRes.ok) {
         throw new Error('Snapshot request failed (' + snapRes.status + ')');
     }
-    const payload = await snapRes.json();
+    let payload = { tests: [], passages: [] };
+    try {
+        payload = await snapRes.json();
+    } catch (e) {
+        console.error('Snapshot JSON parse failed');
+    }
+
     renderTestsTable(payload.tests || []);
     renderSectionsTable(payload.tests || []);
     renderModulesTable(payload.tests || []);
@@ -1288,14 +1452,21 @@ function initTestDashboardDelegatedActions() {
     });
 
     root.addEventListener('click', async function (e) {
-        const btn = e.target.closest('.delete-test-btn, .delete-section-btn, .delete-module-btn, .delete-question-btn');
+        const btn = e.target.closest('.delete-test-btn, .delete-section-btn, .delete-module-btn, .delete-question-btn, .edit-question-btn');
         if (!btn) {
             return;
         }
+
+        const id = btn.getAttribute('data-id');
+
+        if (btn.classList.contains('edit-question-btn')) {
+            openEditQuestionModal(id);
+            return;
+        }
+
         if (!confirm('Permanently delete this item?')) {
             return;
         }
-        const id = btn.getAttribute('data-id');
         let url;
         if (btn.classList.contains('delete-test-btn')) {
             url = @json(url('test-dashboard/tests')) + '/' + encodeURIComponent(id);
@@ -1335,6 +1506,315 @@ function initTestDashboardDelegatedActions() {
         }
     });
 }
+
+async function openEditQuestionModal(id) {
+    try {
+        const response = await fetch(`{{ url('test-dashboard/questions') }}/${id}`);
+        if (!response.ok) throw new Error('Failed to fetch question data');
+        const result = await response.json();
+        const question = result.data;
+
+        document.getElementById('editQuestionId').value = question.id;
+        document.getElementById('editQuestionIdDisplay').textContent = question.id;
+        document.getElementById('editQuestionStem').value = question.stem;
+        document.getElementById('editQuestionType').value = question.question_type;
+        document.getElementById('editDifficulty').value = question.difficulty || '';
+        document.getElementById('editSkillSubdomain').value = question.skill_subdomain || '';
+        document.getElementById('editSprHint').value = question.spr_hint || '';
+        document.getElementById('editIsPretest').checked = !!question.is_pretest;
+        document.getElementById('editCalculatorAllowed').checked = !!question.calculator_allowed;
+
+        const sprHintContainer = document.getElementById('editSprHintContainer');
+        if (question.section_type === 'reading_writing') {
+            sprHintContainer.classList.add('d-none');
+        } else {
+            sprHintContainer.classList.remove('d-none');
+        }
+
+        const domainSelect = document.getElementById('editSkillDomain');
+        domainSelect.innerHTML = '<option value="">Select domain...</option>';
+        if (SKILL_DOMAINS[question.section_type]) {
+            SKILL_DOMAINS[question.section_type].forEach(domain => {
+                const opt = document.createElement('option');
+                opt.value = domain.value;
+                opt.textContent = domain.label;
+                if (domain.value === question.skill_domain) opt.selected = true;
+                domainSelect.appendChild(opt);
+            });
+        }
+
+        const passageContainer = document.getElementById('editPassageContainer');
+        if (question.section_type === 'reading_writing' && question.passage) {
+            passageContainer.classList.remove('d-none');
+            document.getElementById('editPassageContent').value = question.passage.content;
+        } else {
+            passageContainer.classList.add('d-none');
+            document.getElementById('editPassageContent').value = '';
+        }
+
+        const modal = new bootstrap.Modal(document.getElementById('editQuestionModal'));
+        
+        // Populate Choices
+        if (question.question_type === 'multiple_choice') {
+            document.getElementById('editMcqChoicesContainer').classList.remove('d-none');
+            document.getElementById('editSprAnswersContainer').classList.add('d-none');
+            // Clear choices first
+            ['A','B','C','D'].forEach(lbl => {
+                const ci = document.getElementById(`editChoice${lbl}Content`);
+                const cr = document.getElementById(`editChoice${lbl}Correct`);
+                if(ci) ci.value = '';
+                if(cr) cr.checked = false;
+            });
+            const rawChoices = question.answer_choices || question.answerChoices || [];
+            rawChoices.forEach(choice => {
+                const contentInput = document.getElementById(`editChoice${choice.label}Content`);
+                const correctRadio = document.getElementById(`editChoice${choice.label}Correct`);
+                if (contentInput) contentInput.value = choice.content;
+                if (correctRadio && (choice.is_correct || choice.is_correct === 1)) correctRadio.checked = true;
+            });
+        } else {
+            document.getElementById('editMcqChoicesContainer').classList.add('d-none');
+            document.getElementById('editSprAnswersContainer').classList.remove('d-none');
+            const answers = (question.spr_correct_answers || []).map(a => a.answer).join(', ');
+            document.getElementById('editSprAnswers').value = answers;
+        }
+
+        // Populate Explanation
+        if (question.explanation) {
+            document.getElementById('editExplanation').value = question.explanation.explanation;
+            document.getElementById('editRationaleA').value = question.explanation.rationale_a || '';
+            document.getElementById('editRationaleB').value = question.explanation.rationale_b || '';
+            document.getElementById('editRationaleC').value = question.explanation.rationale_c || '';
+            document.getElementById('editRationaleD').value = question.explanation.rationale_d || '';
+        } else {
+            document.getElementById('editExplanation').value = '';
+            document.getElementById('editRationaleA').value = '';
+            document.getElementById('editRationaleB').value = '';
+            document.getElementById('editRationaleC').value = '';
+            document.getElementById('editRationaleD').value = '';
+        }
+
+        // Populate Media List
+        refreshEditMediaList(question);
+
+        modal.show();
+    } catch (error) {
+        showAlert('danger', error.message);
+    }
+}
+
+    function refreshEditMediaList() {
+        const mediaList = document.getElementById('editMediaList');
+        if (!mediaList) return;
+        mediaList.innerHTML = '';
+
+        const fields = [
+            document.getElementById('editQuestionStem')?.value || '',
+            document.getElementById('editPassageContent')?.value || '',
+            document.getElementById('editExplanation')?.value || '',
+            document.getElementById('editRationaleA')?.value || '',
+            document.getElementById('editRationaleB')?.value || '',
+            document.getElementById('editRationaleC')?.value || '',
+            document.getElementById('editRationaleD')?.value || ''
+        ];
+        
+        ['A', 'B', 'C', 'D'].forEach(lbl => {
+            const el = document.getElementById(`editChoice${lbl}Content`);
+            if (el) fields.push(el.value);
+        });
+
+        const allText = fields.join(' ');
+        // Improved Regex for Markdown images and Placeholders
+        const mdRegex = /!\[.*?\]\((.*?)\)/g;
+        const placeholderRegex = /\[Media:([^\]]+)\]/gi;
+        
+        const foundUrls = new Set();
+        const foundPlaceholders = new Set();
+        
+        let match;
+        while ((match = mdRegex.exec(allText)) !== null) {
+            foundUrls.add(match[1].trim());
+        }
+        while ((match = placeholderRegex.exec(allText)) !== null) {
+            foundPlaceholders.add(match[1].trim());
+        }
+
+        if (foundUrls.size === 0 && foundPlaceholders.size === 0) {
+            mediaList.innerHTML = '<div class="col-12 text-muted small">No media found in this question.</div>';
+        } else {
+            foundUrls.forEach(url => {
+                const col = document.createElement('div');
+                col.className = 'col-md-3 col-6 mb-2';
+                col.innerHTML = `
+                    <div class="position-relative border rounded p-1 bg-white shadow-sm d-flex align-items-center justify-content-center" style="height: 100px;">
+                        <img src="${url}" class="img-fluid rounded" style="max-height: 90px; object-fit: contain;" onerror="this.src='https://placehold.co/100x100?text=Error'">
+                        <button type="button" class="btn btn-danger btn-sm position-absolute top-0 end-0 rounded-circle shadow-sm d-flex align-items-center justify-content-center" 
+                                style="width: 24px; height: 24px; margin: -10px -10px 0 0; z-index: 10;"
+                                onclick="removeMediaFromEditModal('${url}', true)" title="Remove from all fields">
+                            &times;
+                        </button>
+                    </div>
+                `;
+                mediaList.appendChild(col);
+            });
+            
+            foundPlaceholders.forEach(filename => {
+                const col = document.createElement('div');
+                col.className = 'col-md-3 col-6 mb-2';
+                // Try to resolve placeholder to a predicted storage URL for preview
+                const predictedUrl = `/storage/media/${filename}`;
+                col.innerHTML = `
+                    <div class="position-relative border rounded p-1 bg-light shadow-sm d-flex flex-column align-items-center justify-content-center" style="height: 100px;">
+                        <img src="${predictedUrl}" class="img-fluid rounded mb-1" style="max-height: 60px; object-fit: contain;" onerror="this.style.display='none'; this.nextElementSibling.style.display='block'">
+                        <div class="text-center" style="display:none;">
+                            <i class="bi bi-file-earmark-image text-muted" style="font-size: 1.5rem;"></i>
+                            <div class="x-small text-truncate px-1" style="max-width: 80px;">${filename}</div>
+                        </div>
+                        <div class="x-small text-muted text-center fw-bold">Placeholder</div>
+                        <button type="button" class="btn btn-danger btn-sm position-absolute top-0 end-0 rounded-circle shadow-sm d-flex align-items-center justify-content-center" 
+                                style="width: 24px; height: 24px; margin: -10px -10px 0 0; z-index: 10;"
+                                onclick="removeMediaFromEditModal('${filename}', false)" title="Remove from all fields">
+                            &times;
+                        </button>
+                    </div>
+                `;
+                mediaList.appendChild(col);
+            });
+        }
+    }
+
+window.removeMediaFromEditModal = function(identifier, isUrl) {
+    if (!confirm('Are you sure you want to remove this media from all fields?')) return;
+    
+    const textareas = [
+        'editQuestionStem', 'editPassageContent', 'editExplanation',
+        'editRationaleA', 'editRationaleB', 'editRationaleC', 'editRationaleD'
+    ];
+    
+    const escaped = identifier.trim().replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    const regex = isUrl ? new RegExp(`!\\[.*?\\]\\(\\s*${escaped}\\s*\\)`, 'g') : new RegExp(`\\[Media:\\s*${escaped}\\s*\\]`, 'gi');
+    
+    textareas.forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.value = el.value.replace(regex, '').trim();
+    });
+
+    ['A', 'B', 'C', 'D'].forEach(lbl => {
+        const el = document.getElementById(`editChoice${lbl}Content`);
+        if (el) el.value = el.value.replace(regex, '').trim();
+    });
+
+    refreshEditMediaList();
+};
+
+document.getElementById('editQuestionMediaUpload')?.addEventListener('change', async function(e) {
+    if (!this.files || !this.files.length) return;
+    
+    const formData = new FormData();
+    formData.append('image', this.files[0]);
+
+    try {
+        const response = await fetch('{{ route('test-dashboard.media.upload') }}', {
+            method: 'POST',
+            headers: {
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+                'Accept': 'application/json'
+            },
+            body: formData
+        });
+        const result = await response.json();
+        if (response.ok) {
+            const uploadedFilename = this.files[0].name.trim();
+            const markdown = result.markdown;
+            
+            const textareas = [
+                'editQuestionStem', 'editPassageContent', 'editExplanation',
+                'editRationaleA', 'editRationaleB', 'editRationaleC', 'editRationaleD'
+            ];
+            
+            let replacedAny = false;
+            const placeholderRegex = new RegExp(`\\[Media:\\s*${uploadedFilename.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\s*\\]`, 'gi');
+
+            textareas.forEach(id => {
+                const el = document.getElementById(id);
+                if (el && placeholderRegex.test(el.value)) {
+                    el.value = el.value.replace(placeholderRegex, markdown);
+                    replacedAny = true;
+                }
+            });
+
+            ['A', 'B', 'C', 'D'].forEach(lbl => {
+                const el = document.getElementById(`editChoice${lbl}Content`);
+                if (el && placeholderRegex.test(el.value)) {
+                    el.value = el.value.replace(placeholderRegex, markdown);
+                    replacedAny = true;
+                }
+            });
+
+            if (!replacedAny) {
+                // Fallback: append to stem if no placeholder matched the filename
+                const stem = document.getElementById('editQuestionStem');
+                stem.value += '\n' + markdown;
+            }
+
+            refreshEditMediaList();
+            showAlert('success', replacedAny ? 'Placeholder replaced with image' : 'Media uploaded and inserted into stem');
+        } else {
+            showAlert('danger', result.message || 'Upload failed');
+        }
+    } catch (error) {
+        showAlert('danger', error.message);
+    } finally {
+        this.value = '';
+    }
+});
+
+document.getElementById('editQuestionForm')?.addEventListener('submit', async function(e) {
+    e.preventDefault();
+    const id = document.getElementById('editQuestionId').value;
+    const formData = new FormData(this);
+    const data = Object.fromEntries(formData.entries());
+    
+    // Manually handle nested choices array
+    if (data.question_type === 'multiple_choice') {
+        data.choices = [];
+        ['A', 'B', 'C', 'D'].forEach((label, index) => {
+            const content = document.getElementById(`editChoice${label}Content`).value;
+            data.choices.push({
+                label: label,
+                content: content,
+                order: index + 1
+            });
+        });
+    }
+
+    // Handle checkboxes
+    data.is_pretest = document.getElementById('editIsPretest').checked ? 1 : 0;
+    data.calculator_allowed = document.getElementById('editCalculatorAllowed').checked ? 1 : 0;
+
+    try {
+        const response = await fetch(`{{ url('test-dashboard/questions') }}/${id}`, {
+            method: 'POST', // Using POST with _method=PUT in formData/Object
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+                'Accept': 'application/json'
+            },
+            body: JSON.stringify(data)
+        });
+
+        const result = await response.json();
+        if (response.ok) {
+            showAlert('success', 'Question updated successfully');
+            bootstrap.Modal.getInstance(document.getElementById('editQuestionModal')).hide();
+            await refreshQuestionsTableOnly();
+        } else {
+            showAlert('danger', result.message || 'Update failed');
+        }
+    } catch (error) {
+        showAlert('danger', error.message);
+    }
+});
 
 function updateSectionName(select) {
     const nameInput = document.getElementById('sectionName');
@@ -1419,7 +1899,7 @@ function updateSkillDomains(select) {
         if (sprHintContainer) sprHintContainer.classList.remove('d-none');
     }
 
-    domainSelect.innerHTML = '<option value="">Auto-detect / Select domain...</option>';
+    domainSelect.innerHTML = '<option value="">Select domain...</option>';
 
     if (type && SKILL_DOMAINS[type]) {
         SKILL_DOMAINS[type].forEach(domain => {
@@ -1457,6 +1937,9 @@ document.addEventListener('DOMContentLoaded', function() {
 
     document.getElementById('questionsTableFilterBtn')?.addEventListener('click', async function () {
         window.__tdQuestionsQuery = (document.getElementById('questionsTableFilter')?.value || '').trim();
+        window.__tdQuestionsSection = document.getElementById('questionsTableSectionFilter')?.value || '';
+        window.__tdQuestionsModule = document.getElementById('questionsTableModuleFilter')?.value || '';
+        window.__tdQuestionsStatus = document.getElementById('questionsTableStatusFilter')?.value || '';
         window.__tdQuestionsPage = 1;
         try {
             await refreshQuestionsTableOnly();
@@ -1466,10 +1949,17 @@ document.addEventListener('DOMContentLoaded', function() {
     });
     document.getElementById('questionsTableFilterClearBtn')?.addEventListener('click', async function () {
         const inp = document.getElementById('questionsTableFilter');
-        if (inp) {
-            inp.value = '';
-        }
+        if (inp) inp.value = '';
+        const sec = document.getElementById('questionsTableSectionFilter');
+        if (sec) sec.value = '';
+        const mod = document.getElementById('questionsTableModuleFilter');
+        if (mod) mod.value = '';
+        const stat = document.getElementById('questionsTableStatusFilter');
+        if (stat) stat.value = '';
         window.__tdQuestionsQuery = '';
+        window.__tdQuestionsSection = '';
+        window.__tdQuestionsModule = '';
+        window.__tdQuestionsStatus = '';
         window.__tdQuestionsPage = 1;
         try {
             await refreshQuestionsTableOnly();
@@ -1478,22 +1968,9 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
 
-    // Initialize EasyMDE for passages and question stems (do not use native `required` on these textareas — it blocks submit before JS can copy editor content into the textarea)
-    const passageEditor = new EasyMDE({
-        element: document.getElementById('passageContent'),
-        spellChecker: false,
-        placeholder: "Type passage content here... Supports Markdown and LaTeX (e.g. $x^2$)",
-        minHeight: "200px"
-    });
-
-    const stemEditor = new EasyMDE({
-        element: document.getElementById('questionStem'),
-        spellChecker: false,
-        placeholder: "Type question stem here... Supports Markdown and LaTeX",
-        minHeight: "100px"
-    });
-
-    window.__testDashboardEditors = { passage: passageEditor, stem: stemEditor };
+    // Initialize EasyMDE for bulk import payload if needed (optional)
+    // For now we just remove the specific ones for the deleted forms
+    window.__testDashboardEditors = {};
 
     const savedTab = sessionStorage.getItem(TEST_DASHBOARD_TAB_KEY);
     if (savedTab) {
@@ -1506,11 +1983,7 @@ document.addEventListener('DOMContentLoaded', function() {
     setupForm('testForm', '{{ route('test-dashboard.tests.store') }}');
     setupForm('sectionForm', '{{ route('test-dashboard.sections.store') }}');
     setupForm('moduleForm', '{{ route('test-dashboard.modules.store') }}');
-    setupForm('passageForm', '{{ route('test-dashboard.passages.store') }}');
-    setupForm('questionForm', '{{ route('test-dashboard.questions.store') }}');
     setupForm('attachQuestionForm', '{{ route('test-dashboard.questions.attach') }}');
-    setupForm('answerChoicesForm', '{{ route('test-dashboard.answer-choices.store') }}');
-    setupForm('explanationForm', '{{ route('test-dashboard.explanations.store') }}');
 
     const BULK_QUESTIONS_URL = @json(route('test-dashboard.questions.bulk-store'));
     const bulkJsonExampleRw = {
@@ -1700,8 +2173,32 @@ document.addEventListener('DOMContentLoaded', function() {
             return;
         }
 
+        const processMedia = (text) => {
+            if (!text || typeof text !== 'string') return text;
+            // Only replace if it's NOT already part of a Markdown image (![](...))
+            return text.replace(/(?<!\!)\[Media:([^\]]+)\]/gi, (match, filename) => {
+                return `<img src="/storage/media/${filename}" alt="${filename}" class="question-media img-fluid mb-2 d-block mx-auto" style="max-height: 300px;">`;
+            });
+        };
+
         let html = '';
         items.forEach((item, index) => {
+            // Process media in all text fields
+            item.stem = processMedia(item.stem);
+            if (item.passage) {
+                if (typeof item.passage === 'string') {
+                    item.passage = processMedia(item.passage);
+                } else if (item.passage.content) {
+                    item.passage.content = processMedia(item.passage.content);
+                }
+            }
+            if (item.choices) {
+                item.choices.forEach(c => {
+                    if (c.content) c.content = processMedia(c.content);
+                });
+            }
+            if (item.explanation) item.explanation = processMedia(item.explanation);
+
             const sectionBadge = item.section_type 
                 ? `<span class="badge bg-secondary">${item.section_type === 'reading_writing' ? 'Reading & Writing' : 'Math'}</span>` 
                 : '';
@@ -1786,6 +2283,19 @@ document.addEventListener('DOMContentLoaded', function() {
         });
         container.innerHTML = html;
         previewModal.show();
+        
+        // Trigger KaTeX rendering for preview content
+        if (window.renderMathInElement) {
+            window.renderMathInElement(container, {
+                delimiters: [
+                    {left: "$$", right: "$$", display: true},
+                    {left: "$", right: "$", display: false},
+                    {left: "\\(", right: "\\)", display: false},
+                    {left: "\\[", right: "\\]", display: true}
+                ],
+                throwOnError : false
+            });
+        }
     }
 
     async function handlePreview(isCsv) {
@@ -1802,6 +2312,11 @@ document.addEventListener('DOMContentLoaded', function() {
 
         const formModule = getTomSelectValue('bulkQuestionModule');
         const formStart = document.getElementById('bulkStartPosition')?.value;
+
+        if (!formModule) {
+            showAlert('danger', 'Please select a Target Module in STEP 1 before previewing.');
+            return;
+        }
 
         try {
             let response;
@@ -1838,7 +2353,16 @@ document.addEventListener('DOMContentLoaded', function() {
                 return;
             }
 
-            const result = await response.json();
+            const resultText = await response.text();
+            let result;
+            try {
+                result = JSON.parse(resultText);
+            } catch (e) {
+                showAlert('danger', 'Server returned invalid JSON. Status: ' + response.status);
+                console.error('Invalid JSON response:', resultText);
+                return;
+            }
+
             if (response.ok) {
                 renderPreview(result.data.items);
             } else {
@@ -1859,6 +2383,13 @@ document.addEventListener('DOMContentLoaded', function() {
     document.getElementById('bulkPreviewBtn')?.addEventListener('click', () => handlePreview(false));
     document.getElementById('bulkCsvPreviewBtn')?.addEventListener('click', () => handlePreview(true));
 
+    document.getElementById('bulkClearEditorBtn')?.addEventListener('click', () => {
+        const ta = document.getElementById('bulkQuestionsJson');
+        if (ta) ta.value = '';
+        const fileInput = document.getElementById('bulkJsonFile');
+        if (fileInput) fileInput.value = '';
+    });
+
     document.getElementById('bulkCsvImportSubmitBtn')?.addEventListener('click', async function () {
         const fileInput = document.getElementById('bulkCsvFile');
         const file = fileInput && fileInput.files && fileInput.files.length ? fileInput.files[0] : null;
@@ -1870,7 +2401,7 @@ document.addEventListener('DOMContentLoaded', function() {
         const formStartRaw = document.getElementById('bulkStartPosition')?.value;
         const sp = parseInt(String(formStartRaw), 10);
         if (!formModule) {
-            showAlert('danger', 'Choose a module for CSV import.');
+            showAlert('danger', 'Please select a Target Module in STEP 1.');
             return;
         }
         if (!Number.isFinite(sp) || sp < 1) {
@@ -1973,7 +2504,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 const startCandidate = (formStartRaw !== '' && formStartRaw != null) ? formStartRaw : fileStart;
                 const startPosition = parseInt(String(startCandidate), 10);
                 if (!effectiveModule) {
-                    showAlert('danger', 'Choose a module above or include module_id in the JSON file.');
+                    showAlert('danger', 'Please select a Target Module in STEP 1.');
                     return;
                 }
                 if (!Number.isFinite(startPosition) || startPosition < 1) {
@@ -2011,7 +2542,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     : formStartRaw;
                 const sp = parseInt(String(startFromJson), 10);
                 if (!modFromJson) {
-                    showAlert('danger', 'Choose a module (or include module_id in the JSON).');
+                    showAlert('danger', 'Please select a Target Module in STEP 1.');
                     return;
                 }
                 if (!parsed.items || !Array.isArray(parsed.items) || !parsed.items.length) {
@@ -2183,6 +2714,373 @@ function showAlert(type, message) {
     container.appendChild(alert);
     setTimeout(() => alert.remove(), 4000);
 }
+
+// --- Easy Builder Logic ---
+let builderBlockCount = 0;
+const builderEditors = {}; // To store EasyMDE instances
+
+function addBuilderBlock() {
+    builderBlockCount++;
+    const template = document.getElementById('builderBlockTemplate').innerHTML;
+    const html = template
+        .replace(/{INDEX}/g, builderBlockCount)
+        .replace(/{DISPLAY_INDEX}/g, builderBlockCount);
+    
+    const container = document.getElementById('builderBlocksContainer');
+    const div = document.createElement('div');
+    div.innerHTML = html;
+    const block = div.firstElementChild;
+    container.appendChild(block);
+
+    // Give unique IDs for EasyMDE
+    const stemTextarea = block.querySelector('.builder-stem');
+    stemTextarea.id = `stem_${builderBlockCount}`;
+    
+    const passageTextarea = block.querySelector('.builder-passage');
+    passageTextarea.id = `passage_${builderBlockCount}`;
+
+    // Sync domain options
+    syncBuilderBlockDomain(block);
+
+    // Initialize EasyMDE for Stem
+    builderEditors[`stem_${builderBlockCount}`] = new EasyMDE({
+        element: stemTextarea,
+        placeholder: "Enter question stem...",
+        minHeight: "100px",
+        toolbar: [
+            "bold", "italic", 
+            {
+                name: "underline",
+                action: (editor) => {
+                    const cm = editor.codemirror;
+                    const selection = cm.getSelection();
+                    cm.replaceSelection(`<u>${selection}</u>`);
+                },
+                className: "fa fa-underline",
+                title: "Underline (<u>)",
+            },
+            "heading", "|", "quote", "unordered-list", "ordered-list", "|", "preview"
+        ],
+        status: false
+    });
+    
+    // Auto-scroll to new block
+    block.scrollIntoView({ behavior: 'smooth' });
+
+    // Handle Image Upload
+    const imgInput = block.querySelector('.builder-image-input');
+    const imgBtn = block.querySelector('.upload-image-btn');
+    
+    imgBtn.onclick = () => imgInput.click();
+    
+    imgInput.onchange = async function() {
+        if (!this.files || !this.files[0]) return;
+        
+        const fd = new FormData();
+        fd.append('image', this.files[0]);
+        
+        imgBtn.disabled = true;
+        imgBtn.innerHTML = '<span class="spinner-border spinner-border-sm"></span>';
+        
+        try {
+            const res = await fetch('{{ route('test-dashboard.media.upload') }}', {
+                method: 'POST',
+                headers: { 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content },
+                body: fd
+            });
+            const result = await res.json();
+            if (result.success) {
+                // Insert into Stem editor by default
+                const mde = builderEditors[`stem_${block.dataset.index}`];
+                if (mde) {
+                    const pos = mde.codemirror.getCursor();
+                    mde.codemirror.replaceRange(`\n${result.markdown}\n`, pos);
+                }
+                showAlert('success', 'Image uploaded and inserted!');
+            } else {
+                showAlert('danger', result.message || 'Upload failed');
+            }
+        } catch (err) {
+            showAlert('danger', 'Error: ' + err.message);
+        } finally {
+            imgBtn.disabled = false;
+            imgBtn.innerHTML = '<i class="bi bi-image"></i> Upload Image';
+            this.value = ''; // Reset input
+        }
+    };
+
+    // Handle remove
+    block.querySelector('.remove-block-btn').onclick = function() {
+        // Cleanup EasyMDE
+        if (builderEditors[`stem_${block.dataset.index}`]) {
+            builderEditors[`stem_${block.dataset.index}`].toTextArea();
+            delete builderEditors[`stem_${block.dataset.index}`];
+        }
+        if (builderEditors[`passage_${block.dataset.index}`]) {
+            builderEditors[`passage_${block.dataset.index}`].toTextArea();
+            delete builderEditors[`passage_${block.dataset.index}`];
+        }
+        block.remove();
+        reorderBuilderBlocks();
+    };
+}
+
+function reorderBuilderBlocks() {
+    // Re-indexing blocks is complex with EasyMDE, so we mostly update labels
+    const blocks = document.querySelectorAll('.builder-block');
+    blocks.forEach((block, i) => {
+        block.querySelector('.text-secondary').textContent = `Question #${i + 1}`;
+    });
+}
+
+function syncBuilderBlockDomain(block) {
+    const moduleId = getTomSelectValue('builderModuleId');
+    if (!moduleId) return;
+    
+    const select = document.getElementById('builderModuleId');
+    const option = select.options[select.selectedIndex];
+    const type = option.getAttribute('data-section-type');
+    
+    // Show/Hide passage
+    const passageContainer = block.querySelector('.builder-passage-container');
+    const passageTextarea = block.querySelector('.builder-passage');
+    const index = block.dataset.index;
+
+    if (type === 'reading_writing') {
+        passageContainer.classList.remove('d-none');
+        // Initialize if not already done
+        if (!builderEditors[`passage_${index}`]) {
+            builderEditors[`passage_${index}`] = new EasyMDE({
+                element: passageTextarea,
+                placeholder: "Enter passage content...",
+                minHeight: "150px",
+                toolbar: [
+                    "bold", "italic",
+                    {
+                        name: "underline",
+                        action: (editor) => {
+                            const cm = editor.codemirror;
+                            const selection = cm.getSelection();
+                            cm.replaceSelection(`<u>${selection}</u>`);
+                        },
+                        className: "fa fa-underline",
+                        title: "Underline (<u>)",
+                    },
+                    "|", "unordered-list", "|", "preview"
+                ],
+                status: false
+            });
+        }
+    } else {
+        passageContainer.classList.add('d-none');
+        // We keep the instance but it's hidden. 
+        // Or we can destroy it, but teacher might toggle back.
+    }
+
+    // Update domains
+    const domainSelect = block.querySelector('.builder-domain');
+    const currentVal = domainSelect.value;
+    domainSelect.innerHTML = '<option value="">Select domain...</option>';
+    if (type && SKILL_DOMAINS[type]) {
+        SKILL_DOMAINS[type].forEach(d => {
+            const opt = document.createElement('option');
+            opt.value = d.value;
+            opt.textContent = d.label;
+            if (d.value === currentVal) opt.selected = true;
+            domainSelect.appendChild(opt);
+        });
+    }
+}
+
+document.getElementById('addBuilderBlockBtn')?.addEventListener('click', addBuilderBlock);
+
+document.getElementById('builderModuleId')?.addEventListener('change', function() {
+    document.querySelectorAll('.builder-block').forEach(syncBuilderBlockDomain);
+});
+
+document.getElementById('clearBuilderBtn')?.addEventListener('click', function() {
+    if (confirm('Clear all questions in builder?')) {
+        Object.values(builderEditors).forEach(mde => mde.toTextArea());
+        for (const key in builderEditors) delete builderEditors[key];
+        document.getElementById('builderBlocksContainer').innerHTML = '';
+        builderBlockCount = 0;
+    }
+});
+
+document.getElementById('submitBuilderBtn')?.addEventListener('click', async function() {
+    const moduleId = getTomSelectValue('builderModuleId');
+    if (!moduleId) {
+        showAlert('danger', 'Please select a target module first.');
+        return;
+    }
+
+    const blocks = document.querySelectorAll('.builder-block');
+    if (blocks.length === 0) {
+        showAlert('danger', 'Add at least one question block.');
+        return;
+    }
+
+    const items = [];
+    let isValid = true;
+
+    blocks.forEach(block => {
+        const index = block.dataset.index;
+        const stem = builderEditors[`stem_${index}`] ? builderEditors[`stem_${index}`].value().trim() : '';
+        
+        if (!stem) {
+            block.classList.add('border-danger');
+            isValid = false;
+        } else {
+            block.classList.remove('border-danger');
+        }
+
+        const choices = [];
+        const correctRadio = block.querySelector('.builder-correct-radio:checked');
+        const correctLabel = correctRadio ? correctRadio.value : 'A';
+        
+        block.querySelectorAll('.builder-choice-content').forEach(input => {
+            const label = input.getAttribute('data-label');
+            const content = input.value.trim();
+            if (!content) isValid = false;
+            
+            choices.push({
+                label: label,
+                content: content,
+                is_correct: (label === correctLabel),
+                order: label.charCodeAt(0) - 64
+            });
+        });
+
+        const item = {
+            stem: stem,
+            question_type: 'multiple_choice',
+            difficulty: block.querySelector('.builder-difficulty').value || null,
+            skill_domain: block.querySelector('.builder-domain').value || null,
+            choices: choices,
+            explanation: block.querySelector('.builder-explanation').value.trim()
+        };
+
+        const type = document.getElementById('builderModuleId').selectedOptions[0]?.getAttribute('data-section-type');
+        if (type === 'reading_writing' && builderEditors[`passage_${index}`]) {
+            const passageContent = builderEditors[`passage_${index}`].value().trim();
+            if (passageContent) {
+                item.passage = { content: passageContent };
+            }
+        }
+
+        items.push(item);
+    });
+
+    if (!isValid) {
+        showAlert('danger', 'Please fill in all required fields (Stem and Choices).');
+        return;
+    }
+
+    const startPos = document.getElementById('builderStartPosition').value || 1;
+    const payload = {
+        module_id: moduleId,
+        start_position: startPos,
+        items: items
+    };
+
+    try {
+        const response = await fetch('{{ route('test-dashboard.questions.bulk-store') }}', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+                'Accept': 'application/json'
+            },
+            body: JSON.stringify(payload)
+        });
+
+        const resultText = await response.text();
+        let result;
+        try {
+            result = JSON.parse(resultText);
+        } catch (e) {
+            showAlert('danger', 'Server returned invalid response. Status: ' + response.status);
+            return;
+        }
+
+        if (response.ok) {
+            showAlert('success', `Successfully imported ${items.length} questions.`);
+            // Clean up
+            Object.values(builderEditors).forEach(mde => mde.toTextArea());
+            for (const key in builderEditors) delete builderEditors[key];
+            document.getElementById('builderBlocksContainer').innerHTML = '';
+            builderBlockCount = 0;
+            
+            const preserve = captureTomSelectPreservation(null);
+            await refreshTestDashboardData(preserve);
+        } else {
+            showAlert('danger', result.message || 'Import failed.');
+        }
+    } catch (error) {
+        showAlert('danger', 'Error: ' + error.message);
+    }
+});
+
+document.getElementById('bulkZipImportBtn')?.addEventListener('click', async function() {
+    const fileInput = document.getElementById('bulkZipFile');
+    const moduleId = getTomSelectValue('bulkQuestionModule');
+    const startPos = document.getElementById('bulkStartPosition')?.value || 1;
+    const btn = this;
+
+    if (!moduleId) {
+        showAlert('danger', 'Please select a Target Module in STEP 1.');
+        return;
+    }
+
+    if (!fileInput.files[0]) {
+        showAlert('danger', 'Please select a ZIP file.');
+        return;
+    }
+
+    const fd = new FormData();
+    fd.append('zip_file', fileInput.files[0]);
+    fd.append('module_id', moduleId);
+    fd.append('start_position', startPos);
+
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner-border spinner-border-sm"></span> Importing...';
+
+    try {
+        const response = await fetch('{{ route('test-dashboard.questions.bulk-zip') }}', {
+            method: 'POST',
+            headers: { 
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+                'Accept': 'application/json'
+            },
+            body: fd
+        });
+        
+        const resultText = await response.text();
+        let result;
+        try {
+            result = JSON.parse(resultText);
+        } catch (e) {
+            showAlert('danger', 'Server returned invalid response. Status: ' + response.status);
+            return;
+        }
+
+        if (response.ok) {
+            showAlert('success', result.message);
+            fileInput.value = '';
+            const preserve = captureTomSelectPreservation(null);
+            await refreshTestDashboardData(preserve);
+        } else {
+            showAlert('danger', result.message || 'ZIP import failed.');
+        }
+    } catch (err) {
+        showAlert('danger', 'Error: ' + err.message);
+    } finally {
+        btn.disabled = false;
+        btn.innerHTML = 'Import ZIP';
+    }
+});
+
+
 </script>
 @endpush
 </x-layouts.admin>

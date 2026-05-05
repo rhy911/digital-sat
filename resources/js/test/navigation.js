@@ -46,11 +46,17 @@ export function showQuestion(index) {
     if (resizer) resizer.classList.add('d-none');
     if (rightPanel) {
         rightPanel.style.flex = '0 0 100%';
-        rightPanel.style.maxWidth = '800px';
-        rightPanel.style.margin = '0 auto';
+        rightPanel.style.maxWidth = 'none'; // Full width for panel
+        rightPanel.style.margin = '0';
+
+        // Apply width limit to question content, not the panel itself
+        state.questionElements.forEach(q => {
+            q.style.maxWidth = '800px';
+            q.style.margin = '0 auto';
+        });
     }
   } else {
-    // Standard 2-column layout (or SPR Math which needs directions on left)
+    // Standard 2-column layout
     if (leftPanel) {
         leftPanel.classList.remove('d-none');
         leftPanel.style.flex = state.panelStates[index] ? `0 0 ${state.panelStates[index].left}%` : '0 0 50%';
@@ -60,6 +66,13 @@ export function showQuestion(index) {
         rightPanel.style.flex = state.panelStates[index] ? `0 0 ${state.panelStates[index].right}%` : '0 0 49%';
         rightPanel.style.maxWidth = 'none';
         rightPanel.style.margin = '0';
+        rightPanel.style.paddingTop = '40px';
+
+        // Reset question content width for 2-column mode
+        state.questionElements.forEach(q => {
+            q.style.maxWidth = 'none';
+            q.style.margin = '0';
+        });
     }
   }
 
@@ -71,9 +84,27 @@ export function showQuestion(index) {
   updateNavigationButtons();
   updateQuestionButtonStates();
   
+  // Handle [Media:filename] placeholders
+  const contentAreas = document.querySelectorAll('.stem-text, .passage-container, .answer-option label');
+  contentAreas.forEach(area => {
+    // Only replace if it's NOT already part of a Markdown image (![](...))
+    // We look for [Media: followed by anything that isn't a ]
+    area.innerHTML = area.innerHTML.replace(/(?<!\!)\[Media:([^\]]+)\]/gi, (match, filename) => {
+        return `<img src="/storage/media/${filename}" alt="${filename}" class="question-media img-fluid">`;
+    });
+  });
+
   // Re-run KaTeX auto-render if available
   if (window.renderMathInElement) {
-    window.renderMathInElement(document.body);
+    window.renderMathInElement(document.body, {
+      delimiters: [
+          {left: "$$", right: "$$", display: true},
+          {left: "$", right: "$", display: false},
+          {left: "\\(", right: "\\)", display: false},
+          {left: "\\[", right: "\\]", display: true}
+      ],
+      throwOnError : false
+    });
   }
 }
 
