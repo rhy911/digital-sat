@@ -1,59 +1,108 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
+# [Technical Presentation] Hệ sinh thái Khảo thí & Luyện thi Digital SAT: Deep-Dive Outline
 
-<p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+## Slide 1: Giới thiệu & Tầm nhìn Dự án
 
-## About Laravel
+* **Tiêu đề:** Giải pháp Toàn diện cho Kỷ nguyên Khảo thí Số.
+* **Nội dung:**
+  * **Bối cảnh:** Sự chuyển dịch mang tính bước ngoặt của College Board sang Digital SAT.
+  * **Dự án:** Xây dựng hệ thống mô phỏng High-fidelity kết hợp với nền tảng quản lý học tập (LMS).
+  * **Tầm nhìn:** Tạo ra một môi trường giúp giáo viên và học sinh có thể tự tạo và luyện tập thi trên máy tính.
+  * **Giá trị cốt lõi:** Trải nghiệm thi thực tế - Thuật toán thông minh - Quản trị nội dung tối ưu.
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+## Slide 2: Kiến trúc Hệ thống (System Overview)
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+* **Tiêu đề:** Hệ sinh thái 4 Phân hệ Tích hợp.
+* **Nội dung:**
+  * **Identity & Access:** Quản lý User Life-cycle, phân quyền đa cấp (Student, Teacher, Developer).
+  * **Student Portal:** Trung tâm học tập, thư viện đề thi và dashboard phân tích tiến độ cá nhân.
+  * **Test Engine:** Trình giả lập phòng thi tập trung vào hiệu năng và độ chính xác UX.
+  * **Admin/Teacher CMS:** Hệ thống điều hành nội dung, xử lý dữ liệu thô và cấu hình thuật toán adaptive.
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
+## Slide 3: Phân hệ Xác thực & Bảo mật (Identity)
 
-## Learning Laravel
+* **Tiêu đề:** Quản lý Người dùng & Bảo mật Thông tin.
+* **Nội dung:**
+  * **Xác thực:** Triển khai qua Laravel Sanctum/Fortify cho Web & API.
+  * **Quy trình:** Đăng ký, xác thực Email, quản lý phiên làm việc và bảo mật 2 lớp (2FA).
+  * **Phân quyền:**
+    * **Student:** Truy cập kho đề, thực hiện bài thi.
+    * **Teacher:** Quản trị Item Bank, xem báo cáo học sinh.
+    * **Admin:** Quản trị hệ thống, cấu hình Blueprint và kỹ thuật.
 
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework. You can also check out [Laravel Learn](https://laravel.com/learn), where you will be guided through building a modern Laravel application.
+## Slide 4: Trình giả lập Test Engine (Phần 1: UI/UX)
 
-If you don't feel like reading, [Laracasts](https://laracasts.com) can help. Laracasts contains thousands of video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
+* **Tiêu đề:** Mô phỏng Bluebook "Pixel-Perfect".
+* **Nội dung:**
+  * **Giao diện:** Tái hiện chính xác Header (Timer, Navigation) và Footer.
+  * **Công cụ Hỗ trợ:**
+    * Máy tính đồ họa Desmos tích hợp.
+    * Công cụ gạch chân (Highlighter) và loại trừ đáp án (Strike-through).
+    * Hệ thống đánh dấu câu hỏi (Mark for Review) thời gian thực.
+  * **Layout Thích ứng:** Tự động chuyển đổi Math (1 cột) và Reading (2 cột resizable).
 
-## Laravel Sponsors
+## Slide 5: Trình giả lập Test Engine (Phần 2: Mechanics)
 
-We would like to extend our thanks to the following sponsors for funding Laravel development. If you are interested in becoming a sponsor, please visit the [Laravel Partners program](https://partners.laravel.com).
+* **Tiêu đề:** Thuật toán Adaptive Testing & State Management.
+* **Nội dung:**
+  * **Multi-stage Adaptive:** Cơ chế điều hướng Module 2 (Easy/Hard) dựa trên hiệu suất thực tế.
+  * **State Store:** Sử dụng Vanilla JS Centralized Store để quản lý trạng thái làm bài ổn định.
+  * **Session Persistence:** Đảm bảo dữ liệu không bị mất khi chuyển câu hoặc gặp sự cố kết nối.
+  * **Time Tracking:** Đồng bộ hóa bộ đếm ngược với Server để đảm bảo tính công bằng.
 
-### Premium Partners
+## Slide 6: Hệ thống Quản trị Nội dung (CMS Pipeline)
 
-- **[Vehikl](https://vehikl.com)**
-- **[Tighten Co.](https://tighten.co)**
-- **[Kirschbaum Development Group](https://kirschbaumdevelopment.com)**
-- **[64 Robots](https://64robots.com)**
-- **[Curotec](https://www.curotec.com/services/technologies/laravel)**
-- **[DevSquad](https://devsquad.com/hire-laravel-developers)**
-- **[Redberry](https://redberry.international/laravel-development)**
-- **[Active Logic](https://activelogic.com)**
+* **Tiêu đề:** Số hóa Quy trình Quản lý Ngân hàng câu hỏi (Item Bank).
+* **Nội dung:**
+  * **Data Hierarchy:** Cấu trúc phân cấp nghiêm ngặt `Test > Section > Module > Question`.
+  * **Universal Content Editor:** Soạn thảo Passage (đoạn văn đơn/đôi) và Question đa định dạng.
+  * **Media Handling:** Tự động ánh xạ `[Media:id]` thành asset thực tế qua cơ chế quét ZIP đệ quy.
+  * **Atomic Imports:** DB Transactions đảm bảo tính toàn vẹn dữ liệu khi nhập liệu hàng loạt.
 
-## Contributing
+## Slide 7: Cơ chế Nhập liệu Siêu tốc (Bulk Import)
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
+* **Tiêu đề:** Tự động hóa Pipeline Dữ liệu.
+* **Nội dung:**
+  * **Hỗ trợ đa định dạng:** Import trực tiếp từ tệp JSON, CSV hoặc ZIP (kèm ảnh).
+  * **Validation Layer:** Tự động kiểm tra tính đầy đủ (Difficulty, Domain, SPR correctness) trước khi lưu trữ.
+  * **Auto-positioning:** Thuật toán tự động sắp xếp lại vị trí câu hỏi khi chèn dữ liệu vào các Module hiện có.
 
-## Code of Conduct
+## Slide 8: Kiến trúc Kỹ thuật & Service Layer
 
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
+* **Tiêu đề:** Thiết kế Hệ thống cho Khả năng Mở rộng (Scalability).
+* **Nội dung:**
+  * **Backend:** Laravel 12 với kiến trúc Service Layer tách biệt Business Logic khỏi Controller.
+  * **Service Layer Examples:** `ScoringService`, `AdaptiveRoutingService`, `ImportService`.
+  * **Frontend Engine:** Tối ưu hóa DOM Manipulation qua Vanilla JS để đạt phản hồi < 100ms.
+  * **Rendering Pipeline:** Tích hợp KaTeX cho biểu thức toán học và CSS Engine cho Poetry formatting.
 
-## Security Vulnerabilities
+## Slide 9: Cơ sở Dữ liệu & Tối ưu hóa (Database)
 
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
+* **Tiêu đề:** Quản trị Dữ liệu Phức tạp & Hiệu năng.
+* **Nội dung:**
+  * **Normalization:** Thiết kế 30+ bảng chuẩn hóa để xử lý quan hệ đa cấp và Paired Passages.
+  * **Data Integrity:** Sử dụng Foreign Keys, Constraints và Soft Deletes triệt để.
+  * **Optimization:** Đánh Index chiến lược trên các cột truy vấn trọng yếu (`external_id`, `is_complete`, `test_type`).
 
-## License
+## Slide 10: Chặng đường Phát triển (Roadmap: Scoring Engine)
 
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+* **Tiêu đề:** Hoàn thiện Bộ não Tính điểm & Adaptive Logic.
+* **Nội dung:**
+  * **Raw-to-Scaled Conversion:** Phát triển bảng chuyển đổi điểm sang thang 1600.
+  * **IRT Implementation:** Nghiên cứu áp dụng Item Response Theory để tính điểm dựa trên trọng số độ khó từng câu.
+  * **Adaptive Blueprint:** Tối ưu hóa các ngưỡng threshold điều hướng Module 2.
+
+## Slide 11: Chặng đường Phát triển (Roadmap: Review & Analytics)
+
+* **Tiêu đề:** Nâng cao Trải nghiệm Học tập & Phân tích Năng lực.
+* **Nội dung:**
+  * **Review Mode:** Cho phép xem lại toàn bộ bài làm kèm lời giải chi tiết (Rationale/Explanation).
+  * **Domain Analytics:** Báo cáo thế mạnh/điểm yếu theo từng Domain (Algebra, Craft & Structure...).
+  * **Progress Tracking:** Biểu đồ xu hướng điểm số qua các kỳ thi thử.
+
+## Slide 12: Tổng kết & QA
+
+* **Nội dung:**
+  * **Kết luận:** Hệ thống đã sẵn sàng cho quy mô Production.
+  * **Thông điệp:** Một nền tảng không chỉ để thi, mà để hiểu rõ năng lực bản thân.
+  * **Lời cảm ơn:** Cảm ơn thầy cô và các bạn đã dành thời gian theo dõi.
+  * *Mời đặt câu hỏi thảo luận.*

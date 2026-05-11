@@ -2501,8 +2501,8 @@ document.addEventListener('DOMContentLoaded', function() {
                 const fileModule = fileJson.module_id;
                 const fileStart = fileJson.start_position;
                 const effectiveModule = formModule || (fileModule != null && fileModule !== '' ? String(fileModule) : '');
-                const startCandidate = (formStartRaw !== '' && formStartRaw != null) ? formStartRaw : fileStart;
-                const startPosition = parseInt(String(startCandidate), 10);
+                const startValue = (formStartRaw !== '' && formStartRaw != null) ? formStartRaw : fileStart;
+                const startPosition = parseInt(String(startValue), 10);
                 if (!effectiveModule) {
                     showAlert('danger', 'Please select a Target Module in STEP 1.');
                     return;

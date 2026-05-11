@@ -12,9 +12,12 @@ Hệ thống được chia thành 4 phân hệ chính:
 
 - **Chức năng:** Đăng ký, Đăng nhập, Xác thực Email, Quên mật khẩu.
 - **Đặc điểm:** Giao diện được tùy chỉnh theo phong cách hiện đại, tối giản. Sử dụng Laravel Sanctum/Fortify để đảm bảo bảo mật.
-- **Phân quyền:** Tách biệt rõ ràng giữa Thí sinh (Candidate) và Quản trị viên (Admin).
+- **Phân quyền:** 
+  - **Học sinh (Student):** Người tham gia thi và luyện tập.
+  - **Giáo viên (Teacher):** Quản lý nội dung đề thi, theo dõi tiến độ học sinh.
+  - **Quản trị viên (Admin):** Dành riêng cho nhà phát triển để quản trị hệ thống và cấu hình kỹ thuật.
 
-### B. Cổng Thí sinh (Candidate Portal)
+### B. Cổng Học sinh (Student Portal)
 
 - **Dashboard:** Hiển thị lộ trình học tập, các bài thi gần đây và gợi ý bài thi.
 - **Test Library:** Danh sách các đề Full-length và các bài luyện tập theo kỹ năng (Reading & Writing, Math).
