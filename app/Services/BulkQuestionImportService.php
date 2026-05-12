@@ -70,6 +70,7 @@ class BulkQuestionImportService
                 }
 
                 if (preg_match('/\.(json|csv)$/i', $file->getFilename())) {
+                    \Illuminate\Support\Facades\Log::info('Found data file in ZIP: ' . $file->getPathname());
                     $allDataFiles[] = [
                         'path' => $file->getPathname(),
                         'base' => $file->getPath(),
@@ -89,23 +90,54 @@ class BulkQuestionImportService
                 if ($df['ext'] === 'json') {
                     $raw = file_get_contents($df['path']);
                     $decoded = json_decode($raw, true);
-                    if (json_last_error() !== JSON_ERROR_NONE) continue;
+                    if (json_last_error() !== JSON_ERROR_NONE) {
+                        \Illuminate\Support\Facades\Log::error('JSON decode failed for file: ' . $df['path'] . ' Error: ' . json_last_error_msg());
+                        continue;
+                    }
                     
-                    if (isset($decoded['stem']) && !isset($decoded['items'])) {
-                        $items = [$decoded];
-                    } elseif (is_array($decoded) && array_is_list($decoded) && isset($decoded[0]['stem'])) {
-                        $items = $decoded;
-                    } else {
-                        $items = $decoded['items'] ?? $decoded;
+                    \Illuminate\Support\Facades\Log::info('Decoded JSON keys: ' . implode(', ', array_keys($decoded)));
+                    
+                    if (isset($decoded['items']) && is_array($decoded['items'])) {
+                        $items = $decoded['items'];
+                    } elseif (is_array($decoded) && !empty($decoded)) {
+                        // If it's a list, check if items look like questions
+                        if (array_is_list($decoded)) {
+                            $items = $decoded;
+                        } else {
+                            // Single object with stem?
+                            if (isset($decoded['stem'])) {
+                                $items = [$decoded];
+                            } else {
+                                // Fallback: search for any key that contains a list
+                                foreach ($decoded as $key => $val) {
+                                    if (is_array($val) && array_is_list($val) && !empty($val) && (isset($val[0]['stem']) || isset($val[0]['question_number']))) {
+                                        $items = $val;
+                                        break;
+                                    }
+                                }
+                                // If still no items, maybe the whole object IS a question (non-list array)
+                                if (empty($items) && isset($decoded['stem'])) {
+                                    $items = [$decoded];
+                                }
+                            }
+                        }
                     }
                 } else {
                     $raw = file_get_contents($df['path']);
                     $items = $this->csvImportService->parseCsvToItems($raw);
                 }
 
+                \Illuminate\Support\Facades\Log::info('Items extracted from ' . $df['path'] . ': ' . count($items));
+
+                if (empty($items)) continue;
+
                 // Process Media relative to THIS data file's folder
                 $items = $this->processZipMedia($items, $df['base']);
                 $allItems = array_merge($allItems, $items);
+            }
+
+            if (empty($allItems)) {
+                throw new \Exception('No valid question items found in ZIP data files.');
             }
 
             // 3. Build payload

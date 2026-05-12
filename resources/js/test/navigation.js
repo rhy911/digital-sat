@@ -92,10 +92,11 @@ export function showQuestion(index) {
     });
   });
 
-  if (window.renderMathInElement) {
+  if (window.smartRenderMath) {
+    window.smartRenderMath(document.body);
+  } else if (window.renderMathInElement) {
     window.renderMathInElement(document.body, {
       delimiters: [
-          {left: "$$", right: "$$", display: true},
           {left: "$", right: "$", display: false},
           {left: "\\(", right: "\\)", display: false},
           {left: "\\[", right: "\\]", display: true}
@@ -155,6 +156,16 @@ async function submitModule() {
   const confirmNext = confirm("You are about to proceed to the next module/section.\n\nAre you ready to continue?");
   if (!confirmNext) return;
 
+  if (window.isPreview) {
+    if (window.nextModuleId) {
+      window.location.href = `/take-test/${window.nextModuleId}`;
+    } else {
+      alert("Test Preview completed! Redirecting home...");
+      window.location.href = '/home';
+    }
+    return;
+  }
+
   try {
     const response = await fetch('/test/submit-module', {
       method: 'POST',
@@ -178,11 +189,12 @@ async function submitModule() {
       window.location.href = `/take-test/${data.next_module_id}`;
     } else {
       console.error("Submission failed", data);
-      alert("Error submitting test. Please try again.");
+      const msg = data.error || data.message || "Error submitting test. Please try again.";
+      alert(msg);
     }
   } catch (error) {
     console.error("Error submitting module:", error);
-    alert("Network error. Please try again.");
+    alert("Network error: " + error.message);
   }
 }
 

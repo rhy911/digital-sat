@@ -84,22 +84,25 @@ class SatScoringService
             $denominator = 0.0;
 
             foreach ($responses as $r) {
-                $a = (float) $r->question->irt_a;
-                $b = (float) $r->question->irt_b;
-                $c = (float) $r->question->irt_c;
+                $a = (float) ($r->question->irt_a ?? 1.0); // Default a=1.0 if missing
+                $b = (float) ($r->question->irt_b ?? 0.0); // Default b=0.0 if missing
+                $c = (float) ($r->question->irt_c ?? 0.0); // Default c=0.0 if missing
 
                 // Probability of correct response (3PL Model)
                 $p = $c + (1 - $c) / (1 + exp(-$a * ($theta - $b)));
                 $q = 1 - $p;
 
                 // Avoid division by zero
-                if ($p * $q < 1e-10 || ($p - $c) < 1e-10) continue;
+                $oneMinusC = max(1e-10, 1 - $c);
+                $pMinusC = max(0, $p - $c);
+                
+                if ($p * $q < 1e-10) continue;
 
                 // First derivative of log-likelihood
-                $numerator += $a * ($r->is_correct - $p) * (($p - $c) / ((1 - $c) * $p));
+                $numerator += $a * ($r->is_correct - $p) * ($pMinusC / ($oneMinusC * $p));
                 
                 // Second derivative of log-likelihood (Fisher Information)
-                $denominator += ($a ** 2) * (($p - $c) ** 2) / ((1 - $c) ** 2 * $p * $q);
+                $denominator += ($a ** 2) * ($pMinusC ** 2) / ($oneMinusC ** 2 * $p * $q);
             }
 
             if ($denominator < 1e-10) break;

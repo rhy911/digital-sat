@@ -126,78 +126,33 @@
         <sub>* = Required</sub>
     </h3>
 
-    <!-- Custom Dropdown -->
-    <div class="custom-select-container">
-        <div class="custom-select" id="customSelect" onclick="toggleDropdown()">
-            <span id="selectedText">Choose a test</span>
-        </div>
-        <div class="custom-options" id="customOptions">
-            <div class="custom-option disabled">Choose a test</div>
-            @foreach ($tests as $test)
-                @php
-                    $firstModule = $test->sections->first()?->modules->first();
-                @endphp
-                <div class="custom-option" data-value="{{ $firstModule?->id ?? '' }}">{{ $test->title }}</div>
-            @endforeach
-        </div>
-    </div>
+    <x-ui.custom-select 
+        id="testSelect" 
+        name="testSelect" 
+        placeholder="Choose a test"
+        :options="$tests->map(fn($t) => ['value' => $t->sections->first()?->modules->first()?->id ?? '', 'label' => $t->title])->toArray()" 
+    />
 
-    <!-- Hidden select for form submission -->
-    <select class="form-select hidden" id="testSelect" name="testSelect">
-        <option value="" selected disabled>Choose a test</option>
-        @foreach ($tests as $test)
-            @php
-                $firstModule = $test->sections->first()?->modules->first();
-            @endphp
-            <option value="{{ $firstModule?->id ?? '' }}">{{ $test->title }}</option>
-        @endforeach
-    </select>
     @push('scripts')
         <script>
-            function toggleDropdown() {
-                const customSelect = document.getElementById("customSelect");
-                const customOptions = document.getElementById("customOptions");
-                customSelect.classList.toggle("active");
-                customOptions.classList.toggle("show");
-            }
-
-            function selectOption(value, text) {
-                document.getElementById("selectedText").textContent = text;
-                document.getElementById("testSelect").value = value;
-                document.getElementById("customSelect").classList.remove("active");
-                document.getElementById("customOptions").classList.remove("show");
-                updateSelection();
-            }
-
-            function updateSelection() {
-                const select = document.getElementById("testSelect");
+            function updateSelection(value) {
                 const nextLink = document.querySelector('footer a:first-child');
 
-                if (select.value === 'preview') {
-                    nextLink.href = '/take-test'; // Default or specific preview module
-                } else if (select.value) {
-                    nextLink.href = '/take-test/' + select.value;
+                if (value === 'preview') {
+                    nextLink.href = '/take-test';
+                } else if (value) {
+                    nextLink.href = '/take-test/' + value;
                 } else {
                     nextLink.href = '#';
                 }
             }
 
             document.addEventListener("DOMContentLoaded", function() {
-                const options = document.querySelectorAll(".custom-option:not(.disabled)");
+                const options = document.querySelectorAll("#testSelectOptions .custom-option:not(.disabled)");
                 options.forEach(option => {
                     option.addEventListener("click", function() {
-                        selectOption(this.getAttribute("data-value"), this.textContent);
+                        selectOption('testSelect', this.getAttribute("data-value"), this.textContent, updateSelection);
                     });
-                });
-
-                document.addEventListener("click", function(event) {
-                    const container = document.querySelector(".custom-select-container");
-                    if (!container.contains(event.target)) {
-                        const customSelect = document.getElementById("customSelect");
-                        const customOptions = document.getElementById("customOptions");
-                        if (customSelect) customSelect.classList.remove("active");
-                        if (customOptions) customOptions.classList.remove("show");
-                    }
                 });
             });
         </script>

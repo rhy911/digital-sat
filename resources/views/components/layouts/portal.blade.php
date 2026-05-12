@@ -27,7 +27,7 @@
             font-size: 2.25rem;
             text-align: center;
             font-weight: 400;
-            margin: 2rem 0
+            margin: 2rem 0;
         }
 
         main .container {
@@ -58,6 +58,8 @@
             cursor: pointer;
             font-size: 1rem;
             font-weight: 600;
+            text-decoration: none;
+            display: inline-block;
         }
 
         .btn:hover {
@@ -70,19 +72,15 @@
 <body>
     <header></header>
     <main>
-        <h1>{{ $title ?? '' }}</h1>
+        <h1>{{ $title }}</h1>
         <div class="container">
             {{ $slot }}
         </div>
     </main>
     <footer>
         <div class="buttons">
-            <a href="{{ $nextUrl }}">
-                <div class="btn">Next</div>
-            </a>
-            <a href="{{ $backUrl }}">
-                <div class="btn">Back</div>
-            </a>
+            <a href="{{ $nextUrl }}" class="btn" role="button">Next</a>
+            <a href="{{ $backUrl }}" class="btn" role="button">Back</a>
         </div>
     </footer>
     @stack('scripts')

@@ -30,9 +30,9 @@ Route::get('/signup', function () {
 
 Route::post('/signup', RegisterWebController::class)->name('signup');
 
-Route::get('/forget', function () {
+Route::get('/forgot', function () {
     return view('auth.forgot');
-})->name('forget');
+})->name('forgot');
 
 Route::get('/email-verify', function () {
     return view('auth.email-verify');
@@ -137,6 +137,7 @@ Route::get('/take-test/{module_id?}', function ($module_id = null) {
         'module_number' => $module->module_number,
         'module_id' => $module->id,
         'username' => \Illuminate\Support\Facades\Auth::user()?->username ?? 'Guest',
+        'is_preview' => ($test->title === 'Test Preview'),
     ];
 
     // Determine next module for navigation (simple logic for now)
@@ -197,7 +198,7 @@ Route::middleware(['auth'])->prefix('test-dashboard')->name('test-dashboard.')->
     Route::put('/questions/{id}', [TestDashboardController::class, 'updateQuestion'])->name('questions.update');
     Route::post('/questions/bulk', [TestDashboardController::class, 'bulkStoreQuestions'])->name('questions.bulk-store');
     Route::post('/questions/bulk-preview', [TestDashboardController::class, 'bulkPreviewQuestions'])->name('questions.bulk-preview');
-    Route::post('/questions/bulk-csv', [TestDashboardController::class, 'bulkStoreQuestionsFromCsv'])->name('questions.bulk-csv');
+    Route::post('/questions/bulk-csv', [TestDashboardController::class, 'bulkStoreQuestionsFromCsv'])->name('questions.bulk-csv-store');
     Route::post('/questions/bulk-csv-preview', [TestDashboardController::class, 'bulkPreviewQuestionsFromCsv'])->name('questions.bulk-csv-preview');
     Route::post('/questions/bulk-zip', [TestDashboardController::class, 'bulkStoreQuestionsFromZip'])->name('questions.bulk-zip');
     Route::post('/questions/attach', [TestDashboardController::class, 'attachQuestionToModule'])->name('questions.attach');

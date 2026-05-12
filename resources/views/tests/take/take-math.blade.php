@@ -148,5 +148,6 @@
         window.nextModuleName = @json($nextModuleName ?? null);
         window.userTestId = @json($userTestId ?? null);
         window.currentModuleId = @json($testData->module_id ?? null);
+        window.isPreview = @json($testData->is_preview ?? false);
     </script>
 </x-layouts.test>

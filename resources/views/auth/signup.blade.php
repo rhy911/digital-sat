@@ -2,25 +2,21 @@
     @push('scripts')
     <script>
         document.addEventListener('DOMContentLoaded', () => {
-            const usernameInput = document.getElementById("username");
-            const passwordInput = document.getElementById("password");
-            const passwordConfirmInput = document.getElementById("password_confirmation");
-            const mismatchMsg = document.getElementById("passwordMismatch");
+            const passwordInput = document.getElementById('password');
+            const passwordConfirmInput = document.getElementById('password_confirmation');
+            const mismatchMsg = document.getElementById('passwordMismatch');
 
             new AuthForm('signupForm', {
                 validate: () => {
                     const passwordsMatch = passwordInput.value === passwordConfirmInput.value;
-                    if (passwordConfirmInput.value.trim() !== "" && !passwordsMatch) {
-                        passwordConfirmInput.classList.add("is-invalid");
-                        mismatchMsg.style.display = "block";
+                    if (passwordConfirmInput.value.trim() !== '' && !passwordsMatch) {
+                        passwordConfirmInput.classList.add('is-invalid');
+                        mismatchMsg.style.display = 'block';
                     } else {
-                        passwordConfirmInput.classList.remove("is-invalid");
-                        mismatchMsg.style.display = "none";
+                        passwordConfirmInput.classList.remove('is-invalid');
+                        mismatchMsg.style.display = 'none';
                     }
                     return passwordsMatch;
-                },
-                prepareData: (formData) => {
-                    return formData;
                 },
                 onSuccess: (data) => {
                     if (data.token) {
@@ -35,12 +31,7 @@
     </script>
     @endpush
     <!-- Back -->
-    <a href="/" class="back-link">
-        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-            <polyline points="15 18 9 12 15 6"></polyline>
-        </svg>
-        Back
-    </a>
+    <x-auth.back-link href="/" />
 
     <!-- Title -->
     <h2 class="signin-title">Create a Student Account</h2>
@@ -59,23 +50,31 @@
         </div>
 
         <div class="mb-3">
-            <label for="password" class="form-label">Password</label>
-            <div class="password-field">
-                <input type="password" class="form-control" id="password" name="password" autocomplete="new-password">
-                <button type="button" class="password-toggle" id="passwordToggle" data-password-target="password" aria-label="Show password"></button>
-            </div>
+            <x-auth.password-field
+                label="Password"
+                input-id="password"
+                name="password"
+                autocomplete="new-password"
+                toggle-id="passwordToggle"
+                target-id="password"
+            />
         </div>
 
         <div class="mb-4">
-            <label for="password_confirmation" class="form-label">Re-enter Password</label>
-            <div class="password-field">
-                <input type="password" class="form-control" id="password_confirmation" name="password_confirmation" autocomplete="new-password">
-                <button type="button" class="password-toggle" id="rePasswordToggle" data-password-target="password_confirmation" aria-label="Show password"></button>
-            </div>
+            <x-auth.password-field
+                label="Re-enter Password"
+                input-id="password_confirmation"
+                name="password_confirmation"
+                autocomplete="new-password"
+                toggle-id="rePasswordToggle"
+                target-id="password_confirmation"
+            />
             <div class="invalid-feedback" id="passwordMismatch">Passwords do not match.</div>
         </div>
 
-        <div id="errorMessage" style="display: none; color: #dc3545; margin-bottom: 1rem; padding: 0.75rem; background-color: #f8d7da; border-radius: 4px;"></div>
+        <x-auth.alerts
+            error-style="display: none; color: #dc3545; margin-bottom: 1rem; padding: 0.75rem; background-color: #f8d7da; border-radius: 4px;"
+        />
 
         <button type="submit" class="submit-btn" id="submitBtn" data-processing-text="Processing..." disabled>Create Account</button>
     </form>

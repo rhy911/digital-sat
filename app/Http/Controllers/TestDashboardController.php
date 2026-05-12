@@ -529,26 +529,63 @@ class TestDashboardController extends Controller
     /**
      * Delete endpoints
      */
-    public function deleteTest($id)
+    public function deleteTest(Request $request, $id)
     {
-        Test::findOrFail($id)->delete();
+        $test = Test::with('sections.modules.questions')->findOrFail($id);
+        
+        DB::transaction(function () use ($test, $request) {
+            if ($request->boolean('delete_children')) {
+                foreach ($test->sections as $section) {
+                    foreach ($section->modules as $module) {
+                        foreach ($module->questions as $question) {
+                            $question->delete();
+                        }
+                        $module->delete();
+                    }
+                    $section->delete();
+                }
+            }
+            $test->delete();
+        });
+
         return response()->json(['status' => 'success', 'message' => 'Test deleted.']);
     }
 
-    public function deleteSection($id)
+    public function deleteSection(Request $request, $id)
     {
-        $section = Section::with('test')->findOrFail($id);
+        $section = Section::with(['test', 'modules.questions'])->findOrFail($id);
         $test = $section->test;
-        $section->delete();
+
+        DB::transaction(function () use ($section, $request) {
+            if ($request->boolean('delete_children')) {
+                foreach ($section->modules as $module) {
+                    foreach ($module->questions as $question) {
+                        $question->delete();
+                    }
+                    $module->delete();
+                }
+            }
+            $section->delete();
+        });
+
         if ($test) $test->refreshTotalDuration();
         return response()->json(['status' => 'success', 'message' => 'Section deleted.']);
     }
 
-    public function deleteModule($id)
+    public function deleteModule(Request $request, $id)
     {
-        $module = Module::with('section.test')->findOrFail($id);
+        $module = Module::with(['section.test', 'questions'])->findOrFail($id);
         $test = $module->section->test ?? null;
-        $module->delete();
+
+        DB::transaction(function () use ($module, $request) {
+            if ($request->boolean('delete_children')) {
+                foreach ($module->questions as $question) {
+                    $question->delete();
+                }
+            }
+            $module->delete();
+        });
+
         if ($test) $test->refreshTotalDuration();
         return response()->json(['status' => 'success', 'message' => 'Module deleted.']);
     }
