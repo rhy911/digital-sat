@@ -22,6 +22,9 @@ class Question extends Model
         'skill_subdomain',
         'spr_hint',
         'calculator_allowed',
+        'irt_a',
+        'irt_b',
+        'irt_c',
         'external_id',
     ];
 
@@ -29,6 +32,9 @@ class Question extends Model
         'calculator_allowed' => 'boolean',
         'is_pretest' => 'boolean',
         'is_complete' => 'boolean',
+        'irt_a' => 'float',
+        'irt_b' => 'float',
+        'irt_c' => 'float',
     ];
 
     public function passage()

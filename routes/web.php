@@ -51,6 +51,10 @@ Route::middleware(['auth', 'verified'])->group(function () {
     })->name('dashboard');
 
     Route::get('/home', HomeController::class)->name('home');
+    Route::get('/my-practice/{user_test_id}', [\App\Http\Controllers\PracticeController::class, 'show'])->name('my-practice');
+
+    Route::post('/test/start/{test_id}', [\App\Http\Controllers\TestTakingController::class, 'startTest'])->name('test.start');
+    Route::post('/test/submit-module', [\App\Http\Controllers\TestTakingController::class, 'submitModule'])->name('test.submit-module');
 
     Route::post('/logout', LogoutController::class)->name('logout');
 });
@@ -70,7 +74,9 @@ Route::get('/test-preview', function () {
 })->name('test.preview');
 
 Route::get('choose-test', function () {
-    $tests = \App\Models\Test::where('status', 'active')->get();
+    $tests = \App\Models\Test::where('status', 'active')
+        ->where('title', '!=', 'Test Preview')
+        ->get();
     return view('tests.choose', compact('tests'));
 })->name('choose-test');
 
@@ -93,7 +99,9 @@ Route::get('/take-test/{module_id?}', function ($module_id = null) {
         $test = \App\Models\Test::with([
             'sections.modules.questions.passage',
             'sections.modules.questions.answerChoices' => fn($q) => $q->orderBy('order'),
-        ])->whereIn('status', ['active', 'draft'])->first();
+        ])->whereIn('status', ['active', 'draft'])
+          ->orderByRaw("CASE WHEN title = 'Test Preview' THEN 0 ELSE 1 END")
+          ->first();
 
         if (! $test) {
             abort(404, 'No test available. Please create a test first.');
@@ -148,6 +156,16 @@ Route::get('/take-test/{module_id?}', function ($module_id = null) {
     // Determine which view to use based on section type
     $viewName = $section->type === 'math' ? 'tests.take.take-math' : 'tests.take.take-reading';
 
+    // Get user test record
+    $userTest = null;
+    if (Auth::check()) {
+        $userTest = \App\Models\UserTest::firstOrCreate([
+            'user_id' => Auth::id(),
+            'test_id' => $test->id,
+            'status' => 'in_progress',
+        ]);
+    }
+
     return view($viewName, [
         'testData' => $testData,
         'questions' => $questions,
@@ -159,6 +177,7 @@ Route::get('/take-test/{module_id?}', function ($module_id = null) {
         'sectionType' => $section->type,
         'nextModuleId' => $nextModule ? $nextModule->id : null,
         'nextModuleName' => $nextModule ? ($nextModule->module_number == 2 ? 'Module 2' : 'Section ' . $nextModule->section->order) : null,
+        'userTestId' => $userTest ? $userTest->id : null,
     ]);
 })->name('take-test');
 

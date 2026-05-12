@@ -17,5 +17,6 @@ export const state = {
   totalQuestions: 0,
   highlightMode: false,
   persistentPopover: null,
-  panelStates: [] // Track panel split ratio for each question
+  panelStates: [], // Track panel split ratio for each question
+  userTestId: null
 };

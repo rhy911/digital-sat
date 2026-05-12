@@ -12,7 +12,7 @@ Hệ thống được chia thành 4 phân hệ chính:
 
 - **Chức năng:** Đăng ký, Đăng nhập, Xác thực Email, Quên mật khẩu.
 - **Đặc điểm:** Giao diện được tùy chỉnh theo phong cách hiện đại, tối giản. Sử dụng Laravel Sanctum/Fortify để đảm bảo bảo mật.
-- **Phân quyền:** 
+- **Phân quyền:**
   - **Học sinh (Student):** Người tham gia thi và luyện tập.
   - **Giáo viên (Teacher):** Quản lý nội dung đề thi, theo dõi tiến độ học sinh.
   - **Quản trị viên (Admin):** Dành riêng cho nhà phát triển để quản trị hệ thống và cấu hình kỹ thuật.
@@ -31,13 +31,24 @@ Hệ thống được chia thành 4 phân hệ chính:
   - **Tooling:** Timer, Mark for Review, Strike-through (loại trừ đáp án), Calculator, và Highlight.
   - **Security:** Chế độ Lockdown Browser giả lập (chặn copy/paste, chặn chuột phải).
 
-### D. Hệ thống Quản trị (Admin/CMS)
+### E. Logic Tính điểm (Scoring Logic - Simplified IRT)
 
-- **Test Management:** Quản lý cấu trúc đề thi phức tạp (Test > Section > Module > Question).
-- **Content Management:** Trình soạn thảo chuyên biệt cho Passage (hỗ trợ paired passages) và Question (hỗ trợ công thức toán học, media).
-- **User Management:** Quản lý danh sách thí sinh, theo dõi tiến độ và hỗ trợ người dùng.
+Do thuật toán chính thức của College Board là bảo mật, hệ thống sử dụng phương pháp **Simplified Item Response Theory (IRT)** để đạt độ chính xác ~8/10:
 
-## 3. Kiến trúc Kỹ thuật (Technical Architecture)
+- **Tham số câu hỏi (Item Parameters):**
+  - **Difficulty (b):** Easy = -1.5, Medium = 0, Hard = 1.5.
+  - **Discrimination (a):** Mặc định = 1.0 (Câu SPR có thể trọng số cao hơn).
+  - **Guessing (c):** MCQ = 0.25, SPR = 0.0.
+- **Cơ chế tính toán:**
+  - Loại bỏ các câu `is_pretest = true` khỏi kết quả tính điểm.
+  - Tính chỉ số năng lực **Theta (θ)** dựa trên trung bình trọng số của các câu đúng.
+  - Chuyển đổi θ sang thang điểm 200–800: `Scaled Score = 500 + (θ * 100)`.
+  - Giới hạn (Clip) điểm trong khoảng [200, 800].
+- **Adaptive Routing:** Sử dụng Weighted Raw Score của Module 1 để quyết định Easy/Hard Module 2.
+
+---
+
+## 4. Quy tắc Phát triển (Coding Standards)
 
 ### Backend (Laravel 11)
 
@@ -78,21 +89,3 @@ Hệ thống được chia thành 4 phân hệ chính:
 4. **Kiểm chứng:** Chạy `php artisan test` và kiểm tra thủ công trên trình duyệt.
 
 ---
-
-## Current Problem (Resolved)
-
-### 1. Testing Page [FIXED]
-
-- Latex doesnt appear right: Added `$` delimiter to KaTeX config in `test.blade.php`, `navigation.js`, and `test-dashboard.blade.php`.
-- Media doesn't appear: Added JS logic in `navigation.js` and `test-dashboard.blade.php` to replace `[Media:filename]` with `<img>` tags pointing to `/storage/media/`.
-- The content still not display properly: Fixed by adding `white-space: pre-wrap;` to `.stem-text` and `.passage-container` in `test-main.css`. This preserves line breaks for poems and formatted text.
-
-### 2. Portal Page [FIXED]
-
-- Remove Choose a Test from Test Preview: Changed `nextUrl` in `preview.blade.php` to `/take-test`.
-- In Choose a Test, Test Preview is appearing double: Removed redundant manual "Test Preview" option in `choose.blade.php`.
-
-### 3. Test Dashboard [FIXED]
-
-- Can't update imported questions: Fixed SPR answer validation in `TestDashboardController.php` to handle both string and array inputs (normalizing to comma-separated string).
-- How to turn incomplete questions into completed: **A question is marked "complete" automatically when both `difficulty` and `skill_domain` are assigned values during update.** Imports often leave these blank/default, so editing them in the Dashboard and saving will toggle `is_complete` to true.

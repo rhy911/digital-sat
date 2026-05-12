@@ -53,6 +53,9 @@ function initializeDOMElements() {
 
   if (state.totalQuestionsSpan) state.totalQuestionsSpan.textContent = state.totalQuestions;
   if (state.questionNumberSpan) state.questionNumberSpan.textContent = state.currentQuestionIndex + 1;
+
+  // Initialize UserTestId from blade global variable
+  state.userTestId = window.userTestId || null;
 }
 
 function handleQuestionButtonClick(e) {

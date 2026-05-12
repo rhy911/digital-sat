@@ -62,8 +62,16 @@
                     <p>Tests appear here a few weeks before test day. <strong>If you got a paper ticket from your school, <a href="/logout">sign out</a> and sign in with it.</strong></p>
                 </div>
                 <div class="test-box d-none" id="past-tests">
-                    <h4>You Haven't Taken Any Digital Tests Yet</h4>
-                    <p>After you take a test, it will appear here with your scores and feedback.</p>
+                    @forelse ($completedTests as $userTest)
+                        <div class="option past-card d-flex flex-column align-items-start w-100 mb-3" style="text-align: left;">
+                            <h4>{{ $userTest->test->title }}</h4>
+                            <div class="status-badge">Completed</div>
+                            <a href="{{ route('my-practice', $userTest->id) }}" class="view-response">View my response</a>
+                        </div>
+                    @empty
+                        <h4>You Haven't Taken Any Digital Tests Yet</h4>
+                        <p>After you take a test, it will appear here with your scores and feedback.</p>
+                    @endforelse
                 </div>
             </section>
 
@@ -94,12 +102,21 @@
                         </div>
                     </a>
                 </div>
-                <div class="test-box d-none" id="practice-past">
-                    <h4>Ready to Practice?</h4>
-                    <p>Go to <strong>Active</strong> and select <strong>Full-Length Practice</strong>.</p>
-                    <p>Once you take any full-length practice test, it will appear here with your scores and feedback.</p>
-                </div>
-            </section>
+                <div class="practice-options d-flex gap-4 d-none" id="practice-past">
+                    @forelse ($completedTests as $userTest)
+                        <div class="option past-card d-flex flex-column align-items-start">
+                            <h4>{{ $userTest->test->title }}</h4>
+                            <div class="status-badge">Completed</div>
+                            <a href="{{ route('my-practice', $userTest->id) }}" class="view-response">View my response</a>
+                        </div>
+                    @empty
+                        <div class="test-box w-100">
+                            <h4>Ready to Practice?</h4>
+                            <p>Go to <strong>Active</strong> and select <strong>Full-Length Practice</strong>.</p>
+                            <p>Once you take any full-length practice test, it will appear here with your scores and feedback.</p>
+                        </div>
+                    @endforelse
+                </div>            </section>
 
             <section class="bigfuture">
                 <h2>Explore BigFuture</h2>

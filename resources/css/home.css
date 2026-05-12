@@ -216,8 +216,52 @@ main section .practice-options a {
 main section .option {
     width: 15rem;
     justify-items: center;
-    padding: 1.5rem 3.125rem 0;
+    padding: 1.5rem 2rem;
     cursor: pointer;
+}
+
+main section .option h4 {
+    margin-bottom: 0.5rem;
+}
+
+main section .option p {
+    margin: 0;
+    font-size: 0.95rem;
+}
+
+main section .option.past-card {
+    width: 20rem;
+    text-align: start;
+    padding: 1.5rem;
+}
+
+main section .option.past-card h4 {
+    margin-top: 0;
+    margin-bottom: 0.75rem;
+}
+
+.status-badge {
+    background-color: #e6fffa;
+    color: #2c7a7b;
+    padding: 0.25rem 0.75rem;
+    border-radius: 9999px;
+    font-size: 0.75rem;
+    font-weight: 700;
+    margin-bottom: 1.25rem;
+    text-transform: uppercase;
+    letter-spacing: 0.025em;
+}
+
+.view-response {
+    margin-left: 0 !important;
+    font-size: 1rem !important;
+    font-weight: 600;
+    text-decoration: none;
+    color: #324dc7 !important;
+}
+
+.view-response:hover {
+    text-decoration: underline;
 }
 
 main section .option img {

@@ -44,7 +44,9 @@
         <div class="resizable-panel right-panel">
             @foreach ($questions as $q)
                 <div class="question @if (!$loop->first) d-none @endif"
-                    id="question{{ $loop->iteration }}" data-section-type="{{ $q->section_type }}"
+                    id="question{{ $loop->iteration }}" 
+                    data-question-id="{{ $q->id }}"
+                    data-section-type="{{ $q->section_type }}"
                     data-question-type="{{ $q->question_type }}">
                     <div class="d-flex flex-column gap-3">
                         <div class="question-header d-flex align-items-center gap-3">
@@ -83,5 +85,7 @@
     <script>
         window.nextModuleId = @json($nextModuleId ?? null);
         window.nextModuleName = @json($nextModuleName ?? null);
+        window.userTestId = @json($userTestId ?? null);
+        window.currentModuleId = @json($testData->module_id ?? null);
     </script>
 </x-layouts.test>

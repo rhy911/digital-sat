@@ -87,14 +87,11 @@ export function showQuestion(index) {
   // Handle [Media:filename] placeholders
   const contentAreas = document.querySelectorAll('.stem-text, .passage-container, .answer-option label');
   contentAreas.forEach(area => {
-    // Only replace if it's NOT already part of a Markdown image (![](...))
-    // We look for [Media: followed by anything that isn't a ]
     area.innerHTML = area.innerHTML.replace(/(?<!\!)\[Media:([^\]]+)\]/gi, (match, filename) => {
         return `<img src="/storage/media/${filename}" alt="${filename}" class="question-media img-fluid">`;
     });
   });
 
-  // Re-run KaTeX auto-render if available
   if (window.renderMathInElement) {
     window.renderMathInElement(document.body, {
       delimiters: [
@@ -128,16 +125,7 @@ export function showReviewSection() {
 
 export function nextQuestion() {
   if (isReviewSectionVisible()) {
-    if (window.nextModuleId) {
-      const targetName = window.nextModuleName || "the next module";
-      const confirmNext = confirm(`You are about to proceed to ${targetName}.\n\nAre you ready to continue?`);
-      if (confirmNext) {
-        window.location.href = `/take-test/${window.nextModuleId}`;
-      }
-    } else {
-      alert("You have completed the practice test.");
-      window.location.href = "/home";
-    }
+    submitModule();
     return;
   }
   if (state.currentQuestionIndex < state.totalQuestions - 1) {
@@ -145,6 +133,56 @@ export function nextQuestion() {
     showQuestion(state.currentQuestionIndex);
   } else {
     showReviewSection();
+  }
+}
+
+async function submitModule() {
+  const answers = {};
+  
+  state.questionElements.forEach(questionEl => {
+    const qId = questionEl.dataset.questionId;
+    const qType = questionEl.dataset.questionType;
+    
+    if (qType === 'multiple_choice') {
+      const selected = questionEl.querySelector('input[type="radio"]:checked');
+      if (selected) answers[qId] = selected.value;
+    } else if (qType === 'student_produced_response') {
+      const input = questionEl.querySelector('.spr-input');
+      if (input) answers[qId] = input.value;
+    }
+  });
+
+  const confirmNext = confirm("You are about to proceed to the next module/section.\n\nAre you ready to continue?");
+  if (!confirmNext) return;
+
+  try {
+    const response = await fetch('/test/submit-module', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+      },
+      body: JSON.stringify({
+        user_test_id: window.userTestId,
+        module_id: window.currentModuleId,
+        answers: answers
+      })
+    });
+
+    const data = await response.json();
+
+    if (data.test_completed) {
+      alert("Test completed! Redirecting to results...");
+      window.location.href = data.redirect_url;
+    } else if (data.next_module_id) {
+      window.location.href = `/take-test/${data.next_module_id}`;
+    } else {
+      console.error("Submission failed", data);
+      alert("Error submitting test. Please try again.");
+    }
+  } catch (error) {
+    console.error("Error submitting module:", error);
+    alert("Network error. Please try again.");
   }
 }
 
