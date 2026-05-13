@@ -39,6 +39,11 @@ header {
     font-weight: 600;
     height: 24px;
     line-height: 24px;
+    transition: color 0.3s ease;
+}
+
+.timer.timer-warning {
+    color: #ab2334;
 }
 
 #clockIcon {
@@ -69,15 +74,41 @@ header {
     color: #000;
 }
 
-.dropdown .dropdown-toggle:hover, .dropdown .dropdown-toggle:focus {
+.dropdown .dropdown-toggle:hover,
+.dropdown .dropdown-toggle:focus {
     background-color: white;
     color: #000;
 }
-
+.dropdown-menu.show {
+    display: flex !important;
+}
 
 .dropdown-menu {
-    width: 50rem;
-    padding: 1rem 1.5rem !important;
+    width: 52rem;
+    padding: 0 !important;
+    max-height: 80vh;
+    flex-direction: column;
+}
+
+.dropdown-content {
+    padding: 2.5rem 1.25rem 1.25rem 1.75rem;
+    overflow-y: auto;
+    flex: 1;
+    min-height: 0;
+}
+
+.dropdown-footer {
+    padding: 1rem 1.75rem;
+    display: flex;
+    justify-content: flex-end;
+}
+
+@media (max-width: 768px) {
+    .dropdown-menu {
+        width: 90vw;
+        left: 5vw !important;
+        right: 5vw !important;
+    }
 }
 
 .dropdown-menu button {

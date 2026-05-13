@@ -138,6 +138,7 @@ Route::get('/take-test/{module_id?}', function ($module_id = null) {
         'module_id' => $module->id,
         'username' => \Illuminate\Support\Facades\Auth::user()?->username ?? 'Guest',
         'is_preview' => ($test->title === 'Test Preview'),
+        'duration_minutes' => $module->duration_minutes ?? ($section->type === 'math' ? 35 : 32),
     ];
 
     // Determine next module for navigation (simple logic for now)

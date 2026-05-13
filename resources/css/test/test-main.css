@@ -191,37 +191,63 @@ main {
     display: none;
 }
 
-.answer-option label {
-    position: relative;
-    padding-left: 50px;
+.answer-row {
+    margin-bottom: 0.75rem;
+}
+
+.answer-option {
+    border: 1px solid #000;
+    border-radius: 8px;
+    transition:
+        border-color 0.3s,
+        background-color 0.3s,
+        opacity 0.3s;
     cursor: pointer;
     display: flex;
+    align-items: stretch;
+    position: relative;
+}
+
+.answer-option input[type="radio"] {
+    display: none;
+}
+
+.answer-option label {
+    margin: 0;
+    padding: 12px 12px 12px 62px;
+    flex: 1;
+    z-index: 1;
+    cursor: pointer;
+    position: relative;
+    display: flex;
     align-items: center;
-    width: 100%;
+    min-height: 48px;
+}
+
+.answer-option label p {
+    margin: 0;
 }
 
 .answer-option label::before {
     content: "";
     position: absolute;
-    left: 0;
+    left: 12px;
     top: 50%;
     transform: translateY(-50%);
     width: 28px;
     height: 28px;
     border: 2px solid #000;
     border-radius: 50%;
-    margin-left: 12px;
 }
 
 .answer-option label::after {
     position: absolute;
-    left: 10px;
+    left: 22px;
     top: 50%;
     transform: translateY(-50%);
     font-weight: 600;
     font-size: 0.875rem;
     z-index: 1;
-    margin-left: 12px;
 }
 
 .answer-option input[value="A"] + label::after {
@@ -248,39 +274,68 @@ main {
     color: white;
 }
 
-.answer-option {
-    border: 1px solid #000;
-    border-radius: 8px;
-    transition:
-        border-color 0.3s,
-        background-color 0.3s;
-    cursor: pointer;
-    display: grid;
-}
-
-.answer-option input,
-.answer-option label {
-    grid-area: 1 / 1; /* stack both on the same cell */
-}
-
-.answer-option label {
-    margin: 0;
-    padding: 12px;
-    padding-left: 62px;
-    align-items: center;
-    z-index: 1;
-}
-
-.answer-option label p {
-    margin: 0;
-}
-
 .answer-option:hover {
     background-color: #80808030;
 }
 
 .answer-option:has(input[type="radio"]:checked) {
     box-shadow: inset 0 0 0 2px #324dc7;
+}
+/* Full box strike through effect */
+.answer-option.struck {
+    opacity: 0.6;
+}
+
+.answer-option.struck::before {
+    content: "";
+    position: absolute;
+    top: 50%;
+    left: -0.75%;
+    width: 101.5%;
+    height: 2px;
+    background-color: #ab2334;
+    z-index: 10;
+    pointer-events: none;
+}
+
+.answer-option.struck label,
+.answer-option.struck label * {
+    color: #888;
+}
+
+.strike-btn {
+    border: 1px solid #000;
+    border-radius: 4px;
+    padding: 8px;
+    cursor: pointer;
+    z-index: 20;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #000;
+    transition: all 0.2s;
+    height: 30px;
+    width: 30px;
+    position: relative;
+    background: transparent;
+}
+.strike-btn:hover {
+    background-color: rgba(0, 0, 0, 0.05);
+    border-color: #ab2334;
+    color: #ab2334;
+}
+
+.strike-btn.active {
+    background-color: #ab23341a;
+    border-color: #ab2334;
+    color: #ab2334;
+}
+
+.strike-btn svg {
+    width: 16px;
+    height: 16px;
+    stroke: currentColor;
+    transition: all 0.2s;
 }
 
 .answer-input-container {

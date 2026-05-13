@@ -4,25 +4,27 @@
             <p>The question in this section address a number of important math skills.</p>
             <p>Use of calculator is permitted for all questions. A reference sheet, calculator, and these directions can be accessed throughout the test.</p>
             
-            <p>Unless otherwise indicated:</p>
-            <ul class='list-disc ps-6'>
-                <li class='mb-1'>All variables and expressions represent real numbers.</li>
-                <li class='mb-1'>Figures provided are drawn to scale.</li>
-                <li class='mb-1'>All figures lie in a plane.</li>
-                <li class='mb-1'>The domain of a given function f is the set of all real numbers x for which f(x) is a real number.</li>
-            </ul>
+            <span>Unless otherwise indicated:
+                <ul class='list-disc ps-6'>
+                    <li class='mb-1'>All variables and expressions represent real numbers.</li>
+                    <li class='mb-1'>Figures provided are drawn to scale.</li>
+                    <li class='mb-1'>All figures lie in a plane.</li>
+                    <li class='mb-1'>The domain of a given function f is the set of all real numbers x for which f(x) is a real number.</li>
+                </ul>
+            </span>
 
             <p>For <strong>multiple-choice questions</strong>, solve each problem and choose the correct answer from the choices provided. Each multiple-choice questions has a single correct answer.</p>
             
-            <p>For <strong>student-produced response questions</strong>, solve each problem and enter your answer as described below.</p>
-            <ul class='list-disc ps-6'>
-                <li>If you find <strong>more than one correct answers</strong>, enter only one answer.</li>
-                <li>You can enter up to 5 characters for a <strong>positive</strong> answer and up to 6 characters (including the negative sign) for a <strong>negative</strong> answer.</li>
-                <li>If your answer is a <strong>fraction</strong> that doesn't fit in the provided space, enter the decimal equivalent.</li>
-                <li>If your answer is a <strong>decimal</strong> that doesn't fit in the provided space, enter it by truncating or rounding at the fourth digit.</li>
-                <li>If your answer is a <strong>mixed number</strong> (such as 3 1/2), enter it as an improper fraction (7/2) or its decimal equivalent (3.5).</li>
-                <li>Don't enter <strong>symbols</strong> such as a percent sign, comma, or dollar sign.</li>
-            </ul>
+            <span>For <strong>student-produced response questions</strong>, solve each problem and enter your answer as described below.
+                <ul class='list-disc ps-6'>
+                    <li>If you find <strong>more than one correct answers</strong>, enter only one answer.</li>
+                    <li>You can enter up to 5 characters for a <strong>positive</strong> answer and up to 6 characters (including the negative sign) for a <strong>negative</strong> answer.</li>
+                    <li>If your answer is a <strong>fraction</strong> that doesn't fit in the provided space, enter the decimal equivalent.</li>
+                    <li>If your answer is a <strong>decimal</strong> that doesn't fit in the provided space, enter it by truncating or rounding at the fourth digit.</li>
+                    <li>If your answer is a <strong>mixed number</strong> (such as 3 1/2), enter it as an improper fraction (7/2) or its decimal equivalent (3.5).</li>
+                    <li>Don't enter <strong>symbols</strong> such as a percent sign, comma, or dollar sign.</li>
+                </ul>
+            </span>
         </div>
         ";
 
@@ -89,10 +91,8 @@
         <div class="resizable-panel right-panel">
             @foreach ($questions as $q)
                 <div class="question @if (!$loop->first) d-none @endif"
-                    id="question{{ $loop->iteration }}" 
-                    data-question-id="{{ $q->id }}"
-                    data-section-type="{{ $q->section_type }}"
-                    data-question-type="{{ $q->question_type }}">
+                    id="question{{ $loop->iteration }}" data-question-id="{{ $q->id }}"
+                    data-section-type="{{ $q->section_type }}" data-question-type="{{ $q->question_type }}">
                     <div class="d-flex flex-column gap-3">
                         <div class="question-header d-flex align-items-center gap-3">
                             <div class="number">{{ $loop->iteration }}</div>
@@ -108,32 +108,43 @@
                         <div class="question-body">
                             <div class="stem-text mb-4">{!! trim(Str::markdown($q->stem, ['html_input' => 'strip', 'allow_unsafe_links' => false])) !!}</div>
 
-                            <div class="d-flex flex-column gap-3">
-                                @if ($q->question_type === 'student_produced_response')
-                                    <div class="answer-input-container">
-                                        <label class="d-block mb-2 fw-bold">Enter your answer:</label>
-                                        <input type="text" class="form-control spr-input"
-                                            name="q{{ $loop->iteration }}" placeholder="______" maxlength="6">
-                                        @if ($q->spr_hint)
-                                            <div class="form-text mt-1 italic text-muted small">{{ $q->spr_hint }}
-                                            </div>
-                                        @endif
+                            @if ($q->question_type === 'student_produced_response')
+                                <div class="answer-input-container">
+                                    <label class="d-block mb-2 fw-bold">Enter your answer:</label>
+                                    <input type="text" class="form-control spr-input" name="q{{ $loop->iteration }}"
+                                        placeholder="______" maxlength="6">
+                                    @if ($q->spr_hint)
+                                        <div class="form-text mt-1 italic text-muted small">{{ $q->spr_hint }}
+                                        </div>
+                                    @endif
 
-                                        <h4 class="spr-preview mt-4">Answer Preview: <span class="preview-value"></span>
-                                        </h4>
-                                    </div>
-                                @else
+                                    <h4 class="spr-preview mt-4">Answer Preview: <span class="preview-value"></span>
+                                    </h4>
+                                </div>
+                            @else
+                                <div class="d-flex flex-column gap-3">
                                     @foreach ($q->answerChoices->sortBy('order') as $choice)
-                                        <div class="answer-option">
-                                            <input type="radio"
-                                                id="q{{ $loop->parent->iteration }}{{ $choice->label }}"
-                                                name="q{{ $loop->parent->iteration }}" value="{{ $choice->label }}">
-                                            <label
-                                                for="q{{ $loop->parent->iteration }}{{ $choice->label }}">{!! Str::markdown($choice->content) !!}</label>
+                                        <div class="answer-row d-flex align-items-center gap-3">
+                                            <div class="answer-option flex-grow-1">
+                                                <input type="radio"
+                                                    id="q{{ $loop->parent->iteration }}{{ $choice->label }}"
+                                                    name="q{{ $loop->parent->iteration }}"
+                                                    value="{{ $choice->label }}">
+                                                <label
+                                                    for="q{{ $loop->parent->iteration }}{{ $choice->label }}">{!! Str::markdown($choice->content) !!}</label>
+                                            </div>
+                                            <button type="button" class="strike-btn" title="Strike through">
+                                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                                    stroke-width="2">
+                                                    <circle cx="12" cy="12" r="10"></circle>
+                                                    <line x1="7" y1="7" x2="17" y2="17">
+                                                    </line>
+                                                </svg>
+                                            </button>
                                         </div>
                                     @endforeach
-                                @endif
-                            </div>
+                                </div>
+                            @endif
                         </div>
                     </div>
                 </div>
@@ -149,5 +160,6 @@
         window.userTestId = @json($userTestId ?? null);
         window.currentModuleId = @json($testData->module_id ?? null);
         window.isPreview = @json($testData->is_preview ?? false);
+        window.durationMinutes = @json($testData->duration_minutes ?? 35);
     </script>
 </x-layouts.test>

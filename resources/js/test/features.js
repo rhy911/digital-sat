@@ -154,7 +154,38 @@ export function initializeQuestionTracking() {
 
     const radioButtons = question.querySelectorAll('input[type="radio"]');
     radioButtons.forEach((radio) => {
-      radio.addEventListener("change", () => updateQuestionButtonStates());
+      radio.addEventListener("change", () => {
+        const option = radio.closest('.answer-option');
+        if (option && option.classList.contains('struck')) {
+          option.classList.remove('struck');
+          const row = option.closest('.answer-row');
+          const strikeBtn = row ? row.querySelector('.strike-btn') : null;
+          if (strikeBtn) strikeBtn.classList.remove('active');
+        }
+        updateQuestionButtonStates();
+      });
+    });
+
+    const strikeBtns = question.querySelectorAll('.strike-btn');
+    strikeBtns.forEach((btn) => {
+      btn.addEventListener('click', function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        const row = this.closest('.answer-row');
+        const option = row ? row.querySelector('.answer-option') : null;
+        if (option) {
+          const isStruck = option.classList.toggle('struck');
+          this.classList.toggle('active');
+          
+          if (isStruck) {
+            const radio = option.querySelector('input[type="radio"]');
+            if (radio && radio.checked) {
+              radio.checked = false;
+              updateQuestionButtonStates();
+            }
+          }
+        }
+      });
     });
   });
 }

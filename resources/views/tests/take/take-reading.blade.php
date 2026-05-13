@@ -3,6 +3,8 @@
         <div class='reading-directions-content'>
             <p>The questions in this section address a number of important reading and writing skills. Each question includes one or more passages, which may include a table or graph. Read each passage and question carefully, and then choose the best answer to the question based on the passage(s).</p>
             <p>All questions in this section are multiple-choice with four answer choices. Each question has a single best answer.</p>
+            <p>&nbsp;</p>
+            <p>&nbsp;</p>
         </div>
         ";
 
@@ -44,10 +46,8 @@
         <div class="resizable-panel right-panel">
             @foreach ($questions as $q)
                 <div class="question @if (!$loop->first) d-none @endif"
-                    id="question{{ $loop->iteration }}" 
-                    data-question-id="{{ $q->id }}"
-                    data-section-type="{{ $q->section_type }}"
-                    data-question-type="{{ $q->question_type }}">
+                    id="question{{ $loop->iteration }}" data-question-id="{{ $q->id }}"
+                    data-section-type="{{ $q->section_type }}" data-question-type="{{ $q->question_type }}">
                     <div class="d-flex flex-column gap-3">
                         <div class="question-header d-flex align-items-center gap-3">
                             <div class="number">{{ $loop->iteration }}</div>
@@ -65,11 +65,22 @@
 
                             <div class="d-flex flex-column gap-3">
                                 @foreach ($q->answerChoices->sortBy('order') as $choice)
-                                    <div class="answer-option">
-                                        <input type="radio" id="q{{ $loop->parent->iteration }}{{ $choice->label }}"
-                                            name="q{{ $loop->parent->iteration }}" value="{{ $choice->label }}">
-                                        <label
-                                            for="q{{ $loop->parent->iteration }}{{ $choice->label }}">{!! Str::markdown($choice->content) !!}</label>
+                                    <div class="answer-row d-flex align-items-center gap-3">
+                                        <div class="answer-option flex-grow-1">
+                                            <input type="radio"
+                                                id="q{{ $loop->parent->iteration }}{{ $choice->label }}"
+                                                name="q{{ $loop->parent->iteration }}" value="{{ $choice->label }}">
+                                            <label
+                                                for="q{{ $loop->parent->iteration }}{{ $choice->label }}">{!! Str::markdown($choice->content) !!}</label>
+                                        </div>
+                                        <button type="button" class="strike-btn" title="Strike through">
+                                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                                stroke-width="2">
+                                                <circle cx="12" cy="12" r="10"></circle>
+                                                <line x1="7" y1="7" x2="17" y2="17">
+                                                </line>
+                                            </svg>
+                                        </button>
                                     </div>
                                 @endforeach
                             </div>
@@ -88,5 +99,6 @@
         window.userTestId = @json($userTestId ?? null);
         window.currentModuleId = @json($testData->module_id ?? null);
         window.isPreview = @json($testData->is_preview ?? false);
+        window.durationMinutes = @json($testData->duration_minutes ?? 32);
     </script>
 </x-layouts.test>

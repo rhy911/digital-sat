@@ -26,6 +26,7 @@ import {
   preventNormalCursorBehavior,
   initializeSprInputValidation
 } from './test/features.js';
+import { startTimer } from './test/timer.js';
 
 // Expose to global scope for inline onclick handlers and backwards compatibility
 window.toggleTimer = toggleTimer;
@@ -97,6 +98,10 @@ document.addEventListener("DOMContentLoaded", () => {
   initializeResizablePanels();
   preventNormalCursorBehavior();
   initializeSprInputValidation();
+
+  // Initialize Timer
+  const duration = window.durationMinutes || 32;
+  startTimer(duration);
 
   // Show initial question
   showQuestion(state.currentQuestionIndex);

@@ -18,5 +18,9 @@ export const state = {
   highlightMode: false,
   persistentPopover: null,
   panelStates: [], // Track panel split ratio for each question
-  userTestId: null
+  userTestId: null,
+
+  // Timer state
+  timeLeft: 0, // in seconds
+  timerInterval: null
 };
