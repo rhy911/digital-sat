@@ -45,34 +45,34 @@ export function showQuestion(index) {
     if (leftPanel) leftPanel.classList.add('d-none');
     if (resizer) resizer.classList.add('d-none');
     if (rightPanel) {
-        rightPanel.style.flex = '0 0 100%';
-        rightPanel.style.maxWidth = 'none'; // Full width for panel
-        rightPanel.style.margin = '0';
+      rightPanel.style.flex = '0 0 100%';
+      rightPanel.style.maxWidth = 'none'; // Full width for panel
+      rightPanel.style.margin = '0';
 
-        // Apply width limit to question content, not the panel itself
-        state.questionElements.forEach(q => {
-            q.style.maxWidth = '800px';
-            q.style.margin = '0 auto';
-        });
+      // Apply width limit to question content, not the panel itself
+      state.questionElements.forEach(q => {
+        q.style.maxWidth = '800px';
+        q.style.margin = '0 auto';
+      });
     }
   } else {
     // Standard 2-column layout
     if (leftPanel) {
-        leftPanel.classList.remove('d-none');
-        leftPanel.style.flex = state.panelStates[index] ? `0 0 ${state.panelStates[index].left}%` : '0 0 50%';
+      leftPanel.classList.remove('d-none');
+      leftPanel.style.flex = state.panelStates[index] ? `0 0 ${state.panelStates[index].left}%` : '0 0 50%';
     }
     if (resizer) resizer.classList.remove('d-none');
     if (rightPanel) {
-        rightPanel.style.flex = state.panelStates[index] ? `0 0 ${state.panelStates[index].right}%` : '0 0 49%';
-        rightPanel.style.maxWidth = 'none';
-        rightPanel.style.margin = '0';
-        rightPanel.style.paddingTop = '40px';
+      rightPanel.style.flex = state.panelStates[index] ? `0 0 ${state.panelStates[index].right}%` : '0 0 49%';
+      rightPanel.style.maxWidth = 'none';
+      rightPanel.style.margin = '0';
+      rightPanel.style.paddingTop = '40px';
 
-        // Reset question content width for 2-column mode
-        state.questionElements.forEach(q => {
-            q.style.maxWidth = 'none';
-            q.style.margin = '0';
-        });
+      // Reset question content width for 2-column mode
+      state.questionElements.forEach(q => {
+        q.style.maxWidth = 'none';
+        q.style.margin = '0';
+      });
     }
   }
 
@@ -83,26 +83,38 @@ export function showQuestion(index) {
 
   updateNavigationButtons();
   updateQuestionButtonStates();
+
+  // Handle [Media:filename] placeholders - Optimized: only current question + mark as processed
+  const currentPassageEl = state.passageElements[index];
+  const processElements = [];
   
-  // Handle [Media:filename] placeholders
-  const contentAreas = document.querySelectorAll('.stem-text, .passage-container, .answer-option label');
-  contentAreas.forEach(area => {
-    area.innerHTML = area.innerHTML.replace(/(?<!\!)\[Media:([^\]]+)\]/gi, (match, filename) => {
-        return `<img src="/storage/media/${filename}" alt="${filename}" class="question-media img-fluid">`;
+  if (currentQuestionEl) {
+    processElements.push(...currentQuestionEl.querySelectorAll('.stem-text, .answer-option label'));
+  }
+  if (currentPassageEl) {
+    processElements.push(currentPassageEl);
+  }
+
+  processElements.forEach(area => {
+    if (area.classList.contains('media-processed')) return;
+    
+    const originalHTML = area.innerHTML;
+    const newHTML = originalHTML.replace(/(?<!\!)\[Media:([^\]]+)\]/gi, (match, filename) => {
+      return `<img src="/storage/media/${filename}" alt="${filename}" class="question-media img-fluid">`;
     });
+    
+    if (newHTML !== originalHTML) {
+      area.innerHTML = newHTML;
+    }
+    area.classList.add('media-processed');
   });
 
   if (window.smartRenderMath) {
-    window.smartRenderMath(document.body);
-  } else if (window.renderMathInElement) {
-    window.renderMathInElement(document.body, {
-      delimiters: [
-          {left: "$", right: "$", display: false},
-          {left: "\\(", right: "\\)", display: false},
-          {left: "\\[", right: "\\]", display: true}
-      ],
-      throwOnError : false
-    });
+    window.smartRenderMath(currentQuestionEl);
+    // If there's a passage, render it too
+    if (currentPassageEl && !currentPassageEl.classList.contains('d-none')) {
+      window.smartRenderMath(currentPassageEl);
+    }
   }
 }
 
@@ -113,7 +125,7 @@ export function showReviewSection() {
 
   const reviewSection = document.getElementById("review-section");
   const resizableContainer = document.querySelector(".resizable-container");
-  
+
   if (reviewSection) reviewSection.classList.remove("d-none");
   if (resizableContainer) resizableContainer.classList.add("d-none");
 
@@ -139,11 +151,11 @@ export function nextQuestion() {
 
 async function submitModule() {
   const answers = {};
-  
+
   state.questionElements.forEach(questionEl => {
     const qId = questionEl.dataset.questionId;
     const qType = questionEl.dataset.questionType;
-    
+
     if (qType === 'multiple_choice') {
       const selected = questionEl.querySelector('input[type="radio"]:checked');
       if (selected) answers[qId] = selected.value;

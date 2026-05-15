@@ -114,7 +114,7 @@
                         explanation: 'The sum of 2 and 2 is 4.'
                     },
                     {
-                        stem: 'If $x^2 = 9$, what is the **positive** value of $x$?',
+                        stem: 'If $$x^2 = 9$$, what is the **positive** value of $$x$$?',
                         question_type: 'student_produced_response',
                         difficulty: 'medium',
                         skill_domain: 'advanced_math',

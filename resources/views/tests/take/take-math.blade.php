@@ -50,7 +50,7 @@
                     <div class="passage-container @if (!$loop->first) d-none @endif"
                         id="passage{{ $loop->iteration }}">
                         @if ($q->passage)
-                            {!! Str::markdown($q->passage->content) !!}
+                            @markdown($q->passage->content)
                         @elseif($q->question_type === 'student_produced_response')
                             <div class="spr-directions p-3">
                                 <h5 class="fw-bold mb-3">Student-produced response directions</h5>
@@ -106,7 +106,7 @@
                             </span>
                         </div>
                         <div class="question-body">
-                            <div class="stem-text mb-4">{!! trim(Str::markdown($q->stem, ['html_input' => 'strip', 'allow_unsafe_links' => false])) !!}</div>
+                            <div class="stem-text mb-4">@markdown($q->stem)</div>
 
                             @if ($q->question_type === 'student_produced_response')
                                 <div class="answer-input-container">
@@ -131,7 +131,7 @@
                                                     name="q{{ $loop->parent->iteration }}"
                                                     value="{{ $choice->label }}">
                                                 <label
-                                                    for="q{{ $loop->parent->iteration }}{{ $choice->label }}">{!! Str::markdown($choice->content) !!}</label>
+                                                    for="q{{ $loop->parent->iteration }}{{ $choice->label }}">@markdown($choice->content)</label>
                                             </div>
                                             <button type="button" class="strike-btn" title="Strike through">
                                                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"

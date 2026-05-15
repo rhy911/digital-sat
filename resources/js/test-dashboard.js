@@ -1,4 +1,4 @@
-document.addEventListener('DOMContentLoaded', function() {
+document.addEventListener('DOMContentLoaded', function () {
     const TEST_DASHBOARD_TAB_KEY = 'testDashboardActiveTab';
 
     function rememberTestDashboardTab() {
@@ -52,7 +52,7 @@ document.addEventListener('DOMContentLoaded', function() {
     function showAlert(type, message) {
         const container = document.getElementById('alert-container');
         if (!container) return;
-        
+
         const alert = document.createElement('div');
         alert.className = `alert alert-${type} alert-dismissible fade show shadow-sm`;
         alert.role = 'alert';
@@ -60,9 +60,9 @@ document.addEventListener('DOMContentLoaded', function() {
             ${message}
             <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
         `;
-        
+
         container.appendChild(alert);
-        
+
         // Auto-remove after 5 seconds
         setTimeout(() => {
             if (alert.parentNode) {
@@ -575,7 +575,7 @@ document.addEventListener('DOMContentLoaded', function() {
         rebuildAllTomSelects(payload, preserveTomSelects);
     }
 
-    window.refreshTestDashboardData = function() {
+    window.refreshTestDashboardData = function () {
         rememberTestDashboardTab();
         window.location.reload();
     };
@@ -712,17 +712,17 @@ document.addEventListener('DOMContentLoaded', function() {
             }
 
             const modal = new bootstrap.Modal(document.getElementById('editQuestionModal'));
-            
+
             // Populate Choices
             if (question.question_type === 'multiple_choice') {
                 document.getElementById('editMcqChoicesContainer').classList.remove('d-none');
                 document.getElementById('editSprAnswersContainer').classList.add('d-none');
                 // Clear choices first
-                ['A','B','C','D'].forEach(lbl => {
+                ['A', 'B', 'C', 'D'].forEach(lbl => {
                     const ci = document.getElementById(`editChoice${lbl}Content`);
                     const cr = document.getElementById(`editChoice${lbl}Correct`);
-                    if(ci) ci.value = '';
-                    if(cr) cr.checked = false;
+                    if (ci) ci.value = '';
+                    if (cr) cr.checked = false;
                 });
                 const rawChoices = question.answer_choices || question.answerChoices || [];
                 rawChoices.forEach(choice => {
@@ -776,7 +776,7 @@ document.addEventListener('DOMContentLoaded', function() {
             document.getElementById('editRationaleC')?.value || '',
             document.getElementById('editRationaleD')?.value || ''
         ];
-        
+
         ['A', 'B', 'C', 'D'].forEach(lbl => {
             const el = document.getElementById(`editChoice${lbl}Content`);
             if (el) fields.push(el.value);
@@ -785,10 +785,10 @@ document.addEventListener('DOMContentLoaded', function() {
         const allText = fields.join(' ');
         const mdRegex = /!\[.*?\]\((.*?)\)/g;
         const placeholderRegex = /\[Media:([^\]]+)\]/gi;
-        
+
         const foundUrls = new Set();
         const foundPlaceholders = new Set();
-        
+
         let match;
         while ((match = mdRegex.exec(allText)) !== null) {
             foundUrls.add(match[1].trim());
@@ -815,7 +815,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 `;
                 mediaList.appendChild(col);
             });
-            
+
             foundPlaceholders.forEach(filename => {
                 const col = document.createElement('div');
                 col.className = 'col-md-3 col-6 mb-2';
@@ -840,17 +840,17 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 
-    window.removeMediaFromEditModal = function(identifier, isUrl) {
+    window.removeMediaFromEditModal = function (identifier, isUrl) {
         if (!confirm('Are you sure you want to remove this media from all fields?')) return;
-        
+
         const textareas = [
             'editQuestionStem', 'editPassageContent', 'editExplanation',
             'editRationaleA', 'editRationaleB', 'editRationaleC', 'editRationaleD'
         ];
-        
+
         const escaped = identifier.trim().replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
         const regex = isUrl ? new RegExp(`!\\[.*?\\]\\(\\s*${escaped}\\s*\\)`, 'g') : new RegExp(`\\[Media:\\s*${escaped}\\s*\\]`, 'gi');
-        
+
         textareas.forEach(id => {
             const el = document.getElementById(id);
             if (el) el.value = el.value.replace(regex, '').trim();
@@ -864,9 +864,9 @@ document.addEventListener('DOMContentLoaded', function() {
         refreshEditMediaList();
     };
 
-    document.getElementById('editQuestionMediaUpload')?.addEventListener('change', async function(e) {
+    document.getElementById('editQuestionMediaUpload')?.addEventListener('change', async function (e) {
         if (!this.files || !this.files.length) return;
-        
+
         const formData = new FormData();
         formData.append('image', this.files[0]);
 
@@ -883,12 +883,12 @@ document.addEventListener('DOMContentLoaded', function() {
             if (response.ok) {
                 const uploadedFilename = this.files[0].name.trim();
                 const markdown = result.markdown;
-                
+
                 const textareas = [
                     'editQuestionStem', 'editPassageContent', 'editExplanation',
                     'editRationaleA', 'editRationaleB', 'editRationaleC', 'editRationaleD'
                 ];
-                
+
                 let replacedAny = false;
                 const placeholderRegex = new RegExp(`\\[Media:\\s*${uploadedFilename.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\s*\\]`, 'gi');
 
@@ -925,12 +925,12 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
 
-    document.getElementById('editQuestionForm')?.addEventListener('submit', async function(e) {
+    document.getElementById('editQuestionForm')?.addEventListener('submit', async function (e) {
         e.preventDefault();
         const id = document.getElementById('editQuestionId').value;
         const formData = new FormData(this);
         const data = Object.fromEntries(formData.entries());
-        
+
         if (data.question_type === 'multiple_choice') {
             data.choices = [];
             ['A', 'B', 'C', 'D'].forEach((label, index) => {
@@ -972,7 +972,7 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
 
-    window.updateSectionName = function(select) {
+    window.updateSectionName = function (select) {
         const nameInput = document.getElementById('sectionName');
         if (!nameInput) return;
         if (select.value === 'reading_writing') {
@@ -982,11 +982,11 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     };
 
-    window.autoFetchSectionType = function(select) {
+    window.autoFetchSectionType = function (select) {
         const selectedOption = select.options[select.selectedIndex];
         const sectionType = selectedOption.getAttribute('data-section-type');
         const sectionTypeSelect = document.getElementById('qSectionType');
-        
+
         if (sectionType && sectionTypeSelect) {
             sectionTypeSelect.value = sectionType;
             updateSkillDomains(sectionTypeSelect);
@@ -1022,7 +1022,7 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 
-    window.applyModuleDefaults = function(select) {
+    window.applyModuleDefaults = function (select) {
         const selectedOption = select.options[select.selectedIndex];
         const type = selectedOption.getAttribute('data-type');
         const durationInput = document.getElementById('moduleDuration');
@@ -1039,7 +1039,7 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     };
 
-    window.updateSkillDomains = function(select) {
+    window.updateSkillDomains = function (select) {
         const domainSelect = document.getElementById('skillDomain');
         if (!domainSelect) return;
         const type = select.value;
@@ -1142,12 +1142,12 @@ document.addEventListener('DOMContentLoaded', function() {
         const form = document.getElementById(formId);
         if (!form) return;
 
-        form.addEventListener('submit', async function(e) {
+        form.addEventListener('submit', async function (e) {
             e.preventDefault();
 
             const formData = new FormData(form);
             const data = Object.fromEntries(formData.entries());
-            
+
             try {
                 const response = await fetch(url, {
                     method: 'POST',
@@ -1318,6 +1318,8 @@ document.addEventListener('DOMContentLoaded', function() {
 
         const processMedia = (text) => {
             if (!text || typeof text !== 'string') return text;
+            // Convert backslash delimiters to $$ for consistent preview rendering
+            text = text.replace(/\\\(/g, '$$').replace(/\\\)/g, '$$');
             return text.replace(/(?<!\!)\[Media:([^\]]+)\]/gi, (match, filename) => {
                 return `<img src="/storage/media/${filename}" alt="${filename}" class="question-media img-fluid mb-2 d-block mx-auto" style="max-height: 300px;">`;
             });
@@ -1340,10 +1342,10 @@ document.addEventListener('DOMContentLoaded', function() {
             }
             if (item.explanation) item.explanation = processMedia(item.explanation);
 
-            const sectionBadge = item.section_type 
-                ? `<span class="badge bg-secondary">${item.section_type === 'reading_writing' ? 'Reading & Writing' : 'Math'}</span>` 
+            const sectionBadge = item.section_type
+                ? `<span class="badge bg-secondary">${item.section_type === 'reading_writing' ? 'Reading & Writing' : 'Math'}</span>`
                 : '';
-            
+
             html += `
                 <div class="card mb-4 shadow-sm border-info">
                     <div class="card-header bg-light d-flex justify-content-between align-items-center flex-wrap gap-2">
@@ -1415,9 +1417,10 @@ document.addEventListener('DOMContentLoaded', function() {
         } else if (window.renderMathInElement) {
             window.renderMathInElement(container, {
                 delimiters: [
-                    {left: "$", right: "$", display: false}
+                    { left: '$$', right: '$$', display: false },
+                    { left: '\\\\[', right: '\\\\]', display: true },
                 ],
-                throwOnError : false
+                throwOnError: false
             });
         }
     }
@@ -1538,11 +1541,27 @@ document.addEventListener('DOMContentLoaded', function() {
     let builderBlockCount = 0;
     const builderEditors = {};
 
-    window.addBuilderBlock = function() {
+    window.insertLatex = function (textareaId) {
+        const textarea = document.getElementById(textareaId);
+        if (!textarea) return;
+
+        const start = textarea.selectionStart;
+        const end = textarea.selectionEnd;
+        const text = textarea.value;
+        const before = text.substring(0, start);
+        const after = text.substring(end, text.length);
+        const latex = '$$  $$';
+
+        textarea.value = before + latex + after;
+        textarea.focus();
+        textarea.selectionStart = textarea.selectionEnd = start + 3; // Position cursor between $$ and $$
+    };
+
+    window.addBuilderBlock = function () {
         builderBlockCount++;
         const template = document.getElementById('builderBlockTemplate').innerHTML;
         const html = template.replace(/{INDEX}/g, builderBlockCount).replace(/{DISPLAY_INDEX}/g, builderBlockCount);
-        
+
         const container = document.getElementById('builderBlocksContainer');
         const div = document.createElement('div');
         div.innerHTML = html;
@@ -1560,16 +1579,38 @@ document.addEventListener('DOMContentLoaded', function() {
             element: stemTextarea,
             placeholder: "Enter question stem...",
             minHeight: "100px",
-            toolbar: ["bold", "italic", { name: "underline", action: (editor) => editor.codemirror.replaceSelection(`<u>${editor.codemirror.getSelection()}</u>`), className: "fa fa-underline", title: "Underline" }, "heading", "|", "quote", "unordered-list", "ordered-list", "|", "preview"],
+            toolbar: [
+                "bold", "italic",
+                { name: "underline", action: (editor) => editor.codemirror.replaceSelection(`<u>${editor.codemirror.getSelection()}</u>`), className: "fa fa-underline", title: "Underline" },
+                "heading", "|",
+                "quote", "unordered-list", "ordered-list", "|",
+                {
+                    name: "latex",
+                    action: (editor) => {
+                        const cm = editor.codemirror;
+                        const selection = cm.getSelection();
+                        if (selection) {
+                            cm.replaceSelection(`$$ ${selection} $$`);
+                        } else {
+                            const cursor = cm.getCursor();
+                            cm.replaceRange("$$  $$", cursor);
+                            cm.setCursor(cursor.line, cursor.ch + 3);
+                        }
+                    },
+                    className: "fa fa-plus-circle",
+                    title: "Insert LaTeX"
+                },
+                "|", "preview"
+            ],
             status: false
         });
-        
+
         block.scrollIntoView({ behavior: 'smooth' });
 
         const imgInput = block.querySelector('.builder-image-input');
         const imgBtn = block.querySelector('.upload-image-btn');
         imgBtn.onclick = () => imgInput.click();
-        imgInput.onchange = async function() {
+        imgInput.onchange = async function () {
             if (!this.files?.[0]) return;
             const fd = new FormData();
             fd.append('image', this.files[0]);
@@ -1585,7 +1626,7 @@ document.addEventListener('DOMContentLoaded', function() {
             finally { imgBtn.disabled = false; this.value = ''; }
         };
 
-        block.querySelector('.remove-block-btn').onclick = function() {
+        block.querySelector('.remove-block-btn').onclick = function () {
             if (builderEditors[`stem_${block.dataset.index}`]) { builderEditors[`stem_${block.dataset.index}`].toTextArea(); delete builderEditors[`stem_${block.dataset.index}`]; }
             if (builderEditors[`passage_${block.dataset.index}`]) { builderEditors[`passage_${block.dataset.index}`].toTextArea(); delete builderEditors[`passage_${block.dataset.index}`]; }
             block.remove();
@@ -1608,7 +1649,28 @@ document.addEventListener('DOMContentLoaded', function() {
                     element: block.querySelector('.builder-passage'),
                     placeholder: "Enter passage content...",
                     minHeight: "150px",
-                    toolbar: ["bold", "italic", { name: "underline", action: (editor) => editor.codemirror.replaceSelection(`<u>${editor.codemirror.getSelection()}</u>`), className: "fa fa-underline", title: "Underline" }, "|", "unordered-list", "|", "preview"],
+                    toolbar: [
+                        "bold", "italic",
+                        { name: "underline", action: (editor) => editor.codemirror.replaceSelection(`<u>${editor.codemirror.getSelection()}</u>`), className: "fa fa-underline", title: "Underline" },
+                        "|", "unordered-list", "|",
+                        {
+                            name: "latex",
+                            action: (editor) => {
+                                const cm = editor.codemirror;
+                                const selection = cm.getSelection();
+                                if (selection) {
+                                    cm.replaceSelection(`\\[ ${selection} \\]`);
+                                } else {
+                                    const cursor = cm.getCursor();
+                                    cm.replaceRange("\\[  \\]", cursor);
+                                    cm.setCursor(cursor.line, cursor.ch + 3);
+                                }
+                            },
+                            className: "fa fa-plus-circle",
+                            title: "Insert LaTeX"
+                        },
+                        "|", "preview"
+                    ],
                     status: false
                 });
             }
@@ -1630,7 +1692,7 @@ document.addEventListener('DOMContentLoaded', function() {
     document.getElementById('addBuilderBlockBtn')?.addEventListener('click', window.addBuilderBlock);
     document.getElementById('builderModuleId')?.addEventListener('change', () => document.querySelectorAll('.builder-block').forEach(syncBuilderBlockDomain));
 
-    document.getElementById('clearBuilderBtn')?.addEventListener('click', function() {
+    document.getElementById('clearBuilderBtn')?.addEventListener('click', function () {
         if (confirm('Clear all questions in builder?')) {
             Object.values(builderEditors).forEach(mde => mde.toTextArea());
             for (const key in builderEditors) delete builderEditors[key];
@@ -1639,7 +1701,7 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
 
-    document.getElementById('submitBuilderBtn')?.addEventListener('click', async function() {
+    document.getElementById('submitBuilderBtn')?.addEventListener('click', async function () {
         const moduleId = getTomSelectValue('builderModuleId');
         const blocks = document.querySelectorAll('.builder-block');
         if (!moduleId || blocks.length === 0) { showAlert('danger', 'Module and at least one block required.'); return; }
@@ -1689,7 +1751,7 @@ document.addEventListener('DOMContentLoaded', function() {
         } catch (error) { showAlert('danger', 'Error: ' + error.message); }
     });
 
-    document.getElementById('bulkZipImportBtn')?.addEventListener('click', async function() {
+    document.getElementById('bulkZipImportBtn')?.addEventListener('click', async function () {
         const fileInput = document.getElementById('bulkZipFile');
         const moduleId = getTomSelectValue('bulkQuestionModule');
         if (!moduleId || !fileInput.files[0]) { showAlert('danger', 'Module and ZIP file required.'); return; }

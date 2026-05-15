@@ -26,7 +26,7 @@
             @foreach ($questions as $index => $q)
                 @if ($q->passage)
                     <div class="passage-container @if (!$loop->first) d-none @endif"
-                        id="passage{{ $loop->iteration }}">{!! trim(Str::markdown($q->passage->content, ['html_input' => 'strip', 'allow_unsafe_links' => false])) !!}</div>
+                        id="passage{{ $loop->iteration }}">@markdown($q->passage->content)</div>
                 @else
                     <div class="passage-container @if (!$loop->first) d-none @endif"
                         id="passage{{ $loop->iteration }}">
@@ -61,7 +61,7 @@
                             </span>
                         </div>
                         <div class="question-body">
-                            <div class="stem-text mb-4">{!! trim(Str::markdown($q->stem, ['html_input' => 'strip', 'allow_unsafe_links' => false])) !!}</div>
+                            <div class="stem-text mb-4">@markdown($q->stem)</div>
 
                             <div class="d-flex flex-column gap-3">
                                 @foreach ($q->answerChoices->sortBy('order') as $choice)
@@ -71,7 +71,7 @@
                                                 id="q{{ $loop->parent->iteration }}{{ $choice->label }}"
                                                 name="q{{ $loop->parent->iteration }}" value="{{ $choice->label }}">
                                             <label
-                                                for="q{{ $loop->parent->iteration }}{{ $choice->label }}">{!! Str::markdown($choice->content) !!}</label>
+                                                for="q{{ $loop->parent->iteration }}{{ $choice->label }}">@markdown($choice->content)</label>
                                         </div>
                                         <button type="button" class="strike-btn" title="Strike through">
                                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"

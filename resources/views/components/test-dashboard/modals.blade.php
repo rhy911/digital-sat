@@ -32,11 +32,17 @@
                 </div>
                 <div class="modal-body">
                     <div id="editPassageContainer" class="mb-3 d-none">
-                        <label for="editPassageContent" class="form-label fw-bold">Passage Content (Reading & Writing)</label>
+                        <div class="d-flex justify-content-between align-items-center mb-1">
+                            <label for="editPassageContent" class="form-label fw-bold mb-0">Passage Content (Reading & Writing)</label>
+                            <button type="button" class="btn btn-link btn-sm p-0 text-decoration-none" onclick="insertLatex('editPassageContent')"><i class="bi bi-plus-circle"></i> LaTeX</button>
+                        </div>
                         <textarea class="form-control" id="editPassageContent" name="passage_content" rows="6"></textarea>
                     </div>
                     <div class="mb-3">
-                        <label for="editQuestionStem" class="form-label fw-bold">Question Stem / Prompt</label>
+                        <div class="d-flex justify-content-between align-items-center mb-1">
+                            <label for="editQuestionStem" class="form-label fw-bold mb-0">Question Stem / Prompt</label>
+                            <button type="button" class="btn btn-link btn-sm p-0 text-decoration-none" onclick="insertLatex('editQuestionStem')"><i class="bi bi-plus-circle"></i> LaTeX</button>
+                        </div>
                         <textarea class="form-control" id="editQuestionStem" name="stem" rows="4" required></textarea>
                     </div>
                     <div class="row">
@@ -114,9 +120,13 @@
                     </div>
 
                     <hr>
-                    <h6 class="fw-bold mb-3">Explanation</h6>
+                    <hr>
+                    <div class="d-flex justify-content-between align-items-center mb-1">
+                        <h6 class="fw-bold m-0">Explanation</h6>
+                        <button type="button" class="btn btn-link btn-sm p-0 text-decoration-none" onclick="insertLatex('editExplanation')"><i class="bi bi-plus-circle"></i> LaTeX</button>
+                    </div>
                     <div class="mb-3">
-                        <label for="editExplanation" class="form-label">Correct Rationale</label>
+                        <label for="editExplanation" class="form-label small">Correct Rationale</label>
                         <textarea class="form-control" id="editExplanation" name="explanation" rows="3"></textarea>
                     </div>
                     <div class="row">

@@ -484,49 +484,49 @@ class BulkQuestionImportService
     {
         if (! isset($payload['items'])) return $payload;
         foreach ($payload['items'] as $i => $row) {
-            // Map common field variations
-            if (!isset($row['question_type'])) {
-                if (isset($row['type'])) {
-                    $payload['items'][$i]['question_type'] = $row['type'];
-                } elseif (!isset($row['choices']) || $row['choices'] === null) {
-                    // Detect SPR if choices are missing/null
-                    $payload['items'][$i]['question_type'] = 'student_produced_response';
-                } else {
-                    // Default for Digital SAT if not specified
-                    $payload['items'][$i]['question_type'] = 'multiple_choice';
-                }
-            }
-
-            // Map "domain" to "skill_domain"
+            // 1. Map "domain" to "skill_domain"
             if (!isset($row['skill_domain']) && isset($row['domain'])) {
                 $payload['items'][$i]['skill_domain'] = $row['domain'];
             }
 
-            // Normalize Passage
-            if (isset($row['passage']) && is_string($row['passage'])) {
+            // 2. Detect and normalize question_type
+            if (!isset($row['question_type'])) {
+                if (isset($row['type'])) {
+                    $payload['items'][$i]['question_type'] = $row['type'];
+                } elseif (!isset($row['choices']) || $row['choices'] === null || $row['choices'] === '') {
+                    $payload['items'][$i]['question_type'] = 'student_produced_response';
+                } else {
+                    $payload['items'][$i]['question_type'] = 'multiple_choice';
+                }
+            }
+
+            // 3. Normalize Passage (from string to array)
+            if (isset($row['passage']) && is_string($row['passage']) && trim($row['passage']) !== '') {
                 $payload['items'][$i]['passage'] = ['content' => $row['passage']];
             }
 
-            // Normalize Choices (If object like {"A": "...", "B": "..."})
-            if (isset($row['choices']) && is_array($row['choices']) && ! array_is_list($row['choices'])) {
-                $normalizedChoices = [];
-                $correctAns = $row['correct_answer'] ?? ($row['correct_choice'] ?? null);
-                
-                foreach ($row['choices'] as $label => $content) {
-                    $normalizedChoices[] = [
-                        'label' => $label,
-                        'content' => $content,
-                        'is_correct' => ($label === $correctAns)
-                    ];
-                }
-                $payload['items'][$i]['choices'] = $normalizedChoices;
-            }
+            // 4. Map correct_answer to choices or spr_correct_answers
+            $correctAns = $row['correct_answer'] ?? ($row['correct_choice'] ?? null);
 
-            // If SPR, map correct_answer to spr_correct_answers array
-            if ($payload['items'][$i]['question_type'] === 'student_produced_response') {
-                if (!isset($row['spr_correct_answers']) && isset($row['correct_answer'])) {
-                    $val = $row['correct_answer'];
-                    $payload['items'][$i]['spr_correct_answers'] = is_array($val) ? $val : [$val];
+            if ($payload['items'][$i]['question_type'] === 'multiple_choice') {
+                if (isset($row['choices']) && is_array($row['choices'])) {
+                    if (!array_is_list($row['choices'])) {
+                        // Handle Object structure: {"A": "...", "B": "..."}
+                        $normalizedChoices = [];
+                        foreach ($row['choices'] as $label => $content) {
+                            $normalizedChoices[] = [
+                                'label' => $label,
+                                'content' => $content,
+                                'is_correct' => (strtoupper(trim((string)$label)) === strtoupper(trim((string)$correctAns)))
+                            ];
+                        }
+                        $payload['items'][$i]['choices'] = $normalizedChoices;
+                    }
+                }
+            } else {
+                // Handle student_produced_response
+                if (!isset($row['spr_correct_answers']) && $correctAns !== null) {
+                    $payload['items'][$i]['spr_correct_answers'] = is_array($correctAns) ? $correctAns : [$correctAns];
                 }
             }
         }

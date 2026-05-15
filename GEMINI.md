@@ -79,13 +79,41 @@ Do thuật toán chính thức của College Board là bảo mật, hệ thống
   - Test Schema: Đảm bảo Database luôn đúng cấu trúc.
   - Test Logic: Tập trung vào các hàm tính điểm và logic adaptive.
 
-## 5. Quy trình làm việc (Workflow)
+## 6. Project Naming Conventions
 
-1. **Nghiên cứu:** Kiểm tra `artisan` và cấu trúc file hiện tại.
-2. **Thiết kế:** Cập nhật Database (nếu cần) qua Migration.
-3. **Thực thi:**
-    - Tạo FormRequest -> Service -> Controller.
-    - Cập nhật giao diện Blade & Assets.
-4. **Kiểm chứng:** Chạy `php artisan test` và kiểm tra thủ công trên trình duyệt.
+To ensure consistency and maintainability, all developers must adhere to the following naming standards:
+
+### A. Backend (PHP - Laravel)
+- **Classes/Models/Controllers:** `PascalCase` (e.g., `QuestionController`, `SatScoringService`).
+- **Methods:** `camelCase` (e.g., `estimateTheta`, `getPayloadFromRequest`).
+- **Variables/Properties:** `camelCase` (e.g., `count`, `domain`, `pos`). Prioritize brevity without losing technical context.
+- **Example:** Use `domain` instead of `skillDomain`, `subdomain` instead of `skillSubdomain`.
+- **Namespaces:** `PascalCase` (e.g., `App\Http\Controllers`).
+
+### B. Frontend (JavaScript)
+- **Functions:** `camelCase` (e.g., `showQuestion`, `smartRenderMath`).
+- **Variables/Constants:** `camelCase` (e.g., `currentIndex`, `isReviewVisible`).
+- **Global Constants/Environment:** `UPPER_SNAKE_CASE` (e.g., `API_BASE_URL`).
+- **Files:** `kebab-case.js` (e.g., `test-navigation.js`, `ui-handlers.js`).
+
+### C. Styling (CSS/Tailwind)
+- **Standard CSS Classes:** `kebab-case` (e.g., `test-container`, `btn-primary`).
+- **BEM (Block Element Modifier) for Custom Components:** `block__element--modifier` (e.g., `passage__content--highlighted`).
+- **Tailwind Classes:** Use utility-first approach directly in Blade.
+
+### D. Database (MySQL)
+- **Tables:** `snake_case` (plural) (e.g., `questions`, `answer_choices`).
+- **Columns:** `snake_case` (singular) (e.g., `is_pretest`, `skill_domain`).
+- **Foreign Keys:** `singular_table_id` (e.g., `passage_id`, `module_id`).
+
+### E. Views & Assets (Blade)
+- **View Files:** `kebab-case.blade.php` (e.g., `take-math.blade.php`).
+- **Component Folders:** `kebab-case` (e.g., `resources/views/components/test-dashboard`).
+- **Image Assets:** `snake_case` (e.g., `test_preview.png`).
+
+### F. API Routes
+- **Endpoints:** `kebab-case` (plural) (e.g., `/api/user-tests`, `/api/module-questions`).
+- **Parameters:** `snake_case` (e.g., `{test_id}`).
+
 
 ---

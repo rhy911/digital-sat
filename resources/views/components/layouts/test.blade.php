@@ -15,13 +15,13 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css">
     <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js"></script>
     <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/auto-render.min.js" onload="if(window.smartRenderMath) { window.smartRenderMath(document.body); } else { renderMathInElement(document.body, {
-                                                        delimiters: [
-                                                            {left: '$', right: '$', display: false},
-                                                            {left: '\\(', right: '\\)', display: false},
-                                                            {left: '\\[', right: '\\]', display: true}
-                                                        ],
-                                                        throwOnError : false
-                                                    }); }"></script>
+                                                            delimiters: [
+                                                                { left: '$$', right: '$$', display: false },
+                                                                { left: '\\\\[', right: '\\\\]', display: true },
+                                                            ],
+                                                            throwOnError : false,
+                                                            trust: true
+                                                        }); }"></script>
     @stack('styles')
 </head>
 

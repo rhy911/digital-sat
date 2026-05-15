@@ -1,7 +1,7 @@
 <x-layouts.app :user="$user">
     <div class="welcome">
         <div class="container">
-            <h1>Welcome, {{ explode(' ', $user->name)[0] ?? 'User' }}! Good luck on test day!</h1>
+            <h1>Welcome, {{ $user->username ?? 'User' }}! Good luck on test day!</h1>
         </div>
     </div>
     <div class="container">
