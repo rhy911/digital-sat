@@ -52,6 +52,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
     Route::get('/home', HomeController::class)->name('home');
     Route::get('/my-practice/{user_test_id}', [\App\Http\Controllers\PracticeController::class, 'show'])->name('my-practice');
+    Route::get('/my-practice/{user_test_id}/score', [\App\Http\Controllers\PracticeController::class, 'scoreDetails'])->name('my-practice.score');
 
     Route::post('/test/start/{test_id}', [\App\Http\Controllers\TestTakingController::class, 'startTest'])->name('test.start');
     Route::post('/test/submit-module', [\App\Http\Controllers\TestTakingController::class, 'submitModule'])->name('test.submit-module');

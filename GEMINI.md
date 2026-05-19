@@ -73,7 +73,7 @@ Hệ thống sử dụng phương pháp **Item Response Theory (IRT)** với mô
 ## 4. Quy trình & Nguyên tắc Làm việc (Agent/Dev Workflow)
 
 - **Surgical Updates:** Khi chỉnh sửa code, chỉ tập trung vào phần được yêu cầu, tránh refactor lan man trừ khi được chỉ định.
-- **Session Memory:** Sau mỗi phiên làm việc (session), bắt buộc ghi lại tóm tắt các thay đổi vào file `Herd/digital-sat/prompts/agent_memory.md`.
+- **Session Memory:** Sau mỗi phiên làm việc (session), bắt buộc ghi lại tóm tắt các thay đổi vào file `Herd/digital-sat/prompts/agent_memory.md`. Luôn sử dụng skill `caveman-compress` để nén tóm tắt thành dạng Caveman (Caveman-speak) nhằm tối ưu hóa tối đa dung lượng token đầu vào (input tokens) cho các session tiếp theo.
 - **Feature Tracking:** Bắt buộc cập nhật mọi tính năng mới hoặc thay đổi logic quan trọng vào `prompts/feature_memory.md`. Đây là cơ sở để AI nắm bắt project nhanh và dùng để trích xuất báo cáo sau này.
 - **Convention:** Tuân thủ PSR-12 cho PHP và CamelCase cho JavaScript, sử dụng các hàm mới của Lavarel, không dùng kiểu php cũ.
 - **Documentation:** Luôn cập nhật Migration và Model DocBlock khi thay đổi cấu trúc dữ liệu.

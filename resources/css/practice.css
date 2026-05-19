@@ -99,6 +99,8 @@
     border-radius: 30px;
     font-size: 14px;
     font-weight: 600;
+    color: #000;
+    text-decoration: none;
     cursor: pointer;
     transition: all 0.3s ease;
 }
@@ -135,3 +137,33 @@
     color: #666;
     text-decoration: underline;
 }
+
+/* Score Details Page */
+.sd-header-btn { padding: 0.5rem 1.25rem; border-radius: 9999px; border: 1px solid #fff; color: #fff; font-weight: 600; font-size: 0.875rem; transition: background-color 0.3s, color 0.3s; display: flex; align-items: center; gap: 0.5rem; background: transparent; cursor: pointer; }
+.sd-header-btn:hover { background-color: #fff; color: #0077c8; }
+.sd-summary-card { background-color: #eff3f8; border-radius: 0.75rem; padding: 1.5rem; text-align: center; }
+.sd-summary-value { font-size: 2.25rem; font-weight: 700; margin-bottom: 0.5rem; line-height: 1; }
+.sd-summary-label { color: #374151; font-weight: 600; font-size: 0.875rem; }
+.sd-table { width: 100%; text-align: left; border-collapse: collapse; }
+.sd-table-th { padding: 0.75rem 1rem; font-weight: 700; font-size: 0.875rem; color: #fff; background-color: #4d4d4d; }
+.sd-table-row { border-bottom: 1px solid #e5e7eb; transition: background-color 0.2s; }
+.sd-table-row:hover { background-color: #f9fafb; }
+.sd-table-td { padding: 0.75rem 1rem; font-size: 0.875rem; }
+.sd-tab-btn { padding: 0.5rem 1rem; font-weight: 700; border-bottom: 4px solid transparent; color: #4b5563; transition: color 0.2s, border-color 0.2s; background: transparent; cursor: pointer; }
+.sd-tab-btn:hover { color: #000; border-color: #000; }
+.sd-tab-btn.active { color: #000; border-color: #000; }
+
+
+.sd-domain-bars { display: flex; gap: 0.25rem; margin-bottom: 0.5rem; }
+.sd-domain-bar { height: 0.5rem; flex: 1 1 0%; }
+.sd-domain-bar.filled { background-color: #002b66; }
+.sd-domain-bar.empty { background-color: #e5e7eb; }
+.sd-domain-meta { font-size: 0.75rem; }
+.sd-domain-level { color: #0077c8; font-weight: 700; border-bottom: 1px dotted #0077c8; cursor: help; }
+
+
+.toggle-checkbox:checked { right: 0; border-color: #68D391; }
+.toggle-checkbox:checked + .toggle-label { background-color: #68D391; }
+.toggle-checkbox { right: 0; z-index: 1; border-color: #e2e8f0; transition: all 0.3s; }
+.toggle-label { transition: all 0.3s; }
+

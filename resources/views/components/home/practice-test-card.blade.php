@@ -40,7 +40,7 @@
 
     <!-- Actions -->
     <div class="practice-card-actions">
-        <button class="practice-card-btn-primary">Score Details</button>
+        <a href="{{ route('my-practice.score', ['user_test_id' => $test->id]) }}" class="practice-card-btn-primary block text-center no-underline">Score Details</a>
         <div class="practice-card-footer-link">
             <span>☰ Practice Specific Questions</span>
         </div>

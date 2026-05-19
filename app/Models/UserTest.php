@@ -29,4 +29,9 @@ class UserTest extends Model
     {
         return $this->belongsTo(Test::class);
     }
+
+    public function userAnswers()
+    {
+        return $this->hasMany(UserTestAnswer::class);
+    }
 }
