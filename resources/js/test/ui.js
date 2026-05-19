@@ -199,18 +199,25 @@ export function initializeMoreDropdown() {
 
   moreBtn.addEventListener("click", (e) => {
     e.stopPropagation();
-    moreMenu.classList.toggle("hidden");
+    const isHidden = moreMenu.classList.toggle("hidden");
+    if (isHidden) {
+      moreBtn.classList.remove("highlight-mode-active");
+    } else {
+      moreBtn.classList.add("highlight-mode-active");
+    }
   });
 
   document.addEventListener("click", (event) => {
     if (!moreBtn.contains(event.target) && !moreMenu.contains(event.target)) {
       moreMenu.classList.add("hidden");
+      moreBtn.classList.remove("highlight-mode-active");
     }
   });
 
   if (takeBreakBtn) {
     takeBreakBtn.addEventListener("click", () => {
       moreMenu.classList.add("hidden");
+      moreBtn.classList.remove("highlight-mode-active");
       alert("Taking a break... (Functionality to be implemented)");
     });
   }
@@ -218,6 +225,7 @@ export function initializeMoreDropdown() {
   if (exitExamBtn) {
     exitExamBtn.addEventListener("click", () => {
       moreMenu.classList.add("hidden");
+      moreBtn.classList.remove("highlight-mode-active");
       if (confirm("Are you sure you want to exit the exam? Your progress will be saved.")) {
         window.location.href = "/dashboard";
       }

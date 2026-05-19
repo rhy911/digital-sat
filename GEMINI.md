@@ -31,20 +31,21 @@ Hệ thống được chia thành 4 phân hệ chính:
   - **Tooling:** Timer, Mark for Review, Strike-through (loại trừ đáp án), Calculator, và Highlight.
   - **Security:** Chế độ Lockdown Browser giả lập (chặn copy/paste, chặn chuột phải).
 
-### E. Logic Tính điểm (Scoring Logic - Simplified IRT)
+### E. Logic Tính điểm (Scoring Logic - Advanced IRT)
 
-Do thuật toán chính thức của College Board là bảo mật, hệ thống sử dụng phương pháp **Simplified Item Response Theory (IRT)** để đạt độ chính xác ~8/10:
+Hệ thống sử dụng phương pháp **Item Response Theory (IRT)** với mô hình **3PL (3-Parameter Logistic)** để đạt độ chính xác cao:
 
 - **Tham số câu hỏi (Item Parameters):**
-  - **Difficulty (b):** Easy = -1.5, Medium = 0, Hard = 1.5.
-  - **Discrimination (a):** Mặc định = 1.0 (Câu SPR có thể trọng số cao hơn).
-  - **Guessing (c):** MCQ = 0.25, SPR = 0.0.
+  - **Difficulty (b):** Độ khó (Easy: -1.2, Medium: 0.0, Hard: 1.4).
+  - **Discrimination (a):** Độ phân biệt (MCQ: 0.9, SPR: 1.3).
+  - **Guessing (c):** Xác suất đoán mò (MCQ: 0.25, SPR: 0.0).
 - **Cơ chế tính toán:**
   - Loại bỏ các câu `is_pretest = true` khỏi kết quả tính điểm.
-  - Tính chỉ số năng lực **Theta (θ)** dựa trên trung bình trọng số của các câu đúng.
-  - Chuyển đổi θ sang thang điểm 200–800: `Scaled Score = 500 + (θ * 100)`.
-  - Giới hạn (Clip) điểm trong khoảng [200, 800].
-- **Adaptive Routing:** Sử dụng Weighted Raw Score của Module 1 để quyết định Easy/Hard Module 2.
+  - Sử dụng **Maximum Likelihood Estimation (MLE)** qua thuật toán Newton-Raphson để ước tính chỉ số năng lực **Theta (θ)** trong khoảng [-4.0, 4.0].
+  - Chuyển đổi θ sang thang điểm 200–800 bằng hàm **Sigmoid Mapping** để mô phỏng đường cong điểm số thực tế.
+  - **Adaptive Routing:** Sử dụng θ sau Module 1 để quyết định nhánh Easy/Hard cho Module 2.
+
+*Chi tiết xem tại: `prompts/digital-sat-scoring-pipeline.md` và `prompts/feature_memory.md`.*
 
 ---
 
@@ -72,6 +73,8 @@ Do thuật toán chính thức của College Board là bảo mật, hệ thống
 ## 4. Quy tắc Phát triển (Coding Standards)
 
 - **Surgical Updates:** Khi chỉnh sửa code, chỉ tập trung vào phần được yêu cầu, tránh refactor lan man trừ khi được chỉ định.
+- **Session Memory:** Sau mỗi phiên làm việc (session), bắt buộc ghi lại tóm tắt các thay đổi vào file `Herd/digital-sat/prompts/agent_memory.md`.
+- **Feature Tracking:** Bắt buộc cập nhật mọi tính năng mới hoặc thay đổi logic quan trọng vào `prompts/feature_memory.md`. Đây là cơ sở để AI nắm bắt project nhanh và dùng để trích xuất báo cáo sau này.
 - **Convention:** Tuân thủ PSR-12 cho PHP và CamelCase cho JavaScript, sử dụng các hàm mới của Lavarel, không dùng kiểu php cũ.
 - **Documentation:** Luôn cập nhật Migration và Model DocBlock khi thay đổi cấu trúc dữ liệu.
 - **Structure**: Ưu tiên chia nhỏ các tính năng thành nhiều file, đóng gói trong từng folder nhằm dễ tìm kiếm và quản lý.

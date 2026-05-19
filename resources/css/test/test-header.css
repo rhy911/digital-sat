@@ -24,15 +24,144 @@ header {
 }
 
 .icon-container.highlight-mode-active {
-    background-color: #fff4b1;
-    border: 2px solid #fedb00;
+    background-color: white;
+    border: 1px solid #ccc;
     border-radius: 4px;
 }
 
-.icon img {
+.icon-container.highlight-mode-active p {
+    text-decoration: underline;
+    font-weight: 600;
+}
+
+.icon img, .icon svg {
     width: 25px;
     height: 25px;
 }
+
+/* Calculator Modal Styles */
+.calculator-modal {
+    position: fixed;
+    top: 0px;
+    left: 0px;
+    width: 400px;
+    height: 700px;
+    background: white;
+    border: 1px solid #ccc;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+    z-index: 1000;
+    display: flex;
+    flex-direction: column;
+    border-radius: 8px;
+    overflow: hidden;
+    min-width: 400px;
+    min-height: 300px;
+}
+
+.calculator-modal.hidden {
+    display: none;
+}
+
+.calculator-modal-header {
+    background: #003366;
+    color: white;
+    padding: 0 12px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    cursor: move;
+    user-select: none;
+    height: 40px;
+}
+
+.calculator-tabs {
+    display: flex;
+    height: 100%;
+    align-items: flex-end;
+    gap: 2px;
+}
+
+.calc-tab {
+    background: #004d99;
+    color: #ccc;
+    border: none;
+    padding: 6px 15px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    border-radius: 4px 4px 0 0;
+    height: 32px;
+    transition: all 0.2s;
+}
+
+.calc-tab:hover {
+    color: white;
+    background: #0059b3;
+}
+
+.calc-tab.active {
+    background: white;
+    color: #003366;
+    height: 36px;
+}
+
+.calculator-modal-header button.closeCalculatorBtn {
+    background: transparent;
+    border: none;
+    color: white;
+    font-size: 24px;
+    cursor: pointer;
+    line-height: 1;
+    padding: 5px;
+}
+
+.calculator-content {
+    flex: 1;
+    width: 100%;
+}
+
+.calculator-content.hidden {
+    display: none;
+}
+
+.calculator-resize-handle {
+    position: absolute;
+    right: 0;
+    bottom: 0;
+    width: 20px;
+    height: 20px;
+    cursor: nwse-resize;
+    background: #003366;
+    clip-path: polygon(100% 0, 100% 100%, 0 100%);
+    opacity: 0.6;
+    transition: opacity 0.2s;
+    z-index: 10;
+}
+
+.calculator-resize-handle:hover {
+    opacity: 1;
+}
+
+.calculator-resize-handle::after {
+    content: "";
+    position: absolute;
+    right: 3px;
+    bottom: 3px;
+    width: 10px;
+    height: 10px;
+    border-right: 2px solid white;
+    border-bottom: 2px solid white;
+}
+
+@media (max-width: 600px) {
+    .calculator-modal {
+        width: 95vw !important;
+        height: 70vh !important;
+        left: 2.5vw !important;
+        top: 15vh !important;
+    }
+}
+
 
 .timer {
     font-size: 1.25rem;

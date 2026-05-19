@@ -14,14 +14,16 @@
     @vite(['resources/css/app.css', 'resources/css/test/test-main.css', 'resources/sass/app.scss', 'resources/js/app.js', 'resources/js/test.js'])
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css">
     <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js"></script>
+    <script src="https://www.desmos.com/api/v1.12/calculator.js?apiKey=db07a8e640bc4faca92a5c89e0745235"></script>
+    <script src="https://www.desmos.com/api/v1.12/scientific.js?apiKey=db07a8e640bc4faca92a5c89e0745235"></script>
     <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/auto-render.min.js" onload="if(window.smartRenderMath) { window.smartRenderMath(document.body); } else { renderMathInElement(document.body, {
-                                                            delimiters: [
-                                                                { left: '$$', right: '$$', display: false },
-                                                                { left: '\\\\[', right: '\\\\]', display: true },
-                                                            ],
-                                                            throwOnError : false,
-                                                            trust: true
-                                                        }); }"></script>
+                                                                    delimiters: [
+                                                                        { left: '$$', right: '$$', display: false },
+                                                                        { left: '\\\\[', right: '\\\\]', display: true },
+                                                                    ],
+                                                                    throwOnError : false,
+                                                                    trust: true
+                                                                }); }"></script>
     @stack('styles')
 </head>
 
@@ -69,6 +71,20 @@
                         <img src="{{ asset('/images/notes.png') }}" alt="Notes">
                     </div>
                     <p class="m-0">Highlights & Notes</p>
+                </div>
+            @endif
+            @if (($sectionType ?? '') === 'math')
+                <div class="icon-container" id="calculatorBtn">
+                    <div class="icon">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor"
+                            class="bi bi-calculator" viewBox="0 0 16 16">
+                            <path
+                                d="M12 1a1 1 0 0 1 1 1v12a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1zM4 0a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2V2a2 2 0 0 0-2-2z" />
+                            <path
+                                d="M4 2.5a.5.5 0 0 1 .5-.5h7a.5.5 0 0 1 .5.5v2a.5.5 0 0 1-.5.5h-7a.5.5 0 0 1-.5-.5zm0 4a.5.5 0 0 1 .5-.5h1a.5.5 0 0 1 .5.5v1a.5.5 0 0 1-.5.5h-1a.5.5 0 0 1-.5-.5zm0 3a.5.5 0 0 1 .5-.5h1a.5.5 0 0 1 .5.5v1a.5.5 0 0 1-.5.5h-1a.5.5 0 0 1-.5-.5zm0 3a.5.5 0 0 1 .5-.5h1a.5.5 0 0 1 .5.5v1a.5.5 0 0 1-.5.5h-1a.5.5 0 0 1-.5-.5zm3-6a.5.5 0 0 1 .5-.5h1a.5.5 0 0 1 .5.5v1a.5.5 0 0 1-.5.5h-1a.5.5 0 0 1-.5-.5zm0 3a.5.5 0 0 1 .5-.5h1a.5.5 0 0 1 .5.5v1a.5.5 0 0 1-.5.5h-1a.5.5 0 0 1-.5-.5zm0 3a.5.5 0 0 1 .5-.5h1a.5.5 0 0 1 .5.5v1a.5.5 0 0 1-.5.5h-1a.5.5 0 0 1-.5-.5zm3-6a.5.5 0 0 1 .5-.5h1a.5.5 0 0 1 .5.5v1a.5.5 0 0 1-.5.5h-1a.5.5 0 0 1-.5-.5zm0 3a.5.5 0 0 1 .5-.5h1a.5.5 0 0 1 .5.5v4a.5.5 0 0 1-.5.5h-1a.5.5 0 0 1-.5-.5z" />
+                        </svg>
+                    </div>
+                    <p class="m-0">Calculator</p>
                 </div>
             @endif
             <div class="relative inline-block text-left">
@@ -121,9 +137,9 @@
                             Questions</strong></h5>
                     <div class="row text-center question-nav-row">
                         <div class="col d-flex align-items-center justify-content-center gap-2">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24"
-                                fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"
-                                stroke-linejoin="round" class="feather feather-map-pin">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16"
+                                viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"
+                                stroke-linecap="round" stroke-linejoin="round" class="feather feather-map-pin">
                                 <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
                                 <circle cx="12" cy="10" r="3"></circle>
                             </svg>
@@ -188,6 +204,21 @@
             <div class="navigate-btn" onclick="prevQuestion()" id="backButton">Back</div>
         </div>
     </footer>
+
+    <!-- Desmos Calculator Modal -->
+    <div id="calculatorModal" class="calculator-modal hidden">
+        <div class="calculator-modal-header">
+            <div class="calculator-tabs">
+                <button class="calc-tab active" data-tab="graphing">Graphing</button>
+                <button class="calc-tab" data-tab="scientific">Scientific</button>
+            </div>
+            <button class="closeCalculatorBtn">&times;</button>
+        </div>
+        <div id="graphingCalc" class="calculator-content"></div>
+        <div id="scientificCalc" class="calculator-content hidden"></div>
+        <div class="calculator-resize-handle"></div>
+    </div>
+
     @stack('scripts')
 </body>
 

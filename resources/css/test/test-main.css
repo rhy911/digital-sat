@@ -18,6 +18,19 @@ main {
     overflow: hidden;
     display: flex;
     flex-direction: column;
+    transition: margin-left 0.3s ease;
+}
+
+body.calculator-active main {
+    margin-left: max(400px, 30%);
+}
+
+body.calculator-active header {
+    padding-left: calc(max(400px, 30%) + 40px); /* Base shift + existing 40px padding */
+}
+
+header {
+    transition: padding-left 0.3s ease, margin-left 0.3s ease;
 }
 
 .passage-container,

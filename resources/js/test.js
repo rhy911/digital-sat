@@ -24,7 +24,8 @@ import {
   initializeQuestionTracking, 
   initializeResizablePanels, 
   preventNormalCursorBehavior,
-  initializeSprInputValidation
+  initializeSprInputValidation,
+  initializeDesmosCalculator
 } from './test/features.js';
 import { startTimer } from './test/timer.js';
 
@@ -98,6 +99,7 @@ document.addEventListener("DOMContentLoaded", () => {
   initializeResizablePanels();
   preventNormalCursorBehavior();
   initializeSprInputValidation();
+  initializeDesmosCalculator();
 
   // Initialize Timer
   const duration = window.durationMinutes || 32;
