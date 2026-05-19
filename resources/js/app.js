@@ -153,4 +153,9 @@ export function smartRenderMath(element, options = {}) {
     window.renderMathInElement(element || document.body, finalOptions);
 }
 
+window.initDropdownToggle = initDropdownToggle;
+window.initRadioToggleSection = initRadioToggleSection;
+window.initAjaxLogout = initAjaxLogout;
+window.initHomeDashboardPage = initHomeDashboardPage;
+window.initPracticeDashboardPage = initPracticeDashboardPage;
 window.smartRenderMath = smartRenderMath;

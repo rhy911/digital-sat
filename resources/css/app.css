@@ -34,3 +34,90 @@ u {
     text-underline-offset: 3px;
 }
 
+/* ==================== SECURE LOADING SCREEN ==================== */
+.loading-screen {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background: radial-gradient(circle at center, #0f172a 0%, #020617 100%);
+    z-index: 100000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    /* Removed backdrop-filter: blur(12px) to guarantee flawless 60fps performance on heavy DOM loads */
+    transition: opacity 0.25s cubic-bezier(0.4, 0, 0.2, 1), visibility 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    opacity: 1;
+    visibility: visible;
+    will-change: opacity;
+}
+
+.loading-screen.hidden {
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+}
+
+.loading-container {
+    max-width: 400px;
+    padding: 2rem;
+}
+
+.loading-spinner-wrapper {
+    position: relative;
+    width: 80px;
+    height: 80px;
+    margin: 0 auto;
+}
+
+.loading-spinner {
+    width: 100%;
+    height: 100%;
+    border: 4px solid rgba(59, 130, 246, 0.1);
+    border-top: 4px solid #3b82f6;
+    border-radius: 50%;
+    animation: loading-spin 1s linear infinite;
+    box-shadow: 0 0 20px rgba(59, 130, 246, 0.2);
+    will-change: transform;
+    transform: translateZ(0); /* Hardware GPU trigger */
+}
+
+.loading-spinner-inner {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%) translateZ(0);
+    color: #3b82f6;
+    animation: loading-pulse-icon 2s ease-in-out infinite;
+    will-change: transform, opacity;
+}
+
+.loading-title {
+    color: #f8fafc;
+    font-size: 1.25rem;
+    letter-spacing: 0.5px;
+}
+
+.loading-status {
+    color: #94a3b8 !important;
+    font-size: 0.9rem;
+    animation: loading-pulse-text 1.5s ease-in-out infinite;
+}
+
+@keyframes loading-spin {
+    0% { transform: rotate(0deg) translateZ(0); }
+    100% { transform: rotate(360deg) translateZ(0); }
+}
+
+@keyframes loading-pulse-icon {
+    0%, 100% { transform: translate(-50%, -50%) scale(1) translateZ(0); opacity: 0.8; }
+    50% { transform: translate(-50%, -50%) scale(1.05) translateZ(0); opacity: 1; }
+}
+
+@keyframes loading-pulse-text {
+    0%, 100% { opacity: 0.6; }
+    50% { opacity: 1; }
+}
+
+

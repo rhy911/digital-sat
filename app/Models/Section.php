@@ -23,6 +23,8 @@ class Section extends Model
 
     public function modules()
     {
-        return $this->hasMany(Module::class)->orderBy('module_number')->orderBy('order');
+        return $this->belongsToMany(Module::class, 'section_modules')
+            ->orderBy('module_number')
+            ->orderBy('order');
     }
 }

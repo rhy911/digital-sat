@@ -11,7 +11,9 @@ import {
   initializePopover, 
   initializeDropdown, 
   initializeMoreDropdown,
-  hidePopover 
+  hidePopover,
+  showLoadingScreen,
+  hideLoadingScreen
 } from './test/ui.js';
 import { 
   showQuestion, 
@@ -25,7 +27,8 @@ import {
   initializeResizablePanels, 
   preventNormalCursorBehavior,
   initializeSprInputValidation,
-  initializeDesmosCalculator
+  initializeDesmosCalculator,
+  initializeSimpleFullscreen
 } from './test/features.js';
 import { startTimer } from './test/timer.js';
 
@@ -35,6 +38,8 @@ window.nextQuestion = nextQuestion;
 window.prevQuestion = prevQuestion;
 window.showQuestion = showQuestion;
 window.showReviewSection = showReviewSection;
+window.showLoadingScreen = showLoadingScreen;
+window.hideLoadingScreen = hideLoadingScreen;
 
 // ============================================================================
 // INITIALIZATION
@@ -100,6 +105,7 @@ document.addEventListener("DOMContentLoaded", () => {
   preventNormalCursorBehavior();
   initializeSprInputValidation();
   initializeDesmosCalculator();
+  initializeSimpleFullscreen();
 
   // Initialize Timer
   const duration = window.durationMinutes || 32;
@@ -111,4 +117,7 @@ document.addEventListener("DOMContentLoaded", () => {
   // Event Delegation
   document.addEventListener("click", handleQuestionButtonClick);
   document.addEventListener("click", handleReviewButtonClick);
+
+  // Hide initial loading screen once fully initialized
+  hideLoadingScreen();
 });

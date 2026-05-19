@@ -178,7 +178,7 @@ Route::get('/take-test/{module_id?}', function ($module_id = null) {
         'sectionName' => $section->name,
         'sectionType' => $section->type,
         'nextModuleId' => $nextModule ? $nextModule->id : null,
-        'nextModuleName' => $nextModule ? ($nextModule->module_number == 2 ? 'Module 2' : 'Section ' . $nextModule->section->order) : null,
+        'nextModuleName' => $nextModule ? ($nextModule->module_number == 2 ? 'Module 2' : 'Section ' . ($nextModule->section?->order ?? '')) : null,
         'userTestId' => $userTest ? $userTest->id : null,
     ]);
 })->name('take-test');
@@ -194,6 +194,7 @@ Route::middleware(['auth'])->prefix('test-dashboard')->name('test-dashboard.')->
     Route::post('/tests', [TestDashboardController::class, 'storeTest'])->name('tests.store');
     Route::put('/tests/{id}', [TestDashboardController::class, 'updateTest'])->name('tests.update');
     Route::post('/sections', [TestDashboardController::class, 'storeSection'])->name('sections.store');
+    Route::post('/sections/link-module', [TestDashboardController::class, 'linkModuleToSection'])->name('sections.link-module');
     Route::post('/modules', [TestDashboardController::class, 'storeModule'])->name('modules.store');
     Route::get('/questions/{id}', [TestDashboardController::class, 'showQuestion'])->name('questions.show');
     Route::put('/questions/{id}', [TestDashboardController::class, 'updateQuestion'])->name('questions.update');

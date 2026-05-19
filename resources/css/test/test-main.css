@@ -19,6 +19,7 @@ main {
     display: flex;
     flex-direction: column;
     transition: margin-left 0.3s ease;
+    font-family: "Noto Serif", Georgia, serif !important;
 }
 
 body.calculator-active main {
@@ -26,19 +27,28 @@ body.calculator-active main {
 }
 
 body.calculator-active header {
-    padding-left: calc(max(400px, 30%) + 40px); /* Base shift + existing 40px padding */
+    padding-left: calc(
+        max(400px, 30%) + 40px
+    ); /* Base shift + existing 40px padding */
 }
 
 header {
-    transition: padding-left 0.3s ease, margin-left 0.3s ease;
+    transition:
+        padding-left 0.3s ease,
+        margin-left 0.3s ease;
 }
 
 .passage-container,
 .stem-text {
-    font-family: "Inter", Arial, Helvetica, sans-serif;
+    font-family: "Noto Serif", Georgia, serif !important;
     font-size: 1rem;
-    line-height: 1.55;
+    line-height: 1.6;
     color: #1a1a1a;
+}
+
+#review-section,
+#review-section * {
+    font-family: "Inter", Arial, Helvetica, sans-serif !important;
 }
 
 .overlay {
@@ -255,7 +265,7 @@ header {
 
 .answer-option label::after {
     position: absolute;
-    left: 22px;
+    left: 21px;
     top: 50%;
     transform: translateY(-50%);
     font-weight: 600;
@@ -436,4 +446,149 @@ header {
     width: 40px !important;
     height: 40px !important;
     font-size: 1.5rem !important;
+}
+
+/* ==================== PREMIUM CUSTOM ALERT MODAL STYLES ==================== */
+.custom-alert-modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    z-index: 10000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 1;
+    transition: opacity 0.25s ease;
+}
+
+.custom-alert-modal.hidden {
+    display: none !important;
+    opacity: 0;
+}
+
+.custom-alert-backdrop {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(15, 23, 42, 0.4);
+    -webkit-backdrop-filter: blur(8px);
+    backdrop-filter: blur(8px);
+}
+
+.custom-alert-box {
+    position: relative;
+    background: #ffffff;
+    border-radius: 16px;
+    box-shadow:
+        0 20px 25px -5px rgba(0, 0, 0, 0.1),
+        0 10px 10px -5px rgba(0, 0, 0, 0.04);
+    width: 90%;
+    max-width: 420px;
+    padding: 24px;
+    border: 1px solid rgba(226, 232, 240, 0.8);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    transform: scale(1);
+    transition: transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+    z-index: 1;
+}
+
+.custom-alert-modal.hidden .custom-alert-box {
+    transform: scale(0.9);
+}
+
+.custom-alert-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 56px;
+    height: 56px;
+    border-radius: 50%;
+    background-color: rgba(30, 41, 59, 0.05);
+    color: #1e293b;
+    margin-bottom: 16px;
+}
+
+.custom-alert-icon.warning {
+    background-color: rgba(245, 158, 11, 0.1);
+    color: #d97706;
+}
+
+.custom-alert-icon.error {
+    background-color: rgba(239, 68, 68, 0.1);
+    color: #dc2626;
+}
+
+.custom-alert-icon.success {
+    background-color: rgba(16, 185, 129, 0.1);
+    color: #059669;
+}
+
+.custom-alert-content {
+    margin-bottom: 24px;
+    width: 100%;
+}
+
+.custom-alert-title {
+    font-size: 1.15rem;
+    font-weight: 700;
+    color: #0f172a;
+    margin-bottom: 8px;
+    font-family: "Inter", sans-serif;
+}
+
+.custom-alert-message {
+    font-size: 0.95rem;
+    color: #475569;
+    line-height: 1.5;
+    margin: 0;
+    font-family: "Inter", sans-serif;
+}
+
+.custom-alert-actions {
+    display: flex;
+    gap: 12px;
+    width: 100%;
+    justify-content: center;
+}
+
+.custom-alert-btn {
+    flex: 1;
+    max-width: 160px;
+    padding: 10px 16px;
+    border-radius: 8px;
+    font-size: 0.95rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    border: none;
+    outline: none;
+}
+
+.custom-alert-btn.btn-primary {
+    background-color: #1e293b;
+    color: #ffffff;
+}
+
+.custom-alert-btn.btn-primary:hover {
+    background-color: #0f172a;
+    transform: translateY(-1px);
+}
+
+.custom-alert-btn.btn-secondary {
+    background-color: #f1f5f9;
+    color: #475569;
+    border: 1px solid #e2e8f0;
+}
+
+.custom-alert-btn.btn-secondary:hover {
+    background-color: #e2e8f0;
+    color: #334155;
+    transform: translateY(-1px);
 }

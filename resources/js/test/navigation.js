@@ -1,5 +1,11 @@
 import { state } from './state.js';
-import { updateQuestionButtonStates } from './ui.js';
+import { 
+  updateQuestionButtonStates,
+  showLoadingScreen,
+  hideLoadingScreen,
+  showCustomConfirm,
+  showCustomAlert
+} from './ui.js';
 
 export function isReviewSectionVisible() {
   const reviewSection = document.getElementById("review-section");
@@ -165,19 +171,22 @@ async function submitModule() {
     }
   });
 
-  const confirmNext = confirm("You are about to proceed to the next module/section.\n\nAre you ready to continue?");
+  const confirmNext = await showCustomConfirm("You are about to proceed to the next module/section.\n\nAre you ready to continue?", "warning", "Proceed to Next Section");
   if (!confirmNext) return;
 
   if (window.isPreview) {
+    showLoadingScreen("Saving responses and loading next section...");
     if (window.nextModuleId) {
       window.location.href = `/take-test/${window.nextModuleId}`;
     } else {
-      alert("Test Preview completed! Redirecting home...");
+      showLoadingScreen("Completing test preview...");
+      await showCustomAlert("Test Preview completed! Redirecting home...", "success", "Test Completed");
       window.location.href = '/home';
     }
     return;
   }
 
+  showLoadingScreen("Saving responses & scoring current module...");
   try {
     const response = await fetch('/test/submit-module', {
       method: 'POST',
@@ -195,18 +204,22 @@ async function submitModule() {
     const data = await response.json();
 
     if (data.test_completed) {
-      alert("Test completed! Redirecting to results...");
+      showLoadingScreen("Scoring exam & loading results...");
+      await showCustomAlert("Test completed! Redirecting to results...", "success", "Test Completed");
       window.location.href = data.redirect_url;
     } else if (data.next_module_id) {
+      showLoadingScreen("Adaptive routing complete! Loading next module...");
       window.location.href = `/take-test/${data.next_module_id}`;
     } else {
+      hideLoadingScreen();
       console.error("Submission failed", data);
       const msg = data.error || data.message || "Error submitting test. Please try again.";
-      alert(msg);
+      await showCustomAlert(msg, "error", "Submission Error");
     }
   } catch (error) {
+    hideLoadingScreen();
     console.error("Error submitting module:", error);
-    alert("Network error: " + error.message);
+    await showCustomAlert("Network error: " + error.message, "error", "Network Error");
   }
 }
 

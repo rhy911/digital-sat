@@ -32,8 +32,12 @@ class DigitalSatMockSeeder extends Seeder
 
         // --- MODULES ---
         $rwM1 = Module::create(['section_id' => $rwSection->id, 'module_number' => 1, 'difficulty_level' => 'standard', 'duration_minutes' => 32, 'total_questions' => 27, 'order' => 1]);
+        $rwM2Easy = Module::create(['section_id' => $rwSection->id, 'module_number' => 2, 'difficulty_level' => 'easy', 'duration_minutes' => 32, 'total_questions' => 27, 'order' => 2]);
+        $rwM2Hard = Module::create(['section_id' => $rwSection->id, 'module_number' => 2, 'difficulty_level' => 'hard', 'duration_minutes' => 32, 'total_questions' => 27, 'order' => 3]);
 
         $mathM1 = Module::create(['section_id' => $mathSection->id, 'module_number' => 1, 'difficulty_level' => 'standard', 'duration_minutes' => 35, 'total_questions' => 22, 'order' => 1]);
+        $mathM2Easy = Module::create(['section_id' => $mathSection->id, 'module_number' => 2, 'difficulty_level' => 'easy', 'duration_minutes' => 35, 'total_questions' => 22, 'order' => 2]);
+        $mathM2Hard = Module::create(['section_id' => $mathSection->id, 'module_number' => 2, 'difficulty_level' => 'hard', 'duration_minutes' => 35, 'total_questions' => 22, 'order' => 3]);
 
         // --- R&W QUESTIONS (MODULE 1) ---
         $rw_data = [
@@ -99,6 +103,8 @@ class DigitalSatMockSeeder extends Seeder
                 ['D', $data[4][3], $data[5] === 3],
             ]);
             $rwM1->questions()->attach($q->id, ['position' => $i + 1]);
+            $rwM2Easy->questions()->attach($q->id, ['position' => $i + 1]);
+            $rwM2Hard->questions()->attach($q->id, ['position' => $i + 1]);
         }
 
         // --- MATH QUESTIONS (MODULE 1) ---
@@ -126,6 +132,8 @@ class DigitalSatMockSeeder extends Seeder
                 DB::table('spr_correct_answers')->insert(['question_id' => $q->id, 'answer' => $data[3], 'answer_type' => 'exact', 'created_at' => now()]);
             }
             $mathM1->questions()->attach($q->id, ['position' => $i + 1]);
+            $mathM2Easy->questions()->attach($q->id, ['position' => $i + 1]);
+            $mathM2Hard->questions()->attach($q->id, ['position' => $i + 1]);
         }
 
         $this->createScoreConversions($test->id);

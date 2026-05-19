@@ -1,5 +1,6 @@
 import { state } from './state.js';
 import { showReviewSection } from './navigation.js';
+import { showCustomAlert } from './ui.js';
 
 /**
  * Initialize and start the countdown timer
@@ -47,7 +48,7 @@ function updateTimerDisplay() {
 /**
  * Action when time runs out
  */
-function handleTimeUp() {
-  alert("Time is up! Moving to review section.");
+async function handleTimeUp() {
+  await showCustomAlert("Time is up! Moving to review section.", "warning", "Time Up");
   showReviewSection();
 }

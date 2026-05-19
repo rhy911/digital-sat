@@ -416,3 +416,35 @@ export function initializeDesmosCalculator() {
   }
 }
 
+// ============================================================================
+// SIMPLE FULLSCREEN
+// ============================================================================
+
+export function initializeSimpleFullscreen() {
+  const enterFullscreen = () => {
+    // Check if not already in fullscreen
+    const isFullscreen = document.fullscreenElement || 
+                         document.webkitFullscreenElement || 
+                         document.mozFullScreenElement || 
+                         document.msFullscreenElement;
+    if (isFullscreen) return;
+
+    const docEl = document.documentElement;
+    if (docEl.requestFullscreen) {
+      docEl.requestFullscreen().catch(err => console.log('Fullscreen rejected:', err));
+    } else if (docEl.mozRequestFullScreen) {
+      docEl.mozRequestFullScreen();
+    } else if (docEl.webkitRequestFullscreen) {
+      docEl.webkitRequestFullscreen();
+    } else if (docEl.msRequestFullscreen) {
+      docEl.msRequestFullscreen();
+    }
+    
+    // Remove listener after first interaction attempt
+    document.removeEventListener('click', enterFullscreen);
+  };
+
+  document.addEventListener('click', enterFullscreen);
+}
+
+

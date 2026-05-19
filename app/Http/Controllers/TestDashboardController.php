@@ -50,9 +50,15 @@ class TestDashboardController extends Controller
             $questions = collect();
         }
 
+        try {
+            $allModules = Module::with('sections.test')->latest()->get();
+        } catch (\Exception $e) {
+            $allModules = collect();
+        }
+
         $questionsPerPage = self::QUESTIONS_TABLE_PER_PAGE;
 
-        return view('test-dashboard', compact('tests', 'passages', 'questions', 'questionsTotal', 'questionsPerPage'));
+        return view('test-dashboard', compact('tests', 'passages', 'questions', 'questionsTotal', 'questionsPerPage', 'allModules'));
     }
 
     /**
@@ -253,29 +259,56 @@ class TestDashboardController extends Controller
         ], 201);
     }
 
-    /**
-     * Store a new module.
-     */
     public function storeModule(Request $request)
     {
         $validated = $request->validate([
-            'section_id' => 'required|exists:sections,id',
+            'section_id' => 'nullable|exists:sections,id',
+            'test_id' => 'nullable|exists:tests,id',
+            'section_type' => 'nullable|in:reading_writing,math',
+            'key' => 'nullable|string|unique:modules,key|max:255',
             'module_number' => 'required|integer|min:1',
             'difficulty_level' => 'required|in:standard,easy,hard',
             'duration_minutes' => 'required|integer|min:1',
             'total_questions' => 'required|integer|min:1',
         ]);
 
-        $section = Section::findOrFail($validated['section_id']);
-        $baseOrder = (($section->order - 1) * 2) + (int) $validated['module_number'];
-        $existingMax = Module::where('section_id', $section->id)
-            ->where('module_number', $validated['module_number'])
-            ->max('order');
-        $validated['order'] = $existingMax !== null ? ((int) $existingMax + 1) : $baseOrder;
+        // Auto-generate section if test_id and section_type are provided and section_id is empty
+        if (empty($validated['section_id']) && !empty($validated['test_id']) && !empty($validated['section_type'])) {
+            $section = Section::firstOrCreate([
+                'test_id' => $validated['test_id'],
+                'type' => $validated['section_type'],
+            ], [
+                'name' => $validated['section_type'] === 'reading_writing' ? 'Reading and Writing' : 'Math',
+                'order' => $validated['section_type'] === 'reading_writing' ? 1 : 2,
+            ]);
+            $validated['section_id'] = $section->id;
+        }
+
+        if (!empty($validated['section_id'])) {
+            $section = Section::findOrFail($validated['section_id']);
+            $baseOrder = (($section->order - 1) * 2) + (int) $validated['module_number'];
+            $existingMax = Module::where('section_id', $section->id)
+                ->where('module_number', $validated['module_number'])
+                ->max('order');
+            $validated['order'] = $existingMax !== null ? ((int) $existingMax + 1) : $baseOrder;
+        } else {
+            $validated['order'] = 1;
+        }
+
+        // Generate unique key if empty
+        if (empty($validated['key'])) {
+            $validated['key'] = 'MOD_' . strtoupper(Str::random(8));
+        }
 
         $module = Module::create($validated);
-        if ($module->section && $module->section->test) {
-            $module->section->test->refreshTotalDuration();
+
+        if (!empty($validated['section_id'])) {
+            // Link in the pivot table
+            $module->sections()->attach($validated['section_id']);
+            
+            if ($module->section && $module->section->test) {
+                $module->section->test->refreshTotalDuration();
+            }
         }
 
         return response()->json([
@@ -283,6 +316,38 @@ class TestDashboardController extends Controller
             'message' => 'Module created successfully',
             'data' => $module,
         ], 201);
+    }
+
+    /**
+     * Link an existing reusable module to a section.
+     */
+    public function linkModuleToSection(Request $request)
+    {
+        $validated = $request->validate([
+            'section_id' => 'required|exists:sections,id',
+            'module_id' => 'required|exists:modules,id',
+        ]);
+
+        $section = Section::findOrFail($validated['section_id']);
+        $module = Module::findOrFail($validated['module_id']);
+
+        if ($section->modules()->where('module_id', $module->id)->exists()) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'This module is already linked to this section.',
+            ], 422);
+        }
+
+        $section->modules()->attach($module->id);
+
+        if ($section->test) {
+            $section->test->refreshTotalDuration();
+        }
+
+        return response()->json([
+            'status' => 'success',
+            'message' => 'Module linked to section successfully!',
+        ]);
     }
 
     /**

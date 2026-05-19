@@ -49,7 +49,7 @@ Hệ thống sử dụng phương pháp **Item Response Theory (IRT)** với mô
 
 ---
 
-## 4. Quy tắc Phát triển (Coding Standards)
+## 3. Quy tắc Phát triển (Coding Standards)
 
 ### Backend (Laravel 11)
 
@@ -70,7 +70,7 @@ Hệ thống sử dụng phương pháp **Item Response Theory (IRT)** với mô
 - **Optimization:** Sử dụng Index cho các cột thường xuyên truy vấn (`external_id`, `status`, `test_type`).
 - **Data Integrity:** Khóa ngoại bắt buộc để đảm bảo khi xóa Đề thi thì các Section/Module liên quan được xử lý đúng (Soft Delete).
 
-## 4. Quy tắc Phát triển (Coding Standards)
+## 4. Quy trình & Nguyên tắc Làm việc (Agent/Dev Workflow)
 
 - **Surgical Updates:** Khi chỉnh sửa code, chỉ tập trung vào phần được yêu cầu, tránh refactor lan man trừ khi được chỉ định.
 - **Session Memory:** Sau mỗi phiên làm việc (session), bắt buộc ghi lại tóm tắt các thay đổi vào file `Herd/digital-sat/prompts/agent_memory.md`.
@@ -82,11 +82,12 @@ Hệ thống sử dụng phương pháp **Item Response Theory (IRT)** với mô
   - Test Schema: Đảm bảo Database luôn đúng cấu trúc.
   - Test Logic: Tập trung vào các hàm tính điểm và logic adaptive.
 
-## 6. Project Naming Conventions
+## 5. Quy ước Đặt tên (Project Naming Conventions)
 
 To ensure consistency and maintainability, all developers must adhere to the following naming standards:
 
 ### A. Backend (PHP - Laravel)
+
 - **Classes/Models/Controllers:** `PascalCase` (e.g., `QuestionController`, `SatScoringService`).
 - **Methods:** `camelCase` (e.g., `estimateTheta`, `getPayloadFromRequest`).
 - **Variables/Properties:** `camelCase` (e.g., `count`, `domain`, `pos`). Prioritize brevity without losing technical context.
@@ -94,40 +95,45 @@ To ensure consistency and maintainability, all developers must adhere to the fol
 - **Namespaces:** `PascalCase` (e.g., `App\Http\Controllers`).
 
 ### B. Frontend (JavaScript)
+
 - **Functions:** `camelCase` (e.g., `showQuestion`, `smartRenderMath`).
 - **Variables/Constants:** `camelCase` (e.g., `currentIndex`, `isReviewVisible`).
 - **Global Constants/Environment:** `UPPER_SNAKE_CASE` (e.g., `API_BASE_URL`).
 - **Files:** `kebab-case.js` (e.g., `test-navigation.js`, `ui-handlers.js`).
 
 ### C. Styling (CSS/Tailwind)
+
 - **Standard CSS Classes:** `kebab-case` (e.g., `test-container`, `btn-primary`).
 - **BEM (Block Element Modifier) for Custom Components:** `block__element--modifier` (e.g., `passage__content--highlighted`).
 - **Tailwind Classes:** Use utility-first approach directly in Blade.
 
 ### D. Database (MySQL)
+
 - **Tables:** `snake_case` (plural) (e.g., `questions`, `answer_choices`).
 - **Columns:** `snake_case` (singular) (e.g., `is_pretest`, `skill_domain`).
 - **Foreign Keys:** `singular_table_id` (e.g., `passage_id`, `module_id`).
 
 ### E. Views & Assets (Blade)
+
 - **View Files:** `kebab-case.blade.php` (e.g., `take-math.blade.php`).
 - **Component Folders:** `kebab-case` (e.g., `resources/views/components/test-dashboard`).
 - **Image Assets:** `snake_case` (e.g., `test_preview.png`).
 
 ### F. API Routes
+
 - **Endpoints:** `kebab-case` (plural) (e.g., `/api/user-tests`, `/api/module-questions`).
 - **Parameters:** `snake_case` (e.g., `{test_id}`).
 
-
 ---
 
-## 7. Caveman Mode (Always On)
+## 6. Chế độ Caveman (Caveman Mode - Always On)
 
 The agent MUST read and apply the rules defined in the installed workspace skill:
+
 - [caveman/SKILL.md](.agents/skills/caveman/SKILL.md)
 
 Rules:
+
 - Auto-activates on every session start.
 - Follow the rules, intensity levels (lite, full, ultra, wenyan), examples, and auto-clarity boundaries detailed in the `SKILL.md` file.
 - Default intensity level: `full`.
-

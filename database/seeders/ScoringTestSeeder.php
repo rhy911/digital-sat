@@ -47,12 +47,10 @@ class ScoringTestSeeder extends Seeder
         echo "Simulating perfect M1 for section: {$section->name}\n";
         foreach ($m1->questions as $q) {
             $correctLabel = $q->answerChoices->where('is_correct', true)->first()?->label ?? 'A';
-            UserTestAnswer::create([
-                'user_test_id' => $userTest->id,
-                'question_id' => $q->id,
-                'selected_answer' => $correctLabel,
-                'is_correct' => true,
-            ]);
+            UserTestAnswer::updateOrCreate(
+                ['user_test_id' => $userTest->id, 'question_id' => $q->id],
+                ['selected_answer' => $correctLabel, 'is_correct' => true]
+            );
         }
 
         $scoringService = new SatScoringService();
@@ -80,12 +78,10 @@ class ScoringTestSeeder extends Seeder
             $correctLabel = $q->answerChoices->where('is_correct', true)->first()?->label ?? 'A';
             $wrongLabel = ($correctLabel === 'A') ? 'B' : 'A';
 
-            UserTestAnswer::create([
-                'user_test_id' => $userTest->id,
-                'question_id' => $q->id,
-                'selected_answer' => $isCorrect ? $correctLabel : $wrongLabel,
-                'is_correct' => $isCorrect,
-            ]);
+            UserTestAnswer::updateOrCreate(
+                ['user_test_id' => $userTest->id, 'question_id' => $q->id],
+                ['selected_answer' => $isCorrect ? $correctLabel : $wrongLabel, 'is_correct' => $isCorrect]
+            );
         }
 
         $m2Responses = UserTestAnswer::where('user_test_id', $userTest->id)

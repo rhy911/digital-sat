@@ -9,7 +9,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link
-        href="https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&display=swap"
+        href="https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&family=Noto+Serif:ital,wght@0,100..900;1,100..900&display=swap"
         rel="stylesheet">
     @vite(['resources/css/app.css', 'resources/css/test/test-main.css', 'resources/sass/app.scss', 'resources/js/app.js', 'resources/js/test.js'])
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css">
@@ -28,6 +28,22 @@
 </head>
 
 <body>
+    <!-- Secure Test Loading Screen -->
+    <div id="loadingScreen" class="loading-screen d-flex flex-column align-items-center justify-content-center">
+        <div class="loading-container text-center">
+            <div class="loading-spinner-wrapper mb-4">
+                <div class="loading-spinner"></div>
+                <div class="loading-spinner-inner">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+                    </svg>
+                </div>
+            </div>
+            <h4 class="loading-title fw-bold mb-2">Digital SAT Test Engine</h4>
+            <p id="loadingStatusText" class="loading-status text-muted">Initializing secure test environment...</p>
+        </div>
+    </div>
+
     <header>
         <div class="d-flex flex-column justify-content-start">
             <h5>Section {{ $sectionNumber ?? '1' }}, Module {{ $moduleNumber ?? '1' }}:
@@ -217,6 +233,24 @@
         <div id="graphingCalc" class="calculator-content"></div>
         <div id="scientificCalc" class="calculator-content hidden"></div>
         <div class="calculator-resize-handle"></div>
+    </div>
+
+    <!-- Beautiful Premium Custom Alert Modal -->
+    <div id="customAlertModal" class="custom-alert-modal hidden">
+        <div class="custom-alert-backdrop"></div>
+        <div class="custom-alert-box">
+            <div class="custom-alert-icon" id="customAlertIcon">
+                <!-- SVG Icon resolved dynamically in JS -->
+            </div>
+            <div class="custom-alert-content">
+                <h5 class="custom-alert-title" id="customAlertTitle">Notification</h5>
+                <p id="customAlertMessage" class="custom-alert-message">Something went wrong.</p>
+            </div>
+            <div class="custom-alert-actions">
+                <button id="customAlertCancelBtn" class="custom-alert-btn btn-secondary hidden">Cancel</button>
+                <button id="customAlertConfirmBtn" class="custom-alert-btn btn-primary">OK</button>
+            </div>
+        </div>
     </div>
 
     @stack('scripts')
