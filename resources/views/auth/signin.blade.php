@@ -7,45 +7,43 @@
                     if (data.token) {
                         localStorage.setItem('api_token', data.token);
                     }
-                    window.location.href = '{{ route("home") }}';
+                    window.location.href = '{{ route('home') }}';
                 }
             });
         });
     </script>
     @endpush
     <!-- Back -->
-    <a href="/" class="back-link">
-        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-            <polyline points="15 18 9 12 15 6"></polyline>
-        </svg>
-        Back
-    </a>
+    <x-auth.back-link href="/" />
 
-        <!-- Title -->
-        <h2 class="signin-title">Sign In with a Student Account</h2>
+    <!-- Title -->
+    <h2 class="signin-title">Sign In with a Student Account</h2>
 
-        <!-- Form -->
-        <form id="signinForm" action="{{ route('signin') }}" method="POST" novalidate>
-            @csrf
+    <!-- Form -->
+    <form id="signinForm" action="{{ route('signin') }}" method="POST" novalidate>
+        @csrf
 
-            <div class="mb-3">
-                <label for="email" class="form-label">Email Address</label>
-                <input type="email" class="form-control" id="email" name="email" autocomplete="email">
-            </div>
+        <div class="mb-3">
+            <label for="email" class="form-label">Email Address</label>
+            <input type="email" class="form-control" id="email" name="email" autocomplete="email">
+        </div>
 
         <div class="mb-2">
-            <label for="password" class="form-label">Password</label>
-            <div class="password-field">
-                <input type="password" class="form-control" id="password" name="password" autocomplete="current-password">
-                <button type="button" class="password-toggle" id="passwordToggle" data-password-target="password" aria-label="Show password"></button>
-            </div>
+            <x-auth.password-field
+                label="Password"
+                input-id="password"
+                name="password"
+                autocomplete="current-password"
+                toggle-id="passwordToggle"
+                target-id="password"
+            />
         </div>
 
         <div class="mb-4">
-            <a href="/forget" class="forgot-link">Forgot password?</a>
+            <a href="{{ route('forgot') }}" class="forgot-link">Forgot password?</a>
         </div>
 
-        <div id="errorMessage" style="display: none; margin-bottom: 1rem;"></div>
+        <x-auth.alerts />
 
         <button type="submit" class="submit-btn" id="submitBtn" data-processing-text="Processing..." disabled>Submit</button>
     </form>

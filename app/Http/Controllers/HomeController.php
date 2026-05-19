@@ -11,8 +11,16 @@ class HomeController extends Controller
      */
     public function __invoke(Request $request)
     {
+        $user = $request->user();
+        $completedTests = $user->userTests()
+            ->with('test')
+            ->where('status', 'completed')
+            ->orderBy('completed_at', 'desc')
+            ->get();
+
         return view('home', [
-            'user' => $request->user(),
+            'user' => $user,
+            'completedTests' => $completedTests,
         ]);
     }
 }

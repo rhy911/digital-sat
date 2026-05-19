@@ -11,7 +11,9 @@ import {
   initializePopover, 
   initializeDropdown, 
   initializeMoreDropdown,
-  hidePopover 
+  hidePopover,
+  showLoadingScreen,
+  hideLoadingScreen
 } from './test/ui.js';
 import { 
   showQuestion, 
@@ -24,8 +26,11 @@ import {
   initializeQuestionTracking, 
   initializeResizablePanels, 
   preventNormalCursorBehavior,
-  initializeSprInputValidation
+  initializeSprInputValidation,
+  initializeDesmosCalculator,
+  initializeSimpleFullscreen
 } from './test/features.js';
+import { startTimer } from './test/timer.js';
 
 // Expose to global scope for inline onclick handlers and backwards compatibility
 window.toggleTimer = toggleTimer;
@@ -33,6 +38,8 @@ window.nextQuestion = nextQuestion;
 window.prevQuestion = prevQuestion;
 window.showQuestion = showQuestion;
 window.showReviewSection = showReviewSection;
+window.showLoadingScreen = showLoadingScreen;
+window.hideLoadingScreen = hideLoadingScreen;
 
 // ============================================================================
 // INITIALIZATION
@@ -53,6 +60,9 @@ function initializeDOMElements() {
 
   if (state.totalQuestionsSpan) state.totalQuestionsSpan.textContent = state.totalQuestions;
   if (state.questionNumberSpan) state.questionNumberSpan.textContent = state.currentQuestionIndex + 1;
+
+  // Initialize UserTestId from blade global variable
+  state.userTestId = window.userTestId || null;
 }
 
 function handleQuestionButtonClick(e) {
@@ -94,6 +104,12 @@ document.addEventListener("DOMContentLoaded", () => {
   initializeResizablePanels();
   preventNormalCursorBehavior();
   initializeSprInputValidation();
+  initializeDesmosCalculator();
+  initializeSimpleFullscreen();
+
+  // Initialize Timer
+  const duration = window.durationMinutes || 32;
+  startTimer(duration);
 
   // Show initial question
   showQuestion(state.currentQuestionIndex);
@@ -101,4 +117,7 @@ document.addEventListener("DOMContentLoaded", () => {
   // Event Delegation
   document.addEventListener("click", handleQuestionButtonClick);
   document.addEventListener("click", handleReviewButtonClick);
+
+  // Hide initial loading screen once fully initialized
+  hideLoadingScreen();
 });

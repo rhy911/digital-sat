@@ -19,27 +19,6 @@ header .bluebook-logo {
     gap: 10px;
 }
 
-header .user {
-    font-size: 1.125rem;
-    font-weight: bold;
-    display: flex;
-    align-items: center;
-    cursor: pointer;
-}
-
-header .user .avatar {
-    width: 2.5rem;
-    height: 2.5rem;
-    margin-left: 0.625rem;
-}
-
-header .user .avatar img {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-    border-radius: 50%;
-}
-
 /* ── Main content ── */
 
 main {
@@ -57,17 +36,18 @@ main h1 {
     font-weight: 400;
 }
 
-main h2 {
-    display: flex;
-    align-items: center;
-    gap: 1rem;
-    margin-bottom: 1.25rem;
+.section-header h2 {
+    color: #333;
+    font-weight: 700;
 }
 
 main a {
-    margin-left: auto;
     font-size: 1.125rem;
     color: #324dc7;
+}
+
+main a:hover {
+    text-decoration: underline;
 }
 
 main h4 {
@@ -77,21 +57,6 @@ main h4 {
 main p {
     font-size: 1.125rem;
     margin: 1rem 0;
-}
-
-/* Utility Classes */
-
-header .user .avatar {
-    width: 2.5rem;
-    height: 2.5rem;
-    margin-left: 0.625rem;
-}
-
-header .user .avatar img {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-    border-radius: 50%;
 }
 
 /* User Dropdown */
@@ -108,6 +73,20 @@ header .user-dropdown .user {
     padding: 0.5rem 1rem;
     border-radius: 0.5rem;
     transition: background-color 0.2s ease;
+    gap: 0.5rem;
+}
+
+header .user-dropdown .user .avatar {
+    width: 2.5rem;
+    height: 2.5rem;
+    margin-left: 0;
+}
+
+header .user-dropdown .user .avatar img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    border-radius: 50%;
 }
 
 header .user-dropdown .user:hover {
@@ -118,16 +97,20 @@ header .user-dropdown .dropdown-menu {
     position: absolute;
     top: 100%;
     right: 0;
-    margin-top: 0.5rem;
+    margin-top: 0.75rem;
     background: white;
-    border-radius: 0.5rem;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-    min-width: 180px;
+    border-radius: 0.75rem;
+    box-shadow:
+        0 10px 25px -5px rgba(0, 0, 0, 0.1),
+        0 8px 10px -6px rgba(0, 0, 0, 0.1);
+    min-width: 220px;
     opacity: 0;
     visibility: hidden;
     transform: translateY(-10px);
-    transition: all 0.2s ease;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
     z-index: 1000;
+    border: 1px solid rgba(0, 0, 0, 0.05);
+    padding: 0;
 }
 
 header .user-dropdown .dropdown-menu.show {
@@ -151,6 +134,11 @@ header .user-dropdown .dropdown-menu .dropdown-item {
 }
 
 header .user-dropdown .dropdown-menu .dropdown-item:hover {
+    background-color: rgba(0, 0, 0, 0.05);
+    color: #324dc7;
+}
+
+header .user-dropdown .dropdown-menu .dropdown-item.logout-btn:hover {
     background-color: rgba(239, 68, 68, 0.1);
     color: #ef4444;
 }
@@ -166,44 +154,50 @@ header .user-dropdown .dropdown-menu .dropdown-item svg {
 }
 
 /* Button Styles */
-main h2 .btn-group .btn {
-  width: 5.625rem;
-  border-radius: 0.75rem;
+.section-header .btn-group .btn {
+    width: 5rem;
+    border-radius: 0.75rem;
+    border: 1px solid #505050;
+    background-color: white;
+    color: black;
+    font-size: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
 
-main h2 .btn-outline-primary {
-  --btn-color: #444;
-  border-color: var(--btn-color);
-  color: #333;
+.section-header .btn-group .btn-outline-primary {
+    border-color: #505050;
+    color: black;
 }
 
-main h2 .btn-group .btn-check:checked + .btn-outline-primary {
-  background-color: var(--btn-color);
-  border-color: var(--btn-color);
+.section-header .btn-group .btn-check:checked + .btn-outline-primary {
+    background-color: #505050 !important;
+    border-color: #505050 !important;
+    color: white !important;
+    font-weight: 500;
 }
 
-main h2 .btn-outline-primary:hover {
-  background-color: #4444441e;
-  border-color: var(--btn-color);
-  color: #333;
+.section-header .btn-group .btn-outline-primary:hover {
+    background-color: #e9ecef;
+    border-color: #505050;
+    color: black;
 }
 
-main h2 .btn-group .btn-check:focus + .btn-outline-primary,
-main h2 .btn-outline-primary:focus {
-  box-shadow: none;
+.section-header .btn-group .btn-check:focus + .btn-outline-primary,
+.section-header .btn-group .btn:focus {
+    box-shadow: none;
 }
-
-
 
 main section .test-box,
 main section .option,
 main section .bigfuture-content {
-  width: 31.25rem;
-  text-align: center;
-  background: #fff;
-  padding: 1rem 2rem;
-  border-radius: 1rem;
-  box-shadow: 0 0 0.625rem rgba(0, 0, 0, 0.2);
+    width: 31.25rem;
+    text-align: center;
+    background: #fff;
+    padding: 1rem 2rem;
+    border-radius: 1rem;
+    box-shadow: 0 0 0.625rem rgba(0, 0, 0, 0.2);
 }
 
 main section .practice-options a {
@@ -214,10 +208,50 @@ main section .practice-options a {
 }
 
 main section .option {
-    width: 17.5rem;
+    width: 15rem;
     justify-items: center;
-    padding: 1.5rem 3.125rem 0;
+    padding: 1.5rem 2rem;
     cursor: pointer;
+}
+
+main section .option h4 {
+    margin-bottom: 0.5rem;
+}
+
+main section .option p {
+    margin: 0;
+    font-size: 0.95rem;
+}
+
+main section .option.past-card {
+    width: 15rem;
+    text-align: start;
+    padding: 1.5rem;
+}
+
+main section .option.past-card h4 {
+    margin-top: 0;
+    margin-bottom: 0.75rem;
+}
+
+.status-badge {
+    color: #2c7a7b;
+    font-size: 0.75rem;
+    font-weight: 600;
+    margin-bottom: 1.25rem;
+    letter-spacing: 0.025em;
+}
+
+.view-response {
+    margin-left: auto !important;
+    font-size: 1rem !important;
+    font-weight: 600;
+    text-decoration: none;
+    color: #324dc7 !important;
+}
+
+.view-response:hover {
+    text-decoration: underline;
 }
 
 main section .option img {
@@ -226,37 +260,37 @@ main section .option img {
 
 /* BigFuture Section */
 main section .bigfuture-content {
-  width: 100%;
-  height: 15.625rem;
-  display: flex;
-  padding: 0;
-  text-align: start;
+    width: 100%;
+    height: 15.625rem;
+    display: flex;
+    padding: 0;
+    text-align: start;
 }
 
 main section .bigfuture-content img {
-  width: 18.75rem;
-  height: 100%;
-  border-radius: 1rem 0 0 1rem;
-  object-fit: cover;
-  object-position: top;
+    width: 18.75rem;
+    height: 100%;
+    border-radius: 1rem 0 0 1rem;
+    object-fit: cover;
+    object-position: top;
 }
 
 main section .bigfuture-content .info {
-  padding: 1rem 2rem;
+    padding: 1rem 2rem;
 }
 
 main section .bigfuture-content .info .btn {
-  border: 1px solid #333;
-  border-radius: 2.5rem;
-  font-weight: 600;
-  font-size: 1.125rem;
-  padding: 1rem 1.75rem;
-  transition: all 0.3s ease;
+    border: 1px solid #333;
+    border-radius: 2.5rem;
+    font-weight: 600;
+    font-size: 1.125rem;
+    padding: 1rem 1.75rem;
+    transition: all 0.3s ease;
 }
 
 main section .bigfuture-content .info .btn:hover {
-  background-color: #4444441e;
-  border-color: #444;
+    background-color: #4444441e;
+    border-color: #444;
 }
 
 /* Footer

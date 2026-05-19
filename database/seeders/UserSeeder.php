@@ -12,10 +12,6 @@ class UserSeeder extends Seeder
      */
     public function run(): void
     {
-        \Illuminate\Support\Facades\Schema::disableForeignKeyConstraints();
-        \App\Models\User::truncate();
-        \Illuminate\Support\Facades\Schema::enableForeignKeyConstraints();
-
         \App\Models\User::create([
             'username' => 'admin',
             'email' => 'admin@gmail.com',

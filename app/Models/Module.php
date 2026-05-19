@@ -19,6 +19,7 @@ class Module extends Model
 
     protected $fillable = [
         'section_id',
+        'key',
         'module_number',
         'difficulty_level',
         'duration_minutes',
@@ -26,9 +27,61 @@ class Module extends Model
         'order',
     ];
 
+    protected static function booted()
+    {
+        static::created(function ($module) {
+            if ($module->section_id) {
+                \Illuminate\Support\Facades\DB::table('section_modules')->insertOrIgnore([
+                    'section_id' => $module->section_id,
+                    'module_id' => $module->id,
+                    'created_at' => now(),
+                    'updated_at' => now(),
+                ]);
+            }
+        });
+
+        static::updated(function ($module) {
+            if ($module->section_id) {
+                \Illuminate\Support\Facades\DB::table('section_modules')->insertOrIgnore([
+                    'section_id' => $module->section_id,
+                    'module_id' => $module->id,
+                    'created_at' => now(),
+                    'updated_at' => now(),
+                ]);
+            }
+        });
+    }
+
     public function section()
     {
-        return $this->belongsTo(Section::class);
+        // For backwards compatibility, return the primary belongsTo relation
+        // or fall back to the first linked section via many-to-many
+        if ($this->section_id) {
+            return $this->belongsTo(Section::class);
+        }
+        return $this->belongsToMany(Section::class, 'section_modules')->limit(1);
+    }
+
+    public function getSectionAttribute()
+    {
+        if ($this->relationLoaded('section')) {
+            $relation = $this->relations['section'];
+            if ($relation instanceof \Illuminate\Database\Eloquent\Collection) {
+                return $relation->first();
+            }
+            return $relation;
+        }
+
+        if ($this->section_id) {
+            return $this->belongsTo(Section::class)->getResults();
+        }
+
+        return $this->sections()->first();
+    }
+
+    public function sections()
+    {
+        return $this->belongsToMany(Section::class, 'section_modules');
     }
 
     public function questions()

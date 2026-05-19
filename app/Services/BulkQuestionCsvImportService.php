@@ -7,16 +7,12 @@ use Illuminate\Validation\ValidationException;
 
 class BulkQuestionCsvImportService
 {
-    public function __construct(
-        private BulkQuestionImportService $bulkQuestionImport
-    ) {}
-
     /**
-     * Parse uploaded CSV and run the same import pipeline as JSON bulk.
+     * Parse uploaded CSV and return payload for the import pipeline.
      *
-     * @return array{question_ids: array<int, int>, passages_created: int}
+     * @return array
      */
-    public function importFromRequest(Request $request): array
+    public function getPayloadFromRequest(Request $request): array
     {
         $validated = $request->validate([
             'csv_file' => ['required', 'file', 'max:5120', function (string $attribute, mixed $value, \Closure $fail): void {
@@ -42,13 +38,11 @@ class BulkQuestionCsvImportService
         $raw = (string) file_get_contents($file->getRealPath());
         $items = $this->parseCsvToItems($raw);
 
-        $payload = [
+        return [
             'module_id' => (int) $validated['module_id'],
             'start_position' => (int) $validated['start_position'],
             'items' => $items,
         ];
-
-        return $this->bulkQuestionImport->import($payload);
     }
 
     /**

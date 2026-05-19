@@ -17,18 +17,6 @@ class DigitalSatMockSeeder extends Seeder
 {
     public function run(): void
     {
-        Schema::disableForeignKeyConstraints();
-        $tables = [
-            'tests', 'sections', 'modules', 'module_routing',
-            'passages', 'paired_passages', 'questions', 'module_questions',
-            'question_media', 'answer_choices', 'spr_correct_answers',
-            'question_explanations', 'module_blueprints', 'score_conversions',
-        ];
-        foreach ($tables as $table) {
-            DB::table($table)->truncate();
-        }
-        Schema::enableForeignKeyConstraints();
-
         $test = Test::create([
             'title' => 'Test Preview',
             'description' => 'Comprehensive mock test with realistic passages and adaptive routing.',
@@ -44,17 +32,12 @@ class DigitalSatMockSeeder extends Seeder
 
         // --- MODULES ---
         $rwM1 = Module::create(['section_id' => $rwSection->id, 'module_number' => 1, 'difficulty_level' => 'standard', 'duration_minutes' => 32, 'total_questions' => 27, 'order' => 1]);
-        $rwM2H = Module::create(['section_id' => $rwSection->id, 'module_number' => 2, 'difficulty_level' => 'hard', 'duration_minutes' => 32, 'total_questions' => 27, 'order' => 2]);
-        $rwM2E = Module::create(['section_id' => $rwSection->id, 'module_number' => 2, 'difficulty_level' => 'easy', 'duration_minutes' => 32, 'total_questions' => 27, 'order' => 3]);
+        $rwM2Easy = Module::create(['section_id' => $rwSection->id, 'module_number' => 2, 'difficulty_level' => 'easy', 'duration_minutes' => 32, 'total_questions' => 27, 'order' => 2]);
+        $rwM2Hard = Module::create(['section_id' => $rwSection->id, 'module_number' => 2, 'difficulty_level' => 'hard', 'duration_minutes' => 32, 'total_questions' => 27, 'order' => 3]);
 
         $mathM1 = Module::create(['section_id' => $mathSection->id, 'module_number' => 1, 'difficulty_level' => 'standard', 'duration_minutes' => 35, 'total_questions' => 22, 'order' => 1]);
-        $mathM2H = Module::create(['section_id' => $mathSection->id, 'module_number' => 2, 'difficulty_level' => 'hard', 'duration_minutes' => 35, 'total_questions' => 22, 'order' => 2]);
-
-        // --- ROUTING ---
-        DB::table('module_routing')->insert([
-            ['from_module_id' => $rwM1->id, 'to_module_id' => $rwM2H->id, 'condition' => 'score_above', 'threshold_score' => 18, 'created_at' => now()],
-            ['from_module_id' => $mathM1->id, 'to_module_id' => $mathM2H->id, 'condition' => 'score_above', 'threshold_score' => 15, 'created_at' => now()],
-        ]);
+        $mathM2Easy = Module::create(['section_id' => $mathSection->id, 'module_number' => 2, 'difficulty_level' => 'easy', 'duration_minutes' => 35, 'total_questions' => 22, 'order' => 2]);
+        $mathM2Hard = Module::create(['section_id' => $mathSection->id, 'module_number' => 2, 'difficulty_level' => 'hard', 'duration_minutes' => 35, 'total_questions' => 22, 'order' => 3]);
 
         // --- R&W QUESTIONS (MODULE 1) ---
         $rw_data = [
@@ -106,7 +89,6 @@ class DigitalSatMockSeeder extends Seeder
             $p = Passage::create(['content' => $data[2], 'passage_type' => 'single', 'genre' => 'humanities']);
             $q = Question::create([
                 'passage_id' => $p->id,
-                'question_number' => $i + 1,
                 'stem' => $data[3],
                 'question_type' => 'multiple_choice',
                 'difficulty' => 'medium',
@@ -121,44 +103,22 @@ class DigitalSatMockSeeder extends Seeder
                 ['D', $data[4][3], $data[5] === 3],
             ]);
             $rwM1->questions()->attach($q->id, ['position' => $i + 1]);
-        }
-
-        // --- R&W QUESTIONS (MODULE 2 - Reuse same logic for mock) ---
-        foreach ($rw_data as $i => $data) {
-            $p = Passage::create(['content' => $data[2] . " (Module 2 Version)", 'passage_type' => 'single', 'genre' => 'humanities']);
-            $q = Question::create([
-                'passage_id' => $p->id,
-                'question_number' => $i + 1,
-                'stem' => $data[3],
-                'question_type' => 'multiple_choice',
-                'difficulty' => 'hard',
-                'is_pretest' => false,
-                'section_type' => 'reading_writing',
-                'skill_domain' => str_replace(' ', '_', strtolower($data[0]))
-            ]);
-            $this->createChoices($q->id, [
-                ['A', $data[4][0], $data[5] === 0],
-                ['B', $data[4][1], $data[5] === 1],
-                ['C', $data[4][2], $data[5] === 2],
-                ['D', $data[4][3], $data[5] === 3],
-            ]);
-            $rwM2H->questions()->attach($q->id, ['position' => $i + 1]);
-            $rwM2E->questions()->attach($q->id, ['position' => $i + 1]);
+            $rwM2Easy->questions()->attach($q->id, ['position' => $i + 1]);
+            $rwM2Hard->questions()->attach($q->id, ['position' => $i + 1]);
         }
 
         // --- MATH QUESTIONS (MODULE 1) ---
         $math_data = [
-            ['Algebra', 'MCQ', 'If $2x + 10 = 20$, what is the value of $4x$?', '20'],
-            ['Advanced Math', 'MCQ', 'What is the sum of the roots of the quadratic equation $x^2 - 5x + 6 = 0$?', '5'],
+            ['Algebra', 'MCQ', 'If $$2x + 10 = 20$$, what is the value of $$4x$$?', '20'],
+            ['Advanced Math', 'MCQ', 'What is the sum of the roots of the quadratic equation $$x^2 - 5x + 6 = 0$$?', '5'],
             ['Problem Solving', 'MCQ', 'A bag contains 3 red marbles and 2 blue marbles. If one marble is selected at random, what is the probability that the marble is red?', '3/5'],
-            ['Geometry', 'MCQ', 'A circle has a radius of 3 units. What is the area of the circle in square units?', '9π'],
-            ['Algebra', 'SPR', 'Solve for $x$: $5x - 2 = 13$', '3'],
-            ['Advanced Math', 'SPR', 'If $f(x) = x^2 + 4x$, what is the value of $f(2)$?', '12']
+            ['Geometry', 'MCQ', 'A circle has a radius of $$r = 3$$ units. What is the area of the circle in square units?', '$$9\pi$$'],
+            ['Algebra', 'SPR', 'Solve for $$x$$: $$5x - 2 = 13$$', '3'],
+            ['Advanced Math', 'SPR', 'If $$f(x) = x^2 + 4x$$, what is the value of $$f(2)$$?', '12']
         ];
 
         foreach ($math_data as $i => $data) {
             $q = Question::create([
-                'question_number' => $i + 1,
                 'stem' => $data[2],
                 'question_type' => ($data[1] === 'MCQ' ? 'multiple_choice' : 'student_produced_response'),
                 'difficulty' => 'medium',
@@ -172,25 +132,8 @@ class DigitalSatMockSeeder extends Seeder
                 DB::table('spr_correct_answers')->insert(['question_id' => $q->id, 'answer' => $data[3], 'answer_type' => 'exact', 'created_at' => now()]);
             }
             $mathM1->questions()->attach($q->id, ['position' => $i + 1]);
-        }
-
-        // --- MATH QUESTIONS (MODULE 2) ---
-        foreach ($math_data as $i => $data) {
-            $q = Question::create([
-                'question_number' => $i + 1,
-                'stem' => $data[2] . " (Advanced)",
-                'question_type' => ($data[1] === 'MCQ' ? 'multiple_choice' : 'student_produced_response'),
-                'difficulty' => 'hard',
-                'is_pretest' => false,
-                'section_type' => 'math',
-                'skill_domain' => str_replace(' ', '_', strtolower($data[0]))
-            ]);
-            if ($data[1] === 'MCQ') {
-                $this->createChoices($q->id, [['A', $data[3], true], ['B', '20', false], ['C', '25', false], ['D', '40', false]]);
-            } else {
-                DB::table('spr_correct_answers')->insert(['question_id' => $q->id, 'answer' => $data[3], 'answer_type' => 'exact', 'created_at' => now()]);
-            }
-            $mathM2H->questions()->attach($q->id, ['position' => $i + 1]);
+            $mathM2Easy->questions()->attach($q->id, ['position' => $i + 1]);
+            $mathM2Hard->questions()->attach($q->id, ['position' => $i + 1]);
         }
 
         $this->createScoreConversions($test->id);

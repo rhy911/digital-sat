@@ -49,10 +49,10 @@ class DatabaseSchemaTest extends TestCase
     public function test_questions_table_has_expected_columns(): void
     {
         $cols = [
-            'id', 'passage_id', 'paired_passage_id', 'question_number',
+            'id', 'passage_id', 'paired_passage_id',
             'stem', 'question_type', 'difficulty', 'section_type',
             'skill_domain', 'skill_subdomain', 'spr_hint',
-            'calculator_allowed', 'external_id',
+            'calculator_allowed', 'external_id', 'is_pretest', 'is_complete',
         ];
 
         foreach ($cols as $col) {
@@ -291,7 +291,6 @@ class DatabaseSchemaTest extends TestCase
 
         $qId = DB::table('questions')->insertGetId([
             'passage_id' => $passageId,
-            'question_number' => 1,
             'stem' => 'What is the main idea?',
             'question_type' => 'multiple_choice',
             'difficulty' => 'medium',
@@ -324,7 +323,6 @@ class DatabaseSchemaTest extends TestCase
         $qId = DB::table('questions')->insertGetId([
             'passage_id' => $pA,
             'paired_passage_id' => $ppId,
-            'question_number' => 1,
             'stem' => 'Compare the two passages.',
             'question_type' => 'multiple_choice',
             'difficulty' => 'hard',
@@ -442,7 +440,6 @@ class DatabaseSchemaTest extends TestCase
         $this->expectException(\Illuminate\Database\QueryException::class);
 
         DB::table('questions')->insert([
-            'question_number' => 1,
             'stem' => 'Test?',
             'question_type' => 'multiple_choice',
             'difficulty' => 'nightmare',
@@ -550,7 +547,6 @@ class DatabaseSchemaTest extends TestCase
     public function test_spr_question_accepts_multiple_equivalent_answers(): void
     {
         $qId = DB::table('questions')->insertGetId([
-            'question_number' => 1,
             'stem' => 'What is 5 divided by 2?',
             'question_type' => 'student_produced_response',
             'difficulty' => 'easy',
@@ -600,7 +596,6 @@ class DatabaseSchemaTest extends TestCase
         $qId = DB::table('questions')->insertGetId([
             'passage_id' => $passageA,
             'paired_passage_id' => $ppId,
-            'question_number' => 1,
             'stem' => 'How would Author B respond to Author A?',
             'question_type' => 'multiple_choice',
             'difficulty' => 'hard',
@@ -734,7 +729,6 @@ class DatabaseSchemaTest extends TestCase
         for ($i = 1; $i <= 3; $i++) {
             DB::table('questions')->insert([
                 'passage_id' => $passageId,
-                'question_number' => $i,
                 'stem' => "Question {$i} about the passage",
                 'question_type' => 'multiple_choice',
                 'difficulty' => 'medium',
@@ -819,7 +813,6 @@ class DatabaseSchemaTest extends TestCase
     private function createStandaloneQuestion(): int
     {
         return DB::table('questions')->insertGetId([
-            'question_number' => 1,
             'stem' => 'What is 2 + 2?',
             'question_type' => 'multiple_choice',
             'difficulty' => 'easy',

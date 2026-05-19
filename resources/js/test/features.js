@@ -154,7 +154,38 @@ export function initializeQuestionTracking() {
 
     const radioButtons = question.querySelectorAll('input[type="radio"]');
     radioButtons.forEach((radio) => {
-      radio.addEventListener("change", () => updateQuestionButtonStates());
+      radio.addEventListener("change", () => {
+        const option = radio.closest('.answer-option');
+        if (option && option.classList.contains('struck')) {
+          option.classList.remove('struck');
+          const row = option.closest('.answer-row');
+          const strikeBtn = row ? row.querySelector('.strike-btn') : null;
+          if (strikeBtn) strikeBtn.classList.remove('active');
+        }
+        updateQuestionButtonStates();
+      });
+    });
+
+    const strikeBtns = question.querySelectorAll('.strike-btn');
+    strikeBtns.forEach((btn) => {
+      btn.addEventListener('click', function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        const row = this.closest('.answer-row');
+        const option = row ? row.querySelector('.answer-option') : null;
+        if (option) {
+          const isStruck = option.classList.toggle('struck');
+          this.classList.toggle('active');
+          
+          if (isStruck) {
+            const radio = option.querySelector('input[type="radio"]');
+            if (radio && radio.checked) {
+              radio.checked = false;
+              updateQuestionButtonStates();
+            }
+          }
+        }
+      });
     });
   });
 }
@@ -247,3 +278,173 @@ export function preventNormalCursorBehavior() {
   history.pushState(null, null, location.href);
   window.addEventListener('popstate', () => history.pushState(null, null, location.href));
 }
+
+// ============================================================================
+// DESMOS TABBED CALCULATOR
+// ============================================================================
+
+let graphingInstance = null;
+let scientificInstance = null;
+
+export function initializeDesmosCalculator() {
+  const calcBtn = document.getElementById('calculatorBtn');
+  const modal = document.getElementById('calculatorModal');
+  if (!calcBtn || !modal) return;
+
+  const tabs = modal.querySelectorAll('.calc-tab');
+  const closeBtn = modal.querySelector('.closeCalculatorBtn');
+  const graphingDiv = document.getElementById('graphingCalc');
+  const scientificDiv = document.getElementById('scientificCalc');
+
+  // Toggle Modal
+  calcBtn.addEventListener('click', () => {
+    modal.classList.toggle('hidden');
+    
+    // Update button active state
+    if (modal.classList.contains('hidden')) {
+      calcBtn.classList.remove('highlight-mode-active');
+      document.body.classList.remove('calculator-active');
+    } else {
+      calcBtn.classList.add('highlight-mode-active');
+      document.body.classList.add('calculator-active');
+      const activeTab = modal.querySelector('.calc-tab.active').getAttribute('data-tab');
+      initCalculator(activeTab);
+    }
+  });
+
+  // Close Modal
+  if (closeBtn) {
+    closeBtn.addEventListener('click', () => {
+      modal.classList.add('hidden');
+      calcBtn.classList.remove('highlight-mode-active');
+      document.body.classList.remove('calculator-active');
+    });
+  }
+
+  // Tab Switching
+  tabs.forEach(tab => {
+    tab.addEventListener('click', () => {
+      const target = tab.getAttribute('data-tab');
+      
+      // Update UI
+      tabs.forEach(t => t.classList.remove('active'));
+      tab.classList.add('active');
+      
+      if (target === 'graphing') {
+        graphingDiv.classList.remove('hidden');
+        scientificDiv.classList.add('hidden');
+        initCalculator('graphing');
+      } else {
+        graphingDiv.classList.add('hidden');
+        scientificDiv.classList.remove('hidden');
+        initCalculator('scientific');
+      }
+    });
+  });
+
+  function initCalculator(type) {
+    if (type === 'graphing' && !graphingInstance && typeof Desmos !== 'undefined') {
+      graphingInstance = Desmos.GraphingCalculator(graphingDiv, {
+        keypad: true,
+        keypadActivated: true,
+        expressions: true,
+        settingsMenu: true,
+        smartRenderer: true
+      });
+      // Explicitly focus to open keypad
+      graphingInstance.focusFirstExpression();
+    } else if (type === 'scientific' && !scientificInstance && typeof Desmos !== 'undefined') {
+      scientificInstance = Desmos.ScientificCalculator(scientificDiv, {
+        keypad: true
+      });
+    } else if (type === 'graphing' && graphingInstance) {
+      graphingInstance.resize();
+    }
+  }
+
+  // Dragging logic
+  const header = modal.querySelector('.calculator-modal-header');
+  if (header) {
+    let isDragging = false;
+    let offset = { x: 0, y: 0 };
+
+    header.addEventListener('mousedown', (e) => {
+      if (e.target.classList.contains('calc-tab')) return;
+      isDragging = true;
+      offset.x = e.clientX - modal.offsetLeft;
+      offset.y = e.clientY - modal.offsetTop;
+      header.style.cursor = 'grabbing';
+    });
+
+    document.addEventListener('mousemove', (e) => {
+      if (!isDragging) return;
+      modal.style.left = (e.clientX - offset.x) + 'px';
+      modal.style.top = (e.clientY - offset.y) + 'px';
+      modal.style.transform = 'none';
+    });
+
+    document.addEventListener('mouseup', () => {
+      isDragging = false;
+      header.style.cursor = 'move';
+    });
+  }
+
+  // Resizing logic
+  const resizer = modal.querySelector('.calculator-resize-handle');
+  if (resizer) {
+    let isResizing = false;
+
+    resizer.addEventListener('mousedown', (e) => {
+      isResizing = true;
+      e.preventDefault();
+    });
+
+    document.addEventListener('mousemove', (e) => {
+      if (!isResizing) return;
+      const width = e.clientX - modal.offsetLeft;
+      const height = e.clientY - modal.offsetTop;
+      
+      if (width > 400) modal.style.width = width + 'px';
+      if (height > 300) modal.style.height = height + 'px';
+      
+      if (graphingInstance) graphingInstance.resize();
+    });
+
+    document.addEventListener('mouseup', () => {
+      isResizing = false;
+    });
+  }
+}
+
+// ============================================================================
+// SIMPLE FULLSCREEN
+// ============================================================================
+
+export function initializeSimpleFullscreen() {
+  const enterFullscreen = () => {
+    // Check if not already in fullscreen
+    const isFullscreen = document.fullscreenElement || 
+                         document.webkitFullscreenElement || 
+                         document.mozFullScreenElement || 
+                         document.msFullscreenElement;
+    if (isFullscreen) return;
+
+    const docEl = document.documentElement;
+    if (docEl.requestFullscreen) {
+      docEl.requestFullscreen().catch(err => console.log('Fullscreen rejected:', err));
+    } else if (docEl.mozRequestFullScreen) {
+      docEl.mozRequestFullScreen();
+    } else if (docEl.webkitRequestFullscreen) {
+      docEl.webkitRequestFullscreen();
+    } else if (docEl.msRequestFullscreen) {
+      docEl.msRequestFullscreen();
+    }
+    
+    // Remove listener after first interaction attempt
+    document.removeEventListener('click', enterFullscreen);
+  };
+
+  document.addEventListener('click', enterFullscreen);
+}
+
+

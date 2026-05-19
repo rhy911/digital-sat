@@ -12,9 +12,12 @@ Hệ thống được chia thành 4 phân hệ chính:
 
 - **Chức năng:** Đăng ký, Đăng nhập, Xác thực Email, Quên mật khẩu.
 - **Đặc điểm:** Giao diện được tùy chỉnh theo phong cách hiện đại, tối giản. Sử dụng Laravel Sanctum/Fortify để đảm bảo bảo mật.
-- **Phân quyền:** Tách biệt rõ ràng giữa Thí sinh (Candidate) và Quản trị viên (Admin).
+- **Phân quyền:**
+  - **Học sinh (Student):** Người tham gia thi và luyện tập.
+  - **Giáo viên (Teacher):** Quản lý nội dung đề thi, theo dõi tiến độ học sinh.
+  - **Quản trị viên (Admin):** Dành riêng cho nhà phát triển để quản trị hệ thống và cấu hình kỹ thuật.
 
-### B. Cổng Thí sinh (Candidate Portal)
+### B. Cổng Học sinh (Student Portal)
 
 - **Dashboard:** Hiển thị lộ trình học tập, các bài thi gần đây và gợi ý bài thi.
 - **Test Library:** Danh sách các đề Full-length và các bài luyện tập theo kỹ năng (Reading & Writing, Math).
@@ -28,13 +31,25 @@ Hệ thống được chia thành 4 phân hệ chính:
   - **Tooling:** Timer, Mark for Review, Strike-through (loại trừ đáp án), Calculator, và Highlight.
   - **Security:** Chế độ Lockdown Browser giả lập (chặn copy/paste, chặn chuột phải).
 
-### D. Hệ thống Quản trị (Admin/CMS)
+### E. Logic Tính điểm (Scoring Logic - Advanced IRT)
 
-- **Test Management:** Quản lý cấu trúc đề thi phức tạp (Test > Section > Module > Question).
-- **Content Management:** Trình soạn thảo chuyên biệt cho Passage (hỗ trợ paired passages) và Question (hỗ trợ công thức toán học, media).
-- **User Management:** Quản lý danh sách thí sinh, theo dõi tiến độ và hỗ trợ người dùng.
+Hệ thống sử dụng phương pháp **Item Response Theory (IRT)** với mô hình **3PL (3-Parameter Logistic)** để đạt độ chính xác cao:
 
-## 3. Kiến trúc Kỹ thuật (Technical Architecture)
+- **Tham số câu hỏi (Item Parameters):**
+  - **Difficulty (b):** Độ khó (Easy: -1.2, Medium: 0.0, Hard: 1.4).
+  - **Discrimination (a):** Độ phân biệt (MCQ: 0.9, SPR: 1.3).
+  - **Guessing (c):** Xác suất đoán mò (MCQ: 0.25, SPR: 0.0).
+- **Cơ chế tính toán:**
+  - Loại bỏ các câu `is_pretest = true` khỏi kết quả tính điểm.
+  - Sử dụng **Maximum Likelihood Estimation (MLE)** qua thuật toán Newton-Raphson để ước tính chỉ số năng lực **Theta (θ)** trong khoảng [-4.0, 4.0].
+  - Chuyển đổi θ sang thang điểm 200–800 bằng hàm **Sigmoid Mapping** để mô phỏng đường cong điểm số thực tế.
+  - **Adaptive Routing:** Sử dụng θ sau Module 1 để quyết định nhánh Easy/Hard cho Module 2.
+
+*Chi tiết xem tại: `prompts/digital-sat-scoring-pipeline.md` và `prompts/feature_memory.md`.*
+
+---
+
+## 3. Quy tắc Phát triển (Coding Standards)
 
 ### Backend (Laravel 11)
 
@@ -55,9 +70,11 @@ Hệ thống được chia thành 4 phân hệ chính:
 - **Optimization:** Sử dụng Index cho các cột thường xuyên truy vấn (`external_id`, `status`, `test_type`).
 - **Data Integrity:** Khóa ngoại bắt buộc để đảm bảo khi xóa Đề thi thì các Section/Module liên quan được xử lý đúng (Soft Delete).
 
-## 4. Quy tắc Phát triển (Coding Standards)
+## 4. Quy trình & Nguyên tắc Làm việc (Agent/Dev Workflow)
 
 - **Surgical Updates:** Khi chỉnh sửa code, chỉ tập trung vào phần được yêu cầu, tránh refactor lan man trừ khi được chỉ định.
+- **Session Memory:** Sau mỗi phiên làm việc (session), bắt buộc ghi lại tóm tắt các thay đổi vào file `Herd/digital-sat/prompts/agent_memory.md`. Luôn sử dụng skill `caveman-compress` để nén tóm tắt thành dạng Caveman (Caveman-speak) nhằm tối ưu hóa tối đa dung lượng token đầu vào (input tokens) cho các session tiếp theo.
+- **Feature Tracking:** Bắt buộc cập nhật mọi tính năng mới hoặc thay đổi logic quan trọng vào `prompts/feature_memory.md`. Đây là cơ sở để AI nắm bắt project nhanh và dùng để trích xuất báo cáo sau này.
 - **Convention:** Tuân thủ PSR-12 cho PHP và CamelCase cho JavaScript, sử dụng các hàm mới của Lavarel, không dùng kiểu php cũ.
 - **Documentation:** Luôn cập nhật Migration và Model DocBlock khi thay đổi cấu trúc dữ liệu.
 - **Structure**: Ưu tiên chia nhỏ các tính năng thành nhiều file, đóng gói trong từng folder nhằm dễ tìm kiếm và quản lý.
@@ -65,47 +82,58 @@ Hệ thống được chia thành 4 phân hệ chính:
   - Test Schema: Đảm bảo Database luôn đúng cấu trúc.
   - Test Logic: Tập trung vào các hàm tính điểm và logic adaptive.
 
-## 5. Quy trình làm việc (Workflow)
+## 5. Quy ước Đặt tên (Project Naming Conventions)
 
-1. **Nghiên cứu:** Kiểm tra `artisan` và cấu trúc file hiện tại.
-2. **Thiết kế:** Cập nhật Database (nếu cần) qua Migration.
-3. **Thực thi:**
-    - Tạo FormRequest -> Service -> Controller.
-    - Cập nhật giao diện Blade & Assets.
-4. **Kiểm chứng:** Chạy `php artisan test` và kiểm tra thủ công trên trình duyệt.
+To ensure consistency and maintainability, all developers must adhere to the following naming standards:
+
+### A. Backend (PHP - Laravel)
+
+- **Classes/Models/Controllers:** `PascalCase` (e.g., `QuestionController`, `SatScoringService`).
+- **Methods:** `camelCase` (e.g., `estimateTheta`, `getPayloadFromRequest`).
+- **Variables/Properties:** `camelCase` (e.g., `count`, `domain`, `pos`). Prioritize brevity without losing technical context.
+- **Example:** Use `domain` instead of `skillDomain`, `subdomain` instead of `skillSubdomain`.
+- **Namespaces:** `PascalCase` (e.g., `App\Http\Controllers`).
+
+### B. Frontend (JavaScript)
+
+- **Functions:** `camelCase` (e.g., `showQuestion`, `smartRenderMath`).
+- **Variables/Constants:** `camelCase` (e.g., `currentIndex`, `isReviewVisible`).
+- **Global Constants/Environment:** `UPPER_SNAKE_CASE` (e.g., `API_BASE_URL`).
+- **Files:** `kebab-case.js` (e.g., `test-navigation.js`, `ui-handlers.js`).
+
+### C. Styling (CSS/Tailwind)
+
+- **Standard CSS Classes:** `kebab-case` (e.g., `test-container`, `btn-primary`).
+- **BEM (Block Element Modifier) for Custom Components:** `block__element--modifier` (e.g., `passage__content--highlighted`).
+- **Tailwind Classes:** Use utility-first approach directly in Blade.
+
+### D. Database (MySQL)
+
+- **Tables:** `snake_case` (plural) (e.g., `questions`, `answer_choices`).
+- **Columns:** `snake_case` (singular) (e.g., `is_pretest`, `skill_domain`).
+- **Foreign Keys:** `singular_table_id` (e.g., `passage_id`, `module_id`).
+
+### E. Views & Assets (Blade)
+
+- **View Files:** `kebab-case.blade.php` (e.g., `take-math.blade.php`).
+- **Component Folders:** `kebab-case` (e.g., `resources/views/components/test-dashboard`).
+- **Image Assets:** `snake_case` (e.g., `test_preview.png`).
+
+### F. API Routes
+
+- **Endpoints:** `kebab-case` (plural) (e.g., `/api/user-tests`, `/api/module-questions`).
+- **Parameters:** `snake_case` (e.g., `{test_id}`).
 
 ---
 
-## Current Plan
+## 6. Chế độ Caveman (Caveman Mode - Always On)
 
-Simplifies workflow by focusing on high-volume entry while fixing the "Bank" management logic.
+The agent MUST read and apply the rules defined in the installed workspace skill:
 
-### Analysis of Changes
+- [caveman/SKILL.md](.agents/skills/caveman/SKILL.md)
 
-- Remove "Create Question" form: Good. Manual entry is slow. Bulk import (Excel/JSON) is the industry standard for
-  SAT data.
-- Remove "Create Passage" form: Logical for R&W. In Digital SAT, one passage = one question. Bundling them in the
-  import (inline passage) prevents orphaned passages and accidental reuse.
-- Add "Edit Question" function: CRITICAL. Since manual "Create" is gone, users need a way to fix typos or adjust
-  AI-detected domains without re-importing the whole file.
+Rules:
 
-### 1. Implementation Strategy
-
-A. Dashboard UI Cleanup
-
-- Delete the "Create Passage" card.
-- Delete the "Create New Question" card.
-- Keep: "Attach Existing Question from Bank" (still useful to reuse a Math question in a different test).
-- Keep: "Bulk Import" (make this the primary entry point).
-
-B. The "Edit Question" Feature
-
-- Modal: Clicking "Edit" on the Questions Table should open a modal.
-- Fields: Stem, Question Type, Difficulty, Domain, Subdomain, SPR Hint.
-- Passage Edit: If R&W, allow editing the associated passage content directly in the question edit modal.
-- Logic: Updates the global questions table. Changes reflect everywhere that question is used.
-
-C. Backend
-
-- Add updateQuestion method to TestDashboardController.
-- Update BulkQuestionImportService to ensure passage and question remain strictly linked for R&W.
+- Auto-activates on every session start.
+- Follow the rules, intensity levels (lite, full, ultra, wenyan), examples, and auto-clarity boundaries detailed in the `SKILL.md` file.
+- Default intensity level: `full`.

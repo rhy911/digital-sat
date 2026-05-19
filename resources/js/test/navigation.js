@@ -1,5 +1,11 @@
 import { state } from './state.js';
-import { updateQuestionButtonStates } from './ui.js';
+import { 
+  updateQuestionButtonStates,
+  showLoadingScreen,
+  hideLoadingScreen,
+  showCustomConfirm,
+  showCustomAlert
+} from './ui.js';
 
 export function isReviewSectionVisible() {
   const reviewSection = document.getElementById("review-section");
@@ -45,21 +51,34 @@ export function showQuestion(index) {
     if (leftPanel) leftPanel.classList.add('d-none');
     if (resizer) resizer.classList.add('d-none');
     if (rightPanel) {
-        rightPanel.style.flex = '0 0 100%';
-        rightPanel.style.maxWidth = '800px';
-        rightPanel.style.margin = '0 auto';
+      rightPanel.style.flex = '0 0 100%';
+      rightPanel.style.maxWidth = 'none'; // Full width for panel
+      rightPanel.style.margin = '0';
+
+      // Apply width limit to question content, not the panel itself
+      state.questionElements.forEach(q => {
+        q.style.maxWidth = '800px';
+        q.style.margin = '0 auto';
+      });
     }
   } else {
-    // Standard 2-column layout (or SPR Math which needs directions on left)
+    // Standard 2-column layout
     if (leftPanel) {
-        leftPanel.classList.remove('d-none');
-        leftPanel.style.flex = state.panelStates[index] ? `0 0 ${state.panelStates[index].left}%` : '0 0 50%';
+      leftPanel.classList.remove('d-none');
+      leftPanel.style.flex = state.panelStates[index] ? `0 0 ${state.panelStates[index].left}%` : '0 0 50%';
     }
     if (resizer) resizer.classList.remove('d-none');
     if (rightPanel) {
-        rightPanel.style.flex = state.panelStates[index] ? `0 0 ${state.panelStates[index].right}%` : '0 0 49%';
-        rightPanel.style.maxWidth = 'none';
-        rightPanel.style.margin = '0';
+      rightPanel.style.flex = state.panelStates[index] ? `0 0 ${state.panelStates[index].right}%` : '0 0 49%';
+      rightPanel.style.maxWidth = 'none';
+      rightPanel.style.margin = '0';
+      rightPanel.style.paddingTop = '40px';
+
+      // Reset question content width for 2-column mode
+      state.questionElements.forEach(q => {
+        q.style.maxWidth = 'none';
+        q.style.margin = '0';
+      });
     }
   }
 
@@ -70,10 +89,38 @@ export function showQuestion(index) {
 
   updateNavigationButtons();
   updateQuestionButtonStates();
+
+  // Handle [Media:filename] placeholders - Optimized: only current question + mark as processed
+  const currentPassageEl = state.passageElements[index];
+  const processElements = [];
   
-  // Re-run KaTeX auto-render if available
-  if (window.renderMathInElement) {
-    window.renderMathInElement(document.body);
+  if (currentQuestionEl) {
+    processElements.push(...currentQuestionEl.querySelectorAll('.stem-text, .answer-option label'));
+  }
+  if (currentPassageEl) {
+    processElements.push(currentPassageEl);
+  }
+
+  processElements.forEach(area => {
+    if (area.classList.contains('media-processed')) return;
+    
+    const originalHTML = area.innerHTML;
+    const newHTML = originalHTML.replace(/(?<!\!)\[Media:([^\]]+)\]/gi, (match, filename) => {
+      return `<img src="/storage/media/${filename}" alt="${filename}" class="question-media img-fluid">`;
+    });
+    
+    if (newHTML !== originalHTML) {
+      area.innerHTML = newHTML;
+    }
+    area.classList.add('media-processed');
+  });
+
+  if (window.smartRenderMath) {
+    window.smartRenderMath(currentQuestionEl);
+    // If there's a passage, render it too
+    if (currentPassageEl && !currentPassageEl.classList.contains('d-none')) {
+      window.smartRenderMath(currentPassageEl);
+    }
   }
 }
 
@@ -84,7 +131,7 @@ export function showReviewSection() {
 
   const reviewSection = document.getElementById("review-section");
   const resizableContainer = document.querySelector(".resizable-container");
-  
+
   if (reviewSection) reviewSection.classList.remove("d-none");
   if (resizableContainer) resizableContainer.classList.add("d-none");
 
@@ -97,16 +144,7 @@ export function showReviewSection() {
 
 export function nextQuestion() {
   if (isReviewSectionVisible()) {
-    if (window.nextModuleId) {
-      const targetName = window.nextModuleName || "the next module";
-      const confirmNext = confirm(`You are about to proceed to ${targetName}.\n\nAre you ready to continue?`);
-      if (confirmNext) {
-        window.location.href = `/take-test/${window.nextModuleId}`;
-      }
-    } else {
-      alert("You have completed the practice test.");
-      window.location.href = "/home";
-    }
+    submitModule();
     return;
   }
   if (state.currentQuestionIndex < state.totalQuestions - 1) {
@@ -114,6 +152,74 @@ export function nextQuestion() {
     showQuestion(state.currentQuestionIndex);
   } else {
     showReviewSection();
+  }
+}
+
+async function submitModule() {
+  const answers = {};
+
+  state.questionElements.forEach(questionEl => {
+    const qId = questionEl.dataset.questionId;
+    const qType = questionEl.dataset.questionType;
+
+    if (qType === 'multiple_choice') {
+      const selected = questionEl.querySelector('input[type="radio"]:checked');
+      if (selected) answers[qId] = selected.value;
+    } else if (qType === 'student_produced_response') {
+      const input = questionEl.querySelector('.spr-input');
+      if (input) answers[qId] = input.value;
+    }
+  });
+
+  const confirmNext = await showCustomConfirm("You are about to proceed to the next module/section.\n\nAre you ready to continue?", "warning", "Proceed to Next Section");
+  if (!confirmNext) return;
+
+  if (window.isPreview) {
+    showLoadingScreen("Saving responses and loading next section...");
+    if (window.nextModuleId) {
+      window.location.href = `/take-test/${window.nextModuleId}`;
+    } else {
+      showLoadingScreen("Completing test preview...");
+      await showCustomAlert("Test Preview completed! Redirecting home...", "success", "Test Completed");
+      window.location.href = '/home';
+    }
+    return;
+  }
+
+  showLoadingScreen("Saving responses & scoring current module...");
+  try {
+    const response = await fetch('/test/submit-module', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+      },
+      body: JSON.stringify({
+        user_test_id: window.userTestId,
+        module_id: window.currentModuleId,
+        answers: answers
+      })
+    });
+
+    const data = await response.json();
+
+    if (data.test_completed) {
+      showLoadingScreen("Scoring exam & loading results...");
+      await showCustomAlert("Test completed! Redirecting to results...", "success", "Test Completed");
+      window.location.href = data.redirect_url;
+    } else if (data.next_module_id) {
+      showLoadingScreen("Adaptive routing complete! Loading next module...");
+      window.location.href = `/take-test/${data.next_module_id}`;
+    } else {
+      hideLoadingScreen();
+      console.error("Submission failed", data);
+      const msg = data.error || data.message || "Error submitting test. Please try again.";
+      await showCustomAlert(msg, "error", "Submission Error");
+    }
+  } catch (error) {
+    hideLoadingScreen();
+    console.error("Error submitting module:", error);
+    await showCustomAlert("Network error: " + error.message, "error", "Network Error");
   }
 }
 

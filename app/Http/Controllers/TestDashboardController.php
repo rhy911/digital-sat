@@ -11,7 +11,6 @@ use App\Models\Section;
 use App\Models\Test;
 use App\Services\BulkQuestionCsvImportService;
 use App\Services\BulkQuestionImportService;
-use App\Services\AiClassificationService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\DB;
@@ -20,9 +19,7 @@ class TestDashboardController extends Controller
 {
     private const QUESTIONS_TABLE_PER_PAGE = 25;
 
-    public function __construct(
-        private AiClassificationService $aiClassification
-    ) {}
+    public function __construct() {}
 
     /**
      * Display the test data input dashboard.
@@ -44,7 +41,7 @@ class TestDashboardController extends Controller
         try {
             $questionsTotal = Question::query()->count();
             $questions = Question::query()
-                ->select(['id', 'section_type', 'stem', 'is_pretest', 'skill_domain'])
+                ->select(['id', 'section_type', 'stem', 'is_pretest', 'is_complete', 'skill_domain', 'difficulty'])
                 ->orderByDesc('id')
                 ->limit(self::QUESTIONS_TABLE_PER_PAGE)
                 ->get();
@@ -53,9 +50,15 @@ class TestDashboardController extends Controller
             $questions = collect();
         }
 
+        try {
+            $allModules = Module::with('sections.test')->latest()->get();
+        } catch (\Exception $e) {
+            $allModules = collect();
+        }
+
         $questionsPerPage = self::QUESTIONS_TABLE_PER_PAGE;
 
-        return view('test-dashboard', compact('tests', 'passages', 'questions', 'questionsTotal', 'questionsPerPage'));
+        return view('test-dashboard', compact('tests', 'passages', 'questions', 'questionsTotal', 'questionsPerPage', 'allModules'));
     }
 
     /**
@@ -81,22 +84,37 @@ class TestDashboardController extends Controller
         $page = max(1, (int) $request->input('page', 1));
         $q = trim((string) $request->input('q', ''));
         $sectionType = $request->input('section_type');
+        $moduleId = $request->input('module_id');
+        $isComplete = $request->input('is_complete');
 
         $query = Question::query()
-            ->select(['id', 'section_type', 'stem', 'is_pretest', 'skill_domain'])
-            ->orderByDesc('id');
+            ->select(['questions.id', 'questions.section_type', 'questions.stem', 'questions.is_pretest', 'questions.is_complete', 'questions.skill_domain', 'questions.difficulty'])
+            ->orderByDesc('questions.id');
 
         if ($q !== '') {
             if (ctype_digit($q)) {
-                $query->where('id', (int) $q);
+                $query->where('questions.id', (int) $q);
             } else {
                 $like = '%'.str_replace(['\\', '%', '_'], ['\\\\', '\\%', '\\_'], $q).'%';
-                $query->where('stem', 'like', $like);
+                $query->where('questions.stem', 'like', $like);
             }
         }
 
         if (in_array($sectionType, ['reading_writing', 'math'], true)) {
-            $query->where('section_type', $sectionType);
+            $query->where('questions.section_type', $sectionType);
+        }
+
+        if ($isComplete === '0' || $isComplete === 'false') {
+            $query->where('questions.is_complete', false);
+        } elseif ($isComplete === '1' || $isComplete === 'true') {
+            $query->where('questions.is_complete', true);
+        }
+
+        if ($moduleId && ctype_digit((string) $moduleId)) {
+            $query->join('module_questions', 'questions.id', '=', 'module_questions.question_id')
+                  ->where('module_questions.module_id', (int) $moduleId)
+                  ->addSelect('module_questions.position as question_number')
+                  ->reorder('module_questions.position', 'asc');
         }
 
         $paginator = $query->paginate($perPage, ['*'], 'page', $page);
@@ -241,29 +259,56 @@ class TestDashboardController extends Controller
         ], 201);
     }
 
-    /**
-     * Store a new module.
-     */
     public function storeModule(Request $request)
     {
         $validated = $request->validate([
-            'section_id' => 'required|exists:sections,id',
+            'section_id' => 'nullable|exists:sections,id',
+            'test_id' => 'nullable|exists:tests,id',
+            'section_type' => 'nullable|in:reading_writing,math',
+            'key' => 'nullable|string|unique:modules,key|max:255',
             'module_number' => 'required|integer|min:1',
             'difficulty_level' => 'required|in:standard,easy,hard',
             'duration_minutes' => 'required|integer|min:1',
             'total_questions' => 'required|integer|min:1',
         ]);
 
-        $section = Section::findOrFail($validated['section_id']);
-        $baseOrder = (($section->order - 1) * 2) + (int) $validated['module_number'];
-        $existingMax = Module::where('section_id', $section->id)
-            ->where('module_number', $validated['module_number'])
-            ->max('order');
-        $validated['order'] = $existingMax !== null ? ((int) $existingMax + 1) : $baseOrder;
+        // Auto-generate section if test_id and section_type are provided and section_id is empty
+        if (empty($validated['section_id']) && !empty($validated['test_id']) && !empty($validated['section_type'])) {
+            $section = Section::firstOrCreate([
+                'test_id' => $validated['test_id'],
+                'type' => $validated['section_type'],
+            ], [
+                'name' => $validated['section_type'] === 'reading_writing' ? 'Reading and Writing' : 'Math',
+                'order' => $validated['section_type'] === 'reading_writing' ? 1 : 2,
+            ]);
+            $validated['section_id'] = $section->id;
+        }
+
+        if (!empty($validated['section_id'])) {
+            $section = Section::findOrFail($validated['section_id']);
+            $baseOrder = (($section->order - 1) * 2) + (int) $validated['module_number'];
+            $existingMax = Module::where('section_id', $section->id)
+                ->where('module_number', $validated['module_number'])
+                ->max('order');
+            $validated['order'] = $existingMax !== null ? ((int) $existingMax + 1) : $baseOrder;
+        } else {
+            $validated['order'] = 1;
+        }
+
+        // Generate unique key if empty
+        if (empty($validated['key'])) {
+            $validated['key'] = 'MOD_' . strtoupper(Str::random(8));
+        }
 
         $module = Module::create($validated);
-        if ($module->section && $module->section->test) {
-            $module->section->test->refreshTotalDuration();
+
+        if (!empty($validated['section_id'])) {
+            // Link in the pivot table
+            $module->sections()->attach($validated['section_id']);
+            
+            if ($module->section && $module->section->test) {
+                $module->section->test->refreshTotalDuration();
+            }
         }
 
         return response()->json([
@@ -274,34 +319,169 @@ class TestDashboardController extends Controller
     }
 
     /**
-     * Store a new passage.
+     * Link an existing reusable module to a section.
      */
-    public function storePassage(Request $request)
+    public function linkModuleToSection(Request $request)
     {
-        $payload = $request->all();
-        foreach (['word_count', 'source_year'] as $key) {
-            if (array_key_exists($key, $payload) && $payload[$key] === '') {
-                $payload[$key] = null;
-            }
+        $validated = $request->validate([
+            'section_id' => 'required|exists:sections,id',
+            'module_id' => 'required|exists:modules,id',
+        ]);
+
+        $section = Section::findOrFail($validated['section_id']);
+        $module = Module::findOrFail($validated['module_id']);
+
+        if ($section->modules()->where('module_id', $module->id)->exists()) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'This module is already linked to this section.',
+            ], 422);
         }
 
-        $validated = validator($payload, [
-            'content' => 'required|string',
-            'passage_type' => 'required|in:single,paired',
-            'word_count' => 'nullable|integer|min:0',
-            'source_title' => 'nullable|string|max:255',
-            'source_author' => 'nullable|string|max:255',
-            'source_year' => 'nullable|integer',
-            'genre' => 'nullable|in:literary_narrative,social_science,natural_science,humanities',
-        ])->validate();
+        $section->modules()->attach($module->id);
 
-        $passage = Passage::create($validated);
+        if ($section->test) {
+            $section->test->refreshTotalDuration();
+        }
 
         return response()->json([
             'status' => 'success',
-            'message' => 'Passage created successfully',
-            'data' => $passage,
-        ], 201);
+            'message' => 'Module linked to section successfully!',
+        ]);
+    }
+
+    /**
+     * Fetch a single question with its passage and choices.
+     */
+    public function showQuestion($id)
+    {
+        $question = Question::with(['passage', 'answerChoices', 'explanation', 'sprCorrectAnswers'])->findOrFail($id);
+        return response()->json([
+            'status' => 'success',
+            'data' => $question,
+        ]);
+    }
+
+    /**
+     * Update an existing question and its associated passage (if R&W).
+     */
+    public function updateQuestion(Request $request, $id)
+    {
+        $question = Question::with(['passage', 'answerChoices', 'explanation'])->findOrFail($id);
+
+        // Normalize spr_answers
+        if ($request->has('spr_answers')) {
+            $val = $request->input('spr_answers');
+            if (is_array($val)) {
+                $request->merge(['spr_answers' => implode(', ', array_filter($val))]);
+            } elseif ($val === null) {
+                $request->merge(['spr_answers' => '']);
+            }
+        } else {
+            // Ensure spr_answers is at least an empty string if it's an SPR question to satisfy required_if
+            if ($request->input('question_type') === 'student_produced_response') {
+                $request->merge(['spr_answers' => '']);
+            }
+        }
+
+        $validated = $request->validate([
+            'stem' => 'required|string',
+            'question_type' => 'required|in:multiple_choice,student_produced_response',
+            'difficulty' => 'nullable|in:easy,medium,hard',
+            'skill_domain' => 'nullable|string|max:255',
+            'skill_subdomain' => 'nullable|string|max:255',
+            'spr_hint' => 'nullable|string',
+            'is_pretest' => 'boolean',
+            'calculator_allowed' => 'boolean',
+            'passage_content' => 'nullable|string',
+            
+            // Choices & SPR & Explanation
+            'correct_choice' => 'required_if:question_type,multiple_choice|string|max:1',
+            'choices' => 'required_if:question_type,multiple_choice|array',
+            'spr_answers' => 'nullable|string', // Changed from required_if to nullable for smoother validation
+            'explanation' => 'nullable|string',
+            'rationale_a' => 'nullable|string',
+            'rationale_b' => 'nullable|string',
+            'rationale_c' => 'nullable|string',
+            'rationale_d' => 'nullable|string',
+        ]);
+
+        // Manually check SPR requirement if type is SPR
+        if ($validated['question_type'] === 'student_produced_response' && empty($validated['spr_answers'])) {
+             return response()->json([
+                'message' => 'The spr answers field is required for Student Produced Response questions.',
+                'errors' => ['spr_answers' => ['The spr answers field is required.']]
+            ], 422);
+        }
+
+        DB::transaction(function () use ($question, $validated) {
+            $isComplete = !empty($validated['difficulty']) && !empty($validated['skill_domain']);
+
+            $question->update([
+                'stem' => $validated['stem'],
+                'question_type' => $validated['question_type'],
+                'difficulty' => $validated['difficulty'] ?? $question->difficulty,
+                'skill_domain' => $validated['skill_domain'] ?? $question->skill_domain,
+                'skill_subdomain' => $validated['skill_subdomain'] ?? $question->skill_subdomain,
+                'spr_hint' => $validated['spr_hint'] ?? $question->spr_hint,
+                'is_pretest' => $validated['is_pretest'] ?? $question->is_pretest,
+                'calculator_allowed' => $validated['calculator_allowed'] ?? $question->calculator_allowed,
+                'is_complete' => $isComplete,
+            ]);
+
+            if ($question->section_type === 'reading_writing' && $question->passage_id && isset($validated['passage_content'])) {
+                $question->passage->update([
+                    'content' => $validated['passage_content']
+                ]);
+            }
+
+            // Update choices
+            if ($validated['question_type'] === 'multiple_choice') {
+                foreach ($validated['choices'] as $choiceData) {
+                    $question->answerChoices()->updateOrCreate(
+                        ['label' => $choiceData['label']],
+                        [
+                            'content' => $choiceData['content'],
+                            'is_correct' => $choiceData['label'] === $validated['correct_choice'],
+                            'order' => array_search($choiceData['label'], ['A', 'B', 'C', 'D']) + 1
+                        ]
+                    );
+                }
+            } else {
+                // Update SPR answers
+                DB::table('spr_correct_answers')->where('question_id', $question->id)->delete();
+                $answers = array_map('trim', explode(',', $validated['spr_answers']));
+                foreach ($answers as $ans) {
+                    if ($ans === '') continue;
+                    DB::table('spr_correct_answers')->insert([
+                        'question_id' => $question->id,
+                        'answer' => $ans,
+                        'answer_type' => 'exact',
+                        'created_at' => now(),
+                    ]);
+                }
+            }
+
+            // Update Explanation
+            if (isset($validated['explanation'])) {
+                $question->explanation()->updateOrCreate(
+                    ['question_id' => $question->id],
+                    [
+                        'explanation' => $validated['explanation'],
+                        'rationale_a' => $validated['rationale_a'] ?? null,
+                        'rationale_b' => $validated['rationale_b'] ?? null,
+                        'rationale_c' => $validated['rationale_c'] ?? null,
+                        'rationale_d' => $validated['rationale_d'] ?? null,
+                    ]
+                );
+            }
+        });
+
+        return response()->json([
+            'status' => 'success',
+            'message' => 'Question updated successfully',
+            'data' => $question->fresh(['passage', 'answerChoices', 'explanation', 'sprCorrectAnswers']),
+        ]);
     }
 
     /**
@@ -346,92 +526,6 @@ class TestDashboardController extends Controller
     }
 
     /**
-     * Store a new question.
-     */
-    public function storeQuestion(Request $request)
-    {
-        $validated = $request->validate([
-            'module_id' => 'nullable|exists:modules,id',
-            'position' => 'nullable|integer|min:1',
-            'passage_id' => 'nullable|exists:passages,id',
-            'paired_passage_id' => 'nullable|exists:paired_passages,id',
-            'question_number' => 'nullable|integer|min:1',
-            'stem' => 'required|string',
-            'question_type' => 'required|in:multiple_choice,student_produced_response',
-            'difficulty' => 'nullable|in:easy,medium,hard',
-            'is_pretest' => 'boolean',
-            'section_type' => 'nullable|in:reading_writing,math',
-            'skill_domain' => 'nullable|string|max:255',
-            'skill_subdomain' => 'nullable|string|max:255',
-            'spr_hint' => 'nullable|string',
-            'calculator_allowed' => 'boolean',
-            'external_id' => 'nullable|string|max:255',
-        ]);
-
-        if (empty($validated['section_type']) && ! empty($validated['module_id'])) {
-            $module = Module::with('section')->find($validated['module_id']);
-            if ($module && $module->section) {
-                $validated['section_type'] = $module->section->type;
-            }
-        }
-
-        if (empty($validated['section_type'])) {
-            return response()->json(['status' => 'error', 'message' => 'Section type is required.'], 422);
-        }
-
-        if ($validated['section_type'] === 'reading_writing' && $validated['question_type'] === 'student_produced_response') {
-            return response()->json(['status' => 'error', 'message' => 'Reading & Writing does not support SPR.'], 422);
-        }
-
-        if ($validated['section_type'] === 'reading_writing' && ! empty($validated['passage_id'])) {
-            $existing = Question::where('passage_id', $validated['passage_id'])->count();
-            if ($existing > 0) {
-                return response()->json(['status' => 'error', 'message' => 'One question per passage only for R&W.'], 422);
-            }
-        }
-
-        if (empty($validated['difficulty']) || empty($validated['skill_domain'])) {
-            $passageContent = !empty($validated['passage_id']) ? Passage::find($validated['passage_id'])?->content : null;
-            $classification = $this->aiClassification->classify([
-                'section_type' => $validated['section_type'],
-                'stem' => $validated['stem'],
-                'passage_content' => $passageContent,
-            ]);
-            $validated['difficulty'] = $validated['difficulty'] ?? $classification['difficulty'];
-            $validated['skill_domain'] = $validated['skill_domain'] ?? $classification['skill_domain'];
-        }
-
-        $module_id = $validated['module_id'] ?? null;
-        $position = $validated['position'];
-        if ($module_id && empty($position)) {
-            $max = (int) DB::table('module_questions')->where('module_id', $module_id)->max('position');
-            $position = $max + 1;
-        }
-
-        unset($validated['module_id'], $validated['position'], $validated['question_number']);
-
-        $question = Question::create($validated);
-        if ($module_id) {
-            // Auto-shift: if position taken, push existing ones forward
-            DB::transaction(function () use ($module_id, $position) {
-                DB::table('module_questions')
-                    ->where('module_id', $module_id)
-                    ->where('position', '>=', $position)
-                    ->increment('position');
-            });
-
-            $module = Module::find($module_id);
-            $module->questions()->attach($question->id, ['position' => $position]);
-        }
-
-        return response()->json([
-            'status' => 'success',
-            'message' => 'Question created successfully (positions auto-shifted if needed).',
-            'data' => $question,
-        ], 201);
-    }
-
-    /**
      * Preview questions from JSON without saving.
      */
     public function bulkPreviewQuestions(Request $request, BulkQuestionImportService $bulkQuestionImport)
@@ -471,73 +565,92 @@ class TestDashboardController extends Controller
     /**
      * Bulk import from CSV.
      */
-    public function bulkStoreQuestionsFromCsv(Request $request, BulkQuestionCsvImportService $csvImport)
+    public function bulkStoreQuestionsFromCsv(Request $request, BulkQuestionCsvImportService $csvImport, BulkQuestionImportService $bulkQuestionImport)
     {
-        $result = $csvImport->importFromRequest($request);
+        $payload = $csvImport->getPayloadFromRequest($request);
+        $result = $bulkQuestionImport->import($payload);
         return response()->json(['status' => 'success', 'message' => count($result['question_ids']).' question(s) created.', 'data' => $result], 201);
     }
 
     /**
-     * Store answer choices for a question.
+     * Bulk import from ZIP (JSON/CSV + Images).
      */
-    public function storeAnswerChoices(Request $request)
+    public function bulkStoreQuestionsFromZip(Request $request, BulkQuestionImportService $bulkQuestionImport)
     {
-        $validated = $request->validate([
-            'question_id' => 'required|exists:questions,id',
-            'choices' => 'required|array|min:1',
-            'choices.*.label' => 'required|string|max:10',
-            'choices.*.content' => 'required|string',
-            'choices.*.is_correct' => 'boolean',
-            'choices.*.order' => 'required|integer|min:1',
-        ]);
-
-        $createdChoices = [];
-        foreach ($validated['choices'] as $choiceData) {
-            $choice = AnswerChoice::create(array_merge($choiceData, ['question_id' => $validated['question_id']]));
-            $createdChoices[] = $choice;
+        try {
+            $result = $bulkQuestionImport->importFromZip($request);
+            return response()->json([
+                'status' => 'success',
+                'message' => count($result['question_ids']).' question(s) created.',
+                'data' => $result
+            ], 201);
+        } catch (\Exception $e) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'ZIP Import Failed: ' . $e->getMessage()
+            ], 500);
         }
-        return response()->json(['status' => 'success', 'message' => 'Choices created.', 'data' => $createdChoices], 201);
     }
-
     /**
-     * Store question explanation.
+     * Delete endpoints
      */
-    public function storeExplanation(Request $request)
+    public function deleteTest(Request $request, $id)
     {
-        $validated = $request->validate([
-            'question_id' => 'required|exists:questions,id|unique:question_explanations,question_id',
-            'explanation' => 'required|string',
-            'rationale_a' => 'nullable|string',
-            'rationale_b' => 'nullable|string',
-            'rationale_c' => 'nullable|string',
-            'rationale_d' => 'nullable|string',
-            'strategy_tip' => 'nullable|string',
-            'common_mistakes' => 'nullable|string',
-        ]);
-        $explanation = QuestionExplanation::create($validated);
-        return response()->json(['status' => 'success', 'message' => 'Explanation created.', 'data' => $explanation], 201);
-    }
+        $test = Test::with('sections.modules.questions')->findOrFail($id);
+        
+        DB::transaction(function () use ($test, $request) {
+            if ($request->boolean('delete_children')) {
+                foreach ($test->sections as $section) {
+                    foreach ($section->modules as $module) {
+                        foreach ($module->questions as $question) {
+                            $question->delete();
+                        }
+                        $module->delete();
+                    }
+                    $section->delete();
+                }
+            }
+            $test->delete();
+        });
 
-    public function deleteTest($id)
-    {
-        Test::findOrFail($id)->delete();
         return response()->json(['status' => 'success', 'message' => 'Test deleted.']);
     }
 
-    public function deleteSection($id)
+    public function deleteSection(Request $request, $id)
     {
-        $section = Section::with('test')->findOrFail($id);
+        $section = Section::with(['test', 'modules.questions'])->findOrFail($id);
         $test = $section->test;
-        $section->delete();
+
+        DB::transaction(function () use ($section, $request) {
+            if ($request->boolean('delete_children')) {
+                foreach ($section->modules as $module) {
+                    foreach ($module->questions as $question) {
+                        $question->delete();
+                    }
+                    $module->delete();
+                }
+            }
+            $section->delete();
+        });
+
         if ($test) $test->refreshTotalDuration();
         return response()->json(['status' => 'success', 'message' => 'Section deleted.']);
     }
 
-    public function deleteModule($id)
+    public function deleteModule(Request $request, $id)
     {
-        $module = Module::with('section.test')->findOrFail($id);
+        $module = Module::with(['section.test', 'questions'])->findOrFail($id);
         $test = $module->section->test ?? null;
-        $module->delete();
+
+        DB::transaction(function () use ($module, $request) {
+            if ($request->boolean('delete_children')) {
+                foreach ($module->questions as $question) {
+                    $question->delete();
+                }
+            }
+            $module->delete();
+        });
+
         if ($test) $test->refreshTotalDuration();
         return response()->json(['status' => 'success', 'message' => 'Module deleted.']);
     }

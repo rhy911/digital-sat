@@ -17,5 +17,10 @@ export const state = {
   totalQuestions: 0,
   highlightMode: false,
   persistentPopover: null,
-  panelStates: [] // Track panel split ratio for each question
+  panelStates: [], // Track panel split ratio for each question
+  userTestId: null,
+
+  // Timer state
+  timeLeft: 0, // in seconds
+  timerInterval: null
 };
