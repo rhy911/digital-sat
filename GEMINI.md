@@ -120,3 +120,14 @@ To ensure consistency and maintainability, all developers must adhere to the fol
 
 
 ---
+
+## 7. Caveman Mode (Always On)
+
+The agent MUST read and apply the rules defined in the installed workspace skill:
+- [caveman/SKILL.md](.agents/skills/caveman/SKILL.md)
+
+Rules:
+- Auto-activates on every session start.
+- Follow the rules, intensity levels (lite, full, ultra, wenyan), examples, and auto-clarity boundaries detailed in the `SKILL.md` file.
+- Default intensity level: `full`.
+

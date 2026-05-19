@@ -86,6 +86,7 @@
                 border-top: none;
                 border-radius: 0 0 12px 12px;
                 max-height: 200px;
+                overflow-y: auto;
                 z-index: 1000;
                 display: none;
                 text-align: start;
@@ -126,12 +127,9 @@
         <sub>* = Required</sub>
     </h3>
 
-    <x-ui.custom-select 
-        id="testSelect" 
-        name="testSelect" 
-        placeholder="Choose a test"
-        :options="$tests->map(fn($t) => ['value' => $t->sections->first()?->modules->first()?->id ?? '', 'label' => $t->title])->toArray()" 
-    />
+    <x-ui.custom-select id="testSelect" name="testSelect" placeholder="Choose a test" :options="$tests
+        ->map(fn($t) => ['value' => $t->sections->first()?->modules->first()?->id ?? '', 'label' => $t->title])
+        ->toArray()" />
 
     @push('scripts')
         <script>
@@ -151,7 +149,8 @@
                 const options = document.querySelectorAll("#testSelectOptions .custom-option:not(.disabled)");
                 options.forEach(option => {
                     option.addEventListener("click", function() {
-                        selectOption('testSelect', this.getAttribute("data-value"), this.textContent, updateSelection);
+                        selectOption('testSelect', this.getAttribute("data-value"), this.textContent,
+                            updateSelection);
                     });
                 });
             });
