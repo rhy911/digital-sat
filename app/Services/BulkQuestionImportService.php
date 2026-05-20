@@ -212,7 +212,7 @@ class BulkQuestionImportService
                     }
 
                     Storage::disk('public')->put('media/' . $newName, $content);
-                    $url = Storage::disk('public')->url('media/' . $newName);
+                    $url = asset('storage/media/' . $newName);
                     
                     \Illuminate\Support\Facades\Log::info("Media imported: $filename -> media/$newName");
                     
@@ -242,8 +242,7 @@ class BulkQuestionImportService
                     if (is_array($choice) && isset($choice['content'])) {
                         $choice['content'] = $processString($choice['content']);
                     } elseif (is_string($choice)) {
-                        // This handles cases where choices might be plain strings before normalization
-                        // though normalization usually happens after.
+                        $choice = $processString($choice);
                     }
                 }
             }
@@ -514,6 +513,19 @@ class BulkQuestionImportService
                         // Handle Object structure: {"A": "...", "B": "..."}
                         $normalizedChoices = [];
                         foreach ($row['choices'] as $label => $content) {
+                            $normalizedChoices[] = [
+                                'label' => $label,
+                                'content' => $content,
+                                'is_correct' => (strtoupper(trim((string)$label)) === strtoupper(trim((string)$correctAns)))
+                            ];
+                        }
+                        $payload['items'][$i]['choices'] = $normalizedChoices;
+                    } elseif (isset($row['choices'][0]) && is_string($row['choices'][0])) {
+                        // Handle List of Strings structure: ["...", "..."]
+                        $normalizedChoices = [];
+                        $labels = ['A', 'B', 'C', 'D'];
+                        foreach ($row['choices'] as $idx => $content) {
+                            $label = $labels[$idx] ?? chr(65 + $idx);
                             $normalizedChoices[] = [
                                 'label' => $label,
                                 'content' => $content,

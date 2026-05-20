@@ -266,7 +266,7 @@ header {
 .answer-option label::after {
     position: absolute;
     left: 21px;
-    top: 50%;
+    top: 49.875%;
     transform: translateY(-50%);
     font-weight: 600;
     font-size: 0.875rem;
@@ -326,10 +326,78 @@ header {
     color: #888;
 }
 
+/* Cross-out toggle button in question-header */
+.cross-out-toggle-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 26px;
+    background-color: white;
+    border: 2px solid #000;
+    border-radius: 6px;
+    transition:
+        background-color 0.2s ease,
+        transform 0.1s ease;
+}
+
+.cross-out-toggle-btn .cross-out-text {
+    fill: #000;
+    transition: fill 0.2s ease;
+}
+
+.cross-out-toggle-btn .cross-out-line {
+    stroke: #000;
+    transition: stroke 0.2s ease;
+}
+
+.cross-out-toggle-btn:hover {
+    background-color: #dddddd;
+}
+
+.cross-out-toggle-btn.active {
+    background-color: #324dc7;
+}
+
+.cross-out-toggle-btn.active:hover {
+    background-color: white;
+}
+
+.cross-out-toggle-btn.active:hover .cross-out-line {
+    stroke: black;
+}
+
+.cross-out-toggle-btn.active:hover .cross-out-text {
+    fill: black;
+}
+
+.cross-out-toggle-btn.active .cross-out-text {
+    fill: #fff;
+}
+
+.cross-out-toggle-btn.active .cross-out-line {
+    stroke: #fff;
+}
+
+.question[data-question-type="student_produced_response"]
+    .cross-out-toggle-btn {
+    display: none !important;
+}
+
+/* Hide strike buttons by default */
+.question .strike-btn {
+    display: none;
+}
+
+/* Show strike buttons when cross-out mode is active on the question */
+.question.show-strike .strike-btn {
+    display: flex;
+}
+
 .strike-btn {
-    border: 1px solid #000;
-    border-radius: 4px;
-    padding: 8px;
+    border: none;
+    background: transparent;
+    padding: 0;
     cursor: pointer;
     z-index: 20;
     display: flex;
@@ -337,28 +405,55 @@ header {
     justify-content: center;
     color: #000;
     transition: all 0.2s;
-    height: 30px;
-    width: 30px;
+    height: 32px;
+    width: 40px;
     position: relative;
+}
+
+.strike-circle {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 20px;
+    height: 20px;
+    border: 1px solid #000;
+    border-radius: 50%;
+    font-weight: 600;
+    font-size: 0.75rem;
+    font-family: "Inter", sans-serif;
+    color: #000;
     background: transparent;
-}
-.strike-btn:hover {
-    background-color: rgba(0, 0, 0, 0.05);
-    border-color: #ab2334;
-    color: #ab2334;
-}
-
-.strike-btn.active {
-    background-color: #ab23341a;
-    border-color: #ab2334;
-    color: #ab2334;
-}
-
-.strike-btn svg {
-    width: 16px;
-    height: 16px;
-    stroke: currentColor;
     transition: all 0.2s;
+}
+
+.strike-line {
+    position: absolute;
+    left: 5px;
+    right: 6px;
+    top: 50%;
+    height: 1px;
+    background-color: #000;
+    transform: translateY(-50%);
+    transition: all 0.2s;
+}
+
+.strike-btn:hover .strike-circle {
+    background-color: #80808030;
+    border-color: #ab2334;
+    color: #ab2334;
+}
+
+.strike-btn:hover .strike-line {
+    background-color: #ab2334;
+}
+
+.strike-btn.active .strike-circle {
+    border-color: #ab2334;
+    color: #ab2334;
+}
+
+.strike-btn.active .strike-line {
+    background-color: #ab2334;
 }
 
 .answer-input-container {

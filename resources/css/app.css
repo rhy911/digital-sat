@@ -1,7 +1,7 @@
-@import 'tailwindcss';
-@import '@fontsource/roboto/400.css';
-@import '@fontsource/roboto/500.css';
-@import '@fontsource/roboto/700.css';
+@import "tailwindcss";
+@import "@fontsource/roboto/400.css";
+@import "@fontsource/roboto/500.css";
+@import "@fontsource/roboto/700.css";
 /* @import './root.css';
 @import './auth.css'; */
 
@@ -11,7 +11,7 @@
 @source '../**/*.js';
 
 @theme {
-    --font-sans: 'Roboto', ui-sans-serif, system-ui, sans-serif;
+    --font-sans: "Roboto", ui-sans-serif, system-ui, sans-serif;
 }
 
 * {
@@ -47,7 +47,9 @@ u {
     align-items: center;
     justify-content: center;
     /* Removed backdrop-filter: blur(12px) to guarantee flawless 60fps performance on heavy DOM loads */
-    transition: opacity 0.25s cubic-bezier(0.4, 0, 0.2, 1), visibility 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    transition:
+        opacity 0.25s cubic-bezier(0.4, 0, 0.2, 1),
+        visibility 0.25s cubic-bezier(0.4, 0, 0.2, 1);
     opacity: 1;
     visibility: visible;
     will-change: opacity;
@@ -100,24 +102,38 @@ u {
 }
 
 .loading-status {
-    color: #94a3b8 !important;
+    color: #f8fafc !important;
     font-size: 0.9rem;
     animation: loading-pulse-text 1.5s ease-in-out infinite;
 }
 
 @keyframes loading-spin {
-    0% { transform: rotate(0deg) translateZ(0); }
-    100% { transform: rotate(360deg) translateZ(0); }
+    0% {
+        transform: rotate(0deg) translateZ(0);
+    }
+    100% {
+        transform: rotate(360deg) translateZ(0);
+    }
 }
 
 @keyframes loading-pulse-icon {
-    0%, 100% { transform: translate(-50%, -50%) scale(1) translateZ(0); opacity: 0.8; }
-    50% { transform: translate(-50%, -50%) scale(1.05) translateZ(0); opacity: 1; }
+    0%,
+    100% {
+        transform: translate(-50%, -50%) scale(1) translateZ(0);
+        opacity: 0.8;
+    }
+    50% {
+        transform: translate(-50%, -50%) scale(1.05) translateZ(0);
+        opacity: 1;
+    }
 }
 
 @keyframes loading-pulse-text {
-    0%, 100% { opacity: 0.6; }
-    50% { opacity: 1; }
+    0%,
+    100% {
+        opacity: 0.6;
+    }
+    50% {
+        opacity: 1;
+    }
 }
-
-

@@ -228,7 +228,7 @@ export function initializeMoreDropdown() {
       moreBtn.classList.remove("highlight-mode-active");
       const confirmed = await showCustomConfirm("Are you sure you want to exit the exam? Your progress will be saved.", "warning", "Exit Exam");
       if (confirmed) {
-        window.location.href = "/dashboard";
+        window.location.href = "/home";
       }
     });
   }

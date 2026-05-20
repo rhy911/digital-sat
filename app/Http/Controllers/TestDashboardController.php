@@ -68,10 +68,12 @@ class TestDashboardController extends Controller
     {
         $tests = Test::with('sections.modules')->latest()->get();
         $passages = Passage::latest()->get();
+        $allModules = Module::with('sections.test')->latest()->get();
 
         return response()->json([
             'tests' => $tests,
             'passages' => $passages,
+            'allModules' => $allModules,
         ]);
     }
 
@@ -304,7 +306,7 @@ class TestDashboardController extends Controller
 
         if (!empty($validated['section_id'])) {
             // Link in the pivot table
-            $module->sections()->attach($validated['section_id']);
+            $module->sections()->syncWithoutDetaching([$validated['section_id']]);
             
             if ($module->section && $module->section->test) {
                 $module->section->test->refreshTotalDuration();
@@ -324,12 +326,33 @@ class TestDashboardController extends Controller
     public function linkModuleToSection(Request $request)
     {
         $validated = $request->validate([
-            'section_id' => 'required|exists:sections,id',
             'module_id' => 'required|exists:modules,id',
+            'section_id' => 'nullable|exists:sections,id',
+            'test_id' => 'nullable|exists:tests,id',
+            'section_type' => 'nullable|in:reading_writing,math',
         ]);
 
-        $section = Section::findOrFail($validated['section_id']);
         $module = Module::findOrFail($validated['module_id']);
+
+        if (empty($validated['section_id'])) {
+            if (empty($validated['test_id']) || empty($validated['section_type'])) {
+                return response()->json([
+                    'status' => 'error',
+                    'message' => 'Either Section ID or Test ID + Section Type is required.',
+                ], 422);
+            }
+
+            // Find or create section
+            $section = Section::firstOrCreate([
+                'test_id' => $validated['test_id'],
+                'type' => $validated['section_type'],
+            ], [
+                'name' => $validated['section_type'] === 'reading_writing' ? 'Reading and Writing' : 'Math',
+                'order' => $validated['section_type'] === 'reading_writing' ? 1 : 2,
+            ]);
+        } else {
+            $section = Section::findOrFail($validated['section_id']);
+        }
 
         if ($section->modules()->where('module_id', $module->id)->exists()) {
             return response()->json([
@@ -346,7 +369,7 @@ class TestDashboardController extends Controller
 
         return response()->json([
             'status' => 'success',
-            'message' => 'Module linked to section successfully!',
+            'message' => 'Module linked successfully!',
         ]);
     }
 

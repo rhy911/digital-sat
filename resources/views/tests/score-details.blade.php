@@ -133,8 +133,8 @@
                     'sectionName' => $sectionName,
                     'correctAnswer' => $correctAnswer,
                     'questionData' => [
-                        'stem' => $answer->question->stem,
-                        'explanation' => $answer->question->explanation->body ?? 'No explanation available.',
+                        'stem' => \Illuminate\Support\Str::markdown($answer->question->stem ?? '', ['html_input' => 'strip', 'allow_unsafe_links' => false]),
+                        'explanation' => \Illuminate\Support\Str::markdown($answer->question->explanation?->explanation ?? 'No explanation available.', ['html_input' => 'strip', 'allow_unsafe_links' => false]),
                         'correct_answer' => $correctAnswer,
                         'your_answer' => $answer->selected_answer ?? 'Omitted',
                         'status' => $statusKey,
@@ -142,7 +142,7 @@
                         'choices' => $answer->question->answerChoices->map(function($c) {
                             return [
                                 'label' => $c->label,
-                                'content' => $c->content,
+                                'content' => \Illuminate\Support\Str::markdown($c->content ?? '', ['html_input' => 'strip', 'allow_unsafe_links' => false]),
                                 'is_correct' => (bool)$c->is_correct
                             ];
                         })->toArray(),

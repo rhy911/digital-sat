@@ -85,13 +85,27 @@
         <div class="col-md-5">
             <div class="card h-100 shadow-sm border-primary">
                 <div class="card-header bg-primary text-white">
-                    <h5 class="mb-0"><i class="bi bi-link-45deg"></i> Link Reusable Module to Section</h5>
+                    <h5 class="mb-0"><i class="bi bi-link-45deg"></i> Link Reusable Module to Test/Section</h5>
                 </div>
                 <div class="card-body">
                     <form id="linkModuleForm">
                         @csrf
-                        <div class="mb-4">
-                            <label for="linkSection" class="form-label">Target Section <span class="text-danger">*</span></label>
+                        
+                        <div class="mb-3">
+                            <label class="form-label d-block fw-semibold text-secondary">Link Target <span class="text-danger">*</span></label>
+                            <div class="form-check form-check-inline">
+                                <input class="form-check-input" type="radio" name="link_target_type" id="targetTypeSection" value="section" checked>
+                                <label class="form-check-label text-dark" for="targetTypeSection">Existing Section</label>
+                            </div>
+                            <div class="form-check form-check-inline">
+                                <input class="form-check-input" type="radio" name="link_target_type" id="targetTypeTest" value="test">
+                                <label class="form-check-label text-dark" for="targetTypeTest">Test &amp; Auto-Create Section</label>
+                            </div>
+                        </div>
+
+                        <!-- Target Section Field -->
+                        <div id="linkSectionContainer" class="mb-3">
+                            <label for="linkSection" class="form-label fw-semibold">Target Section <span class="text-danger">*</span></label>
                             <select class="form-select tom-select" id="linkSection" name="section_id" required>
                                 <option value="">Select section...</option>
                                 @foreach($tests as $test)
@@ -105,8 +119,32 @@
                             <small class="text-muted">Select the Section to receive this Module</small>
                         </div>
 
-                        <div class="mb-4">
-                            <label for="linkModule" class="form-label">Reusable Module <span class="text-danger">*</span></label>
+                        <!-- Target Test Fields (hidden by default) -->
+                        <div id="linkTestFieldsContainer" class="d-none">
+                            <div class="mb-3">
+                                <label for="linkTest" class="form-label fw-semibold">Target Test <span class="text-danger">*</span></label>
+                                <select class="form-select tom-select" id="linkTest" name="test_id">
+                                    <option value="">Select test...</option>
+                                    @foreach($tests as $test)
+                                    <option value="{{ $test->id }}">
+                                        {{ $test->title }}
+                                    </option>
+                                    @endforeach
+                                </select>
+                            </div>
+                            <div class="mb-3">
+                                <label for="linkSectionType" class="form-label fw-semibold">Section Type <span class="text-danger">*</span></label>
+                                <select class="form-select" id="linkSectionType" name="section_type">
+                                    <option value="">Select type...</option>
+                                    <option value="reading_writing">Reading and Writing</option>
+                                    <option value="math">Math</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <!-- Reusable Module Field -->
+                        <div class="mb-3">
+                            <label for="linkModule" class="form-label fw-semibold">Reusable Module <span class="text-danger">*</span></label>
                             <select class="form-select tom-select" id="linkModule" name="module_id" required>
                                 <option value="">Select module by key/ID...</option>
                                 @foreach($allModules as $mod)
@@ -118,7 +156,7 @@
                             <small class="text-muted">Choose the module you wish to link</small>
                         </div>
 
-                        <button type="submit" class="btn btn-primary w-100">Associate Module</button>
+                        <button type="submit" class="btn btn-primary w-100 mt-2">Associate Module</button>
                     </form>
                 </div>
             </div>

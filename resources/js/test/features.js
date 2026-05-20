@@ -152,6 +152,16 @@ export function initializeQuestionTracking() {
       });
     }
 
+    const crossOutToggleBtn = question.querySelector('.cross-out-toggle-btn');
+    if (crossOutToggleBtn) {
+      crossOutToggleBtn.addEventListener('click', function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        this.classList.toggle('active');
+        question.classList.toggle('show-strike');
+      });
+    }
+
     const radioButtons = question.querySelectorAll('input[type="radio"]');
     radioButtons.forEach((radio) => {
       radio.addEventListener("change", () => {

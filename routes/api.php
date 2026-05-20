@@ -26,8 +26,6 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/email/verification-notification', ResendVerificationController::class);
 });
 
-use App\Http\Controllers\UserController;
-
 // Student routes
 Route::get('/students', [UserController::class, 'get_data']);
 Route::post('/students', [UserController::class, 'insert_data']);

@@ -25,9 +25,9 @@ class VerifyEmailWebController extends Controller
             }
 
             if ($user->hasVerifiedEmail()) {
-                // Already verified - login and go to dashboard
+                // Already verified - login and go to home
                 Auth::login($user, true);
-                return redirect()->route('dashboard')
+                return redirect()->route('home')
                     ->with('info', 'Email đã được xác minh rồi.');
             }
 
@@ -42,7 +42,7 @@ class VerifyEmailWebController extends Controller
                 'email' => $user->email,
             ]);
 
-            return redirect()->route('dashboard')
+            return redirect()->route('home')
                 ->with('success', 'Email đã được xác minh thành công! Chào mừng bạn.');
         } catch (\Exception $e) {
             Log::error('Email verification error (Web)', [

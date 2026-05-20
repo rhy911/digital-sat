@@ -311,7 +311,11 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
     function captureTomSelectPreservation(submittedForm) {
-        const ids = ['sectionTest', 'moduleSection', 'questionModule', 'bulkQuestionModule', 'questionPassage', 'answerQuestionId', 'explanationQuestionId'];
+        const ids = [
+            'sectionTest', 'moduleSection', 'questionModule', 'bulkQuestionModule', 
+            'questionPassage', 'answerQuestionId', 'explanationQuestionId',
+            'linkSection', 'linkTest', 'linkModule'
+        ];
         const preserve = {};
         ids.forEach(function (id) {
             const el = document.getElementById(id);
@@ -323,17 +327,18 @@ document.addEventListener('DOMContentLoaded', function () {
         return preserve;
     }
 
-    function rebuildSectionTestTomSelect(tests, preserved) {
-        const el = document.getElementById('sectionTest');
+    function rebuildSectionTestTomSelect(tests, preserved, selectId) {
+        selectId = selectId || 'sectionTest';
+        const el = document.getElementById(selectId);
         if (!el) {
             return;
         }
         destroyTomSelectIfAny(el);
-        el.innerHTML = '<option value="">Search test...</option>';
+        el.innerHTML = '<option value="">' + (selectId === 'linkTest' ? 'Select test...' : 'Search test...') + '</option>';
         tests.forEach(function (t) {
             const opt = document.createElement('option');
             opt.value = t.id;
-            opt.textContent = t.title + ' (ID:' + t.id + ')';
+            opt.textContent = t.title + (selectId === 'linkTest' ? '' : ' (ID:' + t.id + ')');
             el.appendChild(opt);
         });
         initTomSelectOn(el);
@@ -342,21 +347,41 @@ document.addEventListener('DOMContentLoaded', function () {
         }
     }
 
-    function rebuildModuleSectionTomSelect(tests, preserved) {
-        const el = document.getElementById('moduleSection');
+    function rebuildModuleSectionTomSelect(tests, preserved, selectId) {
+        selectId = selectId || 'moduleSection';
+        const el = document.getElementById(selectId);
         if (!el) {
             return;
         }
         destroyTomSelectIfAny(el);
-        el.innerHTML = '<option value="">Search section...</option>';
+        el.innerHTML = '<option value="">' + (selectId === 'linkSection' ? 'Select section...' : 'Search section...') + '</option>';
         tests.forEach(function (test) {
             (test.sections || []).forEach(function (section) {
                 const opt = document.createElement('option');
                 opt.value = section.id;
                 opt.setAttribute('data-type', section.type);
-                opt.textContent = test.title + ' - ' + section.name + ' (ID:' + section.id + ')';
+                opt.textContent = test.title + ' - ' + section.name + (selectId === 'linkSection' ? '' : ' (ID:' + section.id + ')');
                 el.appendChild(opt);
             });
+        });
+        initTomSelectOn(el);
+        if (preserved && optionExistsInSelect(el, preserved)) {
+            el.tomselect.setValue(String(preserved), true);
+        }
+    }
+
+    function rebuildLinkModuleTomSelect(allModules, preserved) {
+        const el = document.getElementById('linkModule');
+        if (!el) {
+            return;
+        }
+        destroyTomSelectIfAny(el);
+        el.innerHTML = '<option value="">Select module by key/ID...</option>';
+        allModules.forEach(function (mod) {
+            const opt = document.createElement('option');
+            opt.value = mod.id;
+            opt.textContent = '[' + (mod.key || 'ID: ' + mod.id) + '] - Mod ' + mod.module_number + ' (' + capitalizeFirstLetter(mod.difficulty_level) + ')';
+            el.appendChild(opt);
         });
         initTomSelectOn(el);
         if (preserved && optionExistsInSelect(el, preserved)) {
@@ -628,30 +653,48 @@ document.addEventListener('DOMContentLoaded', function () {
         return 'primary';
     }
 
-    function renderModulesTable(tests) {
+    function renderModulesTable(allModules) {
         const tbody = document.getElementById('modulesTableBody');
         if (!tbody) {
             return;
         }
-        const rows = [];
-        tests.forEach(function (test) {
-            (test.sections || []).forEach(function (section) {
-                (section.modules || []).forEach(function (mod) {
-                    const diffClass = moduleDifficultyBadgeClass(mod.difficulty_level);
-                    rows.push('<tr>'
-                        + '<td>' + escapeHtml(mod.id) + '</td>'
-                        + '<td><small>' + escapeHtml(test.title) + '</small><br><strong>' + escapeHtml(section.name) + '</strong></td>'
-                        + '<td>' + escapeHtml(mod.module_number) + '</td>'
-                        + '<td><span class="badge bg-secondary">' + escapeHtml(mod.order) + '</span></td>'
-                        + '<td><span class="badge bg-' + diffClass + '">' + escapeHtml(humanizeUnderscores(mod.difficulty_level)) + '</span></td>'
-                        + '<td>' + escapeHtml(mod.duration_minutes) + 'm</td>'
-                        + '<td>' + escapeHtml(mod.total_questions) + '</td>'
-                        + '<td><button type="button" class="btn btn-sm btn-outline-danger delete-module-btn" data-id="' + escapeHtml(mod.id) + '">Delete</button></td>'
-                        + '</tr>');
-                });
-            });
-        });
-        tbody.innerHTML = rows.length ? rows.join('') : '<tr><td colspan="8" class="text-center text-muted py-4">No modules yet</td></tr>';
+        if (!allModules.length) {
+            tbody.innerHTML = '<tr><td colspan="8" class="text-center text-muted py-4">No modules found. Create one above!</td></tr>';
+            return;
+        }
+        tbody.innerHTML = allModules.map(function (mod) {
+            const diffClass = moduleDifficultyBadgeClass(mod.difficulty_level);
+            
+            let linkedHtml = '';
+            const sections = mod.sections || [];
+            if (sections.length === 0) {
+                linkedHtml = '<span class="badge bg-warning text-dark"><i class="bi bi-unlock"></i> Standalone (Reusable)</span>';
+            } else {
+                linkedHtml = '<div class="d-flex flex-column gap-1">' + sections.map(function (sec) {
+                    const testTitle = (sec.test && sec.test.title) ? sec.test.title : 'Test';
+                    return '<div>'
+                        + '<span class="badge bg-success bg-opacity-10 text-success border border-success border-opacity-25 py-1">'
+                        + '<i class="bi bi-tag"></i> ' + escapeHtml(testTitle) + ' &raquo; <strong>' + escapeHtml(sec.name) + '</strong>'
+                        + '</span>'
+                        + '</div>';
+                }).join('') + '</div>';
+            }
+
+            return '<tr>'
+                + '<td>' + escapeHtml(mod.id) + '</td>'
+                + '<td><code class="font-monospace bg-light px-2 py-1 border rounded text-dark">' + escapeHtml(mod.key || 'N/A') + '</code></td>'
+                + '<td>' + linkedHtml + '</td>'
+                + '<td><span class="badge bg-secondary">Mod ' + escapeHtml(mod.module_number) + '</span></td>'
+                + '<td><span class="badge bg-' + diffClass + '">' + escapeHtml(capitalizeFirstLetter(mod.difficulty_level)) + '</span></td>'
+                + '<td>' + escapeHtml(mod.duration_minutes) + 'm</td>'
+                + '<td>' + escapeHtml(mod.total_questions) + '</td>'
+                + '<td class="text-end">'
+                + '<button class="btn btn-sm btn-outline-danger delete-module-btn" data-id="' + escapeHtml(mod.id) + '">'
+                + '<i class="bi bi-trash"></i> Delete'
+                + '</button>'
+                + '</td>'
+                + '</tr>';
+        }).join('');
     }
 
     function renderQuestionsTable(questions) {
@@ -724,11 +767,15 @@ document.addEventListener('DOMContentLoaded', function () {
         const p = preserve || {};
         const tests = payload.tests || [];
         const passages = payload.passages || [];
-        rebuildSectionTestTomSelect(tests, p.sectionTest);
-        rebuildModuleSectionTomSelect(tests, p.moduleSection);
+        const allModules = payload.allModules || [];
+        rebuildSectionTestTomSelect(tests, p.sectionTest, 'sectionTest');
+        rebuildSectionTestTomSelect(tests, p.linkTest, 'linkTest');
+        rebuildModuleSectionTomSelect(tests, p.moduleSection, 'moduleSection');
+        rebuildModuleSectionTomSelect(tests, p.linkSection, 'linkSection');
         rebuildQuestionModuleTomSelect(tests, p.questionModule, 'questionModule');
         rebuildQuestionModuleTomSelect(tests, p.bulkQuestionModule, 'bulkQuestionModule');
         rebuildQuestionPassageTomSelect(passages, p.questionPassage);
+        rebuildLinkModuleTomSelect(allModules, p.linkModule);
         initRemoteQuestionPickers(p);
     }
 
@@ -752,7 +799,7 @@ document.addEventListener('DOMContentLoaded', function () {
         if (!snapRes.ok) {
             throw new Error('Snapshot request failed (' + snapRes.status + ')');
         }
-        let payload = { tests: [], passages: [] };
+        let payload = { tests: [], passages: [], allModules: [] };
         try {
             payload = await snapRes.json();
         } catch (e) {
@@ -761,7 +808,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
         renderTestsTable(payload.tests || []);
         renderSectionsTable(payload.tests || []);
-        renderModulesTable(payload.tests || []);
+        renderModulesTable(payload.allModules || []);
         let listJson = { data: [], total: 0, current_page: 1, last_page: 1 };
         if (listRes.ok) {
             try {
@@ -1301,6 +1348,47 @@ document.addEventListener('DOMContentLoaded', function () {
     });
     initRemoteQuestionPickers({});
     bindQuestionsPaginationOnce();
+
+    // Toggle Link target type in Link Reusable Module form
+    function initLinkTargetToggle() {
+        const sectionContainer = document.getElementById('linkSectionContainer');
+        const testFieldsContainer = document.getElementById('linkTestFieldsContainer');
+        const sectionSelect = document.getElementById('linkSection');
+        const testSelect = document.getElementById('linkTest');
+        const sectionTypeSelect = document.getElementById('linkSectionType');
+
+        document.querySelectorAll('input[name="link_target_type"]').forEach(function (radio) {
+            radio.addEventListener('change', function () {
+                const val = this.value;
+                if (val === 'section') {
+                    if (sectionContainer) sectionContainer.classList.remove('d-none');
+                    if (testFieldsContainer) testFieldsContainer.classList.add('d-none');
+                    if (sectionSelect) {
+                        sectionSelect.setAttribute('required', 'required');
+                        if (sectionSelect.tomselect) sectionSelect.tomselect.required = true;
+                    }
+                    if (testSelect) {
+                        testSelect.removeAttribute('required');
+                        if (testSelect.tomselect) testSelect.tomselect.required = false;
+                    }
+                    if (sectionTypeSelect) sectionTypeSelect.removeAttribute('required');
+                } else {
+                    if (sectionContainer) sectionContainer.classList.add('d-none');
+                    if (testFieldsContainer) testFieldsContainer.classList.remove('d-none');
+                    if (sectionSelect) {
+                        sectionSelect.removeAttribute('required');
+                        if (sectionSelect.tomselect) sectionSelect.tomselect.required = false;
+                    }
+                    if (testSelect) {
+                        testSelect.setAttribute('required', 'required');
+                        if (testSelect.tomselect) testSelect.tomselect.required = true;
+                    }
+                    if (sectionTypeSelect) sectionTypeSelect.setAttribute('required', 'required');
+                }
+            });
+        });
+    }
+    initLinkTargetToggle();
 
     document.getElementById('questionsTableFilterBtn')?.addEventListener('click', async function () {
         window.__tdQuestionsQuery = (document.getElementById('questionsTableFilter')?.value || '').trim();

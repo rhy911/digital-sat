@@ -45,7 +45,7 @@
         </div>
         <div class="resizable-panel right-panel">
             @foreach ($questions as $q)
-                <div class="question @if (!$loop->first) d-none @endif"
+                <div class="question show-strike @if (!$loop->first) d-none @endif"
                     id="question{{ $loop->iteration }}" data-question-id="{{ $q->id }}"
                     data-section-type="{{ $q->section_type }}" data-question-type="{{ $q->question_type }}">
                     <div class="d-flex flex-column gap-3">
@@ -59,6 +59,16 @@
                                 </svg>
                                 Mark for Review
                             </span>
+                            <button type="button" class="cross-out-toggle-btn ms-auto me-2 active"
+                                title="Cross out answer choices you think are wrong">
+                                <svg width="20" height="20" viewBox="0 0 32 32" fill="none"
+                                    xmlns="http://www.w3.org/2000/svg">
+                                    <text x="3" y="22" class="cross-out-text" font-family="Inter, sans-serif"
+                                        font-weight="800" font-size="15" letter-spacing="-0.5">ABC</text>
+                                    <line x1="2" y1="26" x2="30" y2="6"
+                                        class="cross-out-line" stroke-width="2.5" stroke-linecap="round" />
+                                </svg>
+                            </button>
                         </div>
                         <div class="question-body">
                             <div class="stem-text mb-4">@markdown($q->stem)</div>
@@ -73,13 +83,9 @@
                                             <label
                                                 for="q{{ $loop->parent->iteration }}{{ $choice->label }}">@markdown($choice->content)</label>
                                         </div>
-                                        <button type="button" class="strike-btn" title="Strike through">
-                                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                                                stroke-width="2">
-                                                <circle cx="12" cy="12" r="10"></circle>
-                                                <line x1="7" y1="7" x2="17" y2="17">
-                                                </line>
-                                            </svg>
+                                        <button type="button" class="strike-btn">
+                                            <span class="strike-circle">{{ $choice->label }}</span>
+                                            <span class="strike-line"></span>
                                         </button>
                                     </div>
                                 @endforeach

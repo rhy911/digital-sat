@@ -46,9 +46,6 @@ Route::middleware('auth')->group(function () {
 });
 
 Route::middleware(['auth', 'verified'])->group(function () {
-    Route::get('/dashboard', function () {
-        return view('dashboard');
-    })->name('dashboard');
 
     Route::get('/home', HomeController::class)->name('home');
     Route::get('/my-practice/{user_test_id}', [\App\Http\Controllers\PracticeController::class, 'show'])->name('my-practice');
