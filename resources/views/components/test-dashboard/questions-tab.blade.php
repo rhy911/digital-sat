@@ -196,6 +196,83 @@
         </div>
     </div>
 
+    <!-- Interactive Spreadsheet Validation Grid (P0) -->
+    <div id="validation-grid-container" class="card mb-4 shadow-lg border-0 rounded-4 d-none" style="background: rgba(255, 255, 255, 0.7); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); border: 1px solid rgba(255, 255, 255, 0.25);">
+        <div class="card-header bg-gradient bg-dark text-white py-3 rounded-top-4 d-flex justify-content-between align-items-center">
+            <div>
+                <h5 class="mb-1 d-flex align-items-center gap-2">
+                    <i class="bi bi-grid-3x3-gap-fill text-warning"></i>
+                    <span>Review & Validate Import Items</span>
+                </h5>
+                <p class="mb-0 text-white-50 small">Double-click any cell to edit inline. Red cells represent Blocker errors, yellow cells represent Warnings.</p>
+            </div>
+            <div>
+                <button type="button" class="btn-close btn-close-white" id="gridCloseBtn" aria-label="Close"></button>
+            </div>
+        </div>
+        <div class="card-body p-4">
+            <!-- Glassmorphic Stepper -->
+            <div class="d-flex justify-content-between align-items-center mb-4 p-3 rounded-3 shadow-sm bg-white bg-opacity-50" style="backdrop-filter: blur(8px);">
+                <div class="d-flex align-items-center gap-2">
+                    <span class="badge bg-secondary rounded-circle px-2 py-1">1</span>
+                    <span class="fw-semibold text-muted small">Select Module</span>
+                </div>
+                <i class="bi bi-chevron-right text-muted"></i>
+                <div class="d-flex align-items-center gap-2">
+                    <span class="badge bg-secondary rounded-circle px-2 py-1">2</span>
+                    <span class="fw-semibold text-muted small">Upload & Parse</span>
+                </div>
+                <i class="bi bi-chevron-right text-muted"></i>
+                <div class="d-flex align-items-center gap-2">
+                    <span class="badge bg-warning text-dark rounded-circle px-2 py-1">3</span>
+                    <span class="fw-bold text-dark small">Interactive Grid Correction</span>
+                </div>
+                <i class="bi bi-chevron-right text-muted"></i>
+                <div class="d-flex align-items-center gap-2">
+                    <span class="badge bg-light text-muted rounded-circle px-2 py-1">4</span>
+                    <span class="fw-semibold text-muted small">Import Complete</span>
+                </div>
+            </div>
+
+            <!-- Error Summary Header / Status Alert -->
+            <div id="gridStatusAlert" class="alert alert-warning py-3 px-4 rounded-3 mb-3 d-flex align-items-center justify-content-between border-0 shadow-sm">
+                <div class="d-flex align-items-center gap-3">
+                    <i class="bi bi-exclamation-triangle-fill fs-4 text-warning"></i>
+                    <div>
+                        <strong id="gridStatusTitle">Validation Errors Found</strong>
+                        <div id="gridStatusMsg" class="small text-muted">Please correct highlighted cells in the grid below. Hover over highlighted cells for guidance.</div>
+                    </div>
+                </div>
+                <div>
+                    <span class="badge bg-danger rounded-pill px-3 py-2 fs-6" id="gridBlockerCount">0 Blocker(s)</span>
+                    <span class="badge bg-warning text-dark rounded-pill px-3 py-2 fs-6 ms-1" id="gridWarningCount">0 Warning(s)</span>
+                </div>
+            </div>
+
+            <!-- Spreadsheet container -->
+            <div class="border rounded-3 shadow-sm bg-white overflow-hidden mb-3">
+                <div id="validation-grid" class="w-100" style="min-height: 380px;"></div>
+            </div>
+
+            <!-- Actions row -->
+            <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mt-3">
+                <div>
+                    <button type="button" class="btn btn-outline-secondary px-4 py-2 rounded-3" id="gridCancelBtn">
+                        <i class="bi bi-x-circle"></i> Discard Import
+                    </button>
+                </div>
+                <div class="d-flex gap-2">
+                    <button type="button" class="btn btn-info text-white px-4 py-2 rounded-3 shadow-sm" id="gridRevalidateBtn">
+                        <i class="bi bi-arrow-repeat"></i> Re-validate Grid
+                    </button>
+                    <button type="button" class="btn btn-success px-4 py-2 rounded-3 shadow-sm" id="gridImportApprovedBtn">
+                        <i class="bi bi-check-circle-fill"></i> Import Approved Rows
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- Attach Existing Question from Bank -->
     <div class="card mb-4 shadow-sm border-0 rounded-3" style="overflow: visible !important;">
         <div class="card-header bg-primary bg-gradient text-white py-3">

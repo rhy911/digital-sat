@@ -1722,6 +1722,467 @@ document.addEventListener('DOMContentLoaded', function () {
         }
     }
 
+    let validationGridTable = null;
+
+    function validateItemLocal(item, sectionType) {
+        const blockers = {};
+        const warnings = {};
+
+        // Stem check
+        if (!item.stem || item.stem.trim() === '') {
+            blockers.stem = "Question stem is required.";
+        }
+
+        // Question type check
+        const qType = item.question_type || '';
+        if (qType !== 'multiple_choice' && qType !== 'student_produced_response') {
+            blockers.question_type = "Question type must be multiple_choice or student_produced_response.";
+        }
+
+        if (sectionType === 'reading_writing') {
+            if (qType === 'student_produced_response') {
+                blockers.question_type = "Reading & Writing section only allows multiple choice questions.";
+            }
+            const passageContent = item.passage_content || (item.passage ? (typeof item.passage === 'string' ? item.passage : item.passage.content) : '') || '';
+            if (passageContent.trim() === '') {
+                blockers.passage_content = "Passage content is required for Reading & Writing questions.";
+            }
+        }
+
+        // MCQ vs SPR specific checks
+        if (qType === 'multiple_choice') {
+            const correctChoice = String(item.correct_choice || '').trim().toUpperCase();
+            if (!['A', 'B', 'C', 'D'].includes(correctChoice)) {
+                blockers.correct_choice = "Correct choice is required and must be A, B, C, or D.";
+            }
+            if (!item.choices || item.choices.length < 4 || item.choices.some(c => !c.content || c.content.trim() === '')) {
+                blockers.choices = "Multiple choice questions require choices A, B, C, and D with text.";
+            }
+        } else if (qType === 'student_produced_response') {
+            const sprAnswers = item.spr_correct_answers;
+            if (!sprAnswers || sprAnswers.length === 0 || sprAnswers.every(ans => !ans || ans.trim() === '')) {
+                blockers.spr_correct_answers = "At least one accepted correct answer is required for SPR.";
+            }
+        }
+
+        // Warnings
+        const difficulty = String(item.difficulty || '').trim().toLowerCase();
+        if (!['easy', 'medium', 'hard'].includes(difficulty)) {
+            warnings.difficulty = "Difficulty is missing or invalid. Will default to 'medium'.";
+        }
+
+        const domain = String(item.skill_domain || '').trim();
+        if (!domain) {
+            warnings.skill_domain = "Domain is missing. Will default based on section type.";
+        }
+
+        return { blockers, warnings };
+    }
+
+    function flatToStructured(flat) {
+        const item = {
+            question_type: flat.question_type || 'multiple_choice',
+            difficulty: flat.difficulty || 'medium',
+            skill_domain: flat.skill_domain || '',
+            stem: flat.stem || '',
+            explanation: flat.explanation || '',
+        };
+
+        if (flat.passage_content && flat.passage_content.trim() !== '') {
+            item.passage = {
+                content: flat.passage_content,
+                source_title: flat.passage_source_title || ''
+            };
+            item.passage_content = flat.passage_content;
+        }
+
+        if (item.question_type === 'multiple_choice') {
+            item.choices = [
+                { label: 'A', content: flat.choice_a || '', is_correct: flat.correct_choice === 'A', order: 1 },
+                { label: 'B', content: flat.choice_b || '', is_correct: flat.correct_choice === 'B', order: 2 },
+                { label: 'C', content: flat.choice_c || '', is_correct: flat.correct_choice === 'C', order: 3 },
+                { label: 'D', content: flat.choice_d || '', is_correct: flat.correct_choice === 'D', order: 4 },
+            ];
+            item.correct_choice = flat.correct_choice;
+        } else {
+            let spr = flat.spr_correct_answers || '';
+            if (Array.isArray(spr)) {
+                item.spr_correct_answers = spr;
+            } else {
+                item.spr_correct_answers = spr.split(/[|;]/).map(a => a.trim()).filter(Boolean);
+            }
+        }
+
+        return item;
+    }
+
+    function structuredToFlat(item, index) {
+        const flat = {
+            row_index: index + 1,
+            question_type: item.question_type || 'multiple_choice',
+            difficulty: item.difficulty || 'medium',
+            skill_domain: item.skill_domain || '',
+            stem: item.stem || '',
+            passage_content: item.passage_content || (item.passage ? (typeof item.passage === 'string' ? item.passage : item.passage.content) : '') || '',
+            explanation: item.explanation || '',
+            choice_a: '',
+            choice_b: '',
+            choice_c: '',
+            choice_d: '',
+            correct_choice: item.correct_choice || '',
+            spr_correct_answers: '',
+            original_errors: item.errors || []
+        };
+
+        if (item.choices && Array.isArray(item.choices)) {
+            item.choices.forEach(c => {
+                const label = c.label.toUpperCase();
+                if (label === 'A') flat.choice_a = c.content || '';
+                if (label === 'B') flat.choice_b = c.content || '';
+                if (label === 'C') flat.choice_c = c.content || '';
+                if (label === 'D') flat.choice_d = c.content || '';
+                if (c.is_correct) flat.correct_choice = label;
+            });
+        }
+
+        if (item.spr_correct_answers) {
+            if (Array.isArray(item.spr_correct_answers)) {
+                flat.spr_correct_answers = item.spr_correct_answers.join('|');
+            } else {
+                flat.spr_correct_answers = item.spr_correct_answers;
+            }
+        }
+
+        return flat;
+    }
+
+    function createCellFormatter(fieldName) {
+        return function(cell) {
+            const rowData = cell.getRow().getData();
+            const value = cell.getValue() || '';
+            const sectionType = document.getElementById('bulkQuestionModule').selectedOptions[0]?.getAttribute('data-section-type') || 'reading_writing';
+            
+            const struct = flatToStructured(rowData);
+            const { blockers, warnings } = validateItemLocal(struct, sectionType);
+            
+            const cellEl = cell.getElement();
+            cellEl.style.position = "relative";
+            cellEl.removeAttribute('title');
+
+            let errorMsg = null;
+            let isBlocker = false;
+
+            if (fieldName === 'stem' && blockers.stem) {
+                errorMsg = blockers.stem;
+                isBlocker = true;
+            } else if (fieldName === 'question_type' && blockers.question_type) {
+                errorMsg = blockers.question_type;
+                isBlocker = true;
+            } else if (fieldName === 'passage_content' && blockers.passage_content) {
+                errorMsg = blockers.passage_content;
+                isBlocker = true;
+            } else if (fieldName === 'correct_choice' && blockers.correct_choice && rowData.question_type === 'multiple_choice') {
+                errorMsg = blockers.correct_choice;
+                isBlocker = true;
+            } else if (fieldName === 'spr_correct_answers' && blockers.spr_correct_answers && rowData.question_type === 'student_produced_response') {
+                errorMsg = blockers.spr_correct_answers;
+                isBlocker = true;
+            } else if (['choice_a', 'choice_b', 'choice_c', 'choice_d'].includes(fieldName) && blockers.choices && rowData.question_type === 'multiple_choice') {
+                errorMsg = blockers.choices;
+                isBlocker = true;
+            } else if (fieldName === 'difficulty' && warnings.difficulty) {
+                errorMsg = warnings.difficulty;
+                isBlocker = false;
+            } else if (fieldName === 'skill_domain' && warnings.skill_domain) {
+                errorMsg = warnings.skill_domain;
+                isBlocker = false;
+            }
+
+            if (errorMsg) {
+                cellEl.style.backgroundColor = isBlocker ? "#f8d7da" : "#fff3cd";
+                cellEl.style.color = isBlocker ? "#842029" : "#664d03";
+                cellEl.style.fontWeight = "bold";
+                cellEl.setAttribute('title', errorMsg);
+            } else {
+                cellEl.style.backgroundColor = "";
+                cellEl.style.color = "";
+                cellEl.style.fontWeight = "";
+            }
+
+            return value;
+        };
+    }
+
+    function openValidationGrid(items) {
+        const container = document.getElementById('validation-grid-container');
+        if (!container) return;
+
+        container.classList.remove('d-none');
+        container.scrollIntoView({ behavior: 'smooth' });
+
+        const flatItems = items.map((item, idx) => structuredToFlat(item, idx));
+
+        if (validationGridTable) {
+            validationGridTable.destroy();
+        }
+
+        validationGridTable = new Tabulator("#validation-grid", {
+            data: flatItems,
+            layout: "fitColumns",
+            reactiveData: true,
+            columns: [
+                { title: "Idx", field: "row_index", width: 50, headerSort: false, frozen: true },
+                { 
+                    title: "Type", 
+                    field: "question_type", 
+                    width: 120,
+                    editor: "list", 
+                    editorParams: { values: ["multiple_choice", "student_produced_response"] },
+                    formatter: createCellFormatter('question_type'),
+                    headerSort: false
+                },
+                { 
+                    title: "Stem", 
+                    field: "stem", 
+                    editor: "textarea", 
+                    formatter: createCellFormatter('stem'),
+                    headerSort: false,
+                    width: 200
+                },
+                { 
+                    title: "Passage", 
+                    field: "passage_content", 
+                    editor: "textarea", 
+                    formatter: createCellFormatter('passage_content'),
+                    headerSort: false,
+                    width: 180
+                },
+                { 
+                    title: "Choice A", 
+                    field: "choice_a", 
+                    editor: "input", 
+                    formatter: createCellFormatter('choice_a'),
+                    headerSort: false
+                },
+                { 
+                    title: "Choice B", 
+                    field: "choice_b", 
+                    editor: "input", 
+                    formatter: createCellFormatter('choice_b'),
+                    headerSort: false
+                },
+                { 
+                    title: "Choice C", 
+                    field: "choice_c", 
+                    editor: "input", 
+                    formatter: createCellFormatter('choice_c'),
+                    headerSort: false
+                },
+                { 
+                    title: "Choice D", 
+                    field: "choice_d", 
+                    editor: "input", 
+                    formatter: createCellFormatter('choice_d'),
+                    headerSort: false
+                },
+                { 
+                    title: "Correct MCQ", 
+                    field: "correct_choice", 
+                    editor: "input", 
+                    formatter: createCellFormatter('correct_choice'),
+                    width: 110,
+                    headerSort: false
+                },
+                { 
+                    title: "SPR Answers", 
+                    field: "spr_correct_answers", 
+                    editor: "input", 
+                    formatter: createCellFormatter('spr_correct_answers'),
+                    width: 120,
+                    headerSort: false
+                },
+                { 
+                    title: "Difficulty", 
+                    field: "difficulty", 
+                    width: 100,
+                    editor: "list", 
+                    editorParams: { values: ["easy", "medium", "hard"] },
+                    formatter: createCellFormatter('difficulty'),
+                    headerSort: false
+                },
+                { 
+                    title: "Domain", 
+                    field: "skill_domain", 
+                    editor: "input", 
+                    formatter: createCellFormatter('skill_domain'),
+                    headerSort: false,
+                    width: 130
+                },
+                { 
+                    title: "Explanation", 
+                    field: "explanation", 
+                    editor: "textarea", 
+                    headerSort: false,
+                    width: 150
+                }
+            ]
+        });
+
+        validationGridTable.on("cellEdited", function(cell) {
+            cell.getRow().reformat();
+            updateGridStatusCounts();
+        });
+
+        updateGridStatusCounts();
+    }
+
+    function updateGridStatusCounts() {
+        if (!validationGridTable) return;
+        const rows = validationGridTable.getData();
+        const sectionType = document.getElementById('bulkQuestionModule').selectedOptions[0]?.getAttribute('data-section-type') || 'reading_writing';
+        
+        let blockerCount = 0;
+        let warningCount = 0;
+
+        rows.forEach(rowData => {
+            const struct = flatToStructured(rowData);
+            const { blockers, warnings } = validateItemLocal(struct, sectionType);
+            blockerCount += Object.keys(blockers).length;
+            warningCount += Object.keys(warnings).length;
+        });
+
+        const blockerBadge = document.getElementById('gridBlockerCount');
+        const warningBadge = document.getElementById('gridWarningCount');
+        const statusAlert = document.getElementById('gridStatusAlert');
+        const statusTitle = document.getElementById('gridStatusTitle');
+        const statusMsg = document.getElementById('gridStatusMsg');
+        const importApprovedBtn = document.getElementById('gridImportApprovedBtn');
+
+        if (blockerBadge) blockerBadge.textContent = `${blockerCount} Blocker(s)`;
+        if (warningBadge) warningBadge.textContent = `${warningCount} Warning(s)`;
+
+        if (blockerCount > 0) {
+            statusAlert.className = "alert alert-danger py-3 px-4 rounded-3 mb-3 d-flex align-items-center justify-content-between border-0 shadow-sm";
+            statusTitle.textContent = "Blocker Errors Found";
+            statusMsg.textContent = "You must resolve all blockers highlighted in red before those rows can be imported.";
+            importApprovedBtn.textContent = "Import Approved Rows";
+            importApprovedBtn.className = "btn btn-warning px-4 py-2 rounded-3 shadow-sm";
+        } else if (warningCount > 0) {
+            statusAlert.className = "alert alert-warning py-3 px-4 rounded-3 mb-3 d-flex align-items-center justify-content-between border-0 shadow-sm";
+            statusTitle.textContent = "Warnings Present";
+            statusMsg.textContent = "Grid has minor warnings highlighted in yellow. You are ready to import all rows; missing details will use defaults.";
+            importApprovedBtn.textContent = "Import All Rows";
+            importApprovedBtn.className = "btn btn-success px-4 py-2 rounded-3 shadow-sm";
+        } else {
+            statusAlert.className = "alert alert-success py-3 px-4 rounded-3 mb-3 d-flex align-items-center justify-content-between border-0 shadow-sm";
+            statusTitle.textContent = "Validation Passed Successfully";
+            statusMsg.textContent = "All rows are 100% valid! You are ready to import.";
+            importApprovedBtn.textContent = "Import All Rows";
+            importApprovedBtn.className = "btn btn-success px-4 py-2 rounded-3 shadow-sm";
+        }
+    }
+
+    // Grid buttons bindings
+    document.getElementById('gridCloseBtn')?.addEventListener('click', () => {
+        document.getElementById('validation-grid-container').classList.add('d-none');
+    });
+    document.getElementById('gridCancelBtn')?.addEventListener('click', async () => {
+        if (await showCustomConfirm('Discard import items and reset the validation grid?', 'warning', 'Discard Import')) {
+            document.getElementById('validation-grid-container').classList.add('d-none');
+            if (validationGridTable) validationGridTable.destroy();
+            validationGridTable = null;
+        }
+    });
+    document.getElementById('gridRevalidateBtn')?.addEventListener('click', () => {
+        if (validationGridTable) {
+            validationGridTable.redraw(true);
+            updateGridStatusCounts();
+            showAlert('success', 'Grid visual validations re-rendered successfully.');
+        }
+    });
+    document.getElementById('gridImportApprovedBtn')?.addEventListener('click', async function() {
+        if (!validationGridTable) return;
+        
+        const formModule = getTomSelectValue('bulkQuestionModule');
+        const formStart = document.getElementById('bulkStartPosition')?.value || 1;
+        const sectionType = document.getElementById('bulkQuestionModule').selectedOptions[0]?.getAttribute('data-section-type') || 'reading_writing';
+
+        const rows = validationGridTable.getData();
+        const approvedItems = [];
+        const blockedIndices = [];
+
+        rows.forEach(rowData => {
+            const struct = flatToStructured(rowData);
+            const { blockers } = validateItemLocal(struct, sectionType);
+            if (Object.keys(blockers).length === 0) {
+                approvedItems.push(struct);
+            } else {
+                blockedIndices.push(rowData.row_index);
+            }
+        });
+
+        if (approvedItems.length === 0) {
+            showAlert('danger', 'No approved rows found. Please fix the blocker errors (red cells) before importing.');
+            return;
+        }
+
+        let confirmMsg = `Import ${approvedItems.length} approved question(s) into Target Module?`;
+        if (blockedIndices.length > 0) {
+            confirmMsg = `Import ${approvedItems.length} approved question(s) and skip ${blockedIndices.length} blocked row(s) (Q#${blockedIndices.join(', Q#')})?`;
+        }
+
+        if (await showCustomConfirm(confirmMsg, 'info', 'Confirm Import')) {
+            const csrf = document.querySelector('meta[name="csrf-token"]').content;
+            try {
+                const response = await fetch(BULK_STORE_URL, {
+                    method: 'POST',
+                    headers: { 
+                        'Content-Type': 'application/json', 
+                        'X-CSRF-TOKEN': csrf,
+                        'Accept': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        module_id: formModule,
+                        start_position: formStart,
+                        items: approvedItems
+                    })
+                });
+
+                const result = await response.json();
+                if (response.ok) {
+                    showAlert('success', result.message || 'Import completed successfully!');
+                    document.getElementById('validation-grid-container').classList.add('d-none');
+                    if (validationGridTable) validationGridTable.destroy();
+                    validationGridTable = null;
+                    
+                    // Clear the file input and textarea
+                    const jsonInput = document.getElementById('bulkJsonFile');
+                    if (jsonInput) jsonInput.value = '';
+                    const csvInput = document.getElementById('bulkCsvFile');
+                    if (csvInput) csvInput.value = '';
+                    const ta = document.getElementById('bulkQuestionsJson');
+                    if (ta) ta.value = '';
+                    
+                    const dropzones = document.querySelectorAll('.file-dropzone');
+                    dropzones.forEach(zone => {
+                        const display = zone.querySelector('.file-name-display');
+                        const icon = zone.querySelector('.bi');
+                        const instruction = zone.querySelector('.drag-instruction');
+                        if (display) display.classList.add('d-none');
+                        if (icon) icon.classList.replace('text-success', 'text-muted');
+                        if (instruction) instruction.classList.remove('text-success');
+                    });
+
+                    await refreshTestDashboardData(captureTomSelectPreservation(null));
+                } else {
+                    showAlert('danger', result.message || 'Import submission failed.');
+                }
+            } catch (err) {
+                showAlert('danger', 'Import error: ' + err.message);
+            }
+        }
+    });
+
     async function handlePreview(isCsv) {
         const fileInput = document.getElementById(isCsv ? 'bulkCsvFile' : 'bulkJsonFile');
         const file = fileInput?.files?.[0];
@@ -1757,8 +2218,11 @@ document.addEventListener('DOMContentLoaded', function () {
             }
 
             const result = await response.json();
-            if (response.ok) renderPreview(result.data.items);
-            else showAlert('danger', result.message || 'Preview failed');
+            if (response.ok) {
+                openValidationGrid(result.data.items);
+            } else {
+                showAlert('danger', result.message || 'Preview failed');
+            }
         } catch (error) {
             showAlert('danger', 'Error: ' + error.message);
         }
@@ -1802,7 +2266,13 @@ document.addEventListener('DOMContentLoaded', function () {
                 showAlert('success', result.message || 'Bulk import completed.');
                 await refreshTestDashboardData(captureTomSelectPreservation(null));
             } else {
-                showAlert('danger', result.message || 'Bulk import failed');
+                // If import fails due to validation errors, let's open the failsafe validation grid!
+                if (result.data && result.data.items) {
+                    showAlert('warning', 'Import failed due to validation errors. We loaded them into the validation grid below for correction.');
+                    openValidationGrid(result.data.items);
+                } else {
+                    showAlert('danger', result.message || 'Bulk import failed');
+                }
             }
         } catch (error) { showAlert('danger', 'Error: ' + error.message); }
     });
@@ -1830,13 +2300,209 @@ document.addEventListener('DOMContentLoaded', function () {
             if (response.ok) {
                 showAlert('success', result.message || 'CSV import completed.');
                 await refreshTestDashboardData(captureTomSelectPreservation(null));
-            } else showAlert('danger', result.message || 'CSV import failed');
+            } else {
+                // If CSV import fails due to validation errors, open validation grid!
+                if (result.data && result.data.items) {
+                    showAlert('warning', 'CSV Import failed due to validation errors. We loaded them into the validation grid below for correction.');
+                    openValidationGrid(result.data.items);
+                } else {
+                    showAlert('danger', result.message || 'CSV import failed');
+                }
+            }
         } catch (error) { showAlert('danger', 'Error: ' + error.message); }
     });
 
     // --- Easy Builder Logic ---
     let builderBlockCount = 0;
     const builderEditors = {};
+    const debouncers = {};
+
+    function debouncedUpdateLivePreview(block) {
+        const index = block.dataset.index;
+        if (debouncers[index]) clearTimeout(debouncers[index]);
+        debouncers[index] = setTimeout(() => {
+            renderLivePreviewCard(block);
+        }, 250);
+    }
+
+    function renderLivePreviewCard(block) {
+        const index = block.dataset.index;
+        const drawer = document.getElementById('builderLivePreviewDrawer');
+        if (!drawer) return;
+
+        // Remove placeholder if it exists
+        const placeholder = drawer.querySelector('.text-muted.text-center');
+        if (placeholder) placeholder.remove();
+
+        let previewCard = drawer.querySelector(`[data-preview-index="${index}"]`);
+        if (!previewCard) {
+            previewCard = document.createElement('div');
+            previewCard.className = "card mb-3 border-0 shadow-sm rounded-3 bg-white overflow-hidden";
+            previewCard.style.borderLeft = "4px solid #ffc107";
+            previewCard.dataset.previewIndex = index;
+            drawer.appendChild(previewCard);
+        }
+
+        const displayIndex = [...document.querySelectorAll('.builder-block')].indexOf(block) + 1;
+        const stemValue = builderEditors[`stem_${index}`] ? builderEditors[`stem_${index}`].value() : '';
+        const passageValue = builderEditors[`passage_${index}`] ? builderEditors[`passage_${index}`].value() : '';
+        const qType = block.querySelector('.builder-format-mcq').checked ? 'multiple_choice' : 'student_produced_response';
+
+        let passageHtml = '';
+        const type = document.getElementById('builderModuleId').selectedOptions[0]?.getAttribute('data-section-type');
+        if (type === 'reading_writing' && passageValue.trim()) {
+            passageHtml = `<div class="passage-preview p-3 mb-3 bg-light rounded-3 small border-start border-3 border-secondary" style="white-space: pre-wrap;">${passageValue}</div>`;
+        }
+
+        let questionBodyHtml = '';
+        if (qType === 'multiple_choice') {
+            const correctLabel = block.querySelector('.builder-correct-radio:checked')?.value || 'A';
+            let choicesHtml = '';
+            block.querySelectorAll('.builder-choice-content').forEach(input => {
+                const label = input.getAttribute('data-label');
+                const content = input.value.trim() || `<span class="text-muted italic">Option ${label} content...</span>`;
+                const isCorrect = label === correctLabel;
+                
+                choicesHtml += `
+                    <div class="d-flex align-items-center gap-2 mb-2 p-2 rounded border ${isCorrect ? 'border-success bg-success-subtle' : 'border-light'}" style="transition: all 0.2s;">
+                        <div class="rounded-circle d-flex align-items-center justify-content-center text-white bg-${isCorrect ? 'success' : 'secondary'} fw-bold" style="width: 24px; height: 24px; font-size: 12px;">
+                            ${label}
+                        </div>
+                        <div class="flex-grow-1 small">${content}</div>
+                    </div>
+                `;
+            });
+            questionBodyHtml = `<div class="choices-preview mt-3">${choicesHtml}</div>`;
+        } else {
+            const sprVal = block.querySelector('.builder-spr-answers').value.trim() || '______';
+            questionBodyHtml = `
+                <div class="answer-input-container p-3 bg-light rounded-3 mt-3 border border-warning border-opacity-25">
+                    <label class="d-block mb-2 fw-bold text-dark small"><i class="bi bi-pencil-fill text-warning"></i> Student Produced Response:</label>
+                    <div class="form-control bg-white font-monospace text-center py-2 fs-5 border-warning border-opacity-50" style="max-width: 150px; letter-spacing: 2px;">
+                        ${sprVal}
+                    </div>
+                </div>
+            `;
+        }
+
+        const explanationValue = block.querySelector('.builder-explanation').value.trim();
+        let explanationHtml = '';
+        if (explanationValue) {
+            explanationHtml = `
+                <div class="explanation-preview p-2 mt-2 bg-light rounded small text-muted border-top border-light">
+                    <strong>Explanation:</strong> ${explanationValue}
+                </div>
+            `;
+        }
+
+        previewCard.innerHTML = `
+            <div class="card-header bg-dark text-white py-2 px-3 d-flex justify-content-between align-items-center">
+                <span class="fw-bold small text-warning"><i class="bi bi-file-earmark-text"></i> Live Preview Q#${displayIndex}</span>
+                <span class="badge bg-secondary font-monospace" style="font-size: 10px;">${qType === 'multiple_choice' ? 'MCQ' : 'SPR'}</span>
+            </div>
+            <div class="card-body p-3">
+                ${passageHtml}
+                <div class="stem-preview fw-semibold text-dark" style="white-space: pre-wrap;">${stemValue || '<span class="text-muted italic">Enter question stem to view preview...</span>'}</div>
+                ${questionBodyHtml}
+                ${explanationHtml}
+            </div>
+        `;
+
+        if (window.smartRenderMath) {
+            window.smartRenderMath(previewCard);
+        }
+    }
+
+    function updateSidebarNavigator() {
+        const navigator = document.getElementById('builderSidebarNavigator');
+        if (!navigator) return;
+
+        const blocks = document.querySelectorAll('.builder-block');
+        if (blocks.length === 0) {
+            navigator.innerHTML = `
+                <div class="text-muted text-center py-4 small">
+                    <i class="bi bi-layers fs-3 d-block mb-2 text-warning"></i>
+                    Add a question to start indexing
+                </div>
+            `;
+            return;
+        }
+
+        navigator.innerHTML = '';
+        blocks.forEach((block, i) => {
+            const index = block.dataset.index;
+            const qType = block.querySelector('.builder-format-mcq').checked ? 'MCQ' : 'SPR';
+            const difficulty = block.querySelector('.builder-difficulty').value || 'N/A';
+            const domainVal = block.querySelector('.builder-domain').value || '';
+            
+            let domainLabel = 'No Domain';
+            if (domainVal) {
+                domainLabel = domainVal.split('_').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
+            }
+
+            const item = document.createElement('a');
+            item.href = "javascript:void(0)";
+            item.className = "list-group-item list-group-item-action border rounded-3 p-2 d-flex flex-column gap-1";
+            item.dataset.targetIndex = index;
+            item.style.transition = "all 0.2s";
+
+            item.innerHTML = `
+                <div class="d-flex align-items-center justify-content-between">
+                    <span class="fw-bold text-dark small">Q#${i + 1} <span class="badge bg-secondary font-monospace" style="font-size: 8px;">${qType}</span></span>
+                    <span class="badge bg-light text-secondary font-monospace text-capitalize" style="font-size: 8px; border: 1px solid #dee2e6;">${difficulty}</span>
+                </div>
+                <div class="text-muted text-truncate" style="font-size: 9px;">
+                    ${domainLabel}
+                </div>
+            `;
+
+            item.onclick = function() {
+                block.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                navigator.querySelectorAll('.list-group-item').forEach(el => el.classList.remove('active', 'bg-warning', 'text-dark', 'border-warning'));
+                item.classList.add('active', 'bg-warning', 'text-dark', 'border-warning');
+            };
+
+            navigator.appendChild(item);
+        });
+    }
+
+    const scroller = document.getElementById('builderWorkspaceScroller');
+    if (scroller) {
+        scroller.addEventListener('scroll', () => {
+            const blocks = document.querySelectorAll('.builder-block');
+            if (blocks.length === 0) return;
+
+            let closestBlock = null;
+            let minDistance = Infinity;
+            const scrollerRect = scroller.getBoundingClientRect();
+            const scrollerCenter = scrollerRect.top + scrollerRect.height / 2;
+
+            blocks.forEach(block => {
+                const rect = block.getBoundingClientRect();
+                const blockCenter = rect.top + rect.height / 2;
+                const distance = Math.abs(blockCenter - scrollerCenter);
+                if (distance < minDistance) {
+                    minDistance = distance;
+                    closestBlock = block;
+                }
+            });
+
+            if (closestBlock) {
+                const index = closestBlock.dataset.index;
+                const navigator = document.getElementById('builderSidebarNavigator');
+                if (navigator) {
+                    navigator.querySelectorAll('.list-group-item').forEach(item => {
+                        if (item.dataset.targetIndex === index) {
+                            item.classList.add('active', 'bg-warning', 'text-dark', 'border-warning');
+                            item.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                        } else {
+                            item.classList.remove('active', 'bg-warning', 'text-dark', 'border-warning');
+                        }
+                    });
+                }
+            }
+        });
+    }
 
     window.insertLatex = function (textareaId) {
         const textarea = document.getElementById(textareaId);
@@ -1902,6 +2568,11 @@ document.addEventListener('DOMContentLoaded', function () {
             status: false
         });
 
+        // Listen to change to update preview in real-time
+        builderEditors[`stem_${builderBlockCount}`].codemirror.on('change', () => {
+            debouncedUpdateLivePreview(block);
+        });
+
         block.scrollIntoView({ behavior: 'smooth' });
 
         const imgInput = block.querySelector('.builder-image-input');
@@ -1917,19 +2588,93 @@ document.addEventListener('DOMContentLoaded', function () {
                 const result = await res.json();
                 if (result.success) {
                     const mde = builderEditors[`stem_${block.dataset.index}`];
-                    if (mde) mde.codemirror.replaceRange(`\n${result.markdown}\n`, mde.codemirror.getCursor());
+                    if (mde) {
+                        mde.codemirror.replaceRange(`\n${result.markdown}\n`, mde.codemirror.getCursor());
+                        debouncedUpdateLivePreview(block);
+                    }
                 } else showAlert('danger', result.message || 'Upload failed');
             } catch (err) { showAlert('danger', 'Error: ' + err.message); }
             finally { imgBtn.disabled = false; this.value = ''; }
         };
 
+        // Bind format toggles
+        const mcqRadio = block.querySelector('.builder-format-mcq');
+        const sprRadio = block.querySelector('.builder-format-spr');
+        const mcqContainer = block.querySelector('.builder-mcq-container');
+        const sprContainer = block.querySelector('.builder-spr-container');
+
+        const updateFormatView = () => {
+            if (mcqRadio.checked) {
+                mcqContainer.classList.remove('d-none');
+                sprContainer.classList.add('d-none');
+            } else {
+                mcqContainer.classList.add('d-none');
+                sprContainer.classList.remove('d-none');
+            }
+            debouncedUpdateLivePreview(block);
+            updateSidebarNavigator();
+        };
+
+        mcqRadio.addEventListener('change', updateFormatView);
+        sprRadio.addEventListener('change', updateFormatView);
+
+        // Bind other changes
+        block.querySelectorAll('input, select, textarea').forEach(el => {
+            if (el.classList.contains('builder-stem') || el.classList.contains('builder-passage')) return;
+            el.addEventListener('input', () => {
+                debouncedUpdateLivePreview(block);
+                if (el.classList.contains('builder-difficulty') || el.classList.contains('builder-domain')) {
+                    updateSidebarNavigator();
+                }
+            });
+            el.addEventListener('change', () => {
+                debouncedUpdateLivePreview(block);
+                if (el.classList.contains('builder-difficulty') || el.classList.contains('builder-domain')) {
+                    updateSidebarNavigator();
+                }
+            });
+        });
+
         block.querySelector('.remove-block-btn').onclick = function () {
-            if (builderEditors[`stem_${block.dataset.index}`]) { builderEditors[`stem_${block.dataset.index}`].toTextArea(); delete builderEditors[`stem_${block.dataset.index}`]; }
-            if (builderEditors[`passage_${block.dataset.index}`]) { builderEditors[`passage_${block.dataset.index}`].toTextArea(); delete builderEditors[`passage_${block.dataset.index}`]; }
+            const index = block.dataset.index;
+            if (builderEditors[`stem_${index}`]) { builderEditors[`stem_${index}`].toTextArea(); delete builderEditors[`stem_${index}`]; }
+            if (builderEditors[`passage_${index}`]) { builderEditors[`passage_${index}`].toTextArea(); delete builderEditors[`passage_${index}`]; }
             block.remove();
+
+            // Remove preview card
+            const previewCard = document.querySelector(`[data-preview-index="${index}"]`);
+            if (previewCard) previewCard.remove();
+
+            const drawer = document.getElementById('builderLivePreviewDrawer');
+            if (drawer && drawer.querySelectorAll('[data-preview-index]').length === 0) {
+                drawer.innerHTML = `
+                    <div class="text-muted text-center py-5 small">
+                        <i class="bi bi-file-earmark-richtext fs-2 d-block mb-2 text-warning"></i>
+                        Live compilation of STEM and formulas will appear here in real-time
+                    </div>
+                `;
+            }
+
             const blocks = document.querySelectorAll('.builder-block');
             blocks.forEach((b, i) => b.querySelector('.text-secondary').textContent = `Question #${i + 1}`);
+
+            // Renumber preview cards
+            if (drawer) {
+                const previewCards = drawer.querySelectorAll('[data-preview-index]');
+                previewCards.forEach((card, i) => {
+                    const textEl = card.querySelector('.card-header span.fw-bold');
+                    if (textEl) {
+                        textEl.innerHTML = `<i class="bi bi-file-earmark-text"></i> Live Preview Q#${i + 1}`;
+                    }
+                });
+            }
+
+            updateSidebarNavigator();
         };
+
+        // Render initial preview
+        debouncedUpdateLivePreview(block);
+        updateSidebarNavigator();
     };
 
     function syncBuilderBlockDomain(block) {
@@ -1970,6 +2715,10 @@ document.addEventListener('DOMContentLoaded', function () {
                     ],
                     status: false
                 });
+
+                builderEditors[`passage_${index}`].codemirror.on('change', () => {
+                    debouncedUpdateLivePreview(block);
+                });
             }
         } else passageContainer.classList.add('d-none');
 
@@ -1995,6 +2744,18 @@ document.addEventListener('DOMContentLoaded', function () {
             for (const key in builderEditors) delete builderEditors[key];
             document.getElementById('builderBlocksContainer').innerHTML = '';
             builderBlockCount = 0;
+
+            const drawer = document.getElementById('builderLivePreviewDrawer');
+            if (drawer) {
+                drawer.innerHTML = `
+                    <div class="text-muted text-center py-5 small">
+                        <i class="bi bi-file-earmark-richtext fs-2 d-block mb-2 text-warning"></i>
+                        Live compilation of STEM and formulas will appear here in real-time
+                    </div>
+                `;
+            }
+
+            updateSidebarNavigator();
         }
     });
 
@@ -2011,16 +2772,45 @@ document.addEventListener('DOMContentLoaded', function () {
             if (!stem) { block.classList.add('border-danger'); isValid = false; }
             else block.classList.remove('border-danger');
 
-            const choices = [];
-            const correctLabel = block.querySelector('.builder-correct-radio:checked')?.value || 'A';
-            block.querySelectorAll('.builder-choice-content').forEach(input => {
-                const label = input.getAttribute('data-label');
-                const content = input.value.trim();
-                if (!content) isValid = false;
-                choices.push({ label, content, is_correct: label === correctLabel, order: label.charCodeAt(0) - 64 });
-            });
+            const qType = block.querySelector('.builder-format-mcq').checked ? 'multiple_choice' : 'student_produced_response';
+            let choices = [];
+            let spr_correct_answers = [];
 
-            const item = { stem, question_type: 'multiple_choice', difficulty: block.querySelector('.builder-difficulty').value || null, skill_domain: block.querySelector('.builder-domain').value || null, choices, explanation: block.querySelector('.builder-explanation').value.trim() };
+            if (qType === 'multiple_choice') {
+                const correctLabel = block.querySelector('.builder-correct-radio:checked')?.value || 'A';
+                block.querySelectorAll('.builder-choice-content').forEach(input => {
+                    const label = input.getAttribute('data-label');
+                    const content = input.value.trim();
+                    if (!content) {
+                        input.classList.add('is-invalid');
+                        isValid = false;
+                    } else {
+                        input.classList.remove('is-invalid');
+                    }
+                    choices.push({ label, content, is_correct: label === correctLabel, order: label.charCodeAt(0) - 64 });
+                });
+            } else {
+                const sprInput = block.querySelector('.builder-spr-answers');
+                const sprVal = sprInput.value.trim();
+                if (!sprVal) {
+                    sprInput.classList.add('is-invalid');
+                    isValid = false;
+                } else {
+                    sprInput.classList.remove('is-invalid');
+                    spr_correct_answers = sprVal.split(/[|;]/).map(a => a.trim()).filter(Boolean);
+                }
+            }
+
+            const item = { 
+                stem, 
+                question_type: qType, 
+                difficulty: block.querySelector('.builder-difficulty').value || null, 
+                skill_domain: block.querySelector('.builder-domain').value || null, 
+                choices: qType === 'multiple_choice' ? choices : [], 
+                spr_correct_answers: qType === 'student_produced_response' ? spr_correct_answers : [],
+                explanation: block.querySelector('.builder-explanation').value.trim() 
+            };
+
             const type = document.getElementById('builderModuleId').selectedOptions[0].getAttribute('data-section-type');
             if (type === 'reading_writing' && builderEditors[`passage_${index}`]) {
                 const passageContent = builderEditors[`passage_${index}`].value().trim();
@@ -2043,6 +2833,18 @@ document.addEventListener('DOMContentLoaded', function () {
                 for (const key in builderEditors) delete builderEditors[key];
                 document.getElementById('builderBlocksContainer').innerHTML = '';
                 builderBlockCount = 0;
+
+                const drawer = document.getElementById('builderLivePreviewDrawer');
+                if (drawer) {
+                    drawer.innerHTML = `
+                        <div class="text-muted text-center py-5 small">
+                            <i class="bi bi-file-earmark-richtext fs-2 d-block mb-2 text-warning"></i>
+                            Live compilation of STEM and formulas will appear here in real-time
+                        </div>
+                    `;
+                }
+
+                updateSidebarNavigator();
                 await refreshTestDashboardData(captureTomSelectPreservation(null));
             } else showAlert('danger', 'Import failed.');
         } catch (error) { showAlert('danger', 'Error: ' + error.message); }

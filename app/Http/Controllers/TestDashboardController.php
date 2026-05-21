@@ -554,8 +554,29 @@ class TestDashboardController extends Controller
     public function bulkPreviewQuestions(Request $request, BulkQuestionImportService $bulkQuestionImport)
     {
         $payload = $bulkQuestionImport->buildPayloadFromRequest($request);
-        $validated = $bulkQuestionImport->validate($payload);
-        return response()->json(['status' => 'success', 'data' => ['items' => $validated['items'] ?? [], 'module_id' => $validated['module_id'] ?? null]]);
+        try {
+            $validated = $bulkQuestionImport->validate($payload);
+            $items = $validated['items'] ?? [];
+            foreach ($items as &$item) {
+                $item['errors'] = [];
+            }
+            return response()->json(['status' => 'success', 'data' => ['items' => $items, 'module_id' => $validated['module_id'] ?? null]]);
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            $items = $payload['items'] ?? [];
+            $errors = $e->errors();
+            foreach ($items as $index => &$item) {
+                $item['errors'] = $item['errors'] ?? [];
+                $prefix = "items.{$index}.";
+                foreach ($errors as $key => $messages) {
+                    if (str_starts_with($key, $prefix)) {
+                        foreach ($messages as $msg) {
+                            $item['errors'][] = $msg;
+                        }
+                    }
+                }
+            }
+            return response()->json(['status' => 'success', 'data' => ['items' => $items, 'module_id' => $payload['module_id'] ?? null]]);
+        }
     }
 
     /**
@@ -576,11 +597,29 @@ class TestDashboardController extends Controller
         $request->validate(['csv_file' => 'required|file|max:5120', 'module_id' => 'nullable|exists:modules,id']);
         $file = $request->file('csv_file');
         $raw = (string) file_get_contents($file->getRealPath());
-        $items = $csvImport->parseCsvToItems($raw);
+        $items = $csvImport->parseCsvToItems($raw, true);
         $moduleId = $request->input('module_id');
         if ($moduleId) {
-            $validated = $bulkQuestionImport->validate(['module_id' => $moduleId, 'start_position' => 1, 'items' => $items]);
-            $items = $validated['items'];
+            try {
+                $validated = $bulkQuestionImport->validate(['module_id' => $moduleId, 'start_position' => 1, 'items' => $items]);
+                $items = $validated['items'] ?? [];
+                foreach ($items as &$item) {
+                    $item['errors'] = $item['errors'] ?? [];
+                }
+            } catch (\Illuminate\Validation\ValidationException $e) {
+                $errors = $e->errors();
+                foreach ($items as $index => &$item) {
+                    $item['errors'] = $item['errors'] ?? [];
+                    $prefix = "items.{$index}.";
+                    foreach ($errors as $key => $messages) {
+                        if (str_starts_with($key, $prefix)) {
+                            foreach ($messages as $msg) {
+                                $item['errors'][] = $msg;
+                            }
+                        }
+                    }
+                }
+            }
         }
         return response()->json(['status' => 'success', 'data' => ['items' => $items]]);
     }

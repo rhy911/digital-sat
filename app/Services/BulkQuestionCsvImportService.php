@@ -48,7 +48,7 @@ class BulkQuestionCsvImportService
     /**
      * @return array<int, array<string, mixed>>
      */
-    public function parseCsvToItems(string $raw): array
+    public function parseCsvToItems(string $raw, bool $tolerant = false): array
     {
         if (str_starts_with($raw, "\xEF\xBB\xBF")) {
             $raw = substr($raw, 3);
@@ -93,11 +93,11 @@ class BulkQuestionCsvImportService
                 }
                 $assoc[$headerMap[$i]] = $cell;
             }
-            $items[] = $this->mapCsvRowToItem($assoc, $rowNum);
+            $items[] = $this->mapCsvRowToItem($assoc, $rowNum, $tolerant);
         }
         fclose($handle);
 
-        if ($items === []) {
+        if ($items === [] && !$tolerant) {
             throw ValidationException::withMessages([
                 'csv_file' => ['No data rows found after the header.'],
             ]);
@@ -124,8 +124,9 @@ class BulkQuestionCsvImportService
      * @param  array<string, string|null>  $row
      * @return array<string, mixed>
      */
-    private function mapCsvRowToItem(array $row, int $rowNum): array
+    private function mapCsvRowToItem(array $row, int $rowNum, bool $tolerant = false): array
     {
+        $errors = [];
         $g = fn (string $k) => trim((string) ($row[$k] ?? ''));
 
         $questionType = $g('question_type');
@@ -139,9 +140,19 @@ class BulkQuestionCsvImportService
         }
 
         if ($questionType === '' || $difficulty === '' || $skillDomain === '' || $stem === '') {
-            throw ValidationException::withMessages([
-                'csv_file' => ["Row {$rowNum}: question_type, difficulty, skill_domain, and stem are required."],
-            ]);
+            $missing = [];
+            if ($questionType === '') $missing[] = 'question_type';
+            if ($difficulty === '') $missing[] = 'difficulty';
+            if ($skillDomain === '') $missing[] = 'skill_domain';
+            if ($stem === '') $missing[] = 'stem';
+            
+            $errMsg = "Row {$rowNum}: " . implode(', ', $missing) . " are required.";
+            if (!$tolerant) {
+                throw ValidationException::withMessages([
+                    'csv_file' => [$errMsg],
+                ]);
+            }
+            $errors[] = $errMsg;
         }
 
         $item = [
@@ -227,15 +238,23 @@ class BulkQuestionCsvImportService
                 ];
             }
             if ($choices === []) {
-                throw ValidationException::withMessages([
-                    'csv_file' => ["Row {$rowNum}: multiple_choice requires at least one choice_*_content column with text."],
-                ]);
+                $errMsg = "Row {$rowNum}: multiple_choice requires at least one choice_*_content column with text.";
+                if (!$tolerant) {
+                    throw ValidationException::withMessages([
+                        'csv_file' => [$errMsg],
+                    ]);
+                }
+                $errors[] = $errMsg;
             }
             $correct = strtoupper($g('correct_choice'));
             if ($correct === '') {
-                throw ValidationException::withMessages([
-                    'csv_file' => ["Row {$rowNum}: correct_choice is required for multiple_choice (A, B, C, or D)."],
-                ]);
+                $errMsg = "Row {$rowNum}: correct_choice is required for multiple_choice (A, B, C, or D).";
+                if (!$tolerant) {
+                    throw ValidationException::withMessages([
+                        'csv_file' => [$errMsg],
+                    ]);
+                }
+                $errors[] = $errMsg;
             }
             $marked = false;
             foreach ($choices as $idx => $c) {
@@ -246,26 +265,42 @@ class BulkQuestionCsvImportService
                     break;
                 }
             }
-            if (! $marked) {
-                throw ValidationException::withMessages([
-                    'csv_file' => ["Row {$rowNum}: correct_choice must match a choice label (e.g. A)."],
-                ]);
+            if ($correct !== '' && !$marked) {
+                $errMsg = "Row {$rowNum}: correct_choice must match a choice label (e.g. A).";
+                if (!$tolerant) {
+                    throw ValidationException::withMessages([
+                        'csv_file' => [$errMsg],
+                    ]);
+                }
+                $errors[] = $errMsg;
             }
             $item['choices'] = $choices;
         } else {
             $sprRaw = $g('spr_correct_answers');
             if ($sprRaw === '') {
-                throw ValidationException::withMessages([
-                    'csv_file' => ["Row {$rowNum}: spr_correct_answers is required for student_produced_response (use | to separate multiple accepted answers)."],
-                ]);
+                $errMsg = "Row {$rowNum}: spr_correct_answers is required for student_produced_response (use | to separate multiple accepted answers).";
+                if (!$tolerant) {
+                    throw ValidationException::withMessages([
+                        'csv_file' => [$errMsg],
+                    ]);
+                }
+                $errors[] = $errMsg;
             }
             $answers = array_values(array_filter(array_map('trim', preg_split('/[|;]/', $sprRaw) ?: [])));
-            if ($answers === []) {
-                throw ValidationException::withMessages([
-                    'csv_file' => ["Row {$rowNum}: spr_correct_answers could not be parsed."],
-                ]);
+            if ($sprRaw !== '' && $answers === []) {
+                $errMsg = "Row {$rowNum}: spr_correct_answers could not be parsed.";
+                if (!$tolerant) {
+                    throw ValidationException::withMessages([
+                        'csv_file' => [$errMsg],
+                    ]);
+                }
+                $errors[] = $errMsg;
             }
             $item['spr_correct_answers'] = $answers;
+        }
+
+        if ($tolerant) {
+            $item['errors'] = $errors;
         }
 
         return $item;

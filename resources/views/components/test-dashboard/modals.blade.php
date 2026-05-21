@@ -221,9 +221,26 @@
                     </select>
                 </div>
 
+                <div class="col-12 mb-3">
+                    <label class="form-label fw-bold small mb-2 d-block">Question Format</label>
+                    <div class="btn-group w-100" role="group" aria-label="Question format toggle">
+                        <input type="radio" class="btn-check builder-format-radio builder-format-mcq" name="format_{INDEX}" id="format_mcq_{INDEX}" autocomplete="off" checked value="multiple_choice">
+                        <label class="btn btn-outline-warning" for="format_mcq_{INDEX}">
+                            <i class="bi bi-list-ol"></i> Multiple Choice (MCQ)
+                        </label>
+
+                        <input type="radio" class="btn-check builder-format-radio builder-format-spr" name="format_{INDEX}" id="format_spr_{INDEX}" autocomplete="off" value="student_produced_response">
+                        <label class="btn btn-outline-warning" for="format_spr_{INDEX}">
+                            <i class="bi bi-pencil-square"></i> Student Produced Response (SPR)
+                        </label>
+                    </div>
+                </div>
+
                 <hr>
-                <div class="col-12">
-                    <h6 class="fw-bold small mb-3">Choices (Mark the correct one)</h6>
+
+                <!-- MCQ Container -->
+                <div class="col-12 builder-mcq-container">
+                    <h6 class="fw-bold small mb-3 text-warning"><i class="bi bi-list-stars"></i> MCQ Choices (Mark correct one)</h6>
                     <div class="builder-choices-container">
                         <!-- 4 choices -->
                         <div class="input-group mb-2">
@@ -255,6 +272,13 @@
                             <input type="text" class="form-control builder-choice-content" data-label="D" placeholder="Option D content" required>
                         </div>
                     </div>
+                </div>
+
+                <!-- SPR Container -->
+                <div class="col-12 builder-spr-container d-none">
+                    <h6 class="fw-bold small mb-3 text-warning"><i class="bi bi-check-all"></i> SPR Accepted Answers <span class="text-danger">*</span></h6>
+                    <input type="text" class="form-control builder-spr-answers" placeholder="e.g. 3|3.0 (separate multiple answers with | or ;)">
+                    <div class="form-text small text-muted mt-2">Use | or ; to specify multiple accepted formats (e.g. decimal and fraction).</div>
                 </div>
 
                 <div class="col-12 mt-3">
