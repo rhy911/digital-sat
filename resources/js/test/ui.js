@@ -327,7 +327,7 @@ function getOrCreateAlertModal() {
   return modal;
 }
 
-export function showCustomAlert(message, type = 'info', title = 'Notification') {
+export function showCustomAlert(message, type = 'info', title = 'Notification', showConfirmBtn = true) {
   return new Promise((resolve) => {
     const modal = getOrCreateAlertModal();
     const titleEl = modal.querySelector('#customAlertTitle');
@@ -338,11 +338,16 @@ export function showCustomAlert(message, type = 'info', title = 'Notification') 
 
     // Set texts
     titleEl.textContent = title;
-    msgEl.textContent = message;
+    msgEl.innerHTML = message.replace(/\n/g, '<br>');
 
     // Reset button states
     cancelBtn.classList.add('hidden');
     confirmBtn.className = 'custom-alert-btn btn-primary';
+    if (!showConfirmBtn) {
+        confirmBtn.classList.add('hidden');
+    } else {
+        confirmBtn.classList.remove('hidden');
+    }
     confirmBtn.textContent = 'OK';
 
     // Set icons and colors based on type
@@ -407,7 +412,7 @@ export function showCustomConfirm(message, type = 'warning', title = 'Confirm Ac
 
     // Set texts
     titleEl.textContent = title;
-    msgEl.textContent = message;
+    msgEl.innerHTML = message.replace(/\n/g, '<br>');
 
     // Set button visibility & labels
     cancelBtn.classList.remove('hidden');

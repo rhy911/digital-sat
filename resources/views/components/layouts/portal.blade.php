@@ -82,7 +82,7 @@
                 </div>
             </div>
             <h4 class="loading-title fw-bold mb-2">Digital SAT Test Engine</h4>
-            <p id="loadingStatusText" class="loading-status text-muted">Entering secure testing environment...</p>
+            <p id="loadingStatusText" class="loading-status">Entering secure testing environment...</p>
         </div>
     </div>
 

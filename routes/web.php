@@ -142,9 +142,8 @@ Route::get('/take-test/{module_id?}', function ($module_id = null) {
     // Determine next module for navigation (simple logic for now)
     $nextModule = null;
     if ($module->module_number == 1) {
-        // Find Module 2 in same section (prefer hard for mock)
-        $nextModule = $section->modules->where('module_number', 2)->firstWhere('difficulty_level', 'hard')
-            ?? $section->modules->where('module_number', 2)->first();
+        // Find Module 2 in same section (prefer hard for mock/preview if available)
+        $nextModule = $section->modules->where('module_number', 2)->firstWhere('difficulty_level', 'hard');
     } else {
         // Move to next section's first module
         $nextSection = $test->sections->where('order', '>', $section->order)->sortBy('order')->first();
@@ -190,10 +189,13 @@ Route::middleware(['auth'])->prefix('test-dashboard')->name('test-dashboard.')->
 
     // API endpoints for creating and updating data
     Route::post('/tests', [TestDashboardController::class, 'storeTest'])->name('tests.store');
+    Route::post('/tests/generate-full', [TestDashboardController::class, 'generateFullSatStructure'])->name('tests.generate-full');
+    Route::post('/tests/{id}/clone', [TestDashboardController::class, 'cloneTest'])->name('tests.clone');
     Route::put('/tests/{id}', [TestDashboardController::class, 'updateTest'])->name('tests.update');
     Route::post('/sections', [TestDashboardController::class, 'storeSection'])->name('sections.store');
     Route::post('/sections/link-module', [TestDashboardController::class, 'linkModuleToSection'])->name('sections.link-module');
     Route::post('/modules', [TestDashboardController::class, 'storeModule'])->name('modules.store');
+    Route::post('/modules/{id}/clone', [TestDashboardController::class, 'cloneModule'])->name('modules.clone');
     Route::get('/questions/{id}', [TestDashboardController::class, 'showQuestion'])->name('questions.show');
     Route::put('/questions/{id}', [TestDashboardController::class, 'updateQuestion'])->name('questions.update');
     Route::post('/questions/bulk', [TestDashboardController::class, 'bulkStoreQuestions'])->name('questions.bulk-store');

@@ -216,8 +216,11 @@
                             <td>{{ $module->duration_minutes }}m</td>
                             <td>{{ $module->total_questions }}</td>
                             <td class="text-end">
-                                <button class="btn btn-sm btn-outline-danger delete-module-btn" data-id="{{ $module->id }}">
-                                    <i class="bi bi-trash"></i> Delete
+                                <button class="btn btn-sm btn-outline-info clone-module-btn" data-id="{{ $module->id }}" title="Clone Module">
+                                    <i class="bi bi-copy"></i>
+                                </button>
+                                <button class="btn btn-sm btn-outline-danger delete-module-btn" data-id="{{ $module->id }}" title="Delete">
+                                    <i class="bi bi-trash"></i>
                                 </button>
                             </td>
                         </tr>

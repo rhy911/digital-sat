@@ -77,6 +77,7 @@
                                         <option value="active" {{ $test->status === 'active' ? 'selected' : '' }}>Active</option>
                                         <option value="archived" {{ $test->status === 'archived' ? 'selected' : '' }}>Archived</option>
                                     </select>
+                                    <button class="btn btn-sm btn-outline-info clone-test-btn" data-id="{{ $test->id }}" title="Clone Template (Hierarchy Only)"><i class="bi bi-copy"></i></button>
                                     <button class="btn btn-sm btn-outline-danger delete-test-btn" data-id="{{ $test->id }}">Delete</button>
                                 </div>
                             </td>

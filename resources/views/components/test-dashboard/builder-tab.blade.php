@@ -56,7 +56,29 @@
                 </div>
 
                 <!-- Middle Question Builder Workspace (P1) -->
-                <div class="col-lg-5 mb-4" id="builderWorkspaceScroller" style="max-height: calc(100vh - 12rem); overflow-y: auto;">
+                <div class="col-lg-5 mb-4 position-relative" id="builderWorkspaceScroller" style="max-height: calc(100vh - 12rem); overflow-y: auto;">
+                    
+                    <!-- Sticky Breadcrumb (P2) -->
+                    <div class="sticky-top bg-white border-bottom pb-2 mb-3 pt-1 z-3 d-none" id="builderInteractiveBreadcrumb">
+                        <nav aria-label="breadcrumb">
+                          <ol class="breadcrumb mb-0 align-items-center small">
+                            <li class="breadcrumb-item"><i class="bi bi-journal-text me-1"></i><span id="bc-test-title" class="text-truncate d-inline-block align-bottom" style="max-width: 120px;" title="">Test</span></li>
+                            <li class="breadcrumb-item">
+                                <div class="dropdown d-inline-block">
+                                    <span class="cursor-pointer fw-bold dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false" id="bc-section-title">Section</span>
+                                    <ul class="dropdown-menu shadow-sm fs-7" id="bc-section-dropdown"></ul>
+                                </div>
+                            </li>
+                            <li class="breadcrumb-item active" aria-current="page">
+                                <div class="dropdown d-inline-block">
+                                    <span class="cursor-pointer fw-bold dropdown-toggle text-primary" data-bs-toggle="dropdown" aria-expanded="false" id="bc-module-title">Module</span>
+                                    <ul class="dropdown-menu shadow-sm fs-7" id="bc-module-dropdown"></ul>
+                                </div>
+                            </li>
+                          </ol>
+                        </nav>
+                    </div>
+
                     <div id="builderBlocksContainer">
                         <!-- Question blocks will be added here -->
                     </div>

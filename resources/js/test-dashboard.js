@@ -50,6 +50,129 @@ document.addEventListener('DOMContentLoaded', function () {
     window.__tdQuestionsPerPage = QUESTIONS_PER_PAGE;
     window.__tdQuestionsQuery = '';
 
+    let editPassageEditor, editStemEditor, editExplanationEditor;
+
+    function compileMarkdownToHtml(text) {
+        if (!text) return '';
+        try {
+            // Fix loose formatting like "** bold **" which standard marked.js ignores
+            text = text.replace(/\*\*\s*([^*]+?)\s*\*\*/g, '**$1**');
+            
+            if (window.marked) {
+                const markedOptions = { breaks: true, gfm: true };
+                if (typeof window.marked.parse === 'function') {
+                    return window.marked.parse(text, markedOptions);
+                } else if (typeof window.marked === 'function') {
+                    if (window.marked.setOptions) window.marked.setOptions(markedOptions);
+                    return window.marked(text);
+                }
+            }
+            if (window.EasyMDE && typeof window.EasyMDE.prototype.markdown === 'function') {
+                return window.EasyMDE.prototype.markdown(text);
+            }
+        } catch (e) {
+            console.error('Markdown compile failed', e);
+        }
+        return text.replace(/\n/g, '<br>');
+    }
+
+    function processMedia(text) {
+        if (!text || typeof text !== 'string') return text;
+        // Convert backslash delimiters to $$ for consistent preview rendering
+        text = text.replace(/\\\(/g, '$$').replace(/\\\)/g, '$$');
+        return text.replace(/(?<!\!)\[Media:([^\]]+)\]/gi, (match, filename) => {
+            return `<img src="/storage/media/${filename}" alt="${filename}" class="question-media img-fluid mb-2 d-block mx-auto" style="max-height: 300px;">`;
+        });
+    }
+
+    function getPremiumToolbar(activeEditorKey, changeCallback) {
+        return [
+            "bold", "italic",
+            {
+                name: "underline",
+                action: (editor) => {
+                    editor.codemirror.replaceSelection(`<u>${editor.codemirror.getSelection()}</u>`);
+                    if (changeCallback) changeCallback();
+                },
+                className: "fa fa-underline",
+                title: "Underline"
+            },
+            "heading", "|",
+            "quote", "unordered-list", "ordered-list", "|",
+            {
+                name: "latex",
+                action: (editor) => {
+                    const cm = editor.codemirror;
+                    const selection = cm.getSelection();
+                    if (selection) {
+                        cm.replaceSelection(`$$ ${selection} $$`);
+                    } else {
+                        const cursor = cm.getCursor();
+                        cm.replaceRange("$$  $$", cursor);
+                        cm.setCursor(cursor.line, cursor.ch + 3);
+                    }
+                    if (changeCallback) changeCallback();
+                },
+                className: "fa fa-plus-circle",
+                title: "Insert LaTeX ($$)"
+            },
+            {
+                name: "upload-image",
+                className: "fa fa-upload",
+                title: "Upload Image",
+                action: (editor) => {
+                    const fileInput = document.createElement('input');
+                    fileInput.type = 'file';
+                    fileInput.accept = 'image/*';
+                    fileInput.style.display = 'none';
+                    document.body.appendChild(fileInput);
+
+                    fileInput.addEventListener('change', async function () {
+                        if (!fileInput.files || !fileInput.files.length) {
+                            fileInput.remove();
+                            return;
+                        }
+                        const file = fileInput.files[0];
+                        const formData = new FormData();
+                        formData.append('image', file);
+
+                        try {
+                            const response = await fetch(MEDIA_UPLOAD_URL, {
+                                method: 'POST',
+                                headers: {
+                                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+                                    'Accept': 'application/json'
+                                },
+                                body: formData
+                            });
+                            const result = await response.json();
+                            if (response.ok) {
+                                const markdown = result.markdown || `![](${result.url})`;
+                                const cm = editor.codemirror;
+                                const cursor = cm.getCursor();
+                                cm.replaceRange(`\n${markdown}\n`, cursor);
+                                if (changeCallback) changeCallback();
+                                showAlert('success', 'Image uploaded and inserted successfully');
+                            } else {
+                                showAlert('danger', result.message || 'Upload failed');
+                            }
+                        } catch (error) {
+                            showAlert('danger', error.message);
+                        } finally {
+                            fileInput.remove();
+                        }
+                    });
+
+                    fileInput.click();
+                },
+                className: "fa fa-image",
+                title: "Upload and Insert Image"
+            },
+            "|", "preview"
+        ];
+    }
+
+
     function getOrCreateAlertModal() {
         let modal = document.getElementById('customAlertModal');
         if (modal) return modal;
@@ -312,7 +435,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
     function captureTomSelectPreservation(submittedForm) {
         const ids = [
-            'sectionTest', 'moduleSection', 'questionModule', 'bulkQuestionModule', 
+            'sectionTest', 'moduleSection', 'questionModule', 'bulkQuestionModule',
             'questionPassage', 'answerQuestionId', 'explanationQuestionId',
             'linkSection', 'linkTest', 'linkModule'
         ];
@@ -664,7 +787,7 @@ document.addEventListener('DOMContentLoaded', function () {
         }
         tbody.innerHTML = allModules.map(function (mod) {
             const diffClass = moduleDifficultyBadgeClass(mod.difficulty_level);
-            
+
             let linkedHtml = '';
             const sections = mod.sections || [];
             if (sections.length === 0) {
@@ -927,9 +1050,12 @@ document.addEventListener('DOMContentLoaded', function () {
             const result = await response.json();
             const question = result.data;
 
+            // Store current question for the modal listener
+            window.__editingQuestion = question;
+
             document.getElementById('editQuestionId').value = question.id;
             document.getElementById('editQuestionIdDisplay').textContent = question.id;
-            document.getElementById('editQuestionStem').value = question.stem;
+
             document.getElementById('editQuestionType').value = question.question_type;
             document.getElementById('editDifficulty').value = question.difficulty || '';
             document.getElementById('editSkillSubdomain').value = question.skill_subdomain || '';
@@ -958,15 +1084,11 @@ document.addEventListener('DOMContentLoaded', function () {
             }
 
             const passageContainer = document.getElementById('editPassageContainer');
-            if (sectionType === 'reading_writing' && question.passage) {
+            if (sectionType === 'reading_writing' && (question.passage || question.passage_content)) {
                 passageContainer.classList.remove('d-none');
-                document.getElementById('editPassageContent').value = question.passage.content;
             } else {
                 passageContainer.classList.add('d-none');
-                document.getElementById('editPassageContent').value = '';
             }
-
-            const modal = new bootstrap.Modal(document.getElementById('editQuestionModal'));
 
             // Populate Choices
             if (question.question_type === 'multiple_choice') {
@@ -993,29 +1115,63 @@ document.addEventListener('DOMContentLoaded', function () {
                 document.getElementById('editSprAnswers').value = answers;
             }
 
-            // Populate Explanation
+            // Populate static rationales
             if (question.explanation) {
-                document.getElementById('editExplanation').value = question.explanation.explanation;
                 document.getElementById('editRationaleA').value = question.explanation.rationale_a || '';
                 document.getElementById('editRationaleB').value = question.explanation.rationale_b || '';
                 document.getElementById('editRationaleC').value = question.explanation.rationale_c || '';
                 document.getElementById('editRationaleD').value = question.explanation.rationale_d || '';
             } else {
-                document.getElementById('editExplanation').value = '';
                 document.getElementById('editRationaleA').value = '';
                 document.getElementById('editRationaleB').value = '';
                 document.getElementById('editRationaleC').value = '';
                 document.getElementById('editRationaleD').value = '';
             }
 
-            // Populate Media List
-            refreshEditMediaList(question);
-
+            const modalEl = document.getElementById('editQuestionModal');
+            const modal = bootstrap.Modal.getOrCreateInstance(modalEl);
             modal.show();
+
         } catch (error) {
             showAlert('danger', error.message);
         }
     }
+
+    // Modal Visibility Listeners for Robust EasyMDE initialization
+    document.getElementById('editQuestionModal')?.addEventListener('shown.bs.modal', function () {
+        const question = window.__editingQuestion;
+        if (!question) return;
+
+        initEditModalEditors();
+
+        if (editStemEditor) {
+            editStemEditor.value(question.stem || '');
+            editStemEditor.codemirror.refresh();
+        }
+
+        if (editPassageEditor) {
+            const pContent = question.passage_content || (question.passage ? (typeof question.passage === 'string' ? question.passage : question.passage.content) : '');
+            editPassageEditor.value(pContent || '');
+            editPassageEditor.codemirror.refresh();
+        }
+
+        if (editExplanationEditor) {
+            const expContent = question.explanation ? (question.explanation.explanation || '') : '';
+            editExplanationEditor.value(expContent);
+            editExplanationEditor.codemirror.refresh();
+        }
+
+        refreshEditMediaList();
+        updateEditQuestionPreview();
+
+        // Final focus/refresh to ensure it's not white
+        setTimeout(() => {
+            if (editStemEditor) editStemEditor.codemirror.refresh();
+            if (editPassageEditor) editPassageEditor.codemirror.refresh();
+            if (editExplanationEditor) editExplanationEditor.codemirror.refresh();
+        }, 100);
+    });
+
 
     function refreshEditMediaList() {
         const mediaList = document.getElementById('editMediaList');
@@ -1023,9 +1179,9 @@ document.addEventListener('DOMContentLoaded', function () {
         mediaList.innerHTML = '';
 
         const fields = [
-            document.getElementById('editQuestionStem')?.value || '',
-            document.getElementById('editPassageContent')?.value || '',
-            document.getElementById('editExplanation')?.value || '',
+            editStemEditor ? editStemEditor.value() : (document.getElementById('editQuestionStem')?.value || ''),
+            editPassageEditor ? editPassageEditor.value() : (document.getElementById('editPassageContent')?.value || ''),
+            editExplanationEditor ? editExplanationEditor.value() : (document.getElementById('editExplanation')?.value || ''),
             document.getElementById('editRationaleA')?.value || '',
             document.getElementById('editRationaleB')?.value || '',
             document.getElementById('editRationaleC')?.value || '',
@@ -1182,30 +1338,65 @@ document.addEventListener('DOMContentLoaded', function () {
 
     document.getElementById('editQuestionForm')?.addEventListener('submit', async function (e) {
         e.preventDefault();
-        const id = document.getElementById('editQuestionId').value;
-        const formData = new FormData(this);
-        const data = Object.fromEntries(formData.entries());
-
-        if (data.question_type === 'multiple_choice') {
-            data.choices = [];
-            ['A', 'B', 'C', 'D'].forEach((label, index) => {
-                const contentInput = document.getElementById(`editChoice${label}Content`);
-                if (contentInput) {
-                    data.choices.push({
-                        label: label,
-                        content: contentInput.value,
-                        order: index + 1
-                    });
-                }
-            });
-        }
-
-        data.is_pretest = document.getElementById('editIsPretest').checked ? 1 : 0;
-        data.calculator_allowed = document.getElementById('editCalculatorAllowed').checked ? 1 : 0;
 
         try {
+            // Ensure EasyMDE editors sync back to textareas
+            if (editStemEditor) document.getElementById('editQuestionStem').value = editStemEditor.value();
+            if (editPassageEditor) document.getElementById('editPassageContent').value = editPassageEditor.value();
+            if (editExplanationEditor) document.getElementById('editExplanation').value = editExplanationEditor.value();
+
+            const stemVal = editStemEditor ? editStemEditor.value() : document.getElementById('editQuestionStem').value;
+            if (!stemVal || stemVal.trim() === '') {
+                showAlert('danger', 'Question stem is required.');
+                return;
+            }
+
+            const id = document.getElementById('editQuestionId').value;
+            if (!id) {
+                showAlert('danger', 'Question ID missing. Cannot update.');
+                return;
+            }
+
+            const form = document.getElementById('editQuestionForm');
+            if (!form) {
+                showAlert('danger', 'Question Form element not found.');
+                return;
+            }
+
+            const formData = new FormData(form);
+            const data = Object.fromEntries(formData.entries());
+
+            // Clean up nested choices keys produced by FormData and manually build nested choices array
+            if (data.question_type === 'multiple_choice') {
+                data.choices = [];
+                ['A', 'B', 'C', 'D'].forEach((label, index) => {
+                    const contentInput = document.getElementById(`editChoice${label}Content`);
+                    const isCorrectRadio = document.getElementById(`editChoice${label}Correct`);
+
+                    if (contentInput) {
+                        data.choices.push({
+                            label: label,
+                            content: contentInput.value,
+                            is_correct: isCorrectRadio ? isCorrectRadio.checked : false,
+                            order: index + 1
+                        });
+                    }
+
+                    // Remove the flat choice keys to avoid confusion
+                    delete data[`choices[${index}][label]`];
+                    delete data[`choices[${index}][content]`];
+                });
+                // correct_choice is already at top level from radio button
+            } else {
+                // Student Produced Response (SPR)
+                // spr_answers is already in data from FormData
+            }
+
+            data.is_pretest = document.getElementById('editIsPretest').checked ? 1 : 0;
+            data.calculator_allowed = document.getElementById('editCalculatorAllowed').checked ? 1 : 0;
+
             const response = await fetch(`${BASE_URL}/questions/${id}`, {
-                method: 'POST',
+                method: 'PUT',
                 headers: {
                     'Content-Type': 'application/json',
                     'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
@@ -1216,14 +1407,17 @@ document.addEventListener('DOMContentLoaded', function () {
 
             const result = await response.json();
             if (response.ok) {
-                showAlert('success', 'Question updated successfully');
-                bootstrap.Modal.getInstance(document.getElementById('editQuestionModal')).hide();
+                showAlert('success', 'Question updated successfully!');
+                const modalEl = document.getElementById('editQuestionModal');
+                const modalInstance = bootstrap.Modal.getInstance(modalEl) || bootstrap.Modal.getOrCreateInstance(modalEl);
+                modalInstance.hide();
                 await refreshQuestionsTableOnly();
             } else {
                 showAlert('danger', result.message || 'Update failed');
             }
         } catch (error) {
-            showAlert('danger', error.message);
+            console.error('Update question failed:', error);
+            showAlert('danger', 'Submission error: ' + error.message);
         }
     });
 
@@ -1389,6 +1583,166 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     }
     initLinkTargetToggle();
+
+    let editPreviewDebouncer = null;
+    function debouncedEditQuestionPreview() {
+        if (editPreviewDebouncer) clearTimeout(editPreviewDebouncer);
+        editPreviewDebouncer = setTimeout(() => {
+            updateEditQuestionPreview();
+        }, 200);
+    }
+
+    function updateEditQuestionPreview() {
+        const previewContainer = document.getElementById('editQuestionPreviewContent');
+        if (!previewContainer) return;
+
+        const qTypeSelect = document.getElementById('editQuestionType');
+        const qType = qTypeSelect ? qTypeSelect.value : 'multiple_choice';
+
+        const stemValue = editStemEditor ? editStemEditor.value() : (document.getElementById('editQuestionStem')?.value || '');
+        const passageValue = editPassageEditor ? editPassageEditor.value() : (document.getElementById('editPassageContent')?.value || '');
+        const explanationValue = editExplanationEditor ? editExplanationEditor.value() : (document.getElementById('editExplanation')?.value || '');
+
+        // Check if reading_writing / passage container is visible
+        const passageContainer = document.getElementById('editPassageContainer');
+        const showPassage = passageContainer && !passageContainer.classList.contains('d-none');
+
+        let passageHtml = '';
+        if (showPassage && passageValue.trim()) {
+            passageHtml = `<div class="edit-passage-preview p-3 mb-3 bg-light rounded-3 small border-start border-3 border-secondary">${compileMarkdownToHtml(processMedia(passageValue))}</div>`;
+        }
+
+        const stemHtml = compileMarkdownToHtml(processMedia(stemValue));
+
+        let questionBodyHtml = '';
+        if (qType === 'multiple_choice') {
+            let choicesHtml = '';
+            ['A', 'B', 'C', 'D'].forEach(label => {
+                const contentInput = document.getElementById(`editChoice${label}Content`);
+                const correctRadio = document.getElementById(`editChoice${label}Correct`);
+
+                const rawContent = contentInput ? contentInput.value.trim() : '';
+                const content = rawContent ? compileMarkdownToHtml(processMedia(rawContent)) : `<span class="text-muted italic">Option ${label} content...</span>`;
+                const isCorrect = correctRadio ? correctRadio.checked : false;
+
+                choicesHtml += `
+                    <div class="d-flex align-items-center gap-2 mb-2 p-2 rounded border ${isCorrect ? 'border-success bg-success-subtle' : 'border-light'}" style="transition: all 0.2s;">
+                        <div class="rounded-circle d-flex align-items-center justify-content-center text-white bg-${isCorrect ? 'success' : 'secondary'} fw-bold" style="width: 24px; height: 24px; font-size: 12px; flex-shrink: 0;">
+                            ${label}
+                        </div>
+                        <div class="flex-grow-1 small">${content}</div>
+                    </div>
+                `;
+            });
+            questionBodyHtml = `<div class="choices-preview mt-3">${choicesHtml}</div>`;
+        } else {
+            const sprAnswersInput = document.getElementById('editSprAnswers');
+            const sprVal = sprAnswersInput ? sprAnswersInput.value.trim() : '';
+            questionBodyHtml = `
+                <div class="answer-input-container p-3 bg-light rounded-3 mt-3 border border-warning border-opacity-25">
+                    <label class="d-block mb-2 fw-bold text-dark small"><i class="bi bi-pencil-fill text-warning"></i> Student Produced Response:</label>
+                    <div class="form-control bg-white font-monospace text-center py-2 fs-5 border-warning border-opacity-50" style="max-width: 150px; letter-spacing: 2px;">
+                        ${sprVal || '______'}
+                    </div>
+                </div>
+            `;
+        }
+
+        let explanationHtml = '';
+        if (explanationValue.trim()) {
+            explanationHtml = `
+                <div class="explanation-preview p-2 mt-3 bg-light rounded small text-muted border-top border-light">
+                    <strong>Explanation:</strong> ${compileMarkdownToHtml(processMedia(explanationValue))}
+                </div>
+            `;
+        }
+
+        previewContainer.innerHTML = `
+            ${passageHtml}
+            <div class="edit-stem-preview fw-semibold text-dark">
+                ${stemHtml || '<span class="text-muted italic">Enter question stem to view preview...</span>'}
+            </div>
+            ${questionBodyHtml}
+            ${explanationHtml}
+        `;
+
+        // Update preview type badge
+        const badge = document.getElementById('editPreviewTypeBadge');
+        if (badge) {
+            badge.textContent = qType === 'multiple_choice' ? 'MCQ' : 'SPR';
+        }
+
+        if (window.smartRenderMath) {
+            window.smartRenderMath(previewContainer);
+        }
+    }
+
+    function initEditModalEditors() {
+        const stemEl = document.getElementById('editQuestionStem');
+        const passageEl = document.getElementById('editPassageContent');
+        const explanationEl = document.getElementById('editExplanation');
+
+        if (stemEl && !editStemEditor) {
+            editStemEditor = new EasyMDE({
+                element: stemEl,
+                placeholder: "Enter question stem...",
+                minHeight: "120px",
+                toolbar: getPremiumToolbar('editStem', () => debouncedEditQuestionPreview()),
+                status: false,
+                autoDownloadFontAwesome: false
+            });
+            editStemEditor.codemirror.on('change', () => {
+                debouncedEditQuestionPreview();
+            });
+        }
+
+        if (passageEl && !editPassageEditor) {
+            editPassageEditor = new EasyMDE({
+                element: passageEl,
+                placeholder: "Enter passage content...",
+                minHeight: "150px",
+                toolbar: getPremiumToolbar('editPassage', () => debouncedEditQuestionPreview()),
+                status: false,
+                autoDownloadFontAwesome: false
+            });
+            editPassageEditor.codemirror.on('change', () => {
+                debouncedEditQuestionPreview();
+            });
+        }
+
+        if (explanationEl && !editExplanationEditor) {
+            editExplanationEditor = new EasyMDE({
+                element: explanationEl,
+                placeholder: "Enter explanation...",
+                minHeight: "100px",
+                toolbar: getPremiumToolbar('editExplanation', () => debouncedEditQuestionPreview()),
+                status: false,
+                autoDownloadFontAwesome: false
+            });
+            editExplanationEditor.codemirror.on('change', () => {
+                debouncedEditQuestionPreview();
+            });
+        }
+    }
+
+    // Call editor initialization immediately
+    initEditModalEditors();
+
+    // Bind real-time change listener triggers
+    document.getElementById('editQuestionType')?.addEventListener('change', () => {
+        debouncedEditQuestionPreview();
+    });
+    document.getElementById('editSprAnswers')?.addEventListener('input', () => {
+        debouncedEditQuestionPreview();
+    });
+    ['A', 'B', 'C', 'D'].forEach(label => {
+        document.getElementById(`editChoice${label}Content`)?.addEventListener('input', () => {
+            debouncedEditQuestionPreview();
+        });
+        document.getElementById(`editChoice${label}Correct`)?.addEventListener('change', () => {
+            debouncedEditQuestionPreview();
+        });
+    });
 
     document.getElementById('questionsTableFilterBtn')?.addEventListener('click', async function () {
         window.__tdQuestionsQuery = (document.getElementById('questionsTableFilter')?.value || '').trim();
@@ -1612,15 +1966,6 @@ document.addEventListener('DOMContentLoaded', function () {
             container.innerHTML = '<div class="alert alert-warning">No items found to preview.</div>';
             return;
         }
-
-        const processMedia = (text) => {
-            if (!text || typeof text !== 'string') return text;
-            // Convert backslash delimiters to $$ for consistent preview rendering
-            text = text.replace(/\\\(/g, '$$').replace(/\\\)/g, '$$');
-            return text.replace(/(?<!\!)\[Media:([^\]]+)\]/gi, (match, filename) => {
-                return `<img src="/storage/media/${filename}" alt="${filename}" class="question-media img-fluid mb-2 d-block mx-auto" style="max-height: 300px;">`;
-            });
-        };
 
         let html = '';
         items.forEach((item, index) => {
@@ -1857,14 +2202,14 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
     function createCellFormatter(fieldName) {
-        return function(cell) {
+        return function (cell) {
             const rowData = cell.getRow().getData();
             const value = cell.getValue() || '';
             const sectionType = document.getElementById('bulkQuestionModule').selectedOptions[0]?.getAttribute('data-section-type') || 'reading_writing';
-            
+
             const struct = flatToStructured(rowData);
             const { blockers, warnings } = validateItemLocal(struct, sectionType);
-            
+
             const cellEl = cell.getElement();
             cellEl.style.position = "relative";
             cellEl.removeAttribute('title');
@@ -1932,103 +2277,103 @@ document.addEventListener('DOMContentLoaded', function () {
             reactiveData: true,
             columns: [
                 { title: "Idx", field: "row_index", width: 50, headerSort: false, frozen: true },
-                { 
-                    title: "Type", 
-                    field: "question_type", 
+                {
+                    title: "Type",
+                    field: "question_type",
                     width: 120,
-                    editor: "list", 
+                    editor: "list",
                     editorParams: { values: ["multiple_choice", "student_produced_response"] },
                     formatter: createCellFormatter('question_type'),
                     headerSort: false
                 },
-                { 
-                    title: "Stem", 
-                    field: "stem", 
-                    editor: "textarea", 
+                {
+                    title: "Stem",
+                    field: "stem",
+                    editor: "textarea",
                     formatter: createCellFormatter('stem'),
                     headerSort: false,
                     width: 200
                 },
-                { 
-                    title: "Passage", 
-                    field: "passage_content", 
-                    editor: "textarea", 
+                {
+                    title: "Passage",
+                    field: "passage_content",
+                    editor: "textarea",
                     formatter: createCellFormatter('passage_content'),
                     headerSort: false,
                     width: 180
                 },
-                { 
-                    title: "Choice A", 
-                    field: "choice_a", 
-                    editor: "input", 
+                {
+                    title: "Choice A",
+                    field: "choice_a",
+                    editor: "input",
                     formatter: createCellFormatter('choice_a'),
                     headerSort: false
                 },
-                { 
-                    title: "Choice B", 
-                    field: "choice_b", 
-                    editor: "input", 
+                {
+                    title: "Choice B",
+                    field: "choice_b",
+                    editor: "input",
                     formatter: createCellFormatter('choice_b'),
                     headerSort: false
                 },
-                { 
-                    title: "Choice C", 
-                    field: "choice_c", 
-                    editor: "input", 
+                {
+                    title: "Choice C",
+                    field: "choice_c",
+                    editor: "input",
                     formatter: createCellFormatter('choice_c'),
                     headerSort: false
                 },
-                { 
-                    title: "Choice D", 
-                    field: "choice_d", 
-                    editor: "input", 
+                {
+                    title: "Choice D",
+                    field: "choice_d",
+                    editor: "input",
                     formatter: createCellFormatter('choice_d'),
                     headerSort: false
                 },
-                { 
-                    title: "Correct MCQ", 
-                    field: "correct_choice", 
-                    editor: "input", 
+                {
+                    title: "Correct MCQ",
+                    field: "correct_choice",
+                    editor: "input",
                     formatter: createCellFormatter('correct_choice'),
                     width: 110,
                     headerSort: false
                 },
-                { 
-                    title: "SPR Answers", 
-                    field: "spr_correct_answers", 
-                    editor: "input", 
+                {
+                    title: "SPR Answers",
+                    field: "spr_correct_answers",
+                    editor: "input",
                     formatter: createCellFormatter('spr_correct_answers'),
                     width: 120,
                     headerSort: false
                 },
-                { 
-                    title: "Difficulty", 
-                    field: "difficulty", 
+                {
+                    title: "Difficulty",
+                    field: "difficulty",
                     width: 100,
-                    editor: "list", 
+                    editor: "list",
                     editorParams: { values: ["easy", "medium", "hard"] },
                     formatter: createCellFormatter('difficulty'),
                     headerSort: false
                 },
-                { 
-                    title: "Domain", 
-                    field: "skill_domain", 
-                    editor: "input", 
+                {
+                    title: "Domain",
+                    field: "skill_domain",
+                    editor: "input",
                     formatter: createCellFormatter('skill_domain'),
                     headerSort: false,
                     width: 130
                 },
-                { 
-                    title: "Explanation", 
-                    field: "explanation", 
-                    editor: "textarea", 
+                {
+                    title: "Explanation",
+                    field: "explanation",
+                    editor: "textarea",
                     headerSort: false,
                     width: 150
                 }
             ]
         });
 
-        validationGridTable.on("cellEdited", function(cell) {
+        validationGridTable.on("cellEdited", function (cell) {
             cell.getRow().reformat();
             updateGridStatusCounts();
         });
@@ -2040,7 +2385,7 @@ document.addEventListener('DOMContentLoaded', function () {
         if (!validationGridTable) return;
         const rows = validationGridTable.getData();
         const sectionType = document.getElementById('bulkQuestionModule').selectedOptions[0]?.getAttribute('data-section-type') || 'reading_writing';
-        
+
         let blockerCount = 0;
         let warningCount = 0;
 
@@ -2100,9 +2445,9 @@ document.addEventListener('DOMContentLoaded', function () {
             showAlert('success', 'Grid visual validations re-rendered successfully.');
         }
     });
-    document.getElementById('gridImportApprovedBtn')?.addEventListener('click', async function() {
+    document.getElementById('gridImportApprovedBtn')?.addEventListener('click', async function () {
         if (!validationGridTable) return;
-        
+
         const formModule = getTomSelectValue('bulkQuestionModule');
         const formStart = document.getElementById('bulkStartPosition')?.value || 1;
         const sectionType = document.getElementById('bulkQuestionModule').selectedOptions[0]?.getAttribute('data-section-type') || 'reading_writing';
@@ -2136,8 +2481,8 @@ document.addEventListener('DOMContentLoaded', function () {
             try {
                 const response = await fetch(BULK_STORE_URL, {
                     method: 'POST',
-                    headers: { 
-                        'Content-Type': 'application/json', 
+                    headers: {
+                        'Content-Type': 'application/json',
                         'X-CSRF-TOKEN': csrf,
                         'Accept': 'application/json'
                     },
@@ -2154,7 +2499,7 @@ document.addEventListener('DOMContentLoaded', function () {
                     document.getElementById('validation-grid-container').classList.add('d-none');
                     if (validationGridTable) validationGridTable.destroy();
                     validationGridTable = null;
-                    
+
                     // Clear the file input and textarea
                     const jsonInput = document.getElementById('bulkJsonFile');
                     if (jsonInput) jsonInput.value = '';
@@ -2162,7 +2507,7 @@ document.addEventListener('DOMContentLoaded', function () {
                     if (csvInput) csvInput.value = '';
                     const ta = document.getElementById('bulkQuestionsJson');
                     if (ta) ta.value = '';
-                    
+
                     const dropzones = document.querySelectorAll('.file-dropzone');
                     dropzones.forEach(zone => {
                         const display = zone.querySelector('.file-name-display');
@@ -2351,7 +2696,7 @@ document.addEventListener('DOMContentLoaded', function () {
         let passageHtml = '';
         const type = document.getElementById('builderModuleId').selectedOptions[0]?.getAttribute('data-section-type');
         if (type === 'reading_writing' && passageValue.trim()) {
-            passageHtml = `<div class="passage-preview p-3 mb-3 bg-light rounded-3 small border-start border-3 border-secondary" style="white-space: pre-wrap;">${passageValue}</div>`;
+            passageHtml = `<div class="passage-preview p-3 mb-3 bg-light rounded-3 small border-start border-3 border-secondary">${compileMarkdownToHtml(passageValue)}</div>`;
         }
 
         let questionBodyHtml = '';
@@ -2360,12 +2705,13 @@ document.addEventListener('DOMContentLoaded', function () {
             let choicesHtml = '';
             block.querySelectorAll('.builder-choice-content').forEach(input => {
                 const label = input.getAttribute('data-label');
-                const content = input.value.trim() || `<span class="text-muted italic">Option ${label} content...</span>`;
+                const rawVal = input.value.trim();
+                const content = rawVal ? compileMarkdownToHtml(rawVal) : `<span class="text-muted italic">Option ${label} content...</span>`;
                 const isCorrect = label === correctLabel;
-                
+
                 choicesHtml += `
                     <div class="d-flex align-items-center gap-2 mb-2 p-2 rounded border ${isCorrect ? 'border-success bg-success-subtle' : 'border-light'}" style="transition: all 0.2s;">
-                        <div class="rounded-circle d-flex align-items-center justify-content-center text-white bg-${isCorrect ? 'success' : 'secondary'} fw-bold" style="width: 24px; height: 24px; font-size: 12px;">
+                        <div class="rounded-circle d-flex align-items-center justify-content-center text-white bg-${isCorrect ? 'success' : 'secondary'} fw-bold" style="width: 24px; height: 24px; font-size: 12px; flex-shrink: 0;">
                             ${label}
                         </div>
                         <div class="flex-grow-1 small">${content}</div>
@@ -2390,7 +2736,7 @@ document.addEventListener('DOMContentLoaded', function () {
         if (explanationValue) {
             explanationHtml = `
                 <div class="explanation-preview p-2 mt-2 bg-light rounded small text-muted border-top border-light">
-                    <strong>Explanation:</strong> ${explanationValue}
+                    <strong>Explanation:</strong> ${compileMarkdownToHtml(explanationValue)}
                 </div>
             `;
         }
@@ -2402,7 +2748,7 @@ document.addEventListener('DOMContentLoaded', function () {
             </div>
             <div class="card-body p-3">
                 ${passageHtml}
-                <div class="stem-preview fw-semibold text-dark" style="white-space: pre-wrap;">${stemValue || '<span class="text-muted italic">Enter question stem to view preview...</span>'}</div>
+                <div class="stem-preview fw-semibold text-dark">${stemValue ? compileMarkdownToHtml(stemValue) : '<span class="text-muted italic">Enter question stem to view preview...</span>'}</div>
                 ${questionBodyHtml}
                 ${explanationHtml}
             </div>
@@ -2434,7 +2780,7 @@ document.addEventListener('DOMContentLoaded', function () {
             const qType = block.querySelector('.builder-format-mcq').checked ? 'MCQ' : 'SPR';
             const difficulty = block.querySelector('.builder-difficulty').value || 'N/A';
             const domainVal = block.querySelector('.builder-domain').value || '';
-            
+
             let domainLabel = 'No Domain';
             if (domainVal) {
                 domainLabel = domainVal.split('_').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
@@ -2456,7 +2802,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 </div>
             `;
 
-            item.onclick = function() {
+            item.onclick = function () {
                 block.scrollIntoView({ behavior: 'smooth', block: 'center' });
                 navigator.querySelectorAll('.list-group-item').forEach(el => el.classList.remove('active', 'bg-warning', 'text-dark', 'border-warning'));
                 item.classList.add('active', 'bg-warning', 'text-dark', 'border-warning');
@@ -2542,29 +2888,7 @@ document.addEventListener('DOMContentLoaded', function () {
             element: stemTextarea,
             placeholder: "Enter question stem...",
             minHeight: "100px",
-            toolbar: [
-                "bold", "italic",
-                { name: "underline", action: (editor) => editor.codemirror.replaceSelection(`<u>${editor.codemirror.getSelection()}</u>`), className: "fa fa-underline", title: "Underline" },
-                "heading", "|",
-                "quote", "unordered-list", "ordered-list", "|",
-                {
-                    name: "latex",
-                    action: (editor) => {
-                        const cm = editor.codemirror;
-                        const selection = cm.getSelection();
-                        if (selection) {
-                            cm.replaceSelection(`$$ ${selection} $$`);
-                        } else {
-                            const cursor = cm.getCursor();
-                            cm.replaceRange("$$  $$", cursor);
-                            cm.setCursor(cursor.line, cursor.ch + 3);
-                        }
-                    },
-                    className: "fa fa-plus-circle",
-                    title: "Insert LaTeX"
-                },
-                "|", "preview"
-            ],
+            toolbar: getPremiumToolbar('builderStem', () => debouncedUpdateLivePreview(block)),
             status: false
         });
 
@@ -2574,28 +2898,6 @@ document.addEventListener('DOMContentLoaded', function () {
         });
 
         block.scrollIntoView({ behavior: 'smooth' });
-
-        const imgInput = block.querySelector('.builder-image-input');
-        const imgBtn = block.querySelector('.upload-image-btn');
-        imgBtn.onclick = () => imgInput.click();
-        imgInput.onchange = async function () {
-            if (!this.files?.[0]) return;
-            const fd = new FormData();
-            fd.append('image', this.files[0]);
-            imgBtn.disabled = true;
-            try {
-                const res = await fetch(MEDIA_UPLOAD_URL, { method: 'POST', headers: { 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content }, body: fd });
-                const result = await res.json();
-                if (result.success) {
-                    const mde = builderEditors[`stem_${block.dataset.index}`];
-                    if (mde) {
-                        mde.codemirror.replaceRange(`\n${result.markdown}\n`, mde.codemirror.getCursor());
-                        debouncedUpdateLivePreview(block);
-                    }
-                } else showAlert('danger', result.message || 'Upload failed');
-            } catch (err) { showAlert('danger', 'Error: ' + err.message); }
-            finally { imgBtn.disabled = false; this.value = ''; }
-        };
 
         // Bind format toggles
         const mcqRadio = block.querySelector('.builder-format-mcq');
@@ -2691,28 +2993,7 @@ document.addEventListener('DOMContentLoaded', function () {
                     element: block.querySelector('.builder-passage'),
                     placeholder: "Enter passage content...",
                     minHeight: "150px",
-                    toolbar: [
-                        "bold", "italic",
-                        { name: "underline", action: (editor) => editor.codemirror.replaceSelection(`<u>${editor.codemirror.getSelection()}</u>`), className: "fa fa-underline", title: "Underline" },
-                        "|", "unordered-list", "|",
-                        {
-                            name: "latex",
-                            action: (editor) => {
-                                const cm = editor.codemirror;
-                                const selection = cm.getSelection();
-                                if (selection) {
-                                    cm.replaceSelection(`\\[ ${selection} \\]`);
-                                } else {
-                                    const cursor = cm.getCursor();
-                                    cm.replaceRange("\\[  \\]", cursor);
-                                    cm.setCursor(cursor.line, cursor.ch + 3);
-                                }
-                            },
-                            className: "fa fa-plus-circle",
-                            title: "Insert LaTeX"
-                        },
-                        "|", "preview"
-                    ],
+                    toolbar: getPremiumToolbar('builderPassage', () => debouncedUpdateLivePreview(block)),
                     status: false
                 });
 
@@ -2736,7 +3017,87 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
     document.getElementById('addBuilderBlockBtn')?.addEventListener('click', window.addBuilderBlock);
-    document.getElementById('builderModuleId')?.addEventListener('change', () => document.querySelectorAll('.builder-block').forEach(syncBuilderBlockDomain));
+    document.getElementById('builderModuleId')?.addEventListener('change', (e) => {
+        document.querySelectorAll('.builder-block').forEach(syncBuilderBlockDomain);
+
+        // Update Interactive Breadcrumb
+        const select = e.target;
+        const bc = document.getElementById('builderInteractiveBreadcrumb');
+        if (!bc || !select.value) {
+            if (bc) bc.classList.add('d-none');
+            return;
+        }
+
+        bc.classList.remove('d-none');
+        const selectedOpt = select.options[select.selectedIndex];
+        if (!selectedOpt) return;
+        const text = selectedOpt.text;
+        const parts = text.split(' | ');
+        if (parts.length >= 2) {
+            document.getElementById('bc-test-title').textContent = parts[0].trim();
+            document.getElementById('bc-test-title').title = parts[0].trim();
+
+            const subParts = parts[1].split(' - ');
+            if (subParts.length >= 2) {
+                document.getElementById('bc-section-title').textContent = subParts[0].trim() + ' ⌄';
+                document.getElementById('bc-module-title').textContent = subParts[1].trim() + ' ⌄';
+            }
+        }
+
+        // Populate sibling dropdowns
+        const secDropdown = document.getElementById('bc-section-dropdown');
+        const modDropdown = document.getElementById('bc-module-dropdown');
+        if (!secDropdown || !modDropdown) return;
+
+        secDropdown.innerHTML = ''; modDropdown.innerHTML = '';
+
+        const testTitle = parts[0].trim();
+        const currentSectionText = document.getElementById('bc-section-title').textContent.replace(' ⌄', '');
+        const currentModuleText = document.getElementById('bc-module-title').textContent.replace(' ⌄', '');
+
+        const options = Array.from(select.options).filter(o => o.value !== "");
+        const siblings = options.filter(o => o.text.startsWith(testTitle + ' | '));
+
+        const sections = new Set();
+        siblings.forEach(o => {
+            const sp = o.text.split(' | ')[1].split(' - ');
+            sections.add(sp[0].trim());
+        });
+
+        sections.forEach(sec => {
+            if (sec === currentSectionText) return;
+            const li = document.createElement('li');
+            li.innerHTML = `<a class="dropdown-item cursor-pointer text-muted small">${sec}</a>`;
+            li.addEventListener('click', () => {
+                const targetOpt = options.find(o => o.text.startsWith(testTitle + ' | ' + sec));
+                if (targetOpt) {
+                    if (select.tomselect) select.tomselect.setValue(targetOpt.value);
+                    else { select.value = targetOpt.value; select.dispatchEvent(new Event('change')); }
+                }
+            });
+            secDropdown.appendChild(li);
+        });
+        if (secDropdown.children.length === 0) secDropdown.innerHTML = '<li><span class="dropdown-item text-muted small">No other sections</span></li>';
+
+        const modules = siblings.filter(o => o.text.includes(' | ' + currentSectionText + ' - '));
+        modules.forEach(o => {
+            const mText = o.text.split(' - ')[1].trim();
+            if (mText === currentModuleText) return;
+            const li = document.createElement('li');
+            li.innerHTML = `<a class="dropdown-item cursor-pointer text-muted small">${mText}</a>`;
+            li.addEventListener('click', () => {
+                if (select.tomselect) select.tomselect.setValue(o.value);
+                else { select.value = o.value; select.dispatchEvent(new Event('change')); }
+            });
+            modDropdown.appendChild(li);
+        });
+        if (modDropdown.children.length === 0) modDropdown.innerHTML = '<li><span class="dropdown-item text-muted small">No other modules</span></li>';
+
+        // Save to Recent Authoring Context
+        if (typeof addRecentModule === 'function') {
+            addRecentModule(select.value, currentModuleText, testTitle);
+        }
+    });
 
     document.getElementById('clearBuilderBtn')?.addEventListener('click', async function () {
         if (await showCustomConfirm('Clear all questions in builder?', 'warning', 'Clear Builder')) {
@@ -2801,14 +3162,14 @@ document.addEventListener('DOMContentLoaded', function () {
                 }
             }
 
-            const item = { 
-                stem, 
-                question_type: qType, 
-                difficulty: block.querySelector('.builder-difficulty').value || null, 
-                skill_domain: block.querySelector('.builder-domain').value || null, 
-                choices: qType === 'multiple_choice' ? choices : [], 
+            const item = {
+                stem,
+                question_type: qType,
+                difficulty: block.querySelector('.builder-difficulty').value || null,
+                skill_domain: block.querySelector('.builder-domain').value || null,
+                choices: qType === 'multiple_choice' ? choices : [],
                 spr_correct_answers: qType === 'student_produced_response' ? spr_correct_answers : [],
-                explanation: block.querySelector('.builder-explanation').value.trim() 
+                explanation: block.querySelector('.builder-explanation').value.trim()
             };
 
             const type = document.getElementById('builderModuleId').selectedOptions[0].getAttribute('data-section-type');
@@ -2925,5 +3286,245 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
     initPremiumDropzones();
+
+    // ==========================================
+    // CLONE FUNCTIONALITY
+    // ==========================================
+
+    document.addEventListener('click', async function (e) {
+        const cloneTestBtn = e.target.closest('.clone-test-btn');
+        if (cloneTestBtn) {
+            const testId = cloneTestBtn.getAttribute('data-id');
+            const confirmed = await showCustomConfirm('Clone this Test (Hierarchy Only)? No questions will be copied.', 'info', 'Clone Test');
+            if (!confirmed) return;
+
+            cloneTestBtn.disabled = true;
+            try {
+                const response = await fetch(`${BASE_URL}/tests/${testId}/clone`, {
+                    method: 'POST',
+                    headers: {
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+                        'Accept': 'application/json',
+                    }
+                });
+                const result = await response.json();
+                if (response.ok) {
+                    showAlert('success', result.message);
+                    await refreshTestDashboardData(captureTomSelectPreservation(null));
+                } else {
+                    showAlert('danger', result.message);
+                }
+            } catch (error) {
+                showAlert('danger', 'Failed to clone test: ' + error.message);
+            } finally {
+                cloneTestBtn.disabled = false;
+            }
+        }
+
+        const cloneModuleBtn = e.target.closest('.clone-module-btn');
+        if (cloneModuleBtn) {
+            const moduleId = cloneModuleBtn.getAttribute('data-id');
+            const confirmed = await showCustomConfirm('Clone this Module (Hierarchy Only)? No questions will be copied.', 'info', 'Clone Module');
+            if (!confirmed) return;
+
+            cloneModuleBtn.disabled = true;
+            try {
+                const response = await fetch(`${BASE_URL}/modules/${moduleId}/clone`, {
+                    method: 'POST',
+                    headers: {
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+                        'Accept': 'application/json',
+                    }
+                });
+                const result = await response.json();
+                if (response.ok) {
+                    showAlert('success', result.message);
+                    await refreshTestDashboardData(captureTomSelectPreservation(null));
+                } else {
+                    showAlert('danger', result.message);
+                }
+            } catch (error) {
+                showAlert('danger', 'Failed to clone module: ' + error.message);
+            } finally {
+                cloneModuleBtn.disabled = false;
+            }
+        }
+    });
+
+    // ==========================================
+    // QUICK AUTHORING WIZARD
+    // ==========================================
+
+    const wizardBtnFullSat = document.getElementById('wizard-btn-full-sat');
+    const wizardBtnCustom = document.getElementById('wizard-btn-custom');
+    const wizardCustomFlow = document.getElementById('wizard-custom-flow');
+    const wizardLoading = document.getElementById('wizard-loading');
+
+    // Store recently edited modules in localStorage
+    function addRecentModule(moduleId, moduleKey, testTitle) {
+        let recents = JSON.parse(localStorage.getItem('td_recent_modules') || '[]');
+        recents = recents.filter(r => r.id !== moduleId);
+        recents.unshift({ id: moduleId, key: moduleKey, testTitle, ts: Date.now() });
+        if (recents.length > 3) recents = recents.slice(0, 3);
+        localStorage.setItem('td_recent_modules', JSON.stringify(recents));
+    }
+
+    function renderRecentWork() {
+        const recents = JSON.parse(localStorage.getItem('td_recent_modules') || '[]');
+        const container = document.getElementById('wizard-recent-work-container');
+        const list = document.getElementById('wizard-recent-work-list');
+        if (!container || !list) return;
+
+        if (recents.length === 0) {
+            container.classList.add('d-none');
+            return;
+        }
+
+        container.classList.remove('d-none');
+        list.innerHTML = recents.map(r => `
+            <button type="button" class="btn btn-outline-secondary btn-sm rounded-pill resume-recent-btn" data-id="${r.id}">
+                <i class="bi bi-clock-history"></i> ${r.testTitle ? r.testTitle + ' - ' : ''}${r.key || 'Module ' + r.id}
+            </button>
+        `).join('');
+    }
+
+    // Modal open event
+    document.getElementById('quickAuthorWizardModal')?.addEventListener('show.bs.modal', function () {
+        wizardCustomFlow.classList.add('d-none');
+        wizardLoading.classList.add('d-none');
+
+        // Populate Tests Dropdown
+        const testSelect = document.getElementById('wizard-select-test');
+        if (testSelect) {
+            testSelect.innerHTML = '<option value="">Create new standalone Module...</option>' + window.__tdLatestTests.map(t => `<option value="${t.id}">${t.title}</option>`).join('');
+        }
+
+        renderRecentWork();
+    });
+
+    // Handle Recent Click
+    document.addEventListener('click', (e) => {
+        const btn = e.target.closest('.resume-recent-btn');
+        if (btn) {
+            const modId = parseInt(btn.getAttribute('data-id'), 10);
+            bootstrap.Modal.getInstance(document.getElementById('quickAuthorWizardModal'))?.hide();
+            // Switch to builder tab and select module
+            document.getElementById('builder-tab')?.click();
+            setTimeout(() => {
+                const treeItem = document.querySelector(`.ws-tree-item[data-id="${modId}"][data-type="module"]`);
+                if (treeItem) treeItem.click();
+            }, 300);
+        }
+    });
+
+    if (wizardBtnFullSat) {
+        wizardBtnFullSat.addEventListener('click', async () => {
+            const title = prompt("Enter a title for the new Full SAT Test:", "Digital SAT Practice Test");
+            if (!title) return;
+
+            wizardCustomFlow.classList.add('d-none');
+            wizardLoading.classList.remove('d-none');
+
+            try {
+                const response = await fetch(`${BASE_URL}/tests/generate-full`, {
+                    method: 'POST',
+                    headers: {
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+                        'Accept': 'application/json',
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ title })
+                });
+                const result = await response.json();
+                if (response.ok) {
+                    showAlert('success', 'SAT Structure generated!');
+                    await refreshTestDashboardData(captureTomSelectPreservation(null));
+                    bootstrap.Modal.getInstance(document.getElementById('quickAuthorWizardModal'))?.hide();
+                    document.getElementById('builder-tab')?.click();
+                } else {
+                    showAlert('danger', result.message);
+                }
+            } catch (err) {
+                showAlert('danger', 'Error generating structure: ' + err.message);
+            } finally {
+                wizardLoading.classList.add('d-none');
+            }
+        });
+    }
+
+    if (wizardBtnCustom) {
+        wizardBtnCustom.addEventListener('click', () => {
+            wizardCustomFlow.classList.remove('d-none');
+        });
+    }
+
+    const testSelect = document.getElementById('wizard-select-test');
+    const stepTarget = document.getElementById('wizard-step-target');
+    const stepLaunch = document.getElementById('wizard-step-launch');
+
+    if (testSelect) {
+        testSelect.addEventListener('change', () => {
+            stepTarget.classList.remove('d-none');
+            stepLaunch.classList.remove('d-none');
+        });
+    }
+
+    document.getElementById('wizard-btn-launch')?.addEventListener('click', async () => {
+        const testId = document.getElementById('wizard-select-test').value;
+        const domain = document.getElementById('wizard-select-domain').value; // 'reading_writing' | 'math'
+        const modPos = document.getElementById('wizard-select-module').value; // '1_standard' | '2_easy' | '2_hard'
+
+        const [modNum, diff] = modPos.split('_');
+
+        let targetModuleId = null;
+
+        // Creating via endpoint directly
+        wizardLoading.classList.remove('d-none');
+        try {
+            // First create/get section
+            let sectionId = null;
+            if (testId) {
+                const sectionRes = await fetch(`${BASE_URL}/sections`, {
+                    method: 'POST',
+                    headers: { 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content, 'Content-Type': 'application/json', 'Accept': 'application/json' },
+                    body: JSON.stringify({ test_id: testId, type: domain, name: (domain === 'math' ? 'Math' : 'Reading and Writing') })
+                });
+                const secData = await sectionRes.json();
+                if (sectionRes.ok) sectionId = secData.data.id;
+            }
+
+            // Create module
+            const modRes = await fetch(`${BASE_URL}/modules`, {
+                method: 'POST',
+                headers: { 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content, 'Content-Type': 'application/json', 'Accept': 'application/json' },
+                body: JSON.stringify({
+                    test_id: sectionId ? null : testId, // if standalone
+                    section_id: sectionId,
+                    section_type: domain,
+                    module_number: modNum,
+                    difficulty_level: diff,
+                    duration_minutes: domain === 'math' ? 35 : 32,
+                    total_questions: domain === 'math' ? 22 : 27
+                })
+            });
+            const modData = await modRes.json();
+            if (modRes.ok) targetModuleId = modData.data.id;
+
+            await refreshTestDashboardData(captureTomSelectPreservation(null));
+            bootstrap.Modal.getInstance(document.getElementById('quickAuthorWizardModal'))?.hide();
+
+            // Navigate and open
+            document.getElementById('builder-tab')?.click();
+            setTimeout(() => {
+                const treeItem = document.querySelector(`.ws-tree-item[data-id="${targetModuleId}"][data-type="module"]`);
+                if (treeItem) treeItem.click();
+            }, 500);
+
+        } catch (err) {
+            showAlert('danger', err.message);
+        } finally {
+            wizardLoading.classList.add('d-none');
+        }
+    });
 
 });

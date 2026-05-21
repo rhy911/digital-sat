@@ -46,6 +46,31 @@ header {
     color: #1a1a1a;
 }
 
+.passage-container ol,
+.stem-text ol,
+.choice-content ol,
+.explanation ol {
+    list-style-type: decimal !important;
+    padding-left: 1.5rem !important;
+    margin-bottom: 1rem !important;
+}
+
+.passage-container ul,
+.stem-text ul,
+.choice-content ul,
+.explanation ul {
+    list-style-type: disc !important;
+    padding-left: 1.5rem !important;
+    margin-bottom: 1rem !important;
+}
+
+.passage-container li,
+.stem-text li,
+.choice-content li,
+.explanation li {
+    display: list-item !important;
+}
+
 #review-section,
 #review-section * {
     font-family: "Inter", Arial, Helvetica, sans-serif !important;

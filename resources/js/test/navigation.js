@@ -207,6 +207,31 @@ async function submitModule() {
       showLoadingScreen("Scoring exam & loading results...");
       await showCustomAlert("Test completed! Redirecting to results...", "success", "Test Completed");
       window.location.href = data.redirect_url;
+    } else if (data.fallback_module_id) {
+      hideLoadingScreen();
+      let secondsLeft = 10;
+      const message = `The ${data.path} module for this section is currently unavailable. \n\nYou will be automatically re-routed to an alternative module in <span id="fallback-countdown">10</span> seconds.`;
+      
+      let timer;
+      
+      showCustomAlert(message, "warning", "Module Unavailable", false).then(() => {
+        // If user clicks OK, redirect immediately
+        if (timer) clearInterval(timer);
+        showLoadingScreen("Re-routing to alternative module...");
+        window.location.href = `/take-test/${data.fallback_module_id}`;
+      });
+      
+      timer = setInterval(() => {
+        secondsLeft--;
+        const counterEl = document.getElementById('fallback-countdown');
+        if (counterEl) counterEl.textContent = secondsLeft;
+        
+        if (secondsLeft <= 0) {
+          clearInterval(timer);
+          showLoadingScreen("Re-routing to alternative module...");
+          window.location.href = `/take-test/${data.fallback_module_id}`;
+        }
+      }, 1000);
     } else if (data.next_module_id) {
       showLoadingScreen("Adaptive routing complete! Loading next module...");
       window.location.href = `/take-test/${data.next_module_id}`;

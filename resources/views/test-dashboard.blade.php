@@ -1,9 +1,14 @@
 <x-layouts.admin title="Test Dashboard">
     @push('styles')
+        <link rel="preconnect" href="https://fonts.googleapis.com">
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link href="https://fonts.googleapis.com/css2?family=Noto+Serif:ital,wght@0,100..900;1,100..900&display=swap" rel="stylesheet">
         <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
         <link href="https://cdn.jsdelivr.net/npm/tom-select@2.3.1/dist/css/tom-select.bootstrap5.min.css" rel="stylesheet">
         <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/easymde/dist/easymde.min.css">
         <link href="https://cdn.jsdelivr.net/npm/tabulator-tables@5.5.2/dist/css/tabulator_bootstrap5.min.css" rel="stylesheet">
+        <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css">
         <style>
             .tom-select {
                 height: auto !important;
@@ -63,6 +68,64 @@
                 background-color: rgba(13, 110, 253, 0.04) !important;
                 box-shadow: 0 4px 12px rgba(0, 0, 0, 0.03);
             }
+
+            /* Preview elements typography and media parity styling */
+            .passage-preview img, 
+            .stem-preview img, 
+            .edit-passage-preview img, 
+            .edit-stem-preview img,
+            #editQuestionPreviewContent img,
+            .builder-block-preview img {
+                display: block !important;
+                margin: 12px auto !important;
+                width: 55% !important;
+                max-width: 55% !important;
+                height: auto !important;
+            }
+            .passage-preview, 
+            .stem-preview, 
+            .edit-passage-preview, 
+            .edit-stem-preview,
+            #editQuestionPreviewContent,
+            .builder-block-preview {
+                font-family: "Noto Serif", Georgia, serif !important;
+            }
+            .passage-preview p, 
+            .stem-preview p, 
+            .edit-passage-preview p, 
+            .edit-stem-preview p,
+            #editQuestionPreviewContent p,
+            .builder-block-preview p {
+                margin-bottom: 0 !important;
+            }
+            .passage-preview ol, 
+            .stem-preview ol, 
+            .edit-passage-preview ol, 
+            .edit-stem-preview ol,
+            #editQuestionPreviewContent ol,
+            .builder-block-preview ol {
+                list-style-type: decimal !important;
+                padding-left: 1.5rem !important;
+                margin-bottom: 1rem !important;
+            }
+            .passage-preview ul, 
+            .stem-preview ul, 
+            .edit-passage-preview ul, 
+            .edit-stem-preview ul,
+            #editQuestionPreviewContent ul,
+            .builder-block-preview ul {
+                list-style-type: disc !important;
+                padding-left: 1.5rem !important;
+                margin-bottom: 1rem !important;
+            }
+            .passage-preview li, 
+            .stem-preview li, 
+            .edit-passage-preview li, 
+            .edit-stem-preview li,
+            #editQuestionPreviewContent li,
+            .builder-block-preview li {
+                display: list-item !important;
+            }
         </style>
     @endpush
 
@@ -71,6 +134,9 @@
         <div class="d-flex justify-content-between align-items-center mb-4">
             <h1 class="h3 mb-0 text-gray-800">Test Dashboard</h1>
             <div class="d-flex gap-2">
+                <button class="btn btn-primary fw-bold shadow-sm" data-bs-toggle="modal" data-bs-target="#quickAuthorWizardModal">
+                    <i class="bi bi-magic"></i> + Create SAT Content
+                </button>
                 <button class="btn btn-outline-primary"
                     onclick="refreshTestDashboardData(captureTomSelectPreservation(null))">
                     <i class="bi bi-arrow-clockwise"></i> Refresh Data
@@ -113,8 +179,12 @@
     </div>
 
     <x-test-dashboard.modals />
+    <x-test-dashboard.quick-author-wizard />
 
     @push('scripts')
+        <script src="https://cdn.jsdelivr.net/npm/marked@12.0.0/marked.min.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/auto-render.min.js"></script>
         <script src="https://cdn.jsdelivr.net/npm/tom-select@2.3.1/dist/js/tom-select.complete.min.js"></script>
         <script src="https://cdn.jsdelivr.net/npm/easymde/dist/easymde.min.js"></script>
         <script src="https://cdn.jsdelivr.net/npm/tabulator-tables@5.5.2/dist/js/tabulator.min.js"></script>

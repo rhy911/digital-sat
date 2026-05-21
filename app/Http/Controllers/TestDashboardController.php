@@ -653,6 +653,164 @@ class TestDashboardController extends Controller
             ], 500);
         }
     }
+    
+    /**
+     * Auto-generate full SAT structure safely using transactions.
+     */
+    public function generateFullSatStructure(Request $request)
+    {
+        $validated = $request->validate([
+            'title' => 'required|string|max:255',
+        ]);
+
+        try {
+            $test = DB::transaction(function () use ($validated) {
+                $test = Test::create([
+                    'title' => $validated['title'],
+                    'test_type' => 'full_length',
+                    'break_duration_minutes' => 10,
+                    'status' => 'draft',
+                ]);
+
+                // Create R&W Section
+                $rwSection = Section::create([
+                    'test_id' => $test->id,
+                    'type' => 'reading_writing',
+                    'name' => 'Reading and Writing',
+                    'order' => 1,
+                ]);
+
+                // Create R&W Modules
+                $this->createStandardModuleForSection($rwSection, 1, 'standard', 32, 27);
+                $this->createStandardModuleForSection($rwSection, 2, 'easy', 32, 27);
+                $this->createStandardModuleForSection($rwSection, 2, 'hard', 32, 27);
+
+                // Create Math Section
+                $mathSection = Section::create([
+                    'test_id' => $test->id,
+                    'type' => 'math',
+                    'name' => 'Math',
+                    'order' => 2,
+                ]);
+
+                // Create Math Modules
+                $this->createStandardModuleForSection($mathSection, 1, 'standard', 35, 22);
+                $this->createStandardModuleForSection($mathSection, 2, 'easy', 35, 22);
+                $this->createStandardModuleForSection($mathSection, 2, 'hard', 35, 22);
+                
+                $test->refreshTotalDuration();
+
+                return $test->load('sections.modules');
+            });
+
+            return response()->json([
+                'status' => 'success',
+                'message' => 'SAT Structure created successfully.',
+                'data' => $test
+            ], 201);
+        } catch (\Exception $e) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Failed to generate structure: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    private function createStandardModuleForSection(Section $section, int $moduleNumber, string $difficultyLevel, int $duration, int $totalQuestions)
+    {
+        $uniqueKey = strtoupper(substr($section->type, 0, 2)) . '_M' . $moduleNumber . '_' . strtoupper($difficultyLevel) . '_' . strtoupper(Str::random(6));
+        $order = ($moduleNumber === 1) ? 1 : (($difficultyLevel === 'easy') ? 2 : 3);
+        $module = Module::create([
+            'module_number' => $moduleNumber,
+            'difficulty_level' => $difficultyLevel,
+            'duration_minutes' => $duration,
+            'total_questions' => $totalQuestions,
+            'key' => $uniqueKey,
+            'order' => $order,
+        ]);
+        $module->sections()->attach($section->id);
+    }
+
+    /**
+     * Clone a Test (Hierarchy only).
+     */
+    public function cloneTest(Request $request, $id)
+    {
+        try {
+            $test = DB::transaction(function () use ($id) {
+                $originalTest = Test::with('sections.modules')->findOrFail($id);
+                
+                $clonedTest = $originalTest->replicate();
+                $clonedTest->title = $originalTest->title . ' (Clone)';
+                $clonedTest->status = 'draft';
+                $clonedTest->save();
+
+                foreach ($originalTest->sections as $section) {
+                    $clonedSection = $section->replicate();
+                    $clonedSection->test_id = $clonedTest->id;
+                    $clonedSection->save();
+
+                    foreach ($section->modules as $module) {
+                        $clonedModule = $module->replicate();
+                        $clonedModule->key = $module->key . '_CLONE_' . strtoupper(Str::random(4));
+                        $clonedModule->save();
+
+                        // Attach to the new section
+                        $clonedModule->sections()->attach($clonedSection->id);
+                    }
+                }
+                
+                $clonedTest->refreshTotalDuration();
+                return $clonedTest->load('sections.modules');
+            });
+
+            return response()->json([
+                'status' => 'success',
+                'message' => 'Test cloned successfully.',
+                'data' => $test
+            ], 201);
+        } catch (\Exception $e) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Failed to clone test: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Clone a Module (Hierarchy only).
+     */
+    public function cloneModule(Request $request, $id)
+    {
+        try {
+            $module = DB::transaction(function () use ($request, $id) {
+                $originalModule = Module::findOrFail($id);
+                
+                $clonedModule = $originalModule->replicate();
+                $clonedModule->key = $originalModule->key . '_CLONE_' . strtoupper(Str::random(4));
+                $clonedModule->save();
+
+                $sectionId = $request->input('section_id');
+                if ($sectionId) {
+                    $clonedModule->sections()->attach($sectionId);
+                }
+
+                return $clonedModule;
+            });
+
+            return response()->json([
+                'status' => 'success',
+                'message' => 'Module cloned successfully.',
+                'data' => $module
+            ], 201);
+        } catch (\Exception $e) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Failed to clone module: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
     /**
      * Delete endpoints
      */

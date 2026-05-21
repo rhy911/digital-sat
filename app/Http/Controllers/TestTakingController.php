@@ -99,19 +99,40 @@ class TestTakingController extends Controller
                 $nextModule = $section->modules()
                     ->where('module_number', 2)
                     ->where('difficulty_level', $path)
+                    ->withCount('questions')
                     ->first();
                 
-                if (!$nextModule) {
-                    \Illuminate\Support\Facades\Log::warning("Next module (number 2, level {$path}) not found in section {$section->id}. Falling back to any module 2.");
-                    $nextModule = $section->modules()->where('module_number', 2)->first();
-                }
+                if (!$nextModule || $nextModule->questions_count === 0) {
+                    \Illuminate\Support\Facades\Log::warning("Routed module (number 2, level {$path}) is missing or empty in section {$section->id}. Searching for fallback.");
+                    
+                    $fallbackModule = $section->modules()
+                        ->where('module_number', 2)
+                        ->where('difficulty_level', '!=', $path)
+                        ->withCount('questions')
+                        ->first();
 
-                if (!$nextModule) {
-                    \Illuminate\Support\Facades\Log::error("NO MODULE 2 FOUND for section {$section->id}.");
+                    if (!$fallbackModule || $fallbackModule->questions_count === 0) {
+                        \Illuminate\Support\Facades\Log::error("NO FUNCTIONAL MODULE 2 FOUND for section {$section->id}.");
+                        return response()->json([
+                            'error' => 'No functional modules found for this section.',
+                            'details' => "Section ID: {$section->id}, Path: {$path}"
+                        ], 404);
+                    }
+
+                    // Update the saved path to the fallback one so scoring works correctly later
+                    if ($section->type === 'reading_writing') {
+                        $userTest->rw_m2_path = $fallbackModule->difficulty_level;
+                    } else {
+                        $userTest->math_m2_path = $fallbackModule->difficulty_level;
+                    }
+                    $userTest->save();
+
                     return response()->json([
-                        'error' => 'Next module not found for this section.',
-                        'details' => "Section ID: {$section->id}, Path: {$path}"
-                    ], 404);
+                        'next_module_id' => $fallbackModule->id,
+                        'fallback_module_id' => $fallbackModule->id,
+                        'path' => $path,
+                        'message' => "Routed module unavailable. Falling back.",
+                    ]);
                 }
 
                 return response()->json([
@@ -210,9 +231,8 @@ class TestTakingController extends Controller
         if (!$section) return ['scaled_score' => 200, 'theta' => -3.5];
 
         $m1 = $section->modules->where('module_number', 1)->first();
-        // Fallback to any module 2 if the specific path (easy/hard) is missing
-        $m2 = $section->modules->where('module_number', 2)->where('difficulty_level', $m2Path)->first()
-              ?? $section->modules->where('module_number', 2)->first();
+        // Specific difficulty only, no silent fallback
+        $m2 = $section->modules->where('module_number', 2)->where('difficulty_level', $m2Path)->first();
 
         if (!$m1 || !$m2) {
             \Illuminate\Support\Facades\Log::warning("Missing module for final scoring in Section {$section->id}. M1: " . ($m1 ? 'found' : 'missing') . ", M2 ({$m2Path}): " . ($m2 ? 'found' : 'missing'));

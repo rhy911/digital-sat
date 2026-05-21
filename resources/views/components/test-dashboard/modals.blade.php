@@ -20,9 +20,9 @@
 
 <!-- Edit Question Modal -->
 <div class="modal fade" id="editQuestionModal" tabindex="-1" aria-labelledby="editQuestionModalLabel" aria-hidden="true">
-    <div class="modal-dialog modal-lg">
-        <div class="modal-content">
-            <form id="editQuestionForm">
+    <div class="modal-dialog modal-xl modal-dialog-centered">
+        <div class="modal-content overflow-hidden">
+            <form id="editQuestionForm" style="margin: 0;">
                 @csrf
                 @method('PUT')
                 <input type="hidden" id="editQuestionId" name="id">
@@ -30,145 +30,148 @@
                     <h5 class="modal-title" id="editQuestionModalLabel">Edit Question #<span id="editQuestionIdDisplay"></span></h5>
                     <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
-                <div class="modal-body">
-                    <div id="editPassageContainer" class="mb-3 d-none">
-                        <div class="d-flex justify-content-between align-items-center mb-1">
-                            <label for="editPassageContent" class="form-label fw-bold mb-0">Passage Content (Reading & Writing)</label>
-                            <button type="button" class="btn btn-link btn-sm p-0 text-decoration-none" onclick="insertLatex('editPassageContent')"><i class="bi bi-plus-circle"></i> LaTeX</button>
-                        </div>
-                        <textarea class="form-control" id="editPassageContent" name="passage_content" rows="6"></textarea>
-                    </div>
-                    <div class="mb-3">
-                        <div class="d-flex justify-content-between align-items-center mb-1">
-                            <label for="editQuestionStem" class="form-label fw-bold mb-0">Question Stem / Prompt</label>
-                            <button type="button" class="btn btn-link btn-sm p-0 text-decoration-none" onclick="insertLatex('editQuestionStem')"><i class="bi bi-plus-circle"></i> LaTeX</button>
-                        </div>
-                        <textarea class="form-control" id="editQuestionStem" name="stem" rows="4" required></textarea>
-                    </div>
-                    <div class="row">
-                        <div class="col-md-6 mb-3">
-                            <label for="editQuestionType" class="form-label">Question Type</label>
-                            <select class="form-select" id="editQuestionType" name="question_type" required>
-                                <option value="multiple_choice">Multiple Choice</option>
-                                <option value="student_produced_response">Student Produced (SPR)</option>
-                            </select>
-                        </div>
-                        <div class="col-md-6 mb-3">
-                            <label for="editDifficulty" class="form-label">Difficulty</label>
-                            <select class="form-select" id="editDifficulty" name="difficulty">
-                                <option value="easy">Easy</option>
-                                <option value="medium">Medium</option>
-                                <option value="hard">Hard</option>
-                            </select>
-                        </div>
-                    </div>
-                    <div class="row">
-                        <div class="col-md-6 mb-3">
-                            <label for="editSkillDomain" class="form-label">Skill Domain</label>
-                            <select class="form-select" id="editSkillDomain" name="skill_domain"></select>
-                        </div>
-                        <div class="col-md-6 mb-3">
-                            <label for="editSkillSubdomain" class="form-label">Skill Subdomain</label>
-                            <input type="text" class="form-control" id="editSkillSubdomain" name="skill_subdomain">
-                        </div>
-                    </div>
-                    <div class="row">
-                        <div class="col-md-6 mb-3" id="editSprHintContainer">
-                            <label for="editSprHint" class="form-label">SPR Hint</label>
-                            <input type="text" class="form-control" id="editSprHint" name="spr_hint">
-                        </div>
-                        <div class="col-md-3 mb-3 d-flex align-items-end">
-                            <div class="form-check mb-2">
-                                <input class="form-check-input" type="checkbox" id="editIsPretest" name="is_pretest" value="1">
-                                <label class="form-check-label" for="editIsPretest">Pretest?</label>
+                <div class="modal-body p-0">
+                    <div class="row g-0" style="height: calc(100vh - 200px); min-height: 500px; max-height: 800px;">
+                        
+                        <!-- Left Side: Form (Scrollable) -->
+                        <div class="col-lg-7 p-4 border-end overflow-y-auto" style="height: 100%;">
+                            <div id="editPassageContainer" class="mb-3 d-none">
+                                <label for="editPassageContent" class="form-label fw-bold mb-1">Passage Content (Reading & Writing)</label>
+                                <textarea class="form-control" id="editPassageContent" name="passage_content" rows="6"></textarea>
                             </div>
-                        </div>
-                        <div class="col-md-3 mb-3 d-flex align-items-end">
-                            <div class="form-check mb-2">
-                                <input class="form-check-input" type="checkbox" id="editCalculatorAllowed" name="calculator_allowed" value="1">
-                                <label class="form-check-label" for="editCalculatorAllowed">Calculator?</label>
+                            <div class="mb-3">
+                                <label for="editQuestionStem" class="form-label fw-bold mb-1">Question Stem / Prompt</label>
+                                <textarea class="form-control" id="editQuestionStem" name="stem" rows="4"></textarea>
                             </div>
-                        </div>
-                    </div>
-
-                    <hr>
-                    <div id="editMcqChoicesContainer">
-                        <h6 class="fw-bold mb-3">Answer Choices (MCQ)</h6>
-                        @foreach(['A', 'B', 'C', 'D'] as $index => $label)
-                        <div class="row mb-2 align-items-center">
-                            <div class="col-1 text-center"><strong>{{ $label }}</strong></div>
-                            <input type="hidden" name="choices[{{ $index }}][label]" value="{{ $label }}">
-                            <div class="col-8">
-                                <input type="text" class="form-control form-control-sm" name="choices[{{ $index }}][content]" id="editChoice{{ $label }}Content" placeholder="Option content">
-                            </div>
-                            <div class="col-3">
-                                <div class="form-check">
-                                    <input class="form-check-input" type="radio" name="correct_choice" value="{{ $label }}" id="editChoice{{ $label }}Correct">
-                                    <label class="form-check-label small">Correct</label>
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label for="editQuestionType" class="form-label">Question Type</label>
+                                    <select class="form-select" id="editQuestionType" name="question_type" required>
+                                        <option value="multiple_choice">Multiple Choice</option>
+                                        <option value="student_produced_response">Student Produced (SPR)</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label for="editDifficulty" class="form-label">Difficulty</label>
+                                    <select class="form-select" id="editDifficulty" name="difficulty">
+                                        <option value="easy">Easy</option>
+                                        <option value="medium">Medium</option>
+                                        <option value="hard">Hard</option>
+                                    </select>
                                 </div>
                             </div>
-                        </div>
-                        @endforeach
-                    </div>
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label for="editSkillDomain" class="form-label">Skill Domain</label>
+                                    <select class="form-select" id="editSkillDomain" name="skill_domain"></select>
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label for="editSkillSubdomain" class="form-label">Skill Subdomain</label>
+                                    <input type="text" class="form-control" id="editSkillSubdomain" name="skill_subdomain">
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col-md-6 mb-3" id="editSprHintContainer">
+                                    <label for="editSprHint" class="form-label">SPR Hint</label>
+                                    <input type="text" class="form-control" id="editSprHint" name="spr_hint">
+                                </div>
+                                <div class="col-md-3 mb-3 d-flex align-items-end">
+                                    <div class="form-check mb-2">
+                                        <input class="form-check-input" type="checkbox" id="editIsPretest" name="is_pretest" value="1">
+                                        <label class="form-check-label" for="editIsPretest">Pretest?</label>
+                                    </div>
+                                </div>
+                                <div class="col-md-3 mb-3 d-flex align-items-end">
+                                    <div class="form-check mb-2">
+                                        <input class="form-check-input" type="checkbox" id="editCalculatorAllowed" name="calculator_allowed" value="1">
+                                        <label class="form-check-label" for="editCalculatorAllowed">Calculator?</label>
+                                    </div>
+                                </div>
+                            </div>
 
-                    <div id="editSprAnswersContainer" class="d-none">
-                        <h6 class="fw-bold mb-3">Correct Answers (SPR)</h6>
-                        <div class="mb-3">
-                            <label for="editSprAnswers" class="form-label">Comma-separated accepted values</label>
-                            <input type="text" class="form-control" id="editSprAnswers" name="spr_answers" placeholder="e.g. 12, 12.0, 24/2">
-                        </div>
-                    </div>
+                            <hr>
+                            <div id="editMcqChoicesContainer">
+                                <h6 class="fw-bold mb-3">Answer Choices (MCQ)</h6>
+                                @foreach(['A', 'B', 'C', 'D'] as $choiceIndex => $label)
+                                <div class="row mb-2 align-items-center">
+                                    <div class="col-1 text-center"><strong>{{ $label }}</strong></div>
+                                    <input type="hidden" name="choices[{{ $choiceIndex }}][label]" value="{{ $label }}">
+                                    <div class="col-8">
+                                        <input type="text" class="form-control form-control-sm edit-choice-input" name="choices[{{ $choiceIndex }}][content]" id="editChoice{{ $label }}Content" placeholder="Option content">
+                                    </div>
+                                    <div class="col-3">
+                                        <div class="form-check">
+                                            <input class="form-check-input edit-choice-radio" type="radio" name="correct_choice" value="{{ $label }}" id="editChoice{{ $label }}Correct">
+                                            <label class="form-check-label small" for="editChoice{{ $label }}Correct">Correct</label>
+                                        </div>
+                                    </div>
+                                </div>
+                                @endforeach
+                            </div>
 
-                    <hr>
-                    <hr>
-                    <div class="d-flex justify-content-between align-items-center mb-1">
-                        <h6 class="fw-bold m-0">Explanation</h6>
-                        <button type="button" class="btn btn-link btn-sm p-0 text-decoration-none" onclick="insertLatex('editExplanation')"><i class="bi bi-plus-circle"></i> LaTeX</button>
-                    </div>
-                    <div class="mb-3">
-                        <label for="editExplanation" class="form-label small">Correct Rationale</label>
-                        <textarea class="form-control" id="editExplanation" name="explanation" rows="3"></textarea>
-                    </div>
-                    <div class="row">
-                        <div class="col-md-6 mb-2">
-                            <label class="small">Rationale A</label>
-                            <textarea class="form-control form-control-sm" id="editRationaleA" name="rationale_a" rows="1"></textarea>
-                        </div>
-                        <div class="col-md-6 mb-2">
-                            <label class="small">Rationale B</label>
-                            <textarea class="form-control form-control-sm" id="editRationaleB" name="rationale_b" rows="1"></textarea>
-                        </div>
-                        <div class="col-md-6 mb-2">
-                            <label class="small">Rationale C</label>
-                            <textarea class="form-control form-control-sm" id="editRationaleC" name="rationale_c" rows="1"></textarea>
-                        </div>
-                        <div class="col-md-6 mb-2">
-                            <label class="small">Rationale D</label>
-                            <textarea class="form-control form-control-sm" id="editRationaleD" name="rationale_d" rows="1"></textarea>
-                        </div>
-                    </div>
+                            <div id="editSprAnswersContainer" class="d-none">
+                                <h6 class="fw-bold mb-3">Correct Answers (SPR)</h6>
+                                <div class="mb-3">
+                                    <label for="editSprAnswers" class="form-label">Comma-separated accepted values</label>
+                                    <input type="text" class="form-control" id="editSprAnswers" name="spr_answers" placeholder="e.g. 12, 12.0, 24/2">
+                                </div>
+                            </div>
 
-                    <hr>
-                    <div id="editMediaManagementContainer">
-                        <div class="d-flex justify-content-between align-items-center mb-3">
-                            <h6 class="fw-bold m-0">Media Management</h6>
-                            <div class="d-flex gap-2">
-                                <button type="button" class="btn btn-sm btn-outline-secondary" onclick="refreshEditMediaList()" title="Refresh media list from text fields">
-                                    <i class="bi bi-arrow-clockwise"></i> Refresh
-                                </button>
-                                <input type="file" id="editQuestionMediaUpload" class="d-none" accept="image/*">
-                                <button type="button" class="btn btn-sm btn-outline-primary" onclick="document.getElementById('editQuestionMediaUpload').click()">
-                                    <i class="bi bi-cloud-upload"></i> Upload & Insert
-                                </button>
+                            <hr>
+                            <div class="mb-3">
+                                <label for="editExplanation" class="form-label fw-bold mb-1">Correct Rationale (Explanation)</label>
+                                <textarea class="form-control" id="editExplanation" name="explanation" rows="3"></textarea>
+                            </div>
+                            <div class="row">
+                                <div class="col-md-6 mb-2">
+                                    <label class="small">Rationale A</label>
+                                    <textarea class="form-control form-control-sm" id="editRationaleA" name="rationale_a" rows="1"></textarea>
+                                </div>
+                                <div class="col-md-6 mb-2">
+                                    <label class="small">Rationale B</label>
+                                    <textarea class="form-control form-control-sm" id="editRationaleB" name="rationale_b" rows="1"></textarea>
+                                </div>
+                                <div class="col-md-6 mb-2">
+                                    <label class="small">Rationale C</label>
+                                    <textarea class="form-control form-control-sm" id="editRationaleC" name="rationale_c" rows="1"></textarea>
+                                </div>
+                                <div class="col-md-6 mb-2">
+                                    <label class="small">Rationale D</label>
+                                    <textarea class="form-control form-control-sm" id="editRationaleD" name="rationale_d" rows="1"></textarea>
+                                </div>
+                            </div>
+
+                            <hr>
+                            <div id="editMediaManagementContainer">
+                                <div class="d-flex justify-content-between align-items-center mb-3">
+                                    <h6 class="fw-bold m-0">Media Management</h6>
+                                    <div class="d-flex gap-2">
+                                        <button type="button" class="btn btn-sm btn-outline-secondary" onclick="refreshEditMediaList()" title="Refresh media list from text fields">
+                                            <i class="bi bi-arrow-clockwise"></i> Refresh List
+                                        </button>
+                                    </div>
+                                </div>
+                                <div id="editMediaList" class="row g-2">
+                                    <!-- Existing media items will be listed here -->
+                                </div>
+                                <p class="text-muted small mt-2 mb-0"><i class="bi bi-info-circle"></i> Media is managed via Markdown <code>![](...)</code> inside text fields.</p>
                             </div>
                         </div>
-                        <div id="editMediaList" class="row g-2">
-                            <!-- Existing media items will be listed here -->
+
+                        <!-- Right Side: Real-time Live Preview (Sticky) -->
+                        <div class="col-lg-5 p-4 bg-light d-flex flex-column" style="height: 100%;">
+                            <div class="d-flex justify-content-between align-items-center mb-3 pb-2 border-bottom">
+                                <span class="fw-bold text-secondary"><i class="bi bi-file-earmark-richtext text-warning"></i> Real-time Question Preview</span>
+                                <span class="badge bg-secondary font-monospace" id="editPreviewTypeBadge">MCQ</span>
+                            </div>
+                            <div class="flex-grow-1 overflow-y-auto pr-2" id="editQuestionPreviewContent" style="padding-bottom: 20px;">
+                                <!-- Compiled real-time preview -->
+                            </div>
                         </div>
-                        <p class="text-muted small mt-2"><i class="bi bi-info-circle"></i> Media is managed via Markdown <code>![](...)</code> in text fields. Deleting here removes it from text.</p>
+                        
                     </div>
                 </div>
-                <div class="modal-footer">
+                <div class="modal-footer bg-white border-top">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
                     <button type="submit" class="btn btn-primary">Update Question</button>
                 </div>
@@ -185,10 +188,6 @@
         <div class="card-header bg-light d-flex justify-content-between align-items-center">
             <span class="fw-bold text-secondary">Question #{DISPLAY_INDEX}</span>
             <div class="d-flex gap-2">
-                <input type="file" class="d-none builder-image-input" accept="image/*">
-                <button type="button" class="btn btn-sm btn-outline-primary upload-image-btn">
-                    <i class="bi bi-image"></i> Upload Image
-                </button>
                 <button type="button" class="btn btn-sm btn-outline-danger remove-block-btn">Remove</button>
             </div>
         </div>
