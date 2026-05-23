@@ -17,6 +17,10 @@ class Module extends Model
 
     const PRETEST_QUESTIONS_PER_MODULE = 2;
 
+    public const DIFFICULTY_STANDARD = 'standard';
+    public const DIFFICULTY_EASY = 'easy';
+    public const DIFFICULTY_HARD = 'hard';
+
     protected $fillable = [
         'section_id',
         'key',

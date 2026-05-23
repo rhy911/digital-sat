@@ -6,6 +6,12 @@ use Illuminate\Support\Collection;
 
 class SatScoringService
 {
+    public const MIN_SCORE = 200;
+    public const MAX_SCORE_HARD = 800;
+    public const MAX_SCORE_EASY = 640;
+    public const THETA_MAX = 3.5;
+    public const THETA_MIN = -3.5;
+
     /**
      * Calculate score for a section (R&W or Math)
      *
@@ -74,8 +80,8 @@ class SatScoringService
         if ($total === 0) return 0.0;
         
         // Edge cases: All correct or all wrong
-        if ($correctCount === $total) return 3.5;
-        if ($correctCount === 0) return -3.5;
+        if ($correctCount === $total) return self::THETA_MAX;
+        if ($correctCount === 0) return self::THETA_MIN;
 
         $theta = 0.0;
 
@@ -122,7 +128,7 @@ class SatScoringService
      */
     public function routeModule2(float $thetaM1): string
     {
-        return $thetaM1 >= 0.0 ? 'hard' : 'easy';
+        return $thetaM1 >= 0.0 ? \App\Models\Module::DIFFICULTY_HARD : \App\Models\Module::DIFFICULTY_EASY;
     }
 
     /**
@@ -131,12 +137,12 @@ class SatScoringService
     public function thetaToScaledScore(float $theta, string $module2): int
     {
         // Edge cases for max/min ability
-        if ($theta >= 3.5) return $module2 === 'hard' ? 800 : 640;
-        if ($theta <= -3.5) return 200;
+        if ($theta >= self::THETA_MAX) return $module2 === \App\Models\Module::DIFFICULTY_HARD ? self::MAX_SCORE_HARD : self::MAX_SCORE_EASY;
+        if ($theta <= self::THETA_MIN) return self::MIN_SCORE;
 
         // Hard path: 200-800, Easy path: 200-640 (approx ceiling)
-        $maxScore = $module2 === 'hard' ? 800 : 640;
-        $minScore = 200;
+        $maxScore = $module2 === \App\Models\Module::DIFFICULTY_HARD ? self::MAX_SCORE_HARD : self::MAX_SCORE_EASY;
+        $minScore = self::MIN_SCORE;
         $range = $maxScore - $minScore;
 
         // Sigmoid mapping

@@ -5,11 +5,14 @@ namespace App\Http\Controllers;
 use App\Models\Module;
 use App\Models\Question;
 use App\Models\Test;
+use App\Models\Section;
 use App\Models\UserTest;
 use App\Models\UserTestAnswer;
 use App\Services\SatScoringService;
+use App\Http\Requests\SubmitModuleRequest;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 
 class TestTakingController extends Controller
 {
@@ -43,143 +46,141 @@ class TestTakingController extends Controller
     /**
      * Submit answers for a module and get next routing
      */
-    public function submitModule(Request $request)
+    public function submitModule(SubmitModuleRequest $request)
     {
         try {
             \Illuminate\Support\Facades\Log::info("Raw submitModule input: " . json_encode($request->all()));
 
-            $request->validate([
-                'user_test_id' => 'required|exists:user_tests,id',
-                'module_id' => 'required|exists:modules,id',
-                'answers' => 'present|array', // Allow empty array if no questions answered
-            ]);
+            $validated = $request->validated();
 
-            $userTest = UserTest::findOrFail($request->user_test_id);
-            $module = Module::with(['section', 'questions'])->findOrFail($request->module_id);
-            $section = $module->section;
+            return DB::transaction(function () use ($validated) {
+                $userTest = UserTest::findOrFail($validated['user_test_id']);
+                $module = Module::with(['section', 'questions'])->findOrFail($validated['module_id']);
+                $section = $module->section;
 
-            // 1. Save answers
-            $submittedAnswers = $request->input('answers', []);
-            foreach ($submittedAnswers as $questionId => $answer) {
-                $question = Question::find($questionId);
-                if (!$question) continue;
-                
-                $isCorrect = $this->checkAnswer($question, $answer);
-
-                UserTestAnswer::updateOrCreate(
-                    ['user_test_id' => $userTest->id, 'question_id' => $questionId],
-                    ['selected_answer' => $answer, 'is_correct' => $isCorrect]
-                );
-            }
-
-            // 2. Logic for Routing or Finalizing
-            if ($module->module_number == 1) {
-                // End of Module 1: Calculate Theta for routing
-                $m1Responses = UserTestAnswer::where('user_test_id', $userTest->id)
-                    ->whereIn('question_id', $module->questions->pluck('id'))
-                    ->with(['question' => function($q) {
-                        $q->select('id', 'irt_a', 'irt_b', 'irt_c', 'is_pretest');
-                    }])
-                    ->get();
-
-                $thetaM1 = $this->scoringService->estimateTheta($m1Responses);
-                $path = $this->scoringService->routeModule2($thetaM1);
-
-                \Illuminate\Support\Facades\Log::info("Module 1 completed. UserTest: {$userTest->id}, Module: {$module->id}, Section: {$section->id}, Theta: {$thetaM1}, Path: {$path}");
-
-                // Save routing decision
-                if ($section->type === 'reading_writing') {
-                    $userTest->rw_m2_path = $path;
-                } else {
-                    $userTest->math_m2_path = $path;
-                }
-                $userTest->save();
-
-                // Find next module
-                $nextModule = $section->modules()
-                    ->where('module_number', 2)
-                    ->where('difficulty_level', $path)
-                    ->withCount('questions')
-                    ->first();
-                
-                if (!$nextModule || $nextModule->questions_count === 0) {
-                    \Illuminate\Support\Facades\Log::warning("Routed module (number 2, level {$path}) is missing or empty in section {$section->id}. Searching for fallback.");
+                // 1. Save answers
+                $submittedAnswers = $validated['answers'];
+                foreach ($submittedAnswers as $questionId => $answer) {
+                    $question = Question::find($questionId);
+                    if (!$question) continue;
                     
-                    $fallbackModule = $section->modules()
-                        ->where('module_number', 2)
-                        ->where('difficulty_level', '!=', $path)
-                        ->withCount('questions')
-                        ->first();
+                    $isCorrect = $this->checkAnswer($question, $answer);
 
-                    if (!$fallbackModule || $fallbackModule->questions_count === 0) {
-                        \Illuminate\Support\Facades\Log::error("NO FUNCTIONAL MODULE 2 FOUND for section {$section->id}.");
-                        return response()->json([
-                            'error' => 'No functional modules found for this section.',
-                            'details' => "Section ID: {$section->id}, Path: {$path}"
-                        ], 404);
-                    }
+                    UserTestAnswer::updateOrCreate(
+                        ['user_test_id' => $userTest->id, 'question_id' => $questionId],
+                        ['selected_answer' => $answer, 'is_correct' => $isCorrect]
+                    );
+                }
 
-                    // Update the saved path to the fallback one so scoring works correctly later
-                    if ($section->type === 'reading_writing') {
-                        $userTest->rw_m2_path = $fallbackModule->difficulty_level;
+                // 2. Logic for Routing or Finalizing
+                if ($module->module_number == 1) {
+                    // End of Module 1: Calculate Theta for routing
+                    $m1Responses = UserTestAnswer::where('user_test_id', $userTest->id)
+                        ->whereIn('question_id', $module->questions->pluck('id'))
+                        ->with(['question' => function($q) {
+                            $q->select('id', 'irt_a', 'irt_b', 'irt_c', 'is_pretest');
+                        }])
+                        ->get();
+
+                    $thetaM1 = $this->scoringService->estimateTheta($m1Responses);
+                    $path = $this->scoringService->routeModule2($thetaM1);
+
+                    \Illuminate\Support\Facades\Log::info("Module 1 completed. UserTest: {$userTest->id}, Module: {$module->id}, Section: {$section->id}, Theta: {$thetaM1}, Path: {$path}");
+
+                    // Save routing decision
+                    if ($section->type === Section::TYPE_RW) {
+                        $userTest->rw_m2_path = $path;
                     } else {
-                        $userTest->math_m2_path = $fallbackModule->difficulty_level;
+                        $userTest->math_m2_path = $path;
                     }
                     $userTest->save();
 
-                    return response()->json([
-                        'next_module_id' => $fallbackModule->id,
-                        'fallback_module_id' => $fallbackModule->id,
-                        'path' => $path,
-                        'message' => "Routed module unavailable. Falling back.",
-                    ]);
-                }
-
-                return response()->json([
-                    'next_module_id' => $nextModule->id,
-                    'path' => $path,
-                    'message' => "Module 1 submitted. Routed to {$path} Module 2.",
-                ]);
-            } else {
-                // End of Module 2
-                $nextSection = Test::find($userTest->test_id)->sections()
-                    ->where('order', '>', $section->order)
-                    ->orderBy('order')
-                    ->first();
-
-                \Illuminate\Support\Facades\Log::info("Module 2 completed. UserTest: {$userTest->id}, Module: {$module->id}, Next Section Found: " . ($nextSection ? $nextSection->id : 'None'));
-
-                if ($nextSection) {
-                    $nextModule = $nextSection->modules()->where('module_number', 1)->first();
+                    // Find next module
+                    $nextModule = $section->modules()
+                        ->where('module_number', 2)
+                        ->where('difficulty_level', $path)
+                        ->withCount('questions')
+                        ->first();
                     
-                    if (!$nextModule) {
-                        \Illuminate\Support\Facades\Log::error("NO MODULE 1 FOUND for next section {$nextSection->id}.");
+                    if (!$nextModule || $nextModule->questions_count === 0) {
+                        \Illuminate\Support\Facades\Log::warning("Routed module (number 2, level {$path}) is missing or empty in section {$section->id}. Searching for fallback.");
+                        
+                        $fallbackModule = $section->modules()
+                            ->where('module_number', 2)
+                            ->where('difficulty_level', '!=', $path)
+                            ->withCount('questions')
+                            ->first();
+
+                        if (!$fallbackModule || $fallbackModule->questions_count === 0) {
+                            \Illuminate\Support\Facades\Log::error("NO FUNCTIONAL MODULE 2 FOUND for section {$section->id}.");
+                            return response()->json([
+                                'error' => 'No functional modules found for this section.',
+                                'details' => "Section ID: {$section->id}, Path: {$path}"
+                            ], 404);
+                        }
+
+                        // Update the saved path to the fallback one so scoring works correctly later
+                        if ($section->type === Section::TYPE_RW) {
+                            $userTest->rw_m2_path = $fallbackModule->difficulty_level;
+                        } else {
+                            $userTest->math_m2_path = $fallbackModule->difficulty_level;
+                        }
+                        $userTest->save();
+
                         return response()->json([
-                            'error' => 'Module 1 not found for next section.',
-                            'details' => "Section ID: {$nextSection->id}"
-                        ], 404);
+                            'next_module_id' => $fallbackModule->id,
+                            'fallback_module_id' => $fallbackModule->id,
+                            'path' => $path,
+                            'message' => "Routed module unavailable. Falling back.",
+                        ]);
                     }
 
                     return response()->json([
                         'next_module_id' => $nextModule->id,
-                        'message' => 'Section completed. Moving to next section.',
+                        'path' => $path,
+                        'message' => "Module 1 submitted. Routed to {$path} Module 2.",
                     ]);
                 } else {
-                    // End of Test: Calculate Final Scores
-                    $this->finalizeTest($userTest);
-                    return response()->json([
-                        'test_completed' => true,
-                        'redirect_url' => route('home'),
-                        'message' => 'Test completed and scored.',
-                    ]);
-                }
-            }
+                    // End of Module 2
+                    $nextSection = Test::find($userTest->test_id)->sections()
+                        ->where('order', '>', $section->order)
+                        ->orderBy('order')
+                        ->first();
 
-            // Fallback for logical gaps
-            return response()->json([
-                'error' => 'Incomplete test structure or routing failure.',
-                'message' => 'Could not determine next step.'
-            ], 422);
+                    \Illuminate\Support\Facades\Log::info("Module 2 completed. UserTest: {$userTest->id}, Module: {$module->id}, Next Section Found: " . ($nextSection ? $nextSection->id : 'None'));
+
+                    if ($nextSection) {
+                        $nextModule = $nextSection->modules()->where('module_number', 1)->first();
+                        
+                        if (!$nextModule) {
+                            \Illuminate\Support\Facades\Log::error("NO MODULE 1 FOUND for next section {$nextSection->id}.");
+                            return response()->json([
+                                'error' => 'Module 1 not found for next section.',
+                                'details' => "Section ID: {$nextSection->id}"
+                            ], 404);
+                        }
+
+                        return response()->json([
+                            'next_module_id' => $nextModule->id,
+                            'message' => 'Section completed. Moving to next section.',
+                        ]);
+                    } else {
+                        // End of Test: Calculate Final Scores
+                        $this->finalizeTest($userTest);
+                        return response()->json([
+                            'test_completed' => true,
+                            'redirect_url' => route('home'),
+                            'message' => 'Test completed and scored.',
+                        ]);
+                    }
+                }
+
+                // Fallback for logical gaps
+                return response()->json([
+                    'error' => 'Incomplete test structure or routing failure.',
+                    'message' => 'Could not determine next step.'
+                ], 422);
+            });
 
         } catch (\Exception $e) {
             \Illuminate\Support\Facades\Log::error("EXCEPTION in submitModule: " . $e->getMessage() . "\n" . $e->getTraceAsString());

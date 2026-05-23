@@ -11,6 +11,14 @@ use App\Models\Section;
 use App\Models\Test;
 use App\Services\BulkQuestionCsvImportService;
 use App\Services\BulkQuestionImportService;
+use App\Services\TestManagementService;
+use App\Http\Requests\StoreTestRequest;
+use App\Http\Requests\UpdateTestRequest;
+use App\Http\Requests\StoreSectionRequest;
+use App\Http\Requests\StoreModuleRequest;
+use App\Http\Requests\LinkModuleRequest;
+use App\Http\Requests\UpdateQuestionRequest;
+use App\Http\Requests\AttachQuestionRequest;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\DB;
@@ -19,7 +27,12 @@ class TestDashboardController extends Controller
 {
     private const QUESTIONS_TABLE_PER_PAGE = 25;
 
-    public function __construct() {}
+    protected TestManagementService $testManagement;
+
+    public function __construct(TestManagementService $testManagement)
+    {
+        $this->testManagement = $testManagement;
+    }
 
     /**
      * Display the test data input dashboard.
@@ -188,15 +201,9 @@ class TestDashboardController extends Controller
     /**
      * Store a new test.
      */
-    public function storeTest(Request $request)
+    public function storeTest(StoreTestRequest $request)
     {
-        $validated = $request->validate([
-            'title' => 'required|string|max:255',
-            'description' => 'nullable|string',
-            'test_type' => 'required|in:full_length,section_only,mini_quiz',
-            'break_duration_minutes' => 'required|integer|min:0',
-            'status' => 'required|in:draft,active,archived',
-        ]);
+        $validated = $request->validated();
 
         $validated['total_duration_minutes'] = 0;
         $test = Test::create($validated);
@@ -211,16 +218,10 @@ class TestDashboardController extends Controller
     /**
      * Update an existing test.
      */
-    public function updateTest(Request $request, $id)
+    public function updateTest(UpdateTestRequest $request, $id)
     {
         $test = Test::findOrFail($id);
-        $validated = $request->validate([
-            'title' => 'sometimes|required|string|max:255',
-            'description' => 'nullable|string',
-            'test_type' => 'sometimes|required|in:full_length,section_only,mini_quiz',
-            'break_duration_minutes' => 'sometimes|required|integer|min:0',
-            'status' => 'sometimes|required|in:draft,active,archived',
-        ]);
+        $validated = $request->validated();
         $test->update($validated);
 
         return response()->json([
@@ -233,13 +234,9 @@ class TestDashboardController extends Controller
     /**
      * Store a new section.
      */
-    public function storeSection(Request $request)
+    public function storeSection(StoreSectionRequest $request)
     {
-        $validated = $request->validate([
-            'test_id' => 'required|exists:tests,id',
-            'name' => 'nullable|string|max:255',
-            'type' => 'required|in:reading_writing,math',
-        ]);
+        $validated = $request->validated();
 
         if (Section::where('test_id', $validated['test_id'])->where('type', $validated['type'])->exists()) {
             return response()->json([
@@ -248,9 +245,9 @@ class TestDashboardController extends Controller
             ], 422);
         }
 
-        $validated['order'] = $validated['type'] === 'reading_writing' ? 1 : 2;
+        $validated['order'] = $validated['type'] === Section::TYPE_RW ? 1 : 2;
         if (empty($validated['name'])) {
-            $validated['name'] = $validated['type'] === 'reading_writing' ? 'Reading and Writing' : 'Math';
+            $validated['name'] = $validated['type'] === Section::TYPE_RW ? 'Reading and Writing' : 'Math';
         }
         $section = Section::create($validated);
 
@@ -261,18 +258,9 @@ class TestDashboardController extends Controller
         ], 201);
     }
 
-    public function storeModule(Request $request)
+    public function storeModule(StoreModuleRequest $request)
     {
-        $validated = $request->validate([
-            'section_id' => 'nullable|exists:sections,id',
-            'test_id' => 'nullable|exists:tests,id',
-            'section_type' => 'nullable|in:reading_writing,math',
-            'key' => 'nullable|string|unique:modules,key|max:255',
-            'module_number' => 'required|integer|min:1',
-            'difficulty_level' => 'required|in:standard,easy,hard',
-            'duration_minutes' => 'required|integer|min:1',
-            'total_questions' => 'required|integer|min:1',
-        ]);
+        $validated = $request->validated();
 
         // Auto-generate section if test_id and section_type are provided and section_id is empty
         if (empty($validated['section_id']) && !empty($validated['test_id']) && !empty($validated['section_type'])) {
@@ -280,8 +268,8 @@ class TestDashboardController extends Controller
                 'test_id' => $validated['test_id'],
                 'type' => $validated['section_type'],
             ], [
-                'name' => $validated['section_type'] === 'reading_writing' ? 'Reading and Writing' : 'Math',
-                'order' => $validated['section_type'] === 'reading_writing' ? 1 : 2,
+                'name' => $validated['section_type'] === Section::TYPE_RW ? 'Reading and Writing' : 'Math',
+                'order' => $validated['section_type'] === Section::TYPE_RW ? 1 : 2,
             ]);
             $validated['section_id'] = $section->id;
         }
@@ -323,14 +311,9 @@ class TestDashboardController extends Controller
     /**
      * Link an existing reusable module to a section.
      */
-    public function linkModuleToSection(Request $request)
+    public function linkModuleToSection(LinkModuleRequest $request)
     {
-        $validated = $request->validate([
-            'module_id' => 'required|exists:modules,id',
-            'section_id' => 'nullable|exists:sections,id',
-            'test_id' => 'nullable|exists:tests,id',
-            'section_type' => 'nullable|in:reading_writing,math',
-        ]);
+        $validated = $request->validated();
 
         $module = Module::findOrFail($validated['module_id']);
 
@@ -347,8 +330,8 @@ class TestDashboardController extends Controller
                 'test_id' => $validated['test_id'],
                 'type' => $validated['section_type'],
             ], [
-                'name' => $validated['section_type'] === 'reading_writing' ? 'Reading and Writing' : 'Math',
-                'order' => $validated['section_type'] === 'reading_writing' ? 1 : 2,
+                'name' => $validated['section_type'] === Section::TYPE_RW ? 'Reading and Writing' : 'Math',
+                'order' => $validated['section_type'] === Section::TYPE_RW ? 1 : 2,
             ]);
         } else {
             $section = Section::findOrFail($validated['section_id']);
@@ -388,54 +371,13 @@ class TestDashboardController extends Controller
     /**
      * Update an existing question and its associated passage (if R&W).
      */
-    public function updateQuestion(Request $request, $id)
+    /**
+     * Update an existing question and its associated passage (if R&W).
+     */
+    public function updateQuestion(UpdateQuestionRequest $request, $id)
     {
         $question = Question::with(['passage', 'answerChoices', 'explanation'])->findOrFail($id);
-
-        // Normalize spr_answers
-        if ($request->has('spr_answers')) {
-            $val = $request->input('spr_answers');
-            if (is_array($val)) {
-                $request->merge(['spr_answers' => implode(', ', array_filter($val))]);
-            } elseif ($val === null) {
-                $request->merge(['spr_answers' => '']);
-            }
-        } else {
-            // Ensure spr_answers is at least an empty string if it's an SPR question to satisfy required_if
-            if ($request->input('question_type') === 'student_produced_response') {
-                $request->merge(['spr_answers' => '']);
-            }
-        }
-
-        $validated = $request->validate([
-            'stem' => 'required|string',
-            'question_type' => 'required|in:multiple_choice,student_produced_response',
-            'difficulty' => 'nullable|in:easy,medium,hard',
-            'skill_domain' => 'nullable|string|max:255',
-            'skill_subdomain' => 'nullable|string|max:255',
-            'spr_hint' => 'nullable|string',
-            'is_pretest' => 'boolean',
-            'calculator_allowed' => 'boolean',
-            'passage_content' => 'nullable|string',
-            
-            // Choices & SPR & Explanation
-            'correct_choice' => 'required_if:question_type,multiple_choice|string|max:1',
-            'choices' => 'required_if:question_type,multiple_choice|array',
-            'spr_answers' => 'nullable|string', // Changed from required_if to nullable for smoother validation
-            'explanation' => 'nullable|string',
-            'rationale_a' => 'nullable|string',
-            'rationale_b' => 'nullable|string',
-            'rationale_c' => 'nullable|string',
-            'rationale_d' => 'nullable|string',
-        ]);
-
-        // Manually check SPR requirement if type is SPR
-        if ($validated['question_type'] === 'student_produced_response' && empty($validated['spr_answers'])) {
-             return response()->json([
-                'message' => 'The spr answers field is required for Student Produced Response questions.',
-                'errors' => ['spr_answers' => ['The spr answers field is required.']]
-            ], 422);
-        }
+        $validated = $request->validated();
 
         DB::transaction(function () use ($question, $validated) {
             $isComplete = !empty($validated['difficulty']) && !empty($validated['skill_domain']);
@@ -452,14 +394,14 @@ class TestDashboardController extends Controller
                 'is_complete' => $isComplete,
             ]);
 
-            if ($question->section_type === 'reading_writing' && $question->passage_id && isset($validated['passage_content'])) {
+            if ($question->section_type === Section::TYPE_RW && $question->passage_id && isset($validated['passage_content'])) {
                 $question->passage->update([
                     'content' => $validated['passage_content']
                 ]);
             }
 
             // Update choices
-            if ($validated['question_type'] === 'multiple_choice') {
+            if ($validated['question_type'] === Question::TYPE_MCQ) {
                 foreach ($validated['choices'] as $choiceData) {
                     $question->answerChoices()->updateOrCreate(
                         ['label' => $choiceData['label']],
@@ -510,13 +452,9 @@ class TestDashboardController extends Controller
     /**
      * Attach an existing question to a module.
      */
-    public function attachQuestionToModule(Request $request)
+    public function attachQuestionToModule(AttachQuestionRequest $request)
     {
-        $validated = $request->validate([
-            'module_id' => 'required|exists:modules,id',
-            'question_id' => 'required|exists:questions,id',
-            'position' => 'nullable|integer|min:1',
-        ]);
+        $validated = $request->validated();
 
         $module = Module::findOrFail($validated['module_id']);
         if ($module->questions()->where('question_id', $validated['question_id'])->exists()) {
@@ -661,47 +599,13 @@ class TestDashboardController extends Controller
     {
         $validated = $request->validate([
             'title' => 'required|string|max:255',
+            'test_type' => 'sometimes|string|in:full_length,short_test,module_only',
         ]);
 
+        $testType = $validated['test_type'] ?? 'full_length';
+
         try {
-            $test = DB::transaction(function () use ($validated) {
-                $test = Test::create([
-                    'title' => $validated['title'],
-                    'test_type' => 'full_length',
-                    'break_duration_minutes' => 10,
-                    'status' => 'draft',
-                ]);
-
-                // Create R&W Section
-                $rwSection = Section::create([
-                    'test_id' => $test->id,
-                    'type' => 'reading_writing',
-                    'name' => 'Reading and Writing',
-                    'order' => 1,
-                ]);
-
-                // Create R&W Modules
-                $this->createStandardModuleForSection($rwSection, 1, 'standard', 32, 27);
-                $this->createStandardModuleForSection($rwSection, 2, 'easy', 32, 27);
-                $this->createStandardModuleForSection($rwSection, 2, 'hard', 32, 27);
-
-                // Create Math Section
-                $mathSection = Section::create([
-                    'test_id' => $test->id,
-                    'type' => 'math',
-                    'name' => 'Math',
-                    'order' => 2,
-                ]);
-
-                // Create Math Modules
-                $this->createStandardModuleForSection($mathSection, 1, 'standard', 35, 22);
-                $this->createStandardModuleForSection($mathSection, 2, 'easy', 35, 22);
-                $this->createStandardModuleForSection($mathSection, 2, 'hard', 35, 22);
-                
-                $test->refreshTotalDuration();
-
-                return $test->load('sections.modules');
-            });
+            $test = $this->testManagement->generateFullSatStructure($validated['title'], $testType);
 
             return response()->json([
                 'status' => 'success',
@@ -716,53 +620,13 @@ class TestDashboardController extends Controller
         }
     }
 
-    private function createStandardModuleForSection(Section $section, int $moduleNumber, string $difficultyLevel, int $duration, int $totalQuestions)
-    {
-        $uniqueKey = strtoupper(substr($section->type, 0, 2)) . '_M' . $moduleNumber . '_' . strtoupper($difficultyLevel) . '_' . strtoupper(Str::random(6));
-        $order = ($moduleNumber === 1) ? 1 : (($difficultyLevel === 'easy') ? 2 : 3);
-        $module = Module::create([
-            'module_number' => $moduleNumber,
-            'difficulty_level' => $difficultyLevel,
-            'duration_minutes' => $duration,
-            'total_questions' => $totalQuestions,
-            'key' => $uniqueKey,
-            'order' => $order,
-        ]);
-        $module->sections()->attach($section->id);
-    }
-
     /**
      * Clone a Test (Hierarchy only).
      */
     public function cloneTest(Request $request, $id)
     {
         try {
-            $test = DB::transaction(function () use ($id) {
-                $originalTest = Test::with('sections.modules')->findOrFail($id);
-                
-                $clonedTest = $originalTest->replicate();
-                $clonedTest->title = $originalTest->title . ' (Clone)';
-                $clonedTest->status = 'draft';
-                $clonedTest->save();
-
-                foreach ($originalTest->sections as $section) {
-                    $clonedSection = $section->replicate();
-                    $clonedSection->test_id = $clonedTest->id;
-                    $clonedSection->save();
-
-                    foreach ($section->modules as $module) {
-                        $clonedModule = $module->replicate();
-                        $clonedModule->key = $module->key . '_CLONE_' . strtoupper(Str::random(4));
-                        $clonedModule->save();
-
-                        // Attach to the new section
-                        $clonedModule->sections()->attach($clonedSection->id);
-                    }
-                }
-                
-                $clonedTest->refreshTotalDuration();
-                return $clonedTest->load('sections.modules');
-            });
+            $test = $this->testManagement->cloneTest((int) $id);
 
             return response()->json([
                 'status' => 'success',
@@ -783,20 +647,8 @@ class TestDashboardController extends Controller
     public function cloneModule(Request $request, $id)
     {
         try {
-            $module = DB::transaction(function () use ($request, $id) {
-                $originalModule = Module::findOrFail($id);
-                
-                $clonedModule = $originalModule->replicate();
-                $clonedModule->key = $originalModule->key . '_CLONE_' . strtoupper(Str::random(4));
-                $clonedModule->save();
-
-                $sectionId = $request->input('section_id');
-                if ($sectionId) {
-                    $clonedModule->sections()->attach($sectionId);
-                }
-
-                return $clonedModule;
-            });
+            $sectionId = $request->input('section_id');
+            $module = $this->testManagement->cloneModule((int) $id, $sectionId ? (int) $sectionId : null);
 
             return response()->json([
                 'status' => 'success',
@@ -816,63 +668,32 @@ class TestDashboardController extends Controller
      */
     public function deleteTest(Request $request, $id)
     {
-        $test = Test::with('sections.modules.questions')->findOrFail($id);
-        
-        DB::transaction(function () use ($test, $request) {
-            if ($request->boolean('delete_children')) {
-                foreach ($test->sections as $section) {
-                    foreach ($section->modules as $module) {
-                        foreach ($module->questions as $question) {
-                            $question->delete();
-                        }
-                        $module->delete();
-                    }
-                    $section->delete();
-                }
-            }
-            $test->delete();
-        });
-
-        return response()->json(['status' => 'success', 'message' => 'Test deleted.']);
+        try {
+            $this->testManagement->deleteTest((int) $id, $request->boolean('delete_children'));
+            return response()->json(['status' => 'success', 'message' => 'Test deleted.']);
+        } catch (\Exception $e) {
+            return response()->json(['status' => 'error', 'message' => $e->getMessage()], 500);
+        }
     }
 
     public function deleteSection(Request $request, $id)
     {
-        $section = Section::with(['test', 'modules.questions'])->findOrFail($id);
-        $test = $section->test;
-
-        DB::transaction(function () use ($section, $request) {
-            if ($request->boolean('delete_children')) {
-                foreach ($section->modules as $module) {
-                    foreach ($module->questions as $question) {
-                        $question->delete();
-                    }
-                    $module->delete();
-                }
-            }
-            $section->delete();
-        });
-
-        if ($test) $test->refreshTotalDuration();
-        return response()->json(['status' => 'success', 'message' => 'Section deleted.']);
+        try {
+            $this->testManagement->deleteSection((int) $id, $request->boolean('delete_children'));
+            return response()->json(['status' => 'success', 'message' => 'Section deleted.']);
+        } catch (\Exception $e) {
+            return response()->json(['status' => 'error', 'message' => $e->getMessage()], 500);
+        }
     }
 
     public function deleteModule(Request $request, $id)
     {
-        $module = Module::with(['section.test', 'questions'])->findOrFail($id);
-        $test = $module->section->test ?? null;
-
-        DB::transaction(function () use ($module, $request) {
-            if ($request->boolean('delete_children')) {
-                foreach ($module->questions as $question) {
-                    $question->delete();
-                }
-            }
-            $module->delete();
-        });
-
-        if ($test) $test->refreshTotalDuration();
-        return response()->json(['status' => 'success', 'message' => 'Module deleted.']);
+        try {
+            $this->testManagement->deleteModule((int) $id, $request->boolean('delete_children'));
+            return response()->json(['status' => 'success', 'message' => 'Module deleted.']);
+        } catch (\Exception $e) {
+            return response()->json(['status' => 'error', 'message' => $e->getMessage()], 500);
+        }
     }
 
     public function deleteQuestion($id)
@@ -881,3 +702,4 @@ class TestDashboardController extends Controller
         return response()->json(['status' => 'success', 'message' => 'Question deleted.']);
     }
 }
+

@@ -1,72 +1,95 @@
 <!-- Quick Authoring Wizard Modal -->
 <div class="modal fade" id="quickAuthorWizardModal" tabindex="-1" aria-labelledby="quickAuthorWizardModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-lg modal-dialog-centered">
-        <div class="modal-content border-0 shadow-lg">
-            <div class="modal-header border-bottom-0 bg-primary text-white">
-                <h5 class="modal-title fw-bold" id="quickAuthorWizardModalLabel"><i class="bi bi-magic me-2"></i> Quick Authoring Wizard</h5>
-                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+        <div class="modal-content border border-slate-800/80 rounded-2xl shadow-2xl overflow-hidden glass-panel">
+            <div class="modal-header px-6 py-4 border-b border-slate-800/80 bg-slate-950/40 flex justify-between items-center">
+                <h5 class="modal-title text-base font-extrabold text-white flex items-center gap-3 mb-0" id="quickAuthorWizardModalLabel">
+                    <div class="w-8 h-8 rounded-lg bg-indigo-500/10 border border-indigo-500/30 flex items-center justify-center">
+                        <i class="bi bi-magic text-indigo-400"></i>
+                    </div>
+                    Quick Authoring Wizard
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
-            <div class="modal-body p-4">
+            <div class="modal-body p-6 space-y-6">
                 
                 <!-- Recent Continuation Section -->
-                <div id="wizard-recent-work-container" class="mb-4 d-none">
-                    <h6 class="text-muted text-uppercase small fw-bold mb-3">Continue Recent Work</h6>
-                    <div class="d-flex gap-2 flex-wrap" id="wizard-recent-work-list">
+                <div id="wizard-recent-work-container" class="d-none">
+                    <h6 class="text-xs font-extrabold text-slate-400 uppercase tracking-wider mb-3">Continue Recent Work</h6>
+                    <div class="flex flex-wrap gap-2" id="wizard-recent-work-list">
                         <!-- Populated via JS -->
                     </div>
                 </div>
 
-                <div class="row g-4">
+                <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
                     <!-- Option 1: Full SAT -->
-                    <div class="col-md-6">
-                        <div class="card h-100 border border-primary hover-shadow cursor-pointer transition-all" id="wizard-btn-full-sat">
-                            <div class="card-body text-center p-4">
-                                <div class="bg-primary bg-opacity-10 text-primary rounded-circle d-inline-flex p-3 mb-3">
-                                    <i class="bi bi-journal-text fs-2"></i>
-                                </div>
-                                <h5 class="fw-bold">New Full SAT Test</h5>
-                                <p class="text-muted small mb-0">Instantly generate a complete 6-module structure and start adding questions.</p>
+                    <div class="group relative rounded-2xl border border-slate-800/80 p-6 text-center cursor-pointer bg-slate-900/40 hover:bg-slate-900/80 hover:border-indigo-500/65 hover:shadow-xl flex flex-col justify-between h-full" id="wizard-btn-full-sat">
+                        <div class="flex-1 flex flex-col items-center justify-center py-4">
+                            <div class="w-14 h-14 bg-indigo-500/10 text-indigo-400 border border-indigo-500/20 rounded-full flex items-center justify-center mb-4 shadow-lg">
+                                <i class="bi bi-journal-text text-2.5xl"></i>
                             </div>
+                            <h5 class="text-sm font-extrabold text-white mb-1 uppercase tracking-wide">Full SAT</h5>
+                            <p class="text-slate-450 text-[10px] leading-relaxed max-w-[160px] mx-auto font-medium">6 modules structure.</p>
+                        </div>
+                    </div>
+
+                    <!-- Option 1b: Short Test -->
+                    <div class="group relative rounded-2xl border border-slate-800/80 p-6 text-center cursor-pointer bg-slate-900/40 hover:bg-slate-900/80 hover:border-emerald-500/65 hover:shadow-xl flex flex-col justify-between h-full" id="wizard-btn-short-test">
+                        <div class="flex-1 flex flex-col items-center justify-center py-4">
+                            <div class="w-14 h-14 bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 rounded-full flex items-center justify-center mb-4 shadow-lg">
+                                <i class="bi bi-lightning-charge text-2.5xl"></i>
+                            </div>
+                            <h5 class="text-sm font-extrabold text-white mb-1 uppercase tracking-wide">Short Test</h5>
+                            <p class="text-slate-450 text-[10px] leading-relaxed max-w-[160px] mx-auto font-medium">6 modules (fewer Qs).</p>
+                        </div>
+                    </div>
+
+                    <!-- Option 1c: Module Only -->
+                    <div class="group relative rounded-2xl border border-slate-800/80 p-6 text-center cursor-pointer bg-slate-900/40 hover:bg-slate-900/80 hover:border-rose-500/65 hover:shadow-xl flex flex-col justify-between h-full" id="wizard-btn-module-only">
+                        <div class="flex-1 flex flex-col items-center justify-center py-4">
+                            <div class="w-14 h-14 bg-rose-500/10 text-rose-455 border border-rose-500/20 rounded-full flex items-center justify-center mb-4 shadow-lg">
+                                <i class="bi bi-box-seam text-2.5xl"></i>
+                            </div>
+                            <h5 class="text-sm font-extrabold text-white mb-1 uppercase tracking-wide">Module Only</h5>
+                            <p class="text-slate-450 text-[10px] leading-relaxed max-w-[160px] mx-auto font-medium">Single module focused.</p>
                         </div>
                     </div>
 
                     <!-- Option 2: Custom Content -->
-                    <div class="col-md-6">
-                        <div class="card h-100 border border-secondary hover-shadow cursor-pointer transition-all" id="wizard-btn-custom">
-                            <div class="card-body text-center p-4">
-                                <div class="bg-secondary bg-opacity-10 text-secondary rounded-circle d-inline-flex p-3 mb-3">
-                                    <i class="bi bi-puzzle fs-2"></i>
-                                </div>
-                                <h5 class="fw-bold">Custom Module / Section</h5>
-                                <p class="text-muted small mb-0">Create individual pieces or jump directly into the builder for an existing test.</p>
+                    <div class="group relative rounded-2xl border border-slate-800/80 p-6 text-center cursor-pointer bg-slate-900/40 hover:bg-slate-900/80 hover:border-amber-500/65 hover:shadow-xl flex flex-col justify-between h-full" id="wizard-btn-custom">
+                        <div class="flex-1 flex flex-col items-center justify-center py-4">
+                            <div class="w-14 h-14 bg-amber-500/10 text-amber-400 border border-amber-500/20 rounded-full flex items-center justify-center mb-4 shadow-lg">
+                                <i class="bi bi-puzzle text-2.5xl"></i>
                             </div>
+                            <h5 class="text-sm font-extrabold text-white mb-1 uppercase tracking-wide">Custom</h5>
+                            <p class="text-slate-450 text-[10px] leading-relaxed max-w-[160px] mx-auto font-medium">Individual pieces.</p>
                         </div>
                     </div>
                 </div>
 
                 <!-- Custom Flow Steps (Hidden initially) -->
-                <div id="wizard-custom-flow" class="mt-4 d-none border-top pt-4">
+                <div id="wizard-custom-flow" class="d-none border-t border-slate-800/80 pt-6 space-y-4">
                     <!-- Step 1: Parent Test -->
-                    <div class="mb-4" id="wizard-step-test">
-                        <label class="form-label fw-bold">Select Parent Test</label>
-                        <select class="form-select" id="wizard-select-test">
+                    <div class="space-y-1.5" id="wizard-step-test">
+                        <label class="text-xs font-extrabold text-slate-400 tracking-wider uppercase mb-2 block">Select Parent Test</label>
+                        <select class="w-full px-4 py-2.5 rounded-xl border border-slate-800/80 bg-slate-900/60 text-white focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 outline-none" id="wizard-select-test">
                             <option value="">Choose a test...</option>
                             <!-- Populated via JS -->
                         </select>
                     </div>
 
                     <!-- Step 2: Subject & Target -->
-                    <div class="row mb-4 d-none" id="wizard-step-target">
-                        <div class="col-md-6">
-                            <label class="form-label fw-bold">Domain</label>
-                            <select class="form-select" id="wizard-select-domain">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 d-none" id="wizard-step-target">
+                        <div class="space-y-1.5">
+                            <label class="text-xs font-extrabold text-slate-400 tracking-wider uppercase mb-2 block">Domain</label>
+                            <select class="w-full px-4 py-2.5 rounded-xl border border-slate-800/80 bg-slate-900/60 text-white focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 outline-none" id="wizard-select-domain">
                                 <option value="reading_writing">Reading & Writing</option>
                                 <option value="math">Math</option>
                             </select>
                         </div>
-                        <div class="col-md-6">
-                            <label class="form-label fw-bold">Module Position</label>
-                            <select class="form-select" id="wizard-select-module">
+                        <div class="space-y-1.5">
+                            <label class="text-xs font-extrabold text-slate-400 tracking-wider uppercase mb-2 block">Module Position</label>
+                            <select class="w-full px-4 py-2.5 rounded-xl border border-slate-800/80 bg-slate-900/60 text-white focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 outline-none" id="wizard-select-module">
                                 <option value="1_standard">Module 1 (Standard)</option>
                                 <option value="2_easy">Module 2 (Easy)</option>
                                 <option value="2_hard">Module 2 (Hard)</option>
@@ -74,32 +97,25 @@
                         </div>
                     </div>
 
-                    <div class="text-end d-none" id="wizard-step-launch">
-                        <button class="btn btn-success fw-bold px-4" id="wizard-btn-launch">
-                            Launch Builder <i class="bi bi-arrow-right"></i>
+                    <!-- Navigation Actions -->
+                    <div class="flex justify-between items-center pt-4 border-t border-slate-800/80 mt-6">
+                        <button type="button" class="px-5 py-2.5 bg-slate-900/60 border border-slate-800/80 text-slate-350 font-extrabold text-xs uppercase tracking-wider rounded-xl hover:bg-slate-850 hover:text-white cursor-pointer flex items-center gap-2" id="wizard-btn-back">
+                            <i class="bi bi-arrow-left text-xs"></i> Back
                         </button>
+                        <div class="d-none" id="wizard-step-launch">
+                            <button class="px-6 py-3 bg-gradient-to-r from-emerald-650 to-teal-600 hover:from-emerald-555 hover:to-teal-555 text-white font-extrabold text-xs uppercase tracking-wider rounded-xl shadow-lg shadow-emerald-600/20 hover:shadow-emerald-600/35 transform flex items-center gap-2 cursor-pointer" id="wizard-btn-launch">
+                                Launch Builder <i class="bi bi-arrow-right text-xs"></i>
+                            </button>
+                        </div>
                     </div>
                 </div>
                 
                 <!-- Loading State -->
-                <div id="wizard-loading" class="text-center p-5 d-none">
-                    <div class="spinner-border text-primary" role="status"></div>
-                    <p class="mt-3 text-muted">Generating structure...</p>
+                <div id="wizard-loading" class="text-center py-10 d-none flex flex-col items-center justify-center">
+                    <div class="w-10 h-10 border-4 border-indigo-400 border-t-transparent rounded-full animate-spin"></div>
+                    <p class="mt-4 text-slate-400 text-xs font-extrabold uppercase tracking-widest">Generating structure...</p>
                 </div>
             </div>
         </div>
     </div>
 </div>
-
-<style>
-.hover-shadow:hover {
-    box-shadow: 0 .5rem 1rem rgba(0,0,0,.15)!important;
-    transform: translateY(-2px);
-}
-.cursor-pointer {
-    cursor: pointer;
-}
-.transition-all {
-    transition: all .2s ease-in-out;
-}
-</style>

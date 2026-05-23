@@ -1,0 +1,1320 @@
+/* Global high-performance reset: disable transitions, transforms, animations, and heavy backdrop filters inside dark theme dashboard */
+.dark-theme-dashboard *,
+.modal-content *,
+.offcanvas * {
+    transition: none !important;
+    transition-property: none !important;
+    transition-duration: 0s !important;
+    transition-delay: 0s !important;
+    transform: none !important;
+    animation: none !important;
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+}
+
+/* Explicitly re-enable critical progress spinner animation */
+.dark-theme-dashboard .animate-spin,
+.modal-content .animate-spin,
+.offcanvas .animate-spin {
+    animation: spin 1s linear infinite !important;
+}
+
+/* Base body override to lock viewport height */
+body {
+    overflow: hidden !important;
+    height: 100vh !important;
+    background-color: #0b0f19 !important;
+    color: #e2e8f0 !important;
+}
+
+.dark-theme-dashboard {
+    color: #e2e8f0 !important;
+}
+
+/* Custom Webkit scrollbar for sleek premium feel */
+::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+}
+
+::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+    background: #334155 !important;
+    border-radius: 9999px !important;
+    border: 1px solid transparent !important;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: #475569 !important;
+}
+
+/* Hide number input spin-buttons */
+input::-webkit-outer-spin-button,
+input::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+}
+
+input[type=number] {
+    -moz-appearance: textfield;
+}
+
+/* Glassmorphism panel base utility - Solid high performance dark backdrops */
+.glass-panel {
+    background: #111827 !important;
+    border: 1px solid rgba(255, 255, 255, 0.1) !important;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2) !important;
+}
+
+/* Form field uniform overrides (High specificity) */
+.dark-theme-dashboard input[type="text"],
+.dark-theme-dashboard input[type="number"],
+.dark-theme-dashboard select,
+.dark-theme-dashboard textarea,
+.modal-content input,
+.modal-content select,
+.modal-content textarea,
+.offcanvas-body input,
+.offcanvas-body select,
+.offcanvas-body textarea {
+    background-color: #1e293b !important;
+    color: #ffffff !important;
+    border: 1px solid rgba(255, 255, 255, 0.15) !important;
+    box-shadow: none !important;
+    border-radius: 0.75rem !important;
+}
+
+.dark-theme-dashboard input::placeholder,
+.dark-theme-dashboard textarea::placeholder,
+.modal-content input::placeholder,
+.modal-content textarea::placeholder,
+.offcanvas input::placeholder,
+.offcanvas textarea::placeholder,
+.offcanvas-body input::placeholder,
+.offcanvas-body textarea::placeholder,
+.ts-control input::placeholder,
+.ts-wrapper .ts-control input::placeholder,
+.dark-theme-dashboard [class*="placeholder-"]::placeholder,
+.modal-content [class*="placeholder-"]::placeholder,
+.offcanvas [class*="placeholder-"]::placeholder,
+.offcanvas-body [class*="placeholder-"]::placeholder {
+    color: #cbd5e1 !important;
+}
+
+.dark-theme-dashboard input:hover,
+.dark-theme-dashboard select:hover,
+.dark-theme-dashboard textarea:hover,
+.modal-content input:hover,
+.modal-content select:hover,
+.modal-content textarea:hover {
+    border-color: rgba(99, 102, 241, 0.4) !important;
+    background-color: rgba(30, 41, 59, 0.8) !important;
+}
+
+.dark-theme-dashboard input:focus,
+.dark-theme-dashboard select:focus,
+.dark-theme-dashboard textarea:focus,
+.modal-content input:focus,
+.modal-content select:focus,
+.modal-content textarea:focus {
+    border-color: #818cf8 !important;
+    box-shadow: 0 0 0 2px rgba(129, 140, 248, 0.2) !important;
+    background-color: #1e293b !important;
+    outline: none !important;
+}
+
+@layer utilities {
+
+    /* Utility class fallback for JS conditional rendering */
+    .d-none {
+        display: none !important;
+    }
+}
+
+.dark-theme-dashboard .tom-select,
+.modal-content .tom-select {
+    height: auto !important;
+}
+
+/* Force hide original select elements when tomselected to prevent double inputs */
+select.tomselected,
+select.ts-hidden-accessible,
+.dark-theme-dashboard select.tomselected,
+.modal-content select.tomselected,
+.offcanvas-body select.tomselected,
+.dark-theme-dashboard select.ts-hidden-accessible,
+.modal-content select.ts-hidden-accessible,
+.offcanvas-body select.ts-hidden-accessible {
+    display: none !important;
+    opacity: 0 !important;
+    height: 0 !important;
+    width: 0 !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    border: 0 !important;
+    outline: none !important;
+    pointer-events: none !important;
+    position: absolute !important;
+}
+
+
+.dark-theme-dashboard .ts-control,
+.modal-content .ts-control,
+.offcanvas-body .ts-control {
+    background-color: #1e293b !important;
+    color: #ffffff !important;
+    border-radius: 0.75rem !important;
+    padding: 0.6rem 0.85rem !important;
+    border: 1px solid rgba(255, 255, 255, 0.15) !important;
+}
+
+.dark-theme-dashboard .ts-wrapper.focus .ts-control,
+.modal-content .ts-wrapper.focus .ts-control {
+    border-color: #818cf8 !important;
+    box-shadow: 0 0 0 2px rgba(129, 140, 248, 0.2) !important;
+}
+
+.dark-theme-dashboard .ts-wrapper,
+.modal-content .ts-wrapper,
+.offcanvas-body .ts-wrapper {
+    position: relative !important;
+    z-index: 5;
+    background-color: #1e293b !important;
+    background: #1e293b !important;
+    border-radius: 0.75rem !important;
+}
+
+.dark-theme-dashboard .ts-wrapper.focus,
+.modal-content .ts-wrapper.focus {
+    z-index: 1060 !important;
+}
+
+.dark-theme-dashboard .ts-dropdown,
+.modal-content .ts-dropdown {
+    background-color: #131b2e !important;
+    color: #ffffff !important;
+    z-index: 9999 !important;
+    position: absolute !important;
+    border-radius: 0.75rem !important;
+    box-shadow: 0 12px 28px rgba(0, 0, 0, 0.5) !important;
+    border: 1px solid rgba(255, 255, 255, 0.1) !important;
+    overflow: hidden !important;
+}
+
+.dark-theme-dashboard .ts-dropdown .option,
+.modal-content .ts-dropdown .option {
+    color: #cbd5e1 !important;
+    background-color: #131b2e !important;
+    padding: 8px 12px !important;
+}
+
+.dark-theme-dashboard .ts-dropdown .active,
+.modal-content .ts-dropdown .active {
+    background-color: #4f46e5 !important;
+    color: #ffffff !important;
+}
+
+/* Reset outer wrapper border, background, and padding to resolve the double-input/box look */
+.ts-wrapper.tom-select,
+.ts-wrapper.form-select,
+.ts-wrapper.form-control,
+.dark-theme-dashboard .ts-wrapper.tom-select,
+.dark-theme-dashboard .ts-wrapper.form-select,
+.dark-theme-dashboard .ts-wrapper.form-control,
+.modal-content .ts-wrapper.tom-select,
+.modal-content .ts-wrapper.form-select,
+.modal-content .ts-wrapper.form-control,
+.offcanvas-body .ts-wrapper.tom-select,
+.offcanvas-body .ts-wrapper.form-select,
+.offcanvas-body .ts-wrapper.form-control {
+    border: none !important;
+    border-width: 0 !important;
+    padding: 0 !important;
+    background: transparent !important;
+    background-color: transparent !important;
+    box-shadow: none !important;
+}
+
+/* Single-select chosen items: look like normal input text instead of an embedded badge capsule */
+.dark-theme-dashboard .ts-wrapper.single .ts-control .item,
+.modal-content .ts-wrapper.single .ts-control .item,
+.offcanvas-body .ts-wrapper.single .ts-control .item {
+    background: transparent !important;
+    background-color: transparent !important;
+    border: none !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    box-shadow: none !important;
+    font-size: 0.875rem !important;
+    color: #ffffff !important;
+    display: inline-flex !important;
+    align-items: center !important;
+}
+
+
+.dark-theme-dashboard .ts-control .item,
+.modal-content .ts-control .item {
+    color: #ffffff !important;
+    background-color: rgba(99, 102, 241, 0.25) !important;
+    border: 1px solid rgba(99, 102, 241, 0.45) !important;
+    border-radius: 6px !important;
+    padding: 2px 8px !important;
+    font-size: 0.8rem !important;
+    margin: 2px !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2) !important;
+}
+
+.dark-theme-dashboard .ts-control .item .remove,
+.modal-content .ts-control .item .remove {
+    border-left: 1px solid rgba(99, 102, 241, 0.3) !important;
+    margin-left: 6px !important;
+    padding-left: 4px !important;
+    color: #a5b4fc !important;
+    text-decoration: none !important;
+}
+
+.dark-theme-dashboard .ts-control .item .remove:hover,
+.modal-content .ts-control .item .remove:hover {
+    background: transparent !important;
+    color: #ffffff !important;
+}
+
+.dark-theme-dashboard .ts-control input,
+.modal-content .ts-control input,
+.offcanvas-body .ts-control input {
+    color: #ffffff !important;
+    background: transparent !important;
+    background-color: transparent !important;
+    border: none !important;
+    border-color: transparent !important;
+    border-width: 0 !important;
+    box-shadow: none !important;
+    border-radius: 0 !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    height: auto !important;
+    min-height: 0 !important;
+    line-height: inherit !important;
+}
+
+
+.x-small {
+    font-size: 0.75rem;
+}
+
+.font-monospace {
+    font-family: SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace !important;
+}
+
+.editor-toolbar {
+    border-color: rgba(255, 255, 255, 0.08) !important;
+    border-radius: 0.75rem 0.75rem 0 0;
+}
+
+.CodeMirror {
+    border-color: rgba(255, 255, 255, 0.08) !important;
+    border-radius: 0 0 0.75rem 0.75rem;
+}
+
+.builder-block:hover {
+    border-color: rgba(245, 158, 11, 0.4) !important;
+    box-shadow: 0 0 10px rgba(245, 158, 11, 0.05) !important;
+}
+
+.file-dropzone:hover {
+    border-color: #818cf8 !important;
+    background-color: rgba(99, 102, 241, 0.04) !important;
+    box-shadow: 0 8px 24px rgba(99, 102, 241, 0.08);
+}
+
+/* Preview elements typography and media parity styling */
+.passage-preview img,
+.stem-preview img,
+.edit-passage-preview img,
+.edit-stem-preview img,
+#editQuestionPreviewContent img,
+.builder-block-preview img {
+    display: block !important;
+    margin: 16px auto !important;
+    width: 60% !important;
+    max-width: 60% !important;
+    height: auto !important;
+    border-radius: 8px !important;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2) !important;
+}
+
+.passage-preview,
+.stem-preview,
+.edit-passage-preview,
+.edit-stem-preview,
+#editQuestionPreviewContent,
+.builder-block-preview {
+    font-family: "Noto Serif", Georgia, serif !important;
+}
+
+.passage-preview p,
+.stem-preview p,
+.edit-passage-preview p,
+.edit-stem-preview p,
+#editQuestionPreviewContent p,
+.builder-block-preview p {
+    margin-bottom: 0 !important;
+}
+
+.passage-preview ol,
+.stem-preview ol,
+.edit-passage-preview ol,
+.edit-stem-preview ol,
+#editQuestionPreviewContent ol,
+.builder-block-preview ol {
+    list-style-type: decimal !important;
+    padding-left: 1.75rem !important;
+    margin-bottom: 1.25rem !important;
+}
+
+.passage-preview ul,
+.stem-preview ul,
+.edit-passage-preview ul,
+.edit-stem-preview ul,
+#editQuestionPreviewContent ul,
+.builder-block-preview ul {
+    list-style-type: disc !important;
+    padding-left: 1.75rem !important;
+    margin-bottom: 1.25rem !important;
+}
+
+.passage-preview li,
+.stem-preview li,
+.edit-passage-preview li,
+.edit-stem-preview li,
+#editQuestionPreviewContent li,
+.builder-block-preview li {
+    display: list-item !important;
+}
+
+/* Premium Tabulator Skin (Glass Theme) */
+.tabulator {
+    border: none !important;
+    background-color: transparent !important;
+}
+
+.tabulator-header {
+    background-color: rgba(30, 41, 59, 0.5) !important;
+    border-bottom: 2px solid rgba(255, 255, 255, 0.08) !important;
+    color: #94a3b8 !important;
+    font-weight: 700 !important;
+    text-transform: uppercase !important;
+    font-size: 0.7rem !important;
+    letter-spacing: 0.05em !important;
+}
+
+.tabulator-col {
+    background-color: transparent !important;
+    border-right: none !important;
+}
+
+.tabulator-row {
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05) !important;
+    background-color: rgba(19, 27, 46, 0.3) !important;
+    color: #cbd5e1 !important;
+}
+
+.tabulator-row:hover {
+    background-color: rgba(99, 102, 241, 0.08) !important;
+    box-shadow: inset 3px 0 0 #6366f1 !important;
+}
+
+.tabulator-row.tabulator-row-even {
+    background-color: rgba(19, 27, 46, 0.3) !important;
+}
+
+.tabulator-cell {
+    border-right: none !important;
+    padding: 16px 20px !important;
+    font-size: 0.85rem !important;
+    color: #e2e8f0 !important;
+}
+
+.tabulator-footer {
+    background-color: #0f172a !important;
+    border-top: 1px solid rgba(255, 255, 255, 0.1) !important;
+    color: #94a3b8 !important;
+    padding: 12px 20px !important;
+}
+
+.tabulator-page {
+    border-radius: 8px !important;
+    border: 1px solid rgba(255, 255, 255, 0.08) !important;
+    background-color: rgba(30, 41, 59, 0.4) !important;
+    color: #cbd5e1 !important;
+    padding: 5px 12px !important;
+    margin: 0 3px !important;
+    font-size: 0.8rem !important;
+}
+
+.tabulator-page:hover {
+    background-color: rgba(99, 102, 241, 0.2) !important;
+    color: #ffffff !important;
+    border-color: rgba(99, 102, 241, 0.3) !important;
+}
+
+.tabulator-page.active {
+    background: linear-gradient(135deg, #4f46e5 0%, #6366f1 100%) !important;
+    color: #ffffff !important;
+    border-color: #4f46e5 !important;
+    box-shadow: 0 0 12px rgba(79, 70, 229, 0.3) !important;
+}
+
+/* Sidebar Custom Links */
+.sidebar-link {
+    position: relative !important;
+}
+
+.sidebar-link::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 25%;
+    height: 50%;
+    width: 3px;
+    background: #6366f1;
+    border-radius: 0 4px 4px 0;
+    transform: scaleY(0);
+}
+
+.sidebar-link.active::before {
+    transform: scaleY(1);
+    background: #818cf8;
+}
+
+.sidebar-link.active {
+    background: linear-gradient(90deg, rgba(79, 70, 229, 0.15) 0%, rgba(99, 102, 241, 0.05) 100%) !important;
+    color: #ffffff !important;
+    box-shadow: inset 1px 0 0 rgba(255, 255, 255, 0.05);
+    font-weight: 600;
+}
+
+.sidebar-link:not(.active):hover {
+    background-color: rgba(255, 255, 255, 0.03) !important;
+    color: #ffffff !important;
+}
+
+.sidebar-link-builder.active {
+    background: linear-gradient(90deg, rgba(217, 119, 6, 0.15) 0%, rgba(245, 158, 11, 0.05) 100%) !important;
+    color: #f59e0b !important;
+    font-weight: 600;
+}
+
+.sidebar-link-builder.active::before {
+    background: #f59e0b;
+}
+
+/* Import Wizard Tabs */
+#importMethodTabs button.nav-link {
+    color: #64748b;
+    background-color: transparent;
+    border: 1px solid transparent;
+}
+
+#importMethodTabs button.nav-link:hover {
+    color: #e2e8f0;
+    background-color: rgba(255, 255, 255, 0.03);
+}
+
+#importMethodTabs button.nav-link.active {
+    color: #818cf8 !important;
+    background-color: rgba(79, 70, 229, 0.1) !important;
+    border-color: rgba(129, 140, 248, 0.2) !important;
+}
+
+/* ZIP Progress Bar Stripes */
+@keyframes progress-stripes {
+    from {
+        background-position: 1rem 0;
+    }
+
+    to {
+        background-position: 0 0;
+    }
+}
+
+/* Layout & Workspace Scrollers */
+.builder-workspace-scroller {
+    max-height: calc(100vh - 12rem);
+    overflow-y: auto;
+}
+
+.live-preview-drawer-container {
+    max-height: calc(100vh - 14rem);
+}
+
+.edit-question-grid {
+    height: calc(100vh - 200px);
+    min-height: 500px;
+    max-height: 800px;
+}
+
+/* Specific component styles */
+.z-10 {
+    z-index: 10 !important;
+}
+
+/* Table specific sizing utility classes */
+.w-80 {
+    width: 80px !important;
+}
+
+.w-100 {
+    width: 100px !important;
+}
+
+.w-110 {
+    width: 110px !important;
+}
+
+.w-120 {
+    width: 120px !important;
+}
+
+.w-130 {
+    width: 130px !important;
+}
+
+.w-180 {
+    width: 180px !important;
+}
+
+.max-w-280 {
+    max-width: 280px !important;
+}
+
+.validation-grid-container {
+    min-height: 380px;
+}
+
+/* ==================== GLOBAL PREMIUM DARK MODE OVERRIDES ==================== */
+main.flex-1 {
+    background-color: #0b0f19 !important;
+}
+
+.dark-theme-dashboard.fixed.inset-0.z-40.flex {
+    background-color: #0b0f19 !important;
+}
+
+.dark-theme-dashboard header {
+    background-color: #0f172a !important;
+    border-color: rgba(255, 255, 255, 0.05) !important;
+}
+
+.dark-theme-dashboard header h3 {
+    color: #818cf8 !important;
+    /* Indigo 400 */
+}
+
+.dark-theme-dashboard header span.text-slate-800 {
+    color: #f1f5f9 !important;
+}
+
+.dark-theme-dashboard header span.text-indigo-600 {
+    color: #818cf8 !important;
+}
+
+.dark-theme-dashboard header .w-px.h-8 {
+    background-color: rgba(255, 255, 255, 0.08) !important;
+}
+
+.dark-theme-dashboard header a.hover\:bg-slate-50:hover,
+.dark-theme-dashboard header button.hover\:bg-slate-50:hover {
+    background-color: rgba(255, 255, 255, 0.05) !important;
+}
+
+/* Cards dark mode overrides with high specificity */
+.dark-theme-dashboard .rounded-xl.shadow-sm.border.border-slate-200,
+.dark-theme-dashboard .rounded-2xl.shadow-sm.border.border-slate-200,
+.dark-theme-dashboard .border-slate-200,
+.modal-content .border-slate-200,
+.offcanvas-body .border-slate-200 {
+    background-color: #111827 !important;
+    border-color: rgba(255, 255, 255, 0.1) !important;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2) !important;
+}
+
+.dark-theme-dashboard .bg-slate-50\/75,
+.dark-theme-dashboard .bg-slate-50,
+.dark-theme-dashboard .bg-slate-50\/30,
+.dark-theme-dashboard .bg-slate-50\/40,
+.modal-content .bg-slate-50\/75,
+.modal-content .bg-slate-50,
+.modal-content .bg-slate-50\/30 {
+    background-color: rgba(30, 41, 59, 0.3) !important;
+}
+
+.dark-theme-dashboard .border-b.border-slate-200\/80,
+.modal-content .border-b.border-slate-200\/80 {
+    border-color: rgba(255, 255, 255, 0.06) !important;
+}
+
+.dark-theme-dashboard .border-t.border-slate-200\/80,
+.modal-content .border-t.border-slate-200\/80 {
+    border-color: rgba(255, 255, 255, 0.06) !important;
+}
+
+.dark-theme-dashboard .bg-white,
+.modal-content .bg-white,
+.offcanvas-body .bg-white {
+    background-color: rgba(19, 27, 46, 0.4) !important;
+}
+
+.dark-theme-dashboard .divide-slate-100> :not([hidden])~ :not([hidden]),
+.modal-content .divide-slate-100> :not([hidden])~ :not([hidden]) {
+    border-color: rgba(255, 255, 255, 0.05) !important;
+}
+
+@layer utilities {
+
+    /* Text overrides with high specificity - Snappy contrast and readability */
+    .dark-theme-dashboard .text-slate-850,
+    .modal-content .text-slate-850,
+    .offcanvas .text-slate-850,
+    .offcanvas-body .text-slate-850 {
+        color: #e2e8f0 !important;
+    }
+
+    .dark-theme-dashboard .text-slate-800,
+    .dark-theme-dashboard .text-slate-700,
+    .modal-content .text-slate-800,
+    .modal-content .text-slate-700,
+    .offcanvas .text-slate-800,
+    .offcanvas .text-slate-700,
+    .offcanvas-body .text-slate-800,
+    .offcanvas-body .text-slate-700 {
+        color: #f8fafc !important;
+    }
+
+    .dark-theme-dashboard .text-slate-500,
+    .dark-theme-dashboard .text-slate-550,
+    .dark-theme-dashboard .text-slate-650,
+    .modal-content .text-slate-500,
+    .modal-content .text-slate-550,
+    .modal-content .text-slate-650,
+    .offcanvas .text-slate-500,
+    .offcanvas .text-slate-550,
+    .offcanvas .text-slate-650,
+    .offcanvas-body .text-slate-500,
+    .offcanvas-body .text-slate-550,
+    .offcanvas-body .text-slate-650 {
+        color: #cbd5e1 !important;
+    }
+
+    .dark-theme-dashboard .text-slate-400,
+    .dark-theme-dashboard .text-slate-450,
+    .dark-theme-dashboard .text-slate-455,
+    .dark-theme-dashboard .text-slate-600,
+    .modal-content .text-slate-400,
+    .modal-content .text-slate-450,
+    .modal-content .text-slate-455,
+    .modal-content .text-slate-600,
+    .offcanvas .text-slate-400,
+    .offcanvas .text-slate-450,
+    .offcanvas .text-slate-455,
+    .offcanvas .text-slate-600,
+    .offcanvas-body .text-slate-400,
+    .offcanvas-body .text-slate-450,
+    .offcanvas-body .text-slate-455,
+    .offcanvas-body .text-slate-600 {
+        color: #cbd5e1 !important;
+        /* Raised opacity contrast */
+    }
+
+    .dark-theme-dashboard .text-slate-900,
+    .modal-content .text-slate-900,
+    .offcanvas .text-slate-900,
+    .offcanvas-body .text-slate-900 {
+        color: #ffffff !important;
+    }
+
+    .dark-theme-dashboard label,
+    .modal-content label,
+    .offcanvas label,
+    .offcanvas-body label {
+        color: #cbd5e1 !important;
+    }
+
+    .dark-theme-dashboard .form-text,
+    .modal-content .form-text,
+    .offcanvas .form-text,
+    .offcanvas-body .form-text {
+        color: #cbd5e1 !important;
+    }
+
+    .dark-theme-dashboard .text-secondary,
+    .modal-content .text-secondary,
+    .offcanvas .text-secondary,
+    .offcanvas-body .text-secondary {
+        color: #cbd5e1 !important;
+    }
+}
+
+/* Premium styled checkboxes and radio buttons to eliminate default browser mismatch */
+.dark-theme-dashboard input[type="checkbox"],
+.dark-theme-dashboard input[type="radio"],
+.modal-content input[type="checkbox"],
+.modal-content input[type="radio"] {
+    background-color: rgba(30, 41, 59, 0.6) !important;
+    border: 1px solid rgba(255, 255, 255, 0.15) !important;
+    border-radius: 4px !important;
+    width: 1rem !important;
+    height: 1rem !important;
+    appearance: none !important;
+    -webkit-appearance: none !important;
+    outline: none !important;
+    cursor: pointer !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+}
+
+.dark-theme-dashboard input[type="radio"],
+.modal-content input[type="radio"] {
+    border-radius: 50% !important;
+}
+
+.dark-theme-dashboard input[type="checkbox"]:checked,
+.modal-content input[type="checkbox"]:checked {
+    background-color: #6366f1 !important;
+    border-color: #818cf8 !important;
+}
+
+.dark-theme-dashboard input[type="checkbox"]:checked::after,
+.modal-content input[type="checkbox"]:checked::after {
+    content: "✓" !important;
+    color: #ffffff !important;
+    font-size: 0.7rem !important;
+    font-weight: 900 !important;
+}
+
+.dark-theme-dashboard input[type="radio"]:checked,
+.modal-content input[type="radio"]:checked {
+    background-color: #6366f1 !important;
+    border-color: #818cf8 !important;
+}
+
+.dark-theme-dashboard input[type="radio"]:checked::after,
+.modal-content input[type="radio"]:checked::after {
+    content: "" !important;
+    width: 0.45rem !important;
+    height: 0.45rem !important;
+    background-color: #ffffff !important;
+    border-radius: 50% !important;
+    display: block !important;
+}
+
+/* Secondary/Light button colors and selection option harmony */
+.dark-theme-dashboard .btn-light,
+.modal-content .btn-light,
+.offcanvas-body .btn-light {
+    background-color: rgba(255, 255, 255, 0.08) !important;
+    color: #ffffff !important;
+    border: 1px solid rgba(255, 255, 255, 0.1) !important;
+}
+
+.dark-theme-dashboard .btn-light:hover,
+.modal-content .btn-light:hover,
+.offcanvas-body .btn-light:hover {
+    background-color: rgba(255, 255, 255, 0.15) !important;
+    border-color: rgba(255, 255, 255, 0.2) !important;
+}
+
+.dark-theme-dashboard .btn-secondary,
+.modal-content .btn-secondary,
+.offcanvas-body .btn-secondary {
+    background-color: rgba(71, 85, 105, 0.4) !important;
+    color: #cbd5e1 !important;
+    border: 1px solid rgba(255, 255, 255, 0.05) !important;
+}
+
+.dark-theme-dashboard .btn-secondary:hover,
+.modal-content .btn-secondary:hover,
+.offcanvas-body .btn-secondary:hover {
+    background-color: rgba(71, 85, 105, 0.6) !important;
+    color: #ffffff !important;
+}
+
+.dark-theme-dashboard select option,
+.modal-content select option,
+.offcanvas-body select option {
+    background-color: #131b2e !important;
+    color: #ffffff !important;
+}
+
+/* Fallback Card/Backdrop Container Harmony overrides */
+.dark-theme-dashboard .card,
+.modal-content .card,
+.offcanvas-body .card {
+    background-color: rgba(19, 27, 46, 0.4) !important;
+    border-color: rgba(255, 255, 255, 0.06) !important;
+}
+
+.dark-theme-dashboard .card-header,
+.modal-content .card-header,
+.offcanvas-body .card-header {
+    background-color: rgba(15, 23, 42, 0.3) !important;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.06) !important;
+}
+
+.dark-theme-dashboard .card-footer,
+.modal-content .card-footer,
+.offcanvas-body .card-footer {
+    background-color: rgba(15, 23, 42, 0.3) !important;
+    border-top: 1px solid rgba(255, 255, 255, 0.06) !important;
+}
+
+/* Sub-card backgrounds */
+.dark-theme-dashboard .bg-slate-100,
+.modal-content .bg-slate-100 {
+    background-color: rgba(30, 41, 59, 0.4) !important;
+}
+
+.dark-theme-dashboard .border-slate-200\/50,
+.modal-content .border-slate-200\/50 {
+    border-color: rgba(255, 255, 255, 0.05) !important;
+}
+
+.dark-theme-dashboard .bg-slate-50\/50:hover,
+.modal-content .bg-slate-50\/50:hover {
+    background-color: rgba(30, 41, 59, 0.6) !important;
+}
+
+.dark-theme-dashboard .divide-slate-100,
+.modal-content .divide-slate-100 {
+    border-color: rgba(255, 255, 255, 0.05) !important;
+}
+
+.dark-theme-dashboard table.w-full th,
+.modal-content table.w-full th {
+    color: #94a3b8 !important;
+    background-color: rgba(30, 41, 59, 0.4) !important;
+    border-bottom-color: rgba(255, 255, 255, 0.08) !important;
+}
+
+/* Modals & Offcanvas Dark Mode styling */
+.modal-content,
+.offcanvas {
+    background-color: #0f172a !important;
+    color: #cbd5e1 !important;
+    border: 1px solid rgba(255, 255, 255, 0.12) !important;
+    box-shadow: 0 12px 32px rgba(0, 0, 0, 0.4) !important;
+}
+
+.modal-header,
+.offcanvas-header {
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08) !important;
+    background-color: rgba(15, 23, 42, 0.3) !important;
+}
+
+.modal-footer {
+    border-top: 1px solid rgba(255, 255, 255, 0.08) !important;
+    background-color: rgba(15, 23, 42, 0.3) !important;
+}
+
+.offcanvas-body {
+    background-color: transparent !important;
+}
+
+.modal-title,
+.offcanvas-title {
+    color: #ffffff !important;
+}
+
+.btn-close {
+    filter: invert(1) grayscale(1) brightness(2) !important;
+}
+
+/* Wizard option cards */
+.dark-theme-dashboard .border-slate-250\/80,
+.modal-content .border-slate-250\/80 {
+    border-color: rgba(255, 255, 255, 0.08) !important;
+}
+
+.dark-theme-dashboard .bg-slate-50\/40,
+.modal-content .bg-slate-50\/40 {
+    background-color: rgba(30, 41, 59, 0.4) !important;
+}
+
+.dark-theme-dashboard .hover\:bg-slate-50\/80:hover,
+.modal-content .hover\:bg-slate-50\/80:hover {
+    background-color: rgba(99, 102, 241, 0.08) !important;
+    border-color: rgba(99, 102, 241, 0.2) !important;
+}
+
+/* EasyMDE toolbar & editor theme */
+.editor-toolbar {
+    background-color: rgba(15, 23, 42, 0.4) !important;
+    border-color: rgba(255, 255, 255, 0.08) !important;
+}
+
+.editor-toolbar button {
+    color: #ffffff !important;
+}
+
+.editor-toolbar button:hover {
+    background-color: rgba(255, 255, 255, 0.05) !important;
+}
+
+.CodeMirror {
+    background-color: rgba(15, 23, 42, 0.3) !important;
+    color: #ffffff !important;
+    border-color: rgba(255, 255, 255, 0.08) !important;
+}
+
+.CodeMirror-cursor {
+    border-left-color: #ffffff !important;
+}
+
+/* Previews and containers inside editor */
+.passage-preview,
+.dark-theme-dashboard .passage-preview,
+.stem-preview,
+.dark-theme-dashboard .stem-preview,
+.edit-passage-preview,
+.edit-stem-preview,
+#editQuestionPreviewContent,
+.builder-block-preview {
+    background-color: rgba(30, 41, 59, 0.4) !important;
+    border-color: rgba(255, 255, 255, 0.08) !important;
+    color: #f1f5f9 !important;
+    border-radius: 8px !important;
+}
+
+/* Wizard status bar fixes */
+.dark-theme-dashboard .bg-indigo-50,
+.dark-theme-dashboard .bg-amber-50,
+.dark-theme-dashboard .bg-emerald-50,
+.modal-content .bg-indigo-50,
+.modal-content .bg-amber-50,
+.modal-content .bg-emerald-50 {
+    background-color: rgba(99, 102, 241, 0.06) !important;
+    border-color: rgba(99, 102, 241, 0.1) !important;
+}
+
+.dark-theme-dashboard .text-indigo-800,
+.dark-theme-dashboard .text-amber-800,
+.dark-theme-dashboard .text-emerald-800,
+.modal-content .text-indigo-800,
+.modal-content .text-amber-800,
+.modal-content .text-emerald-800 {
+    color: #a5b4fc !important;
+}
+
+/* Dropzone borders */
+.file-dropzone {
+    border-color: rgba(255, 255, 255, 0.08) !important;
+    background-color: rgba(19, 27, 46, 0.2) !important;
+}
+
+/* ==================== ADDITIONAL HIGH-CONTRAST DARK MODE OVERRIDES ==================== */
+
+/* Tabulator Table and Holder backgrounds to prevent white background bleeding */
+.tabulator-table,
+.tabulator-tableholder {
+    background-color: transparent !important;
+    background: transparent !important;
+}
+
+/* Global status select override inside dark container cells */
+.dark-theme-dashboard select.status-select,
+.modal-content select.status-select,
+.offcanvas-body select.status-select {
+    background-color: #1e293b !important;
+    color: #ffffff !important;
+    border: 1px solid rgba(255, 255, 255, 0.15) !important;
+}
+
+@layer utilities {
+
+    /* Override standard Bootstrap/Tailwind utility text classes inside dark containers for high visibility */
+    .dark-theme-dashboard .text-secondary,
+    .modal-content .text-secondary,
+    .offcanvas-body .text-secondary {
+        color: #cbd5e1 !important;
+    }
+
+    .dark-theme-dashboard .text-dark,
+    .modal-content .text-dark,
+    .offcanvas-body .text-dark {
+        color: #f1f5f9 !important;
+    }
+
+    .dark-theme-dashboard .text-muted,
+    .modal-content .text-muted,
+    .offcanvas-body .text-muted {
+        color: #94a3b8 !important;
+    }
+}
+
+/* Premium status badge dynamic overrides matching the digital-sat visual design */
+/* Active / Success status badge */
+.dark-theme-dashboard .bg-emerald-50,
+.modal-content .bg-emerald-50 {
+    background-color: rgba(16, 185, 129, 0.1) !important;
+}
+
+.dark-theme-dashboard .text-emerald-700,
+.modal-content .text-emerald-700 {
+    color: #34d399 !important;
+}
+
+.dark-theme-dashboard .border-emerald-100,
+.modal-content .border-emerald-100 {
+    border-color: rgba(16, 185, 129, 0.2) !important;
+}
+
+/* Draft / Warning status badge */
+.dark-theme-dashboard .bg-amber-50,
+.modal-content .bg-amber-50 {
+    background-color: rgba(245, 158, 11, 0.1) !important;
+}
+
+.dark-theme-dashboard .text-amber-700,
+.modal-content .text-amber-700 {
+    color: #fbbf24 !important;
+}
+
+.dark-theme-dashboard .border-amber-100,
+.modal-content .border-amber-100 {
+    border-color: rgba(245, 158, 11, 0.2) !important;
+}
+
+/* Archived / Gray status badge */
+.dark-theme-dashboard .bg-slate-100,
+.modal-content .bg-slate-100 {
+    background-color: rgba(148, 163, 184, 0.1) !important;
+}
+
+.dark-theme-dashboard .text-slate-700,
+.modal-content .text-slate-700 {
+    color: #cbd5e1 !important;
+}
+
+.dark-theme-dashboard .border-slate-200,
+.modal-content .border-slate-200 {
+    border-color: rgba(148, 163, 184, 0.2) !important;
+}
+
+/* Bootstrap default bg-light badges to sleek transparent dark pills */
+.dark-theme-dashboard .badge.bg-light,
+.modal-content .badge.bg-light,
+.offcanvas-body .badge.bg-light {
+    background-color: rgba(148, 163, 184, 0.1) !important;
+    color: #cbd5e1 !important;
+    border: 1px solid rgba(148, 163, 184, 0.2) !important;
+}
+
+/* Import wizard non-active tab links contrast fix */
+#importMethodTabs button.nav-link {
+    color: #94a3b8 !important;
+}
+
+#importMethodTabs button.nav-link.active {
+    color: #818cf8 !important;
+}
+
+/* Sleek premium overrides for outline secondary buttons (like pagination controls) */
+.dark-theme-dashboard .btn-outline-secondary,
+.modal-content .btn-outline-secondary {
+    color: #e2e8f0 !important;
+    border-color: rgba(255, 255, 255, 0.15) !important;
+    background-color: rgba(255, 255, 255, 0.03) !important;
+}
+
+.dark-theme-dashboard .btn-outline-secondary:hover,
+.modal-content .btn-outline-secondary:hover {
+    background-color: rgba(255, 255, 255, 0.08) !important;
+    border-color: rgba(255, 255, 255, 0.25) !important;
+    color: #ffffff !important;
+}
+
+.dark-theme-dashboard .btn-outline-secondary:disabled,
+.modal-content .btn-outline-secondary:disabled {
+    color: #475569 !important;
+    border-color: rgba(255, 255, 255, 0.05) !important;
+    background-color: transparent !important;
+}
+
+/* ==================== WORKSPACE INDEX SIDEBAR ACTIVE CONTRAST FIX ==================== */
+#builderSidebarNavigator .list-group-item.active {
+    background-color: #f59e0b !important;
+    border-color: #d97706 !important;
+}
+
+#builderSidebarNavigator .list-group-item.active .text-dark,
+#builderSidebarNavigator .list-group-item.active span,
+#builderSidebarNavigator .list-group-item.active div,
+#builderSidebarNavigator .list-group-item.active a {
+    color: #0b0f19 !important;
+}
+
+#builderSidebarNavigator .list-group-item.active .badge.bg-secondary {
+    background-color: rgba(11, 15, 25, 0.15) !important;
+    color: #0b0f19 !important;
+    border: 1px solid rgba(11, 15, 25, 0.25) !important;
+}
+
+#builderSidebarNavigator .list-group-item.active .badge.bg-light {
+    background-color: rgba(11, 15, 25, 0.08) !important;
+    color: #0b0f19 !important;
+    border: 1px solid rgba(11, 15, 25, 0.2) !important;
+}
+
+#builderSidebarNavigator .list-group-item.active .text-muted {
+    color: rgba(11, 15, 25, 0.8) !important;
+}
+
+/* ==================== BLUEBOOK LIVE PREVIEW DRAWER CONTRAST FIX ==================== */
+#builderLivePreviewDrawer .card.live-preview-card {
+    background-color: rgba(19, 27, 46, 0.6) !important;
+    border: 1px solid rgba(255, 255, 255, 0.1) !important;
+    color: #f1f5f9 !important;
+}
+
+#builderLivePreviewDrawer .card.live-preview-card .card-body {
+    color: #f1f5f9 !important;
+}
+
+#builderLivePreviewDrawer .card.live-preview-card .text-dark,
+#builderLivePreviewDrawer .card.live-preview-card .stem-preview {
+    color: #f8fafc !important;
+}
+
+#builderLivePreviewDrawer .card.live-preview-card .text-muted {
+    color: #94a3b8 !important;
+}
+
+#builderLivePreviewDrawer .choices-preview .border-light {
+    border-color: rgba(255, 255, 255, 0.08) !important;
+    background-color: rgba(30, 41, 59, 0.4) !important;
+    color: #cbd5e1 !important;
+}
+
+#builderLivePreviewDrawer .choices-preview .border-light * {
+    color: #cbd5e1 !important;
+}
+
+#builderLivePreviewDrawer .choices-preview .border-success.bg-success-subtle {
+    background-color: rgba(16, 185, 129, 0.15) !important;
+    border-color: rgba(16, 185, 129, 0.3) !important;
+    color: #34d399 !important;
+}
+
+#builderLivePreviewDrawer .choices-preview .border-success.bg-success-subtle * {
+    color: #34d399 !important;
+}
+
+#builderLivePreviewDrawer .choices-preview .bg-secondary {
+    background-color: rgba(148, 163, 184, 0.25) !important;
+    color: #e2e8f0 !important;
+}
+
+#builderLivePreviewDrawer .choices-preview .bg-success {
+    background-color: #10b981 !important;
+    color: #ffffff !important;
+}
+
+#builderLivePreviewDrawer .passage-preview {
+    background-color: rgba(30, 41, 59, 0.4) !important;
+    border-color: rgba(255, 255, 255, 0.1) !important;
+    color: #e2e8f0 !important;
+}
+
+#builderLivePreviewDrawer .passage-preview * {
+    color: #e2e8f0 !important;
+}
+
+#builderLivePreviewDrawer .explanation-preview {
+    background-color: rgba(30, 41, 59, 0.4) !important;
+    border-top-color: rgba(255, 255, 255, 0.08) !important;
+    color: #94a3b8 !important;
+}
+
+#builderLivePreviewDrawer .explanation-preview strong {
+    color: #cbd5e1 !important;
+}
+
+#builderLivePreviewDrawer .explanation-preview * {
+    color: #94a3b8 !important;
+}
+
+#builderLivePreviewDrawer .answer-input-container {
+    background-color: rgba(30, 41, 59, 0.4) !important;
+    border-color: rgba(245, 158, 11, 0.25) !important;
+}
+
+#builderLivePreviewDrawer .answer-input-container label {
+    color: #fbbf24 !important;
+}
+
+#builderLivePreviewDrawer .answer-input-container .live-preview-spr-input {
+    background-color: #1e293b !important;
+    color: #ffffff !important;
+    border-color: rgba(245, 158, 11, 0.4) !important;
+}
+
+/* ==================== ACTION BUTTON HOVER BLEEDS OVERRIDE ==================== */
+.delete-section-btn:hover,
+.delete-test-btn:hover,
+.delete-module-btn:hover {
+    background-color: rgba(244, 63, 94, 0.1) !important;
+    color: #f43f5e !important;
+}
+
+.clone-test-btn:hover,
+.clone-module-btn:hover {
+    background-color: rgba(99, 102, 241, 0.1) !important;
+    color: #818cf8 !important;
+}
+
+.edit-test-btn:hover,
+.edit-section-btn:hover,
+.edit-module-btn:hover {
+    background-color: rgba(99, 102, 241, 0.1) !important;
+    color: #818cf8 !important;
+}
+
+/* Elegant high-contrast overrides for subtle colorful badges in dark mode */
+.dark-theme-dashboard .bg-warning-subtle,
+.modal-content .bg-warning-subtle {
+    background-color: rgba(245, 158, 11, 0.15) !important;
+    color: #fbbf24 !important;
+    border-color: rgba(245, 158, 11, 0.25) !important;
+}
+
+.dark-theme-dashboard .bg-danger-subtle,
+.modal-content .bg-danger-subtle {
+    background-color: rgba(239, 68, 68, 0.15) !important;
+    color: #f87171 !important;
+    border-color: rgba(239, 68, 68, 0.25) !important;
+}
+
+.dark-theme-dashboard .bg-success-subtle,
+.modal-content .bg-success-subtle {
+    background-color: rgba(16, 185, 129, 0.15) !important;
+    color: #34d399 !important;
+    border-color: rgba(16, 185, 129, 0.25) !important;
+}
+
+.dark-theme-dashboard .bg-info-subtle,
+.modal-content .bg-info-subtle {
+    background-color: rgba(14, 165, 233, 0.15) !important;
+    color: #38bdf8 !important;
+    border-color: rgba(14, 165, 233, 0.25) !important;
+}
+
+/* Add generous bottom spacing to all dashboard tab content panes for a spacious premium feel */
+.dark-theme-dashboard .tab-pane {
+    padding-bottom: 2rem !important;
+}

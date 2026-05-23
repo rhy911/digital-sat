@@ -9,15 +9,18 @@ class Question extends Model
 {
     use HasFactory;
 
+    public const TYPE_MCQ = 'multiple_choice';
+    public const TYPE_SPR = 'student_produced_response';
+
     protected static function booted()
     {
         static::creating(function ($question) {
             // Automatically assign standardized March 2026 3PL IRT parameters if not explicitly provided or if default-matched
             if ($question->irt_a === null || $question->irt_a == 0.90) {
-                $question->irt_a = $question->question_type === 'student_produced_response' ? 1.3 : 0.9;
+                $question->irt_a = $question->question_type === self::TYPE_SPR ? 1.3 : 0.9;
             }
             if ($question->irt_c === null || $question->irt_c == 0.25) {
-                $question->irt_c = $question->question_type === 'student_produced_response' ? 0.0 : 0.25;
+                $question->irt_c = $question->question_type === self::TYPE_SPR ? 0.0 : 0.25;
             }
             if ($question->irt_b === null || $question->irt_b == 0.00) {
                 $question->irt_b = match ($question->difficulty) {

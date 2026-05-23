@@ -1,237 +1,273 @@
 @props(['tests', 'allModules'])
 
 <div class="tab-pane fade" id="modules" role="tabpanel">
-    <div class="row g-4">
-        <!-- Create Module Form -->
-        <div class="col-md-7">
-            <div class="card h-100 shadow-sm">
-                <div class="card-header bg-info text-white">
-                    <h5 class="mb-0"><i class="bi bi-folder-plus"></i> Create New Reusable Module</h5>
-                </div>
-                <div class="card-body">
-                    <form id="moduleForm">
-                        @csrf
-                        <div class="row">
-                            <div class="col-md-6 mb-3">
-                                <label for="moduleTest" class="form-label">Target Test <span class="text-muted">(Optional)</span></label>
-                                <select class="form-select tom-select" id="moduleTest" name="test_id">
-                                    <option value="">No test (Standalone reusable module)</option>
-                                    @foreach($tests as $test)
-                                    <option value="{{ $test->id }}">
-                                        {{ $test->title }}
-                                    </option>
-                                    @endforeach
-                                </select>
-                                <small class="text-muted">Section will be auto-generated inside the test</small>
-                            </div>
-                            <div class="col-md-6 mb-3">
-                                <label for="moduleSectionType" class="form-label">Section Type <span class="text-danger">*</span></label>
-                                <select class="form-select" id="moduleSectionType" name="section_type" required onchange="applyModuleDefaults(this)">
-                                    <option value="reading_writing" data-type="reading_writing">Reading and Writing</option>
-                                    <option value="math" data-type="math">Math</option>
-                                </select>
-                                <small class="text-muted">Auto-selects exam duration &amp; counts</small>
-                            </div>
-                        </div>
-
-                        <div class="mb-3">
-                            <label for="moduleKey" class="form-label">Module Key / Unique Code <span class="text-muted">(Optional)</span></label>
-                            <input type="text" class="form-control font-monospace" id="moduleKey" name="key" placeholder="e.g. RW_M1_STANDARD_01">
-                            <small class="text-muted">Generated automatically if left blank</small>
-                        </div>
-
-                        <div class="row">
-                            <div class="col-md-6 mb-3">
-                                <label for="moduleNumber" class="form-label">Module Type # <span class="text-danger">*</span></label>
-                                <select class="form-select" id="moduleNumber" name="module_number" required>
-                                    <option value="1">1 (Standard / M1)</option>
-                                    <option value="2">2 (Adaptive / M2)</option>
-                                </select>
-                            </div>
-                            <div class="col-md-6 mb-3">
-                                <label for="difficultyLevel" class="form-label">Difficulty <span class="text-danger">*</span></label>
-                                <select class="form-select" id="difficultyLevel" name="difficulty_level" required>
-                                    <option value="standard">Standard (M1)</option>
-                                    <option value="easy">Easy (M2)</option>
-                                    <option value="hard">Hard (M2)</option>
-                                </select>
-                            </div>
-                        </div>
-
-                        <div class="row">
-                            <div class="col-md-6 mb-3">
-                                <label for="moduleDuration" class="form-label">Duration (min) <span class="text-danger">*</span></label>
-                                <input type="number" class="form-control" id="moduleDuration" name="duration_minutes" value="32" required>
-                            </div>
-                            <div class="col-md-6 mb-3">
-                                <label for="totalQuestions" class="form-label">Total Questions <span class="text-danger">*</span></label>
-                                <input type="number" class="form-control" id="totalQuestions" name="total_questions" value="27" required>
-                                <small class="text-muted">Includes 2 pretest questions</small>
-                            </div>
-                        </div>
-                        
-                        <div class="mb-3">
-                            <p class="form-text text-muted mb-0">
-                                <strong>Tip:</strong> Standalone modules can be associated with multiple test sections later using the link panel.
-                            </p>
-                        </div>
-                        <button type="submit" class="btn btn-info text-white">Create Module</button>
-                    </form>
-                </div>
-            </div>
+    <!-- Header Actions -->
+    <div class="mb-6 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-6">
+        <div>
+            <h4 class="text-xl font-extrabold text-white tracking-tight">Reusable Modules</h4>
+            <p class="text-xs text-slate-400 font-medium">Manage and link your question modules across different tests.</p>
         </div>
-
-        <!-- Link Existing Module Form -->
-        <div class="col-md-5">
-            <div class="card h-100 shadow-sm border-primary">
-                <div class="card-header bg-primary text-white">
-                    <h5 class="mb-0"><i class="bi bi-link-45deg"></i> Link Reusable Module to Test/Section</h5>
-                </div>
-                <div class="card-body">
-                    <form id="linkModuleForm">
-                        @csrf
-                        
-                        <div class="mb-3">
-                            <label class="form-label d-block fw-semibold text-secondary">Link Target <span class="text-danger">*</span></label>
-                            <div class="form-check form-check-inline">
-                                <input class="form-check-input" type="radio" name="link_target_type" id="targetTypeSection" value="section" checked>
-                                <label class="form-check-label text-dark" for="targetTypeSection">Existing Section</label>
-                            </div>
-                            <div class="form-check form-check-inline">
-                                <input class="form-check-input" type="radio" name="link_target_type" id="targetTypeTest" value="test">
-                                <label class="form-check-label text-dark" for="targetTypeTest">Test &amp; Auto-Create Section</label>
-                            </div>
-                        </div>
-
-                        <!-- Target Section Field -->
-                        <div id="linkSectionContainer" class="mb-3">
-                            <label for="linkSection" class="form-label fw-semibold">Target Section <span class="text-danger">*</span></label>
-                            <select class="form-select tom-select" id="linkSection" name="section_id" required>
-                                <option value="">Select section...</option>
-                                @foreach($tests as $test)
-                                    @foreach($test->sections as $section)
-                                    <option value="{{ $section->id }}">
-                                        {{ $test->title }} - {{ $section->name }}
-                                    </option>
-                                    @endforeach
-                                @endforeach
-                            </select>
-                            <small class="text-muted">Select the Section to receive this Module</small>
-                        </div>
-
-                        <!-- Target Test Fields (hidden by default) -->
-                        <div id="linkTestFieldsContainer" class="d-none">
-                            <div class="mb-3">
-                                <label for="linkTest" class="form-label fw-semibold">Target Test <span class="text-danger">*</span></label>
-                                <select class="form-select tom-select" id="linkTest" name="test_id">
-                                    <option value="">Select test...</option>
-                                    @foreach($tests as $test)
-                                    <option value="{{ $test->id }}">
-                                        {{ $test->title }}
-                                    </option>
-                                    @endforeach
-                                </select>
-                            </div>
-                            <div class="mb-3">
-                                <label for="linkSectionType" class="form-label fw-semibold">Section Type <span class="text-danger">*</span></label>
-                                <select class="form-select" id="linkSectionType" name="section_type">
-                                    <option value="">Select type...</option>
-                                    <option value="reading_writing">Reading and Writing</option>
-                                    <option value="math">Math</option>
-                                </select>
-                            </div>
-                        </div>
-
-                        <!-- Reusable Module Field -->
-                        <div class="mb-3">
-                            <label for="linkModule" class="form-label fw-semibold">Reusable Module <span class="text-danger">*</span></label>
-                            <select class="form-select tom-select" id="linkModule" name="module_id" required>
-                                <option value="">Select module by key/ID...</option>
-                                @foreach($allModules as $mod)
-                                <option value="{{ $mod->id }}">
-                                    [{{ $mod->key ?? 'ID: ' . $mod->id }}] - Mod {{ $mod->module_number }} ({{ ucfirst($mod->difficulty_level) }})
-                                </option>
-                                @endforeach
-                            </select>
-                            <small class="text-muted">Choose the module you wish to link</small>
-                        </div>
-
-                        <button type="submit" class="btn btn-primary w-100 mt-2">Associate Module</button>
-                    </form>
-                </div>
-            </div>
+        <div class="flex gap-3">
+            <button class="px-5 py-3 bg-slate-900/60 border border-slate-800/80 text-slate-200 font-extrabold text-xs uppercase tracking-wider rounded-xl hover:bg-slate-850 hover:text-white shadow-lg flex items-center gap-2.5 cursor-pointer" data-bs-toggle="offcanvas" data-bs-target="#linkModuleOffcanvas">
+                <i class="bi bi-link-45deg text-sm"></i> Link Module
+            </button>
+            <button class="px-5 py-3 bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-500 hover:to-violet-500 text-white font-extrabold text-xs uppercase tracking-wider rounded-xl shadow-lg shadow-indigo-600/20 hover:shadow-indigo-600/35 flex items-center gap-2.5 cursor-pointer" data-bs-toggle="offcanvas" data-bs-target="#createModuleOffcanvas">
+                <i class="bi bi-plus-lg text-xs"></i> Create Module
+            </button>
         </div>
     </div>
 
     <!-- Existing Modules Listing -->
-    <div class="card mt-4 shadow-sm">
-        <div class="card-header bg-light">
-            <h5 class="mb-0"><i class="bi bi-journals"></i> All Reusable Modules &amp; Composition</h5>
+    <div class="rounded-2xl border border-slate-800/60 bg-slate-900/20 shadow-2xl overflow-hidden glass-panel">
+        <div class="px-6 py-4 border-b border-slate-800/80 bg-slate-950/40 flex flex-col md:flex-row md:items-center justify-between gap-4">
+            <h5 class="font-extrabold text-white flex items-center gap-3 mb-0 text-base">
+                <div class="w-8 h-8 rounded-lg bg-indigo-500/10 border border-indigo-500/30 flex items-center justify-center">
+                    <i class="bi bi-list-ul text-indigo-400"></i>
+                </div>
+                Existing Reusable Modules
+            </h5>
+            <div class="relative">
+                <span class="absolute left-3 top-1/2 -translate-y-1/2 text-slate-455"><i class="bi bi-search text-xs"></i></span>
+                <input type="text" class="pl-9 pr-4 py-2.5 w-full md:w-64 text-sm rounded-xl border border-slate-800/80 bg-slate-900/60 text-white placeholder-slate-550 focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 outline-none" id="modulesTableSearch" placeholder="Search modules...">
+            </div>
         </div>
-        <div class="card-body">
-            <div class="table-responsive">
-                <table class="table table-hover align-middle">
-                    <thead class="table-light">
-                        <tr>
-                            <th>ID</th>
-                            <th>Module Key / Code</th>
-                            <th>Linked Tests &amp; Sections</th>
-                            <th>Type #</th>
-                            <th>Difficulty</th>
-                            <th>Duration</th>
-                            <th>Questions</th>
-                            <th class="text-end">Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody id="modulesTableBody">
-                        @forelse($allModules as $module)
-                        <tr>
-                            <td>{{ $module->id }}</td>
-                            <td>
-                                <code class="font-monospace bg-light px-2 py-1 border rounded text-dark">{{ $module->key ?? 'N/A' }}</code>
-                            </td>
-                            <td>
-                                @if($module->sections->isEmpty())
-                                    <span class="badge bg-warning text-dark"><i class="bi bi-unlock"></i> Standalone (Reusable)</span>
-                                @else
-                                    <div class="d-flex flex-column gap-1">
-                                        @foreach($module->sections as $sec)
-                                        <div>
-                                            <span class="badge bg-success bg-opacity-10 text-success border border-success border-opacity-25 py-1">
-                                                <i class="bi bi-tag"></i> {{ $sec->test->title ?? 'Test' }} &raquo; <strong>{{ $sec->name }}</strong>
-                                            </span>
-                                        </div>
-                                        @endforeach
-                                    </div>
-                                @endif
-                            </td>
-                            <td>
-                                <span class="badge bg-secondary">Mod {{ $module->module_number }}</span>
-                            </td>
-                            <td>
-                                <span class="badge bg-{{ $module->difficulty_level === 'hard' ? 'danger' : ($module->difficulty_level === 'easy' ? 'success' : 'primary') }}">
-                                    {{ ucfirst($module->difficulty_level) }}
+        <div class="overflow-x-auto">
+            <table class="w-full text-left text-xs text-slate-350">
+                <thead class="bg-slate-950/50 text-slate-400 border-b border-slate-800/80 font-bold uppercase tracking-wider">
+                    <tr>
+                        <th class="px-6 py-3.5 font-extrabold text-[10px] text-slate-400">Id</th>
+                        <th class="px-6 py-3.5 font-extrabold text-[10px] text-slate-400">Key / Code</th>
+                        <th class="px-6 py-3.5 font-extrabold text-[10px] text-slate-400">Target</th>
+                        <th class="px-6 py-3.5 font-extrabold text-[10px] text-slate-400">Type</th>
+                        <th class="px-6 py-3.5 font-extrabold text-[10px] text-slate-400">Difficulty</th>
+                        <th class="px-6 py-3.5 font-extrabold text-[10px] text-slate-400">Time</th>
+                        <th class="px-6 py-3.5 font-extrabold text-[10px] text-slate-400">Q's</th>
+                        <th class="px-6 py-3.5 font-extrabold text-[10px] text-slate-400 text-right">Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="modulesTableBody" class="divide-y divide-slate-800/40 bg-transparent">
+                    @forelse($allModules as $module)
+                    <tr class="hover:bg-indigo-500/5 border-b border-slate-800/40">
+                        <td class="px-6 py-4 font-semibold text-slate-500">{{ $module->id }}</td>
+                        <td class="px-6 py-4">
+                            <code class="font-mono text-xs bg-slate-950/65 px-2.5 py-1.5 rounded-lg text-indigo-400 border border-slate-800/80 font-bold tracking-wide">{{ $module->key ?? 'N/A' }}</code>
+                        </td>
+                        <td class="px-6 py-4">
+                            @if($module->sections->isEmpty())
+                                <span class="inline-flex items-center px-2.5 py-1 rounded-lg text-[10px] font-extrabold bg-amber-500/10 text-amber-400 border border-amber-500/20 uppercase tracking-wide">
+                                    <i class="bi bi-unlock mr-1.5"></i> Standalone
                                 </span>
-                            </td>
-                            <td>{{ $module->duration_minutes }}m</td>
-                            <td>{{ $module->total_questions }}</td>
-                            <td class="text-end">
-                                <button class="btn btn-sm btn-outline-info clone-module-btn" data-id="{{ $module->id }}" title="Clone Module">
+                            @else
+                                <div class="flex flex-col gap-1.5">
+                                    @foreach($module->sections as $sec)
+                                    <div>
+                                        <span class="inline-flex items-center px-2.5 py-1 rounded-lg text-[10px] font-extrabold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 uppercase tracking-wide">
+                                            <i class="bi bi-tag mr-1.5"></i> {{ $sec->test->title ?? 'Test' }} &raquo; <span class="ml-1 opacity-90 text-white font-medium normal-case">{{ $sec->name }}</span>
+                                        </span>
+                                    </div>
+                                    @endforeach
+                                </div>
+                            @endif
+                        </td>
+                        <td class="px-6 py-4">
+                            <span class="inline-flex items-center px-2.5 py-1 rounded-lg text-[10px] font-extrabold bg-slate-800/60 text-slate-350 border border-slate-700/60 uppercase tracking-wide">Module {{ $module->module_number }}</span>
+                        </td>
+                        <td class="px-6 py-4">
+                            @php
+                                $diffColors = [
+                                    'hard' => 'bg-rose-500/10 text-rose-400 border-rose-500/20',
+                                    'easy' => 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20',
+                                    'standard' => 'bg-blue-500/10 text-blue-400 border-blue-500/20'
+                                ];
+                                $colorClass = $diffColors[$module->difficulty_level] ?? 'bg-slate-800/60 text-slate-350 border-slate-700/60';
+                            @endphp
+                            <span class="inline-flex items-center px-2.5 py-1 rounded-lg text-[10px] font-extrabold border uppercase tracking-wide {{ $colorClass }}">
+                                {{ ucfirst($module->difficulty_level) }}
+                            </span>
+                        </td>
+                        <td class="px-6 py-4 font-bold text-slate-200">{{ $module->duration_minutes }}<span class="text-[10px] ml-0.5 opacity-50 uppercase tracking-tighter">min</span></td>
+                        <td class="px-6 py-4 font-extrabold text-white text-sm">{{ $module->total_questions }}</td>
+                        <td class="px-6 py-4 text-right">
+                            <div class="flex justify-end gap-1">
+                                <button class="w-8 h-8 flex items-center justify-center text-slate-400 hover:text-indigo-400 hover:bg-indigo-500/10 rounded-xl clone-module-btn cursor-pointer" data-id="{{ $module->id }}" title="Clone Module">
                                     <i class="bi bi-copy"></i>
                                 </button>
-                                <button class="btn btn-sm btn-outline-danger delete-module-btn" data-id="{{ $module->id }}" title="Delete">
+                                <button class="w-8 h-8 flex items-center justify-center text-slate-400 hover:text-rose-455 hover:bg-rose-500/10 rounded-xl delete-module-btn cursor-pointer" data-id="{{ $module->id }}" title="Delete">
                                     <i class="bi bi-trash"></i>
                                 </button>
-                            </td>
-                        </tr>
-                        @empty
-                        <tr>
-                            <td colspan="8" class="text-center text-muted py-4">No modules found. Create one above!</td>
-                        </tr>
-                        @endforelse
-                    </tbody>
-                </table>
-            </div>
+                            </div>
+                        </td>
+                    </tr>
+                    @empty
+                    <tr>
+                        <td colspan="8" class="px-6 py-20 text-center">
+                            <div class="flex flex-col items-center justify-center">
+                                <div class="w-20 h-20 rounded-full bg-slate-900/40 border border-slate-800/60 flex items-center justify-center mb-6">
+                                    <i class="bi bi-inbox text-3xl text-slate-450"></i>
+                                </div>
+                                <h4 class="text-base font-extrabold text-white">No modules found</h4>
+                                <p class="text-xs text-slate-400 mt-1 max-w-xs mx-auto leading-relaxed">You haven't created any reusable modules yet. Create one to start building your tests.</p>
+                                <button class="mt-6 px-5 py-3 bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-500 hover:to-violet-500 text-white font-extrabold text-xs uppercase tracking-wider rounded-xl shadow-lg shadow-indigo-600/20 cursor-pointer" data-bs-toggle="offcanvas" data-bs-target="#createModuleOffcanvas">
+                                    Create Your First Module
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                    @endforelse
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Create Module Offcanvas -->
+    <div class="offcanvas offcanvas-end" tabindex="-1" id="createModuleOffcanvas" style="width: 480px;">
+        <div class="offcanvas-header border-b border-slate-800/80 bg-slate-950/40 px-8 py-5 flex items-center justify-between">
+            <h5 class="offcanvas-title font-extrabold text-white flex items-center text-base"><i class="bi bi-folder-plus text-indigo-400 mr-3 text-xl"></i> Create Module</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+        </div>
+        <div class="offcanvas-body p-8 overflow-y-auto">
+            <form id="moduleForm" class="space-y-6">
+                @csrf
+                <div>
+                    <label for="moduleTest" class="text-xs font-extrabold text-slate-400 tracking-wider uppercase mb-2 block">Target Test <span class="text-slate-550 font-normal normal-case">(Optional)</span></label>
+                    <select class="form-select tom-select" id="moduleTest" name="test_id">
+                        <option value="">No test (Standalone reusable module)</option>
+                        @foreach($tests as $test)
+                        <option value="{{ $test->id }}">{{ $test->title }}</option>
+                        @endforeach
+                    </select>
+                    <p class="text-[10px] text-slate-500 mt-2 italic flex items-center gap-1.5 font-medium">
+                        <i class="bi bi-info-circle text-indigo-400"></i> Section will be auto-generated inside the test
+                    </p>
+                </div>
+                
+                <div>
+                    <label for="moduleSectionType" class="text-xs font-extrabold text-slate-400 tracking-wider uppercase mb-2 block">Section Type <span class="text-rose-500">*</span></label>
+                    <select class="w-full px-4 py-2.5 rounded-xl border border-slate-800/80 bg-slate-900/60 text-white focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 outline-none appearance-none bg-no-repeat bg-[right_1rem_center] bg-[length:1em_1em]" style="background-image: url('data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 fill=%22none%22 viewBox=%220 0 24 24%22 stroke=%22%2394a3b8%22 stroke-width=%222%22%3E%3Cpath stroke-linecap=%22round%22 stroke-linejoin=%22round%22 d=%22M19 9l-7 7-7-7%22 /%3E%3C/svg%3E')" id="moduleSectionType" name="section_type" required onchange="applyModuleDefaults(this)">
+                        <option value="reading_writing" data-type="reading_writing">Reading and Writing</option>
+                        <option value="math" data-type="math">Math</option>
+                    </select>
+                </div>
+
+                <div>
+                    <label for="moduleKey" class="text-xs font-extrabold text-slate-400 tracking-wider uppercase mb-2 block">Module Key / Unique Code <span class="text-slate-550 font-normal normal-case">(Optional)</span></label>
+                    <input type="text" class="w-full px-4 py-2.5 rounded-xl border border-slate-800/80 bg-slate-900/60 text-white focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 outline-none font-mono text-indigo-400 font-bold" id="moduleKey" name="key" placeholder="e.g. RW_M1_STANDARD_01">
+                </div>
+
+                <div class="grid grid-cols-2 gap-6">
+                    <div>
+                        <label for="moduleNumber" class="text-xs font-extrabold text-slate-400 tracking-wider uppercase mb-2 block">Module Type # <span class="text-rose-500">*</span></label>
+                        <select class="w-full px-4 py-2.5 rounded-xl border border-slate-800/80 bg-slate-900/60 text-white focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 outline-none appearance-none bg-no-repeat bg-[right_1rem_center] bg-[length:1em_1em]" style="background-image: url('data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 fill=%22none%22 viewBox=%220 0 24 24%22 stroke=%22%2394a3b8%22 stroke-width=%222%22%3E%3Cpath stroke-linecap=%22round%22 stroke-linejoin=%22round%22 d=%22M19 9l-7 7-7-7%22 /%3E%3C/svg%3E')" id="moduleNumber" name="module_number" required>
+                            <option value="1">1 (Standard)</option>
+                            <option value="2">2 (Adaptive)</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label for="difficultyLevel" class="text-xs font-extrabold text-slate-400 tracking-wider uppercase mb-2 block">Difficulty <span class="text-rose-500">*</span></label>
+                        <select class="w-full px-4 py-2.5 rounded-xl border border-slate-800/80 bg-slate-900/60 text-white focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 outline-none appearance-none bg-no-repeat bg-[right_1rem_center] bg-[length:1em_1em]" style="background-image: url('data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 fill=%22none%22 viewBox=%220 0 24 24%22 stroke=%22%2394a3b8%22 stroke-width=%222%22%3E%3Cpath stroke-linecap=%22round%22 stroke-linejoin=%22round%22 d=%22M19 9l-7 7-7-7%22 /%3E%3C/svg%3E')" id="difficultyLevel" name="difficulty_level" required>
+                            <option value="standard">Standard (M1)</option>
+                            <option value="easy">Easy (M2)</option>
+                            <option value="hard">Hard (M2)</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-2 gap-6">
+                    <div>
+                        <label for="moduleDuration" class="text-xs font-extrabold text-slate-400 tracking-wider uppercase mb-2 block">Duration (min) <span class="text-rose-500">*</span></label>
+                        <input type="number" class="w-full px-4 py-2.5 rounded-xl border border-slate-800/80 bg-slate-900/60 text-white focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 outline-none" id="moduleDuration" name="duration_minutes" value="32" required>
+                    </div>
+                    <div>
+                        <label for="totalQuestions" class="text-xs font-extrabold text-slate-400 tracking-wider uppercase mb-2 block">Questions <span class="text-rose-500">*</span></label>
+                        <input type="number" class="w-full px-4 py-2.5 rounded-xl border border-slate-800/80 bg-slate-900/60 text-white focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 outline-none" id="totalQuestions" name="total_questions" value="27" required>
+                    </div>
+                </div>
+                
+                <div class="bg-indigo-500/5 border border-indigo-500/15 rounded-xl p-4 flex gap-3 shadow-xl">
+                    <i class="bi bi-info-circle-fill text-indigo-400 text-base shrink-0 mt-0.5"></i>
+                    <p class="text-[11px] text-indigo-300 leading-relaxed mb-0 font-medium">Standalone modules are reusable and can be associated with multiple test sections later.</p>
+                </div>
+
+                <div class="pt-4">
+                    <button type="submit" class="w-full py-3.5 bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-500 hover:to-violet-500 text-white font-extrabold rounded-xl shadow-lg shadow-indigo-600/25 text-xs uppercase tracking-wider cursor-pointer">
+                        Create Module
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Link Module Offcanvas -->
+    <div class="offcanvas offcanvas-end" tabindex="-1" id="linkModuleOffcanvas" style="width: 480px;">
+        <div class="offcanvas-header border-b border-slate-800/80 bg-slate-950/40 px-8 py-5 flex items-center justify-between">
+            <h5 class="offcanvas-title font-extrabold text-white flex items-center text-base"><i class="bi bi-link-45deg text-indigo-400 mr-3 text-xl"></i> Link Module</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+        </div>
+        <div class="offcanvas-body p-8 overflow-y-auto">
+            <form id="linkModuleForm" class="space-y-6">
+                @csrf
+                <div>
+                    <label class="text-xs font-extrabold text-slate-400 tracking-wider uppercase mb-2 block">Link Target <span class="text-rose-500">*</span></label>
+                    <div class="flex gap-6 mt-1">
+                        <label class="flex items-center group cursor-pointer">
+                            <input class="w-4 h-4 text-indigo-650 border-slate-800 bg-slate-900/60 focus:ring-indigo-500/20 cursor-pointer rounded-full" type="radio" name="link_target_type" id="targetTypeSection" value="section" checked>
+                            <span class="ml-2.5 text-xs font-extrabold text-slate-350 group-hover:text-indigo-400 uppercase tracking-wider">Existing Section</span>
+                        </label>
+                        <label class="flex items-center group cursor-pointer">
+                            <input class="w-4 h-4 text-indigo-650 border-slate-800 bg-slate-900/60 focus:ring-indigo-500/20 cursor-pointer rounded-full" type="radio" name="link_target_type" id="targetTypeTest" value="test">
+                            <span class="ml-2.5 text-xs font-extrabold text-slate-350 group-hover:text-indigo-400 uppercase tracking-wider">Test &amp; Auto-Create</span>
+                        </label>
+                    </div>
+                </div>
+
+                <div id="linkSectionContainer">
+                    <label for="linkSection" class="text-xs font-extrabold text-slate-400 tracking-wider uppercase mb-2 block">Target Section <span class="text-rose-500">*</span></label>
+                    <select class="form-select tom-select" id="linkSection" name="section_id" required>
+                        <option value="">Select section...</option>
+                        @foreach($tests as $test)
+                            @foreach($test->sections as $section)
+                            <option value="{{ $section->id }}">{{ $test->title }} - {{ $section->name }}</option>
+                            @endforeach
+                        @endforeach
+                    </select>
+                </div>
+
+                <div id="linkTestFieldsContainer" class="d-none space-y-6">
+                    <div>
+                        <label for="linkTest" class="text-xs font-extrabold text-slate-400 tracking-wider uppercase mb-2 block">Target Test <span class="text-rose-500">*</span></label>
+                        <select class="form-select tom-select" id="linkTest" name="test_id">
+                            <option value="">Select test...</option>
+                            @foreach($tests as $test)
+                            <option value="{{ $test->id }}">{{ $test->title }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+                    <div>
+                        <label for="linkSectionType" class="text-xs font-extrabold text-slate-400 tracking-wider uppercase mb-2 block">Section Type <span class="text-rose-500">*</span></label>
+                        <select class="w-full px-4 py-2.5 rounded-xl border border-slate-800/80 bg-slate-900/60 text-white focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 outline-none appearance-none bg-no-repeat bg-[right_1rem_center] bg-[length:1em_1em]" style="background-image: url('data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 fill=%22none%22 viewBox=%220 0 24 24%22 stroke=%22%2394a3b8%22 stroke-width=%222%22%3E%3Cpath stroke-linecap=%22round%22 stroke-linejoin=%22round%22 d=%22M19 9l-7 7-7-7%22 /%3E%3C/svg%3E')" id="linkSectionType" name="section_type">
+                            <option value="">Select type...</option>
+                            <option value="reading_writing">Reading and Writing</option>
+                            <option value="math">Math</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div>
+                    <label for="linkModule" class="text-xs font-extrabold text-slate-400 tracking-wider uppercase mb-2 block">Reusable Module <span class="text-rose-500">*</span></label>
+                    <select class="form-select tom-select" id="linkModule" name="module_id" required>
+                        <option value="">Select module by key/ID...</option>
+                        @foreach($allModules as $mod)
+                        <option value="{{ $mod->id }}">[{{ $mod->key ?? 'ID: ' . $mod->id }}] - Mod {{ $mod->module_number }} ({{ ucfirst($mod->difficulty_level) }})</option>
+                        @endforeach
+                    </select>
+                </div>
+
+                <div class="pt-4">
+                    <button type="submit" class="w-full py-3.5 bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-500 hover:to-violet-500 text-white font-extrabold rounded-xl shadow-lg shadow-indigo-600/25 text-xs uppercase tracking-wider cursor-pointer">
+                        Associate Module
+                    </button>
+                </div>
+            </form>
         </div>
     </div>
 </div>

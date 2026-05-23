@@ -9,173 +9,97 @@
         <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/easymde/dist/easymde.min.css">
         <link href="https://cdn.jsdelivr.net/npm/tabulator-tables@5.5.2/dist/css/tabulator_bootstrap5.min.css" rel="stylesheet">
         <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css">
-        <style>
-            .tom-select {
-                height: auto !important;
-            }
-
-            .ts-control {
-                border-radius: 0.375rem !important;
-                padding: 0.5rem 0.75rem !important;
-            }
-
-            .ts-wrapper {
-                position: relative !important;
-                z-index: 5;
-            }
-
-            .ts-wrapper.focus {
-                z-index: 1060 !important;
-            }
-
-            .ts-dropdown {
-                z-index: 9999 !important;
-                position: absolute !important;
-            }
-
-            .x-small {
-                font-size: 0.75rem;
-            }
-
-            .font-monospace {
-                font-family: SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace !important;
-            }
-
-            .editor-toolbar {
-                border-color: #dee2e6;
-                border-radius: 0.375rem 0.375rem 0 0;
-            }
-
-            .CodeMirror {
-                border-color: #dee2e6;
-                border-radius: 0 0 0.375rem 0.375rem;
-            }
-
-            .builder-block {
-                transition: all 0.2s ease-in-out;
-            }
-
-            .builder-block:hover {
-                border-color: #ffc107 !important;
-            }
-
-            .file-dropzone {
-                transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
-            }
-
-            .file-dropzone:hover {
-                border-color: #0d6efd !important;
-                background-color: rgba(13, 110, 253, 0.04) !important;
-                box-shadow: 0 4px 12px rgba(0, 0, 0, 0.03);
-            }
-
-            /* Preview elements typography and media parity styling */
-            .passage-preview img, 
-            .stem-preview img, 
-            .edit-passage-preview img, 
-            .edit-stem-preview img,
-            #editQuestionPreviewContent img,
-            .builder-block-preview img {
-                display: block !important;
-                margin: 12px auto !important;
-                width: 55% !important;
-                max-width: 55% !important;
-                height: auto !important;
-            }
-            .passage-preview, 
-            .stem-preview, 
-            .edit-passage-preview, 
-            .edit-stem-preview,
-            #editQuestionPreviewContent,
-            .builder-block-preview {
-                font-family: "Noto Serif", Georgia, serif !important;
-            }
-            .passage-preview p, 
-            .stem-preview p, 
-            .edit-passage-preview p, 
-            .edit-stem-preview p,
-            #editQuestionPreviewContent p,
-            .builder-block-preview p {
-                margin-bottom: 0 !important;
-            }
-            .passage-preview ol, 
-            .stem-preview ol, 
-            .edit-passage-preview ol, 
-            .edit-stem-preview ol,
-            #editQuestionPreviewContent ol,
-            .builder-block-preview ol {
-                list-style-type: decimal !important;
-                padding-left: 1.5rem !important;
-                margin-bottom: 1rem !important;
-            }
-            .passage-preview ul, 
-            .stem-preview ul, 
-            .edit-passage-preview ul, 
-            .edit-stem-preview ul,
-            #editQuestionPreviewContent ul,
-            .builder-block-preview ul {
-                list-style-type: disc !important;
-                padding-left: 1.5rem !important;
-                margin-bottom: 1rem !important;
-            }
-            .passage-preview li, 
-            .stem-preview li, 
-            .edit-passage-preview li, 
-            .edit-stem-preview li,
-            #editQuestionPreviewContent li,
-            .builder-block-preview li {
-                display: list-item !important;
-            }
-        </style>
+        @vite(['resources/css/test-dashboard-admin.css'])
     @endpush
 
-    <div class="container-fluid py-4">
-        <div id="alert-container" class="position-fixed top-0 end-0 p-3" style="z-index: 1060;"></div>
-        <div class="d-flex justify-content-between align-items-center mb-4">
-            <h1 class="h3 mb-0 text-gray-800">Test Dashboard</h1>
-            <div class="d-flex gap-2">
-                <button class="btn btn-primary fw-bold shadow-sm" data-bs-toggle="modal" data-bs-target="#quickAuthorWizardModal">
-                    <i class="bi bi-magic"></i> + Create SAT Content
+    <div class="fixed inset-0 z-40 flex h-screen w-screen overflow-hidden bg-[#0b0f19] dark-theme-dashboard">
+        <div id="alert-container" class="fixed top-6 right-6 z-50"></div>
+        
+        <!-- Sidebar Navigation -->
+        <aside class="w-72 bg-slate-950/80 border-r border-slate-800/80 flex flex-col shrink-0 text-slate-300 relative z-20">
+            <div class="p-8 border-b border-slate-850 flex items-center gap-3">
+                <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-indigo-650 to-violet-500 flex items-center justify-center text-white shadow-lg shadow-indigo-500/30 ring-1 ring-white/10">
+                    <i class="bi bi-mortarboard-fill text-xl"></i>
+                </div>
+                <div>
+                    <h1 class="text-lg font-extrabold text-white tracking-tight leading-none">Digital SAT</h1>
+                    <span class="text-[10px] text-indigo-400 font-extrabold tracking-widest uppercase mt-1 block">Content Suite</span>
+                </div>
+            </div>
+            
+            <div class="p-6">
+                <button class="w-full px-5 py-4 bg-gradient-to-r from-indigo-600 via-violet-600 to-indigo-500 hover:from-indigo-500 hover:to-violet-500 text-white font-extrabold text-sm rounded-xl shadow-lg shadow-indigo-600/25 hover:shadow-indigo-600/45 flex items-center justify-center gap-3 border border-indigo-500/20" data-bs-toggle="modal" data-bs-target="#quickAuthorWizardModal">
+                    <i class="bi bi-magic text-base animate-pulse"></i> New Content
                 </button>
-                <button class="btn btn-outline-primary"
-                    onclick="refreshTestDashboardData(captureTomSelectPreservation(null))">
+            </div>
+            
+            <nav class="flex-1 overflow-y-auto px-4 space-y-1.5" id="dashboardTabs" role="tablist">
+                <button class="w-full text-left px-4 py-3.5 rounded-xl text-sm text-slate-400 sidebar-link active flex items-center gap-3" id="tests-tab" data-bs-toggle="tab" data-bs-target="#tests" type="button" role="tab" aria-selected="true">
+                    <i class="bi bi-journal-text text-lg"></i> Practice Tests
+                </button>
+                <button class="w-full text-left px-4 py-3.5 rounded-xl text-sm text-slate-400 sidebar-link flex items-center gap-3" id="sections-tab" data-bs-toggle="tab" data-bs-target="#sections" type="button" role="tab">
+                    <i class="bi bi-folder2-open text-lg"></i> Sections
+                </button>
+                <button class="w-full text-left px-4 py-3.5 rounded-xl text-sm text-slate-400 sidebar-link flex items-center gap-3" id="modules-tab" data-bs-toggle="tab" data-bs-target="#modules" type="button" role="tab">
+                    <i class="bi bi-box-seam text-lg"></i> Modules
+                </button>
+                <button class="w-full text-left px-4 py-3.5 rounded-xl text-sm text-slate-400 sidebar-link flex items-center gap-3" id="questions-tab" data-bs-toggle="tab" data-bs-target="#questions" type="button" role="tab">
+                    <i class="bi bi-database text-lg"></i> Question Bank
+                </button>
+                <div class="py-2">
+                    <div class="h-px bg-slate-900 w-full"></div>
+                </div>
+                <button class="w-full text-left px-4 py-3.5 rounded-xl text-sm text-amber-500/90 hover:text-amber-400 sidebar-link sidebar-link-builder flex items-center gap-3" id="builder-tab" data-bs-toggle="tab" data-bs-target="#builder" type="button" role="tab">
+                    <i class="bi bi-magic text-lg"></i> Easy Builder
+                </button>
+            </nav>
+ 
+            <div class="p-6 border-t border-slate-900 bg-slate-950/40">
+                <button class="w-full px-4 py-2.5 text-xs text-slate-400 hover:text-white hover:bg-slate-900 rounded-xl flex items-center justify-center gap-2.5 border border-slate-800/80 hover:border-slate-700/80" onclick="refreshTestDashboardData(captureTomSelectPreservation(null))">
                     <i class="bi bi-arrow-clockwise"></i> Refresh Data
                 </button>
             </div>
-        </div>
-
-        <ul class="nav nav-pills mb-4 shadow-sm p-2 bg-white rounded" id="dashboardTabs" role="tablist">
-            <li class="nav-item" role="presentation">
-                <button class="nav-link active" id="tests-tab" data-bs-toggle="tab" data-bs-target="#tests"
-                    type="button" role="tab">Tests</button>
-            </li>
-            <li class="nav-item" role="presentation">
-                <button class="nav-link" id="sections-tab" data-bs-toggle="tab" data-bs-target="#sections"
-                    type="button" role="tab">Sections</button>
-            </li>
-            <li class="nav-item" role="presentation">
-                <button class="nav-link" id="modules-tab" data-bs-toggle="tab" data-bs-target="#modules" type="button"
-                    role="tab">Modules</button>
-            </li>
-            <li class="nav-item" role="presentation">
-                <button class="nav-link" id="questions-tab" data-bs-toggle="tab" data-bs-target="#questions"
-                    type="button" role="tab">Questions & Bank</button>
-            </li>
-            <li class="nav-item" role="presentation">
-                <button class="nav-link" id="builder-tab" data-bs-toggle="tab" data-bs-target="#builder" type="button"
-                    role="tab">
-                    <i class="bi bi-magic"></i> Easy Builder
-                </button>
-            </li>
-        </ul>
-
-        <div class="tab-content" id="dashboardTabContent">
-            <x-test-dashboard.tests-tab :tests="$tests" />
-            <x-test-dashboard.sections-tab :tests="$tests" />
-            <x-test-dashboard.modules-tab :tests="$tests" :all-modules="$allModules" />
-            <x-test-dashboard.questions-tab :tests="$tests" :questions="$questions" :questions-total="$questionsTotal" />
-            <x-test-dashboard.builder-tab :tests="$tests" />
-        </div>
+        </aside>
+ 
+        <!-- Main Content Area -->
+        <main class="flex-1 flex flex-col h-screen overflow-hidden bg-[#0b0f19]">
+            <!-- Modern Header inside Main Area -->
+            <header class="flex justify-between items-center border-b border-slate-800/80 shadow-md z-10 !px-8 !py-3 bg-slate-950/40 text-slate-100">
+                <div class="text-left">
+                    <h3 class="text-indigo-400 font-extrabold m-0 bg-gradient-to-r from-indigo-400 via-violet-400 to-indigo-300 bg-clip-text text-transparent" id="dashboard-active-title">Test Dashboard</h3>
+                </div>
+            @auth
+                <div class="flex items-center gap-4">
+                    <div class="flex flex-col text-right">
+                        <span class="text-sm font-bold text-slate-200 leading-none">{{ auth()->user()->username ?? auth()->user()->email }}</span>
+                        <span class="text-[10px] text-indigo-400 font-extrabold uppercase tracking-widest mt-1.5 flex items-center gap-1"><span class="w-1.5 h-1.5 rounded-full bg-indigo-500 animate-ping"></span> Administrator</span>
+                    </div>
+                    <div class="w-px h-8 bg-slate-800"></div>
+                    <div class="flex items-center gap-2">
+                        <a href="{{ route('home') }}" class="text-slate-400 hover:text-indigo-400 flex items-center justify-center w-10 h-10 rounded-xl hover:bg-slate-900" title="Go to home">
+                            <i class="bi bi-house text-xl"></i>
+                        </a>
+                        <form action="{{ route('logout') }}" method="POST" class="m-0">
+                            @csrf
+                            <button type="submit" class="text-slate-400 hover:text-rose-400 flex items-center justify-center w-10 h-10 rounded-xl hover:bg-slate-900" title="Logout">
+                                <i class="bi bi-box-arrow-right text-xl"></i>
+                            </button>
+                        </form>
+                    </div>
+                </div>
+                @endauth
+            </header>
+ 
+            <div class="flex-1 overflow-y-auto !p-8 !md:p-4">
+                <div class="tab-content h-full" id="dashboardTabContent">
+                    <x-test-dashboard.tests-tab :tests="$tests" />
+                    <x-test-dashboard.sections-tab :tests="$tests" />
+                    <x-test-dashboard.modules-tab :tests="$tests" :all-modules="$allModules" />
+                    <x-test-dashboard.questions-tab :tests="$tests" :questions="$questions" :questions-total="$questionsTotal" />
+                    <x-test-dashboard.builder-tab :tests="$tests" />
+                </div>
+            </div>
+        </main>
     </div>
 
     <x-test-dashboard.modals />
@@ -205,83 +129,6 @@
                 QUESTIONS_ATTACH_URL: "{{ route('test-dashboard.questions.attach') }}",
                 BASE_URL: "/test-dashboard",
                 QUESTIONS_PER_PAGE: 25
-            };
-
-            window.TestDashboardExamples = {
-                RW_JSON: {
-                    items: [{
-                        stem: 'Which choice best describes the **main idea** of the text?',
-                        question_type: 'multiple_choice',
-                        difficulty: 'medium',
-                        skill_domain: 'information_and_ideas',
-                        passage: {
-                            content: 'The researcher noted that early observations were incomplete, yet they shaped every later hypothesis.',
-                            source_title: 'Field notes (fictional sample)'
-                        },
-                        choices: [{
-                                label: 'A',
-                                content: 'Early observations were useless.',
-                                is_correct: false
-                            },
-                            {
-                                label: 'B',
-                                content: 'Initial incomplete work influenced later science.',
-                                is_correct: true
-                            },
-                            {
-                                label: 'C',
-                                content: 'Later teams refused to use older data.',
-                                is_correct: false
-                            },
-                            {
-                                label: 'D',
-                                content: 'Hypotheses are never revised.',
-                                is_correct: false
-                            }
-                        ],
-                        explanation: 'The passage stresses that early incomplete observations still shaped later hypotheses.'
-                    }]
-                },
-                MATH_JSON: {
-                    items: [{
-                            stem: 'What is **2 + 2**?',
-                            question_type: 'multiple_choice',
-                            difficulty: 'easy',
-                            skill_domain: 'algebra',
-                            choices: [{
-                                    label: 'A',
-                                    content: '3',
-                                    is_correct: false
-                                },
-                                {
-                                    label: 'B',
-                                    content: '4',
-                                    is_correct: true
-                                },
-                                {
-                                    label: 'C',
-                                    content: '5',
-                                    is_correct: false
-                                },
-                                {
-                                    label: 'D',
-                                    content: '6',
-                                    is_correct: false
-                                }
-                            ],
-                            explanation: 'The sum of 2 and 2 is 4.'
-                        },
-                        {
-                            stem: 'If $$x^2 = 9$$, what is the **positive** value of $$x$$?',
-                            question_type: 'student_produced_response',
-                            difficulty: 'medium',
-                            skill_domain: 'advanced_math',
-                            spr_correct_answers: ['3'],
-                            spr_hint: 'Enter a positive number only.',
-                            explanation: 'The positive square root of 9 is 3.'
-                        }
-                    ]
-                }
             };
         </script>
         @vite(['resources/js/test-dashboard.js'])

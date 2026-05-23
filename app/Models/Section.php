@@ -9,6 +9,9 @@ class Section extends Model
 {
     use HasFactory;
 
+    public const TYPE_RW = 'reading_writing';
+    public const TYPE_MATH = 'math';
+
     protected $fillable = [
         'test_id',
         'name',

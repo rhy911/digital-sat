@@ -24,6 +24,9 @@ class BulkQuestionImportService
     /**
      * Import from a ZIP file containing a data file (json/csv) and images.
      */
+    /**
+     * Import from a ZIP file containing a data file (json/csv) and images.
+     */
     public function importFromZip(Request $request): array
     {
         @ini_set('memory_limit', '512M');
@@ -33,16 +36,24 @@ class BulkQuestionImportService
             'start_position' => 'nullable|integer|min:1',
         ]);
 
+        return $this->importZipFile(
+            $request->file('zip_file'),
+            (int) $request->input('module_id'),
+            (int) $request->input('start_position', 1)
+        );
+    }
+
+    /**
+     * Decoupled ZIP import logic working directly on native UploadedFile and primitives.
+     */
+    public function importZipFile(\Illuminate\Http\UploadedFile $file, int $moduleId, int $startPosition = 1): array
+    {
+        @ini_set('memory_limit', '512M');
         if (!class_exists('ZipArchive')) {
             throw new \Exception('PHP ZipArchive extension is not installed or enabled.');
         }
 
-        $file = $request->file('zip_file');
-        if (!$file) {
-            throw new \Exception('No ZIP file uploaded.');
-        }
         $zip = new ZipArchive();
-        
         if ($zip->open($file->getRealPath()) !== true) {
             throw ValidationException::withMessages(['zip_file' => ['Could not open ZIP file.']]);
         }
@@ -64,17 +75,17 @@ class BulkQuestionImportService
                 \RecursiveIteratorIterator::LEAVES_ONLY
             );
 
-            foreach ($allFiles as $file) {
-                if (str_starts_with($file->getFilename(), '.') || str_contains($file->getPathname(), '__MACOSX')) {
+            foreach ($allFiles as $fileItem) {
+                if (str_starts_with($fileItem->getFilename(), '.') || str_contains($fileItem->getPathname(), '__MACOSX')) {
                     continue;
                 }
 
-                if (preg_match('/\.(json|csv)$/i', $file->getFilename())) {
-                    \Illuminate\Support\Facades\Log::info('Found data file in ZIP: ' . $file->getPathname());
+                if (preg_match('/\.(json|csv)$/i', $fileItem->getFilename())) {
+                    \Illuminate\Support\Facades\Log::info('Found data file in ZIP: ' . $fileItem->getPathname());
                     $allDataFiles[] = [
-                        'path' => $file->getPathname(),
-                        'base' => $file->getPath(),
-                        'ext' => strtolower($file->getExtension())
+                        'path' => $fileItem->getPathname(),
+                        'base' => $fileItem->getPath(),
+                        'ext' => strtolower($fileItem->getExtension())
                     ];
                 }
             }
@@ -142,8 +153,8 @@ class BulkQuestionImportService
 
             // 3. Build payload
             $payload = [
-                'module_id' => $request->input('module_id'),
-                'start_position' => $request->input('start_position', 1),
+                'module_id' => $moduleId,
+                'start_position' => $startPosition,
                 'items' => $allItems
             ];
 
@@ -280,6 +291,14 @@ class BulkQuestionImportService
             if ($request->filled($key)) $payload[$key] = $request->input($key);
         }
 
+        return $this->buildPayloadFromArray($payload);
+    }
+
+    /**
+     * Standardize and build payload from native array, decoupled from HTTP Request.
+     */
+    public function buildPayloadFromArray(array $payload): array
+    {
         // Auto-detect items wrapper if user sent raw list or single item
         if (isset($payload['stem']) && ! isset($payload['items'])) {
             $payload = ['items' => [$payload]];

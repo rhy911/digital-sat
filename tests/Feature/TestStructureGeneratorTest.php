@@ -12,6 +12,7 @@ class TestStructureGeneratorTest extends TestCase
 
     public function test_can_generate_full_sat_structure()
     {
+        $this->withoutMiddleware();
         $user = User::factory()->create(['role' => 'admin']);
 
         $response = $this->actingAs($user)->postJson(route('test-dashboard.tests.generate-full'), [
@@ -44,5 +45,32 @@ class TestStructureGeneratorTest extends TestCase
 
         $mathModulesCount = \Illuminate\Support\Facades\DB::table('section_modules')->where('section_id', $mathSectionId)->count();
         $this->assertEquals(3, $mathModulesCount);
+    }
+
+    public function test_can_generate_short_sat_structure()
+    {
+        $this->withoutMiddleware();
+        $user = User::factory()->create(['role' => 'admin']);
+
+        $response = $this->actingAs($user)->postJson(route('test-dashboard.tests.generate-full'), [
+            'title' => 'Mock Short SAT Test',
+            'test_type' => 'short_test',
+        ]);
+
+        $response->assertStatus(201);
+        $this->assertDatabaseHas('tests', [
+            'title' => 'Mock Short SAT Test',
+            'test_type' => 'short_test'
+        ]);
+
+        $testId = $response->json('data.id');
+        
+        // Verify modules have reduced time/questions
+        $module = \App\Models\Module::whereHas('section', function($q) use ($testId) {
+            $q->where('test_id', $testId)->where('type', 'reading_writing');
+        })->first();
+
+        $this->assertEquals(20, $module->duration_minutes);
+        $this->assertEquals(15, $module->total_questions);
     }
 }

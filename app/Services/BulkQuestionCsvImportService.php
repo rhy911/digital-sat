@@ -28,7 +28,18 @@ class BulkQuestionCsvImportService
             'start_position' => 'required|integer|min:1',
         ]);
 
-        $file = $request->file('csv_file');
+        return $this->parseCsvFileToPayload(
+            $request->file('csv_file'),
+            (int) $validated['module_id'],
+            (int) $validated['start_position']
+        );
+    }
+
+    /**
+     * Parse an UploadedFile CSV to pipeline payload directly (Request decoupled).
+     */
+    public function parseCsvFileToPayload(\Illuminate\Http\UploadedFile $file, int $moduleId, int $startPosition): array
+    {
         if (! $file->isValid()) {
             throw ValidationException::withMessages([
                 'csv_file' => ['The uploaded file is invalid.'],
@@ -39,8 +50,8 @@ class BulkQuestionCsvImportService
         $items = $this->parseCsvToItems($raw);
 
         return [
-            'module_id' => (int) $validated['module_id'],
-            'start_position' => (int) $validated['start_position'],
+            'module_id' => $moduleId,
+            'start_position' => $startPosition,
             'items' => $items,
         ];
     }
