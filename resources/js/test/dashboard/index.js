@@ -8,7 +8,8 @@ import {
     showAlert, showCustomConfirm, getTomSelectValue, captureTomSelectPreservation,
     rebuildSectionTestTomSelect, rebuildModuleSectionTomSelect, rebuildQuestionModuleTomSelect,
     rebuildQuestionPassageTomSelect, rebuildLinkModuleTomSelect, initTomSelectOn,
-    destroyTomSelectIfAny, optionExistsInSelect, humanizeUnderscores, capitalizeFirstLetter
+    destroyTomSelectIfAny, optionExistsInSelect, humanizeUnderscores, capitalizeFirstLetter,
+    loadHeavyDependencies
 } from './utils/helpers.js';
 import { 
     initEditModalEditors, refreshEditMediaList, debouncedEditQuestionPreview, 
@@ -29,7 +30,8 @@ import {
 import { initQuickAuthorWizard } from './components/wizard.js';
 import * as BulkImport from './components/bulk-import.js';
 
-document.addEventListener('DOMContentLoaded', function () {
+document.addEventListener('DOMContentLoaded', async function () {
+    await loadHeavyDependencies();
 
     function rememberTestDashboardTab() {
         const activeBtn = document.querySelector('#dashboardTabs .nav-link.active') || document.querySelector('#dashboardTabs .sidebar-link.active');
@@ -42,12 +44,14 @@ document.addEventListener('DOMContentLoaded', function () {
     window.__tdLatestPayload = null;
     window.__tdLatestListJson = null;
 
-    function renderActiveTab(targetId = null) {
+    async function renderActiveTab(targetId = null) {
         if (!targetId) {
             const activeBtn = document.querySelector('#dashboardTabs .sidebar-link.active') || document.querySelector('#dashboardTabs .nav-link.active');
             if (activeBtn) targetId = activeBtn.getAttribute('data-bs-target');
         }
         if (!targetId) return;
+
+        await loadHeavyDependencies();
 
         if (targetId === '#tests' && window.__tdLatestTests) {
             renderTestsTable(window.__tdLatestTests);
@@ -77,7 +81,7 @@ document.addEventListener('DOMContentLoaded', function () {
             return refreshQuestionsTableOnly();
         }
         window.__tdLatestListJson = listJson;
-        renderActiveTab('#questions');
+        await renderActiveTab('#questions');
     }
 
     function rebuildAllTomSelects(payload, preserve) {
@@ -120,7 +124,7 @@ document.addEventListener('DOMContentLoaded', function () {
             await refreshQuestionsTableOnly();
         } else {
             window.__tdLatestListJson = listJson;
-            renderActiveTab();
+            await renderActiveTab();
         }
         rebuildAllTomSelects(payload, preserveTomSelects);
     }

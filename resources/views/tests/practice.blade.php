@@ -5,6 +5,9 @@
     logo-class="!text-white"
     user-class="!text-white"
 >
+    @push('styles')
+        @vite(['resources/css/practice.css'])
+    @endpush
     <div class="welcome !bg-[#0077c8]">
         <div class="container">
             <h1 class="!text-white">My Practice</h1>

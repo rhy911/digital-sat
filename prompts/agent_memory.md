@@ -1,5 +1,115 @@
 # Agent Memory Log
 
+> **RULE:** ALWAYS add new entries to the **TOP** of this log (immediately below this header block), so the newest items are seen first.
+
+## [2026-05-24 11:50] - Perf: FCP Optimize & Lazy Load
+*   **Topic**: Perf drop FCP, lazy load heavy CDNs.
+*   **Summary**: Split CSS, drop FontAwesome, lazy load JS/CSS.
+*   `app.blade.php`, `home.blade.php`, `practice.blade.php`:
+    *   Extract `home.css`, `practice.css` from global Vite bundle. `@push` to specific routes.
+*   `test-dashboard.blade.php`:
+    *   Drop FontAwesome CDN (save 128KB).
+    *   Remove synchronous CDNs (EasyMDE, KaTeX, Tabulator, TomSelect, marked).
+*   `helpers.js`:
+    *   Remap EasyMDE defaults from `fa fa-*` to `bi bi-*` (Bootstrap Icons).
+    *   Add `loadHeavyDependencies()` with Promise caching for async script/style injection.
+*   `index.js`:
+    *   Make `DOMContentLoaded`, `renderActiveTab` async.
+    *   `await loadHeavyDependencies()` before rendering tabs.
+*   **Build**: Vite `npm run build` success.
+*   **Changes**: `app.blade.php`, `test-dashboard.blade.php`, `helpers.js`, `index.js` [PERF] Lazy load heavy CDNs, drop FontAwesome, split CSS.
+
+## [2026-05-24 02:20] - Perf: Chunk Rendering & Tabulator Virtualization
+*   **Topic**: Huge dataset rendering bottlenecks.
+*   **Summary**: Added pagination to tests/sections Tabulator. Rewrote modules/questions rendering into progressive chunks.
+*   	ests.js, sections.js: Add pagination: true and paginationSize: 25 to Tabulator options.
+*   modules.js, questions.js: Extract innerHTML loops into equestAnimationFrame + setTimeout chunks appending via insertAdjacentHTML.
+*   **Build**: Vite 
+pm run build success.
+*   **Changes**: 	ests.js, sections.js, modules.js, questions.js [PERF] Progressive rendering for massive tables.
+
+## [2026-05-24 02:10] - Perf: Fix INP & Redundant Tabulator Renders
+*   **Topic**: High INP on tab switch, main thread blocking.
+*   **Summary**: Wrap renderActiveTab in rAF + setTimeout. Cache current data reference to skip redundant table renders.
+*   index.js: 
+equestAnimationFrame + setTimeout for tab switch listener.
+*   	ests.js, sections.js, modules.js, questions.js: Add currentData strict equality guard before 
+eplaceData / innerHTML.
+*   **Build**: Vite 
+pm run build success.
+*   **Changes**: index.js, components [PERF] INP fix, drop redundant tabulator layouts.
+*   index.js: equestAnimationFrame + setTimeout for tab switch listener.
+*   	ests.js, sections.js, modules.js, questions.js: Add currentData strict equality guard before eplaceData / innerHTML.
+*   **Build**: Vite 
+pm run build success.
+*   **Changes**: index.js, components [PERF] INP fix, drop redundant tabulator layouts.
+
+## [2026-05-24 02:00] - Perf: Dashboard Lazy Load & Script Defer
+*   **Topic**: JS execution time, layout thrashing fix.
+*   **Summary**: Defer scripts, lazy load Tabulator tables on tab switch, chunk TomSelect init.
+*   	est-dashboard.blade.php: Defer script tags (marked, katex, tom-select, easymde, tabulator).
+*   index.js: Cache payload. Add 
+enderActiveTab. Bind shown.bs.tab. Chunk initTomSelectBatch with setTimeout.
+*   **Build**: Vite 
+pm run build success.
+*   **Changes**: index.js, 	est-dashboard.blade.php [PERF] Dashboard lazy loading, unblock main thread.
+
+## [2026-05-23 11:50] - UI: Remove Pretest Spinner Icon
+*   **Topic**: Remove the growing spinner icon from the Pretest status badge.
+*   **Summary**: Removed spinner-grow HTML elements from both static Blade view and dynamic JS table row templates.
+*   `pool-table.blade.php`: Removed spinner-grow span from the Pretest badge definition.
+*   `questions.js`: Removed spinner-grow span from dynamic usage badge template inside `renderQuestionsTable`.
+*   **Build**: Vite `npm run build` success.
+*   **Changes**: `pool-table.blade.php`, `questions.js` [UI] Removed spinner icon from Pretest badge.
+
+## [2026-05-23 11:30] - UI: Question Bank Columns Center Alignment
+*   **Topic**: Center alignment of key columns in Question Bank table.
+*   **Summary**: Center align ID, Q. Number, Section, Usage, and Difficulty.
+*   `pool-table.blade.php`:
+    *   Add `text-center` class to `<th>` and `<td>` for columns: Id, Q. Number, Section, Usage, Difficulty.
+    *   Add `justify-content-center` to flex layout in Q. Number table cell.
+*   `questions.js`:
+    *   Add `text-center` class to cell templates in `renderQuestionsTable`.
+    *   Add `justify-content-center` to Q. Number flex wrap template.
+*   **Build**: Vite `npm run build` success.
+*   **Test**: Automated PHPUnit suite `php artisan test` passed (47/47).
+*   **Changes**: `pool-table.blade.php`, `questions.js` [UI] Centered key columns in Question Bank table.
+
+## [2026-05-23 11:00] - UI: Test Dashboard Performance Optimization
+*   **Topic**: UI rendering performance optimizations.
+*   **Summary**: Disable and strip transitions, transforms, continuous animations (pulse/ping), and heavy backdrop blurs globally under the Test Dashboard page, while keeping spinner operational.
+*   `test-dashboard-admin.css`:
+    *   Prepend global reset selector: `.dark-theme-dashboard *, .modal-content *, .offcanvas *` with `transition: none !important; transform: none !important; animation: none !important; backdrop-filter: none !important; -webkit-backdrop-filter: none !important;`.
+    *   Explicitly re-enable spinner animation: `.animate-spin { animation: spin 1s linear infinite !important; }`.
+    *   Strip explicit transition lines inside individual selectors for scrollbars, inputs, TomSelect, builder-block, Tabulator rows, sidebar links, checkboxes, radios, buttons, and EasyMDE.
+*   **Build**: Vite `npm run build` success.
+*   **Test**: Automated PHPUnit suite `php artisan test` passed (47/47).
+*   **Changes**: `test-dashboard-admin.css` [PERF] Universal transition, transform, and backdrop-filter blocker, stripped explicit animations/transitions. HTML/Blade utility files cleared of transition classes and heavy backdrop-blur utility classes.
+
+## [2026-05-23 10:45] - Arch: Clean Architecture & SOLID Refactoring
+*   **Topic**: SOLID structural refactoring.
+*   **Summary**: Clean up magic values, MVC controller bloat, procedural DB updates, tightly bound Request payloads.
+*   `Question.php`, `Section.php`, `Module.php`, `SatScoringService.php`: static model and calculation bounds constants.
+*   `TestManagementService.php` [NEW]: domain service. structure generator, clones, cascade deletions.
+*   `StoreTestRequest.php`, `UpdateTestRequest.php`, `StoreSectionRequest.php`, `StoreModuleRequest.php`, `LinkModuleRequest.php`, `UpdateQuestionRequest.php` (SPR arrays clean), `AttachQuestionRequest.php`, `SubmitModuleRequest.php` [NEW]: FormRequests isolated validations.
+*   `BulkQuestionCsvImportService.php`, `BulkQuestionImportService.php`: decouple import methods from HTTP `Request` objects, generic inputs.
+*   `TestDashboardController.php`: inject service, use FormRequests, remove procedural structures code.
+*   `TestTakingController.php`: DB transactions in submitModule writes, use FormRequest.
+*   `TestManagementServiceTest.php` [NEW]: automation feature test. All 47 tests passed.
+*   **Changes**: Controller decoupled SOLID architecture, isolated FormRequest validations, generic import services, database transactions safety.
+
+## [2026-05-23 08:53] - Easy Builder: Live Preview Placeholder & Wizard Step Navigation
+*   **Topic**: Authoring tools.
+*   **Summary**: Fix dynamic math preview placeholder toggle selector. Step-back navigation cards wizard.
+*   `builder.js`, `quick-author-wizard.blade.php`, `wizard.js`: back buttons selectors, dynamic builder block placeholder draws.
+*   **Changes**: Builder math placeholder toggler, wizard step-back.
+
+## [2026-05-23 08:42] - CSS Cascade Layer Overrides & Contrast Fix
+*   **Topic**: CSS layer priority override.
+*   **Summary**: Wrap custom overrides inside `@layer utilities` to take priority over Tailwind v4 compilation utility layers.
+*   `test-dashboard-admin.css`: wrap `.d-none`, text slates, label overrides inside cascade layer block.
+*   **Changes**: Tailwind v4 cascade layers override fixes.
+
 ## [2026-05-23 02:30] - UI/UX: Fix TomSelect Double Input Bug & Hide Selects
 *   **Topic**: UI/UX TomSelect search input original select conflict.
 *   **Summary**: Hide original selects. Reset search input styles.
@@ -40,6 +150,12 @@
 *   **Summary**: Force Tailwind utility priority over Bootstrap classes.
 *   `app.css`: Add `important` option to `@import "tailwindcss"`.
 *   **Changes**: `app.css` [FIX] Tailwind utilities made `!important`.
+
+## [2026-05-23] - Dashboard Dark Theme Complete
+*   **Topic**: UI aesthetics overhaul.
+*   **Summary**: Migrate admin dashboard to ultra-premium dark theme. Spec CSS utilities.
+*   `test-dashboard-admin.css`, `test-dashboard.blade.php`: custom tomselect dropdown, card backdrops, modals dark schemes.
+*   **Changes**: Ultra premium admin dark mode.
 
 ## [2026-05-22 15:00] - UI/UX: Modals & Wizard Tailwind v4 Conversion
 *   **Topic**: Bootstrap to Tailwind v4 modal migration.
@@ -136,6 +252,17 @@
 *   **Summary**: Single layout, academic domain keys, compare choice answers, KaTeX modals.
 *   `score-details.blade.php`, `app.js`: Section data filters, domain labels, comparison tables.
 *   **Changes**: Score details page normalized with KaTeX reviews.
+
+## [2026-05-19 16:30] - Documentation Sync
+*   **Topic**: project status tracking.
+*   **Summary**: researchers sync `GEMINI.md` + `feature_memory.md`.
+*   **Changes**: Knowledge Base sync complete.
+
+## [2026-05-19 16:10] - Score Details Refactor
+*   **Topic**: User test stats page.
+*   **Summary**: decouple analytics from dashboard grids, custom choice cards KaTeX modals.
+*   `UserTest.php`, `PracticeController.php`, `score-details.blade.php`: score analytics models & views.
+*   **Changes**: Detailed practice test analysis page.
 
 ## [2026-05-19 14:35] - Seeded Completed Practice Data
 *   **Topic**: Database seeding.
@@ -245,102 +372,3 @@
 *   `features.js`, `test.js`: fullscreen.
 *   **Changes**: Auto fullscreen engine.
 
-## [2026-05-19 16:30] - Documentation Sync
-*   **Topic**: project status tracking.
-*   **Summary**: researchers sync `GEMINI.md` + `feature_memory.md`.
-*   **Changes**: Knowledge Base sync complete.
-
-## [2026-05-19 16:10] - Score Details Refactor
-*   **Topic**: User test stats page.
-*   **Summary**: decouple analytics from dashboard grids, custom choice cards KaTeX modals.
-*   `UserTest.php`, `PracticeController.php`, `score-details.blade.php`: score analytics models & views.
-*   **Changes**: Detailed practice test analysis page.
-
-## [2026-05-23] - Dashboard Dark Theme Complete
-*   **Topic**: UI aesthetics overhaul.
-*   **Summary**: Migrate admin dashboard to ultra-premium dark theme. Spec CSS utilities.
-*   `test-dashboard-admin.css`, `test-dashboard.blade.php`: custom tomselect dropdown, card backdrops, modals dark schemes.
-*   **Changes**: Ultra premium admin dark mode.
-
-## [2026-05-23 08:42] - CSS Cascade Layer Overrides & Contrast Fix
-*   **Topic**: CSS layer priority override.
-*   **Summary**: Wrap custom overrides inside `@layer utilities` to take priority over Tailwind v4 compilation utility layers.
-*   `test-dashboard-admin.css`: wrap `.d-none`, text slates, label overrides inside cascade layer block.
-*   **Changes**: Tailwind v4 cascade layers override fixes.
-
-## [2026-05-23 08:53] - Easy Builder: Live Preview Placeholder & Wizard Step Navigation
-*   **Topic**: Authoring tools.
-*   **Summary**: Fix dynamic math preview placeholder toggle selector. Step-back navigation cards wizard.
-*   `builder.js`, `quick-author-wizard.blade.php`, `wizard.js`: back buttons selectors, dynamic builder block placeholder draws.
-*   **Changes**: Builder math placeholder toggler, wizard step-back.
-
-## [2026-05-23 10:45] - Arch: Clean Architecture & SOLID Refactoring
-*   **Topic**: SOLID structural refactoring.
-*   **Summary**: Clean up magic values, MVC controller bloat, procedural DB updates, tightly bound Request payloads.
-*   `Question.php`, `Section.php`, `Module.php`, `SatScoringService.php`: static model and calculation bounds constants.
-*   `TestManagementService.php` [NEW]: domain service. structure generator, clones, cascade deletions.
-*   `StoreTestRequest.php`, `UpdateTestRequest.php`, `StoreSectionRequest.php`, `StoreModuleRequest.php`, `LinkModuleRequest.php`, `UpdateQuestionRequest.php` (SPR arrays clean), `AttachQuestionRequest.php`, `SubmitModuleRequest.php` [NEW]: FormRequests isolated validations.
-*   `BulkQuestionCsvImportService.php`, `BulkQuestionImportService.php`: decouple import methods from HTTP `Request` objects, generic inputs.
-*   `TestDashboardController.php`: inject service, use FormRequests, remove procedural structures code.
-*   `TestTakingController.php`: DB transactions in submitModule writes, use FormRequest.
-*   `TestManagementServiceTest.php` [NEW]: automation feature test. All 47 tests passed.
-*   **Changes**: Controller decoupled SOLID architecture, isolated FormRequest validations, generic import services, database transactions safety.
-
-## [2026-05-23 11:00] - UI: Test Dashboard Performance Optimization
-*   **Topic**: UI rendering performance optimizations.
-*   **Summary**: Disable and strip transitions, transforms, continuous animations (pulse/ping), and heavy backdrop blurs globally under the Test Dashboard page, while keeping spinner operational.
-*   `test-dashboard-admin.css`:
-    *   Prepend global reset selector: `.dark-theme-dashboard *, .modal-content *, .offcanvas *` with `transition: none !important; transform: none !important; animation: none !important; backdrop-filter: none !important; -webkit-backdrop-filter: none !important;`.
-    *   Explicitly re-enable spinner animation: `.animate-spin { animation: spin 1s linear infinite !important; }`.
-    *   Strip explicit transition lines inside individual selectors for scrollbars, inputs, TomSelect, builder-block, Tabulator rows, sidebar links, checkboxes, radios, buttons, and EasyMDE.
-*   **Build**: Vite `npm run build` success.
-*   **Test**: Automated PHPUnit suite `php artisan test` passed (47/47).
-*   **Changes**: `test-dashboard-admin.css` [PERF] Universal transition, transform, and backdrop-filter blocker, stripped explicit animations/transitions. HTML/Blade utility files cleared of transition classes and heavy backdrop-blur utility classes.
-
-## [2026-05-23 11:30] - UI: Question Bank Columns Center Alignment
-*   **Topic**: Center alignment of key columns in Question Bank table.
-*   **Summary**: Center align ID, Q. Number, Section, Usage, and Difficulty.
-*   `pool-table.blade.php`:
-    *   Add `text-center` class to `<th>` and `<td>` for columns: Id, Q. Number, Section, Usage, Difficulty.
-    *   Add `justify-content-center` to flex layout in Q. Number table cell.
-*   `questions.js`:
-    *   Add `text-center` class to cell templates in `renderQuestionsTable`.
-    *   Add `justify-content-center` to Q. Number flex wrap template.
-*   **Build**: Vite `npm run build` success.
-*   **Test**: Automated PHPUnit suite `php artisan test` passed (47/47).
-*   **Changes**: `pool-table.blade.php`, `questions.js` [UI] Centered key columns in Question Bank table.
-
-## [2026-05-23 11:50] - UI: Remove Pretest Spinner Icon
-*   **Topic**: Remove the growing spinner icon from the Pretest status badge.
-*   **Summary**: Removed spinner-grow HTML elements from both static Blade view and dynamic JS table row templates.
-*   `pool-table.blade.php`: Removed spinner-grow span from the Pretest badge definition.
-*   `questions.js`: Removed spinner-grow span from dynamic usage badge template inside `renderQuestionsTable`.
-*   **Build**: Vite `npm run build` success.
-*   **Changes**: `pool-table.blade.php`, `questions.js` [UI] Removed spinner icon from Pretest badge.
-
-## [2026-05-24 02:00] - Perf: Dashboard Lazy Load & Script Defer
-*   **Topic**: JS execution time, layout thrashing fix.
-*   **Summary**: Defer scripts, lazy load Tabulator tables on tab switch, chunk TomSelect init.
-*   	est-dashboard.blade.php: Defer script tags (marked, katex, tom-select, easymde, tabulator).
-*   index.js: Cache payload. Add enderActiveTab. Bind shown.bs.tab. Chunk initTomSelectBatch with setTimeout.
-*   **Build**: Vite 
-pm run build success.
-*   **Changes**: index.js, 	est-dashboard.blade.php [PERF] Dashboard lazy loading, unblock main thread.
-
-## [2026-05-24 02:10] - Perf: Fix INP & Redundant Tabulator Renders
-*   **Topic**: High INP on tab switch, main thread blocking.
-*   **Summary**: Wrap renderActiveTab in rAF + setTimeout. Cache current data reference to skip redundant table renders.
-*   index.js: equestAnimationFrame + setTimeout for tab switch listener.
-*   	ests.js, sections.js, modules.js, questions.js: Add currentData strict equality guard before eplaceData / innerHTML.
-*   **Build**: Vite 
-pm run build success.
-*   **Changes**: index.js, components [PERF] INP fix, drop redundant tabulator layouts.
-
-## [2026-05-24 02:20] - Perf: Chunk Rendering & Tabulator Virtualization
-*   **Topic**: Huge dataset rendering bottlenecks.
-*   **Summary**: Added pagination to tests/sections Tabulator. Rewrote modules/questions rendering into progressive chunks.
-*   	ests.js, sections.js: Add pagination: true and paginationSize: 25 to Tabulator options.
-*   modules.js, questions.js: Extract innerHTML loops into equestAnimationFrame + setTimeout chunks appending via insertAdjacentHTML.
-*   **Build**: Vite 
-pm run build success.
-*   **Changes**: 	ests.js, sections.js, modules.js, questions.js [PERF] Progressive rendering for massive tables.

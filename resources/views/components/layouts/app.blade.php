@@ -12,7 +12,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{{ $title ?? 'Digital SAT' }}</title>
-    @vite(['resources/css/app.css', 'resources/css/home.css', 'resources/css/practice.css', 'resources/sass/app.scss', 'resources/js/app.js'])
+    @vite(['resources/css/app.css', 'resources/sass/app.scss', 'resources/js/app.js'])
+    @stack('styles')
     {{ $head ?? '' }}
 </head>
 <body class="{{ $bodyClass }}">

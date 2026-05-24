@@ -1,4 +1,7 @@
 <x-layouts.app :user="$user">
+    @push('styles')
+        @vite(['resources/css/home.css'])
+    @endpush
     <div class="welcome">
         <div class="container">
             <h1>Welcome, {{ $user->username ?? 'User' }}! Good luck on test day!</h1>

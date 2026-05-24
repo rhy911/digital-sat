@@ -1,5 +1,56 @@
 import { MEDIA_UPLOAD_URL } from '../core/config.js';
 
+const loadedStyles = new Set();
+const loadingScripts = new Map();
+
+export function loadStyle(href) {
+    if (loadedStyles.has(href) || document.querySelector(`link[href="${href}"]`)) return;
+    const link = document.createElement('link');
+    link.rel = 'stylesheet';
+    link.href = href;
+    document.head.appendChild(link);
+    loadedStyles.add(href);
+}
+
+export function loadScript(src) {
+    if (loadingScripts.has(src)) return loadingScripts.get(src);
+    if (document.querySelector(`script[src="${src}"]`)) {
+        return Promise.resolve();
+    }
+    
+    const promise = new Promise((resolve, reject) => {
+        const script = document.createElement('script');
+        script.src = src;
+        script.onload = () => resolve();
+        script.onerror = () => reject(new Error(`Failed to load script ${src}`));
+        document.body.appendChild(script);
+    });
+    
+    loadingScripts.set(src, promise);
+    return promise;
+}
+
+export async function loadHeavyDependencies() {
+    // Load CSS
+    loadStyle('https://cdn.jsdelivr.net/npm/tom-select@2.3.1/dist/css/tom-select.bootstrap5.min.css');
+    loadStyle('https://cdn.jsdelivr.net/npm/easymde/dist/easymde.min.css');
+    loadStyle('https://cdn.jsdelivr.net/npm/tabulator-tables@5.5.2/dist/css/tabulator_bootstrap5.min.css');
+    loadStyle('https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css');
+
+    // Load independent JS
+    const tomSelectP = loadScript('https://cdn.jsdelivr.net/npm/tom-select@2.3.1/dist/js/tom-select.complete.min.js');
+    const tabulatorP = loadScript('https://cdn.jsdelivr.net/npm/tabulator-tables@5.5.2/dist/js/tabulator.min.js');
+    const markedP = loadScript('https://cdn.jsdelivr.net/npm/marked@12.0.0/marked.min.js');
+    
+    // Load dependent JS
+    const katexP = loadScript('https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js')
+        .then(() => loadScript('https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/auto-render.min.js'));
+        
+    const easymdeP = markedP.then(() => loadScript('https://cdn.jsdelivr.net/npm/easymde/dist/easymde.min.js'));
+
+    await Promise.all([tomSelectP, tabulatorP, katexP, easymdeP]);
+}
+
 export function compileMarkdownToHtml(text) {
     if (!text) return '';
     try {
@@ -34,19 +85,30 @@ export function processMedia(text) {
 }
 
 export function getPremiumToolbar(activeEditorKey, changeCallback) {
+    const toggleBold = window.EasyMDE ? window.EasyMDE.toggleBold : (e) => e.toggleBold();
+    const toggleItalic = window.EasyMDE ? window.EasyMDE.toggleItalic : (e) => e.toggleItalic();
+    const toggleHeadingSmaller = window.EasyMDE ? window.EasyMDE.toggleHeadingSmaller : (e) => e.toggleHeadingSmaller();
+    const toggleBlockquote = window.EasyMDE ? window.EasyMDE.toggleBlockquote : (e) => e.toggleBlockquote();
+    const toggleUnorderedList = window.EasyMDE ? window.EasyMDE.toggleUnorderedList : (e) => e.toggleUnorderedList();
+    const toggleOrderedList = window.EasyMDE ? window.EasyMDE.toggleOrderedList : (e) => e.toggleOrderedList();
+    const togglePreview = window.EasyMDE ? window.EasyMDE.togglePreview : (e) => e.togglePreview();
+
     return [
-        "bold", "italic",
+        { name: "bold", action: toggleBold, className: "bi bi-type-bold", title: "Bold" },
+        { name: "italic", action: toggleItalic, className: "bi bi-type-italic", title: "Italic" },
         {
             name: "underline",
             action: (editor) => {
                 editor.codemirror.replaceSelection(`<u>${editor.codemirror.getSelection()}</u>`);
                 if (changeCallback) changeCallback();
             },
-            className: "fa fa-underline",
+            className: "bi bi-type-underline",
             title: "Underline"
         },
-        "heading", "|",
-        "quote", "unordered-list", "ordered-list", "|",
+        { name: "heading", action: toggleHeadingSmaller, className: "bi bi-type-h1", title: "Heading" }, "|",
+        { name: "quote", action: toggleBlockquote, className: "bi bi-chat-left-quote", title: "Quote" },
+        { name: "unordered-list", action: toggleUnorderedList, className: "bi bi-list-ul", title: "Generic List" },
+        { name: "ordered-list", action: toggleOrderedList, className: "bi bi-list-ol", title: "Numbered List" }, "|",
         {
             name: "latex",
             action: (editor) => {
@@ -61,12 +123,12 @@ export function getPremiumToolbar(activeEditorKey, changeCallback) {
                 }
                 if (changeCallback) changeCallback();
             },
-            className: "fa fa-plus-circle",
+            className: "bi bi-plus-circle",
             title: "Insert LaTeX ($$)"
         },
         {
             name: "upload-image",
-            className: "fa fa-upload",
+            className: "bi bi-upload",
             title: "Upload Image",
             action: (editor) => {
                 const fileInput = document.createElement('input');
@@ -113,10 +175,10 @@ export function getPremiumToolbar(activeEditorKey, changeCallback) {
 
                 fileInput.click();
             },
-            className: "fa fa-image",
+            className: "bi bi-image",
             title: "Upload and Insert Image"
         },
-        "|", "preview"
+        "|", { name: "preview", action: togglePreview, className: "bi bi-eye text-indigo-400 font-bold", title: "Toggle Preview", noDisable: true }
     ];
 }
 
