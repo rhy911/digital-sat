@@ -38,14 +38,11 @@ header {
 main {
     background-color: #324dc7;
     flex: 1;
-    display: flex;
-    justify-content: center;
-    align-items: center;
     padding: 40px 20px clamp(20px, 8vh, 80px);
 }
 
 /* ── Auth card ── */
-.signin-container {
+.auth-container {
     background: white;
     border-radius: 20px;
     padding: 40px;
@@ -54,7 +51,7 @@ main {
     box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15);
     display: flex;
     flex-direction: column;
-    gap: 30px;
+    gap: 1.5rem;
 }
 
 /* ── Shared form elements (signin & signup) ── */
@@ -82,16 +79,19 @@ main {
 }
 
 .form-label {
+    display: inline-block;
     font-weight: 600;
-    font-size: 15px;
-    margin-bottom: 6px;
+    font-size: 1rem;
+    margin-bottom: 0.5rem;
 }
 
 .form-control {
+    display: block;
+    width: 100%;
     border: 1.5px solid #b0b0b0;
     border-radius: 8px;
-    padding: 12px 14px;
-    font-size: 15px;
+    padding: 0.375rem 0.75rem;
+    font-size: 1rem;
     transition: border-color 0.2s;
 }
 
@@ -104,11 +104,11 @@ main {
     background-color: #e0e0e0;
     color: #888;
     border: none;
-    padding: 14px 24px;
     border-radius: 2rem;
     font-weight: 600;
-    font-size: 16px;
+    font-size: 1rem;
     width: 100%;
+    padding: 0.875rem 1.5rem;
     transition: all 0.3s ease;
     cursor: not-allowed;
 }
@@ -172,30 +172,23 @@ main {
 }
 
 /* ── Shared auth link styles ── */
-.forgot-link,
 .help-link,
 .signin-footer-links a,
 .signin-link a {
+    font-size: 1rem;
     color: #324dc7;
     text-decoration: none;
     font-weight: 500;
 }
 
-.forgot-link:hover,
 .help-link:hover,
 .signin-footer-links a:hover,
 .signin-link a:hover {
     text-decoration: underline;
 }
 
-.forgot-link {
-    font-size: 14px;
-}
-
 .help-link {
     text-align: center;
-    font-size: 15px;
-    display: block;
 }
 
 /* ── Index page ── */
@@ -290,6 +283,7 @@ main {
     display: flex;
     gap: 14px;
 }
+
 .name-row .form-group {
     flex: 1;
 }

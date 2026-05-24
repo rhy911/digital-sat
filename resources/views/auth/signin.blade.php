@@ -17,7 +17,7 @@
     <x-auth.back-link href="/" />
 
     <!-- Title -->
-    <h2 class="signin-title">Sign In with a Student Account</h2>
+    <h1 class="signin-title">Sign In with a Student Account</h1>
 
     <!-- Form -->
     <form id="signinForm" action="{{ route('signin') }}" method="POST" novalidate>
@@ -39,8 +39,8 @@
             />
         </div>
 
-        <div class="mb-4">
-            <a href="{{ route('forgot') }}" class="forgot-link">Forgot password?</a>
+        <div class="mb-6">
+            <a href="{{ route('forgot') }}" class="help-link text-start">Forgot password?</a>
         </div>
 
         <x-auth.alerts />

@@ -60,7 +60,7 @@
             />
         </div>
 
-        <div class="mb-4">
+        <div class="mb-6">
             <x-auth.password-field
                 label="Re-enter Password"
                 input-id="password_confirmation"
@@ -72,13 +72,11 @@
             <div class="invalid-feedback" id="passwordMismatch">Passwords do not match.</div>
         </div>
 
-        <x-auth.alerts
-            error-style="display: none; color: #dc3545; margin-bottom: 1rem; padding: 0.75rem; background-color: #f8d7da; border-radius: 4px;"
-        />
+        <x-auth.alerts />
 
         <button type="submit" class="submit-btn" id="submitBtn" data-processing-text="Processing..." disabled>Create Account</button>
     </form>
 
     <!-- Sign in link -->
-    <p class="signin-link">Already have an account? <a href="/signin">Sign in</a></p>
+    <a href="/signin" class="help-link">Already have an account?</a>
 </x-layouts.auth>

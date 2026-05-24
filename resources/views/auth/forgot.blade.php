@@ -26,18 +26,17 @@
     <!-- Form -->
     <form id="forgotForm" action="{{ route('forgot') }}" method="POST" novalidate>
         @csrf
-        <div class="mb-3">
+        <div class="mb-6">
             <label for="email" class="form-label">Email Address</label>
             <input type="email" class="form-control" id="email" name="email" placeholder="Enter your email address" required>
             <div class="invalid-feedback">Please enter your email address.</div>
         </div>
 
-        <x-auth.alerts
-            :show-success="true"
-            error-style="display: none; color: #dc3545; margin-bottom: 1rem; padding: 0.75rem; background-color: #f8d7da; border-radius: 4px;"
-            success-style="display: none; color: #155724; margin-bottom: 1rem; padding: 0.75rem; background-color: #d4edda; border-radius: 4px;"
-        />
+        <x-auth.alerts :show-success="true" />
 
-        <button type="submit" id="submitBtn" class="submit-btn w-full mt-4" data-processing-text="Sending..." disabled>Send Reset Link</button>
+        <button type="submit" id="submitBtn" class="submit-btn" data-processing-text="Sending..." disabled>Send Reset Link</button>
     </form>
+
+    <!-- Help -->
+    <a href="/signin" class="help-link">Back to sign in</a>
 </x-layouts.auth>

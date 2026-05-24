@@ -21,7 +21,7 @@
         </button>
     </header>
     <main>
-        <div class="signin-container">
+        <div class="auth-container mx-auto">
             {{ $slot }}
         </div>
     </main>
