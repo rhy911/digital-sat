@@ -154,9 +154,12 @@ header .user-dropdown .dropdown-menu .dropdown-item svg {
 }
 
 /* Button Styles */
+.section-header .btn-group {
+    flex-shrink: 0; /* Prevent overlapping text when viewport shrinks */
+}
+
 .section-header .btn-group .btn {
     width: 5rem;
-    border-radius: 0.75rem;
     border: 1px solid #505050;
     background-color: white;
     color: black;
@@ -164,6 +167,17 @@ header .user-dropdown .dropdown-menu .dropdown-item svg {
     display: flex;
     align-items: center;
     justify-content: center;
+}
+
+/* Fix broken corners to make it a merged pill again */
+.section-header .btn-group > .btn-check:first-child + .btn {
+    border-top-left-radius: 0.75rem !important;
+    border-bottom-left-radius: 0.75rem !important;
+}
+
+.section-header .btn-group > .btn-check:nth-child(3) + .btn {
+    border-top-right-radius: 0.75rem !important;
+    border-bottom-right-radius: 0.75rem !important;
 }
 
 .section-header .btn-group .btn-outline-primary {
