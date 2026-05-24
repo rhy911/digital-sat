@@ -1,6 +1,6 @@
 @props(['tests', 'allModules'])
 
-<div class="tab-pane fade" id="modules" role="tabpanel">
+<div x-show="activeTab === 'modules'" id="modules" role="tabpanel" style="display: none;" x-transition.opacity.duration.300ms>
     <!-- Header Actions -->
     <div class="mb-6 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-6">
         <div>
@@ -8,10 +8,10 @@
             <p class="text-xs text-slate-400 font-medium">Manage and link your question modules across different tests.</p>
         </div>
         <div class="flex gap-3">
-            <button class="px-5 py-3 bg-slate-900/60 border border-slate-800/80 text-slate-200 font-extrabold text-xs uppercase tracking-wider rounded-xl hover:bg-slate-850 hover:text-white shadow-lg flex items-center gap-2.5 cursor-pointer" data-bs-toggle="offcanvas" data-bs-target="#linkModuleOffcanvas">
+            <button class="px-5 py-3 bg-slate-900/60 border border-slate-800/80 text-slate-200 font-extrabold text-xs uppercase tracking-wider rounded-xl hover:bg-slate-850 hover:text-white shadow-lg flex items-center gap-2.5 cursor-pointer" x-on:click="$dispatch('open-offcanvas', 'linkModuleOffcanvas')">
                 <i class="bi bi-link-45deg text-sm"></i> Link Module
             </button>
-            <button class="px-5 py-3 bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-500 hover:to-violet-500 text-white font-extrabold text-xs uppercase tracking-wider rounded-xl shadow-lg shadow-indigo-600/20 hover:shadow-indigo-600/35 flex items-center gap-2.5 cursor-pointer" data-bs-toggle="offcanvas" data-bs-target="#createModuleOffcanvas">
+            <button class="px-5 py-3 bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-500 hover:to-violet-500 text-white font-extrabold text-xs uppercase tracking-wider rounded-xl shadow-lg shadow-indigo-600/20 hover:shadow-indigo-600/35 flex items-center gap-2.5 cursor-pointer" x-on:click="$dispatch('open-offcanvas', 'createModuleOffcanvas')">
                 <i class="bi bi-plus-lg text-xs"></i> Create Module
             </button>
         </div>
@@ -107,7 +107,7 @@
                                 </div>
                                 <h4 class="text-base font-extrabold text-white">No modules found</h4>
                                 <p class="text-xs text-slate-400 mt-1 max-w-xs mx-auto leading-relaxed">You haven't created any reusable modules yet. Create one to start building your tests.</p>
-                                <button class="mt-6 px-5 py-3 bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-500 hover:to-violet-500 text-white font-extrabold text-xs uppercase tracking-wider rounded-xl shadow-lg shadow-indigo-600/20 cursor-pointer" data-bs-toggle="offcanvas" data-bs-target="#createModuleOffcanvas">
+                                <button class="mt-6 px-5 py-3 bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-500 hover:to-violet-500 text-white font-extrabold text-xs uppercase tracking-wider rounded-xl shadow-lg shadow-indigo-600/20 cursor-pointer" x-on:click="$dispatch('open-offcanvas', 'createModuleOffcanvas')">
                                     Create Your First Module
                                 </button>
                             </div>
@@ -120,12 +120,10 @@
     </div>
 
     <!-- Create Module Offcanvas -->
-    <div class="offcanvas offcanvas-end" tabindex="-1" id="createModuleOffcanvas" style="width: 480px;">
-        <div class="offcanvas-header border-b border-slate-800/80 bg-slate-950/40 px-8 py-5 flex items-center justify-between">
-            <h5 class="offcanvas-title font-extrabold text-white flex items-center text-base"><i class="bi bi-folder-plus text-indigo-400 mr-3 text-xl"></i> Create Module</h5>
-            <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Close"></button>
-        </div>
-        <div class="offcanvas-body p-8 overflow-y-auto">
+    <x-ui.offcanvas id="createModuleOffcanvas" width="w-[480px]">
+        <x-slot:titleContent>
+            <i class="bi bi-folder-plus text-indigo-400 mr-3 text-xl"></i> Create Module
+        </x-slot:titleContent>
             <form id="moduleForm" class="space-y-6">
                 @csrf
                 <div>
@@ -194,16 +192,13 @@
                     </button>
                 </div>
             </form>
-        </div>
-    </div>
+    </x-ui.offcanvas>
 
     <!-- Link Module Offcanvas -->
-    <div class="offcanvas offcanvas-end" tabindex="-1" id="linkModuleOffcanvas" style="width: 480px;">
-        <div class="offcanvas-header border-b border-slate-800/80 bg-slate-950/40 px-8 py-5 flex items-center justify-between">
-            <h5 class="offcanvas-title font-extrabold text-white flex items-center text-base"><i class="bi bi-link-45deg text-indigo-400 mr-3 text-xl"></i> Link Module</h5>
-            <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Close"></button>
-        </div>
-        <div class="offcanvas-body p-8 overflow-y-auto">
+    <x-ui.offcanvas id="linkModuleOffcanvas" width="w-[480px]">
+        <x-slot:titleContent>
+            <i class="bi bi-link-45deg text-indigo-400 mr-3 text-xl"></i> Link Module
+        </x-slot:titleContent>
             <form id="linkModuleForm" class="space-y-6">
                 @csrf
                 <div>
@@ -268,6 +263,5 @@
                     </button>
                 </div>
             </form>
-        </div>
-    </div>
+    </x-ui.offcanvas>
 </div>

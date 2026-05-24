@@ -40,7 +40,7 @@
         <hr class="border-slate-800/60 ml-11">
 
         <!-- STEP 2 -->
-        <div>
+        <div x-data="{ importTab: 'json' }">
             <div class="flex items-center gap-3 mb-4">
                 <span class="flex items-center justify-center w-8 h-8 rounded-full bg-indigo-950/40 text-indigo-300 font-bold text-sm border border-indigo-900/60 shadow-[0_0_12px_rgba(99,102,241,0.2)]">2</span>
                 <h4 class="text-base font-bold text-white tracking-tight">Choose Import Method</h4>
@@ -48,17 +48,17 @@
             <div class="pl-11">
                 <ul class="flex flex-wrap gap-2 border-b border-slate-800/80 pb-3 mb-5" id="importMethodTabs" role="tablist">
                     <li role="presentation">
-                        <button class="nav-link active rounded-lg px-4 py-2 font-semibold text-sm focus:outline-hidden" id="json-tab" data-bs-toggle="tab" data-bs-target="#import-json" type="button" role="tab">
+                        <button class="rounded-lg px-4 py-2 font-semibold text-sm focus:outline-hidden transition-colors" :class="importTab === 'json' ? 'bg-indigo-600 text-white shadow-md' : 'text-slate-400 hover:text-white hover:bg-slate-800'" x-on:click="importTab = 'json'" type="button" role="tab">
                             <i class="bi bi-filetype-json mr-1.5 text-base leading-none"></i> JSON / Editor
                         </button>
                     </li>
                     <li role="presentation">
-                        <button class="nav-link rounded-lg px-4 py-2 font-semibold text-sm focus:outline-hidden" id="csv-tab" data-bs-toggle="tab" data-bs-target="#import-csv" type="button" role="tab">
+                        <button class="rounded-lg px-4 py-2 font-semibold text-sm focus:outline-hidden transition-colors" :class="importTab === 'csv' ? 'bg-indigo-600 text-white shadow-md' : 'text-slate-400 hover:text-white hover:bg-slate-800'" x-on:click="importTab = 'csv'" type="button" role="tab">
                             <i class="bi bi-file-earmark-spreadsheet mr-1.5 text-base leading-none"></i> CSV
                         </button>
                     </li>
                     <li role="presentation">
-                        <button class="nav-link rounded-lg px-4 py-2 font-semibold text-sm focus:outline-hidden" id="zip-tab" data-bs-toggle="tab" data-bs-target="#import-zip" type="button" role="tab">
+                        <button class="rounded-lg px-4 py-2 font-semibold text-sm focus:outline-hidden transition-colors" :class="importTab === 'zip' ? 'bg-indigo-600 text-white shadow-md' : 'text-slate-400 hover:text-white hover:bg-slate-800'" x-on:click="importTab = 'zip'" type="button" role="tab">
                             <i class="bi bi-file-earmark-zip mr-1.5 text-base leading-none"></i> ZIP (with Images)
                         </button>
                     </li>
@@ -66,7 +66,7 @@
 
                 <div class="tab-content" id="importMethodContent">
                     <!-- JSON / Editor Tab -->
-                    <div class="tab-pane fade show active" id="import-json" role="tabpanel">
+                    <div x-show="importTab === 'json'" id="import-json" role="tabpanel" x-transition.opacity.duration.300ms style="display: none;">
                         <div class="flex items-center gap-2 mb-4 mt-2">
                             <span class="flex items-center justify-center w-6 h-6 rounded-full bg-amber-950/40 text-amber-400 font-bold text-xs border border-amber-900/60">3</span>
                             <h5 class="text-sm font-bold text-white tracking-tight">Provide Data &amp; Upload</h5>
@@ -126,7 +126,7 @@
                     </div>
 
                     <!-- CSV Tab -->
-                    <div class="tab-pane fade" id="import-csv" role="tabpanel">
+                    <div x-show="importTab === 'csv'" id="import-csv" role="tabpanel" x-transition.opacity.duration.300ms style="display: none;">
                         <div class="flex items-center gap-2 mb-4 mt-2">
                             <span class="flex items-center justify-center w-6 h-6 rounded-full bg-amber-950/40 text-amber-400 font-bold text-xs border border-amber-900/60">3</span>
                             <h5 class="text-sm font-bold text-white tracking-tight">Upload CSV</h5>
@@ -168,7 +168,7 @@
                     </div>
 
                     <!-- ZIP Tab -->
-                    <div class="tab-pane fade" id="import-zip" role="tabpanel">
+                    <div x-show="importTab === 'zip'" id="import-zip" role="tabpanel" x-transition.opacity.duration.300ms style="display: none;">
                         <div class="flex items-center gap-2 mb-4 mt-2">
                             <span class="flex items-center justify-center w-6 h-6 rounded-full bg-amber-950/40 text-amber-400 font-bold text-xs border border-amber-900/60">3</span>
                             <h5 class="text-sm font-bold text-white tracking-tight">Upload ZIP Package</h5>

@@ -25,12 +25,12 @@
         <div class="resizable-panel left-panel">
             @foreach ($questions as $index => $q)
                 @if ($q->passage)
-                    <div class="passage-container @if (!$loop->first) d-none @endif"
+                    <div class="passage-container @if (!$loop->first) hidden @endif"
                         id="passage{{ $loop->iteration }}">@markdown($q->passage->content)</div>
                 @else
-                    <div class="passage-container @if (!$loop->first) d-none @endif"
+                    <div class="passage-container @if (!$loop->first) hidden @endif"
                         id="passage{{ $loop->iteration }}">
-                        <p class="text-muted italic">This question does not have a passage.</p>
+                        <p class="text-slate-500 italic">This question does not have a passage.</p>
                     </div>
                 @endif
             @endforeach
@@ -45,11 +45,11 @@
         </div>
         <div class="resizable-panel right-panel">
             @foreach ($questions as $q)
-                <div class="question show-strike @if (!$loop->first) d-none @endif"
+                <div class="question show-strike @if (!$loop->first) hidden @endif"
                     id="question{{ $loop->iteration }}" data-question-id="{{ $q->id }}"
                     data-section-type="{{ $q->section_type }}" data-question-type="{{ $q->question_type }}">
-                    <div class="d-flex flex-column gap-3">
-                        <div class="question-header d-flex align-items-center gap-3">
+                    <div class="flex flex-col gap-3">
+                        <div class="question-header flex items-center gap-3">
                             <div class="number">{{ $loop->iteration }}</div>
                             <span class="bookmark">
                                 <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20"
@@ -59,7 +59,7 @@
                                 </svg>
                                 Mark for Review
                             </span>
-                            <button type="button" class="cross-out-toggle-btn ms-auto me-2 active"
+                            <button type="button" class="cross-out-toggle-btn ml-auto mr-2 active"
                                 title="Cross out answer choices you think are wrong">
                                 <svg width="20" height="20" viewBox="0 0 32 32" fill="none"
                                     xmlns="http://www.w3.org/2000/svg">
@@ -73,10 +73,10 @@
                         <div class="question-body">
                             <div class="stem-text mb-4">@markdown($q->stem)</div>
 
-                            <div class="d-flex flex-column gap-3">
+                            <div class="flex flex-col gap-3">
                                 @foreach ($q->answerChoices->sortBy('order') as $choice)
-                                    <div class="answer-row d-flex align-items-center gap-3">
-                                        <div class="answer-option flex-grow-1">
+                                    <div class="answer-row flex items-center gap-3">
+                                        <div class="answer-option grow">
                                             <input type="radio"
                                                 id="q{{ $loop->parent->iteration }}{{ $choice->label }}"
                                                 name="q{{ $loop->parent->iteration }}" value="{{ $choice->label }}">

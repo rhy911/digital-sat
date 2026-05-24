@@ -2,6 +2,15 @@
 
 > **RULE:** ALWAYS add new entries to the **TOP** of this log (immediately below this header block), so the newest items are seen first.
 
+## [2026-05-24 16:30] - UI: Purge Bootstrap & Migrate Test/Auth to Tailwind
+* **Topic**: Tailwind CSS UI migration completion.
+* **Summary**: Purge Bootstrap from Test Engine and Auth views. Swap `d-none` to `hidden`.
+* `test.blade.php`, `take-reading.blade.php`, `take-math.blade.php`, `review-section.blade.php`: Refactor `d-flex`, `d-none` to Tailwind equivalents.
+* `navigation.js`, `ui.js`: Update JS DOM toggles (`d-none` -> `hidden`) for strict Tailwind compatibility.
+* `home.blade.php`, `index.blade.php`, `auth/*.blade.php`: Swap grid/flex utilities to Tailwind. Keep custom `auth.css`.
+* **Build**: Vite `npm run build` success. Laravel views/cache cleared.
+* **Changes**: [REFACTOR] Test Engine and Auth UI Tailwind v4 strict conversion.
+
 ## [2026-05-24 11:50] - Perf: FCP Optimize & Lazy Load
 *   **Topic**: Perf drop FCP, lazy load heavy CDNs.
 *   **Summary**: Split CSS, drop FontAwesome, lazy load JS/CSS.

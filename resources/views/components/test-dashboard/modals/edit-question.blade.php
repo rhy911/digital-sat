@@ -1,20 +1,14 @@
-<!-- Edit Question Modal -->
-<div class="modal fade" id="editQuestionModal" tabindex="-1" aria-labelledby="editQuestionModalLabel" aria-hidden="true">
-    <div class="modal-dialog modal-xl modal-dialog-centered">
-        <div class="modal-content border border-slate-800/80 rounded-2xl shadow-2xl overflow-hidden glass-panel">
-            <form id="editQuestionForm" class="m-0">
-                @csrf
-                @method('PUT')
-                <input type="hidden" id="editQuestionId" name="id">
-                <div class="modal-header px-6 py-4 bg-slate-950/40 border-b border-slate-800/80 flex justify-between items-center">
-                    <h5 class="modal-title text-sm font-bold text-white flex items-center gap-2 mb-0" id="editQuestionModalLabel">
-                        <i class="bi bi-pencil-square text-indigo-400"></i> Edit Question #<span id="editQuestionIdDisplay"></span>
-                    </h5>
-                    <button type="button" class="text-slate-400 hover:text-white hover:bg-slate-900/60 rounded-lg p-1.5 focus:outline-hidden" data-bs-dismiss="modal" aria-label="Close">
-                        <i class="bi bi-x-lg text-sm"></i>
-                    </button>
-                </div>
-                <div class="modal-body p-0">
+<x-ui.modal id="editQuestionModal" max-width="xl">
+    <x-slot:title>
+        <div class="flex items-center gap-2">
+            <i class="bi bi-pencil-square text-indigo-400"></i> Edit Question #<span id="editQuestionIdDisplay"></span>
+        </div>
+    </x-slot:title>
+
+    <form id="editQuestionForm" class="m-0">
+        @csrf
+        @method('PUT')
+        <input type="hidden" id="editQuestionId" name="id">
                     <div class="grid grid-cols-1 lg:grid-cols-12 gap-0 edit-question-grid">
                         
                         <!-- Left Side: Form (Scrollable) -->
@@ -163,12 +157,9 @@
                         </div>
                         
                     </div>
-                </div>
-                <div class="modal-footer px-6 py-4 bg-slate-950/40 border-t border-slate-800/80 flex justify-end gap-2 shrink-0">
-                    <button type="button" class="px-4 py-2 bg-slate-900/40 border border-slate-800/80 text-slate-300 hover:text-white font-semibold text-sm rounded-lg hover:bg-slate-900/80" data-bs-dismiss="modal">Cancel</button>
-                    <button type="submit" class="px-5 py-2 bg-gradient-to-r from-indigo-650 to-violet-600 hover:from-indigo-600 hover:to-violet-500 hover:shadow-indigo-500/20 text-white font-semibold text-sm rounded-lg shadow-lg">Update Question</button>
-                </div>
-            </form>
+        <div class="flex justify-end gap-2 mt-6 pt-4 border-t border-slate-800/80">
+            <button type="button" class="px-4 py-2 bg-slate-900/40 border border-slate-800/80 text-slate-300 hover:text-white font-semibold text-sm rounded-lg hover:bg-slate-900/80" x-on:click="$dispatch('close-modal', 'editQuestionModal')">Cancel</button>
+            <button type="submit" class="px-5 py-2 bg-gradient-to-r from-indigo-650 to-violet-600 hover:from-indigo-600 hover:to-violet-500 hover:shadow-indigo-500/20 text-white font-semibold text-sm rounded-lg shadow-lg">Update Question</button>
         </div>
-    </div>
-</div>
+    </form>
+</x-ui.modal>

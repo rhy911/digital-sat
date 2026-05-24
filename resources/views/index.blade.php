@@ -1,7 +1,7 @@
 <x-layouts.auth>
     <h2 class="signin-title">Sign In</h2>
 
-    <a href="/signin" class="primary-btn text-decoration-none text-center" role="button">
+    <a href="/signin" class="primary-btn no-underline text-center" role="button">
         <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none"
             stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
             class="feather feather-link">
@@ -12,7 +12,7 @@
     </a>
 
     <hr class="text-divider" data-content="OR">
-    <a href="/signin" class="secondary-btn text-decoration-none text-center d-block" role="button">
+    <a href="/signin" class="secondary-btn no-underline text-center block" role="button">
         Sign in with a College Board student account
     </a>
 

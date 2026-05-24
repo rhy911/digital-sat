@@ -1,6 +1,6 @@
 @props(['tests'])
 
-<div class="tab-pane fade" id="builder" role="tabpanel">
+<div x-show="activeTab === 'builder'" id="builder" role="tabpanel" style="display: none;" x-transition.opacity.duration.300ms>
     <!-- Easy Question Builder Card -->
     <div class="rounded-2xl border border-slate-800/60 bg-slate-900/20 shadow-2xl overflow-hidden border-l-4 border-amber-500 mb-6 glass-panel">
         <div class="px-6 py-4 bg-slate-950/40 border-b border-slate-800/80 flex justify-between items-center">
@@ -82,16 +82,16 @@
                             </li>
                             <li class="flex items-center gap-1.5">
                                 <span class="text-slate-600">/</span>
-                                <div class="relative inline-block text-left">
-                                    <span class="cursor-pointer font-semibold text-slate-300 hover:text-indigo-400 dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false" id="bc-section-title">Section</span>
-                                    <ul class="dropdown-menu shadow-md border border-slate-800 rounded-xl text-xs bg-[#131b2e]" id="bc-section-dropdown"></ul>
+                                <div class="relative inline-block text-left" x-data="{ open: false }" @click.outside="open = false">
+                                    <span class="cursor-pointer font-semibold text-slate-300 hover:text-indigo-400" @click="open = !open" id="bc-section-title">Section</span>
+                                    <ul x-show="open" @click="open = false" x-transition style="display: none;" class="absolute left-0 z-50 mt-2 min-w-[12rem] py-1 shadow-md border border-slate-800 rounded-xl text-xs bg-[#131b2e]" id="bc-section-dropdown"></ul>
                                 </div>
                             </li>
                             <li class="flex items-center gap-1.5">
                                 <span class="text-slate-600">/</span>
-                                <div class="relative inline-block text-left">
-                                    <span class="cursor-pointer font-bold text-indigo-400 hover:text-indigo-300 dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false" id="bc-module-title">Module</span>
-                                    <ul class="dropdown-menu shadow-md border border-slate-800 rounded-xl text-xs bg-[#131b2e]" id="bc-module-dropdown"></ul>
+                                <div class="relative inline-block text-left" x-data="{ open: false }" @click.outside="open = false">
+                                    <span class="cursor-pointer font-bold text-indigo-400 hover:text-indigo-300" @click="open = !open" id="bc-module-title">Module</span>
+                                    <ul x-show="open" @click="open = false" x-transition style="display: none;" class="absolute left-0 z-50 mt-2 min-w-[12rem] py-1 shadow-md border border-slate-800 rounded-xl text-xs bg-[#131b2e]" id="bc-module-dropdown"></ul>
                                 </div>
                             </li>
                           </ol>
@@ -138,7 +138,7 @@
                 <button type="button" class="px-5 py-3 bg-slate-900/60 border border-slate-800/80 text-slate-200 font-extrabold text-xs uppercase tracking-wider rounded-xl hover:bg-slate-850 hover:text-white shadow-lg flex items-center justify-center gap-2 cursor-pointer" id="clearBuilderBtn">
                     <i class="bi bi-trash"></i> Clear All
                 </button>
-                <button type="button" class="px-6 py-3 bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-450 hover:to-orange-450 text-white font-extrabold text-xs uppercase tracking-wider rounded-xl shadow-lg shadow-amber-500/20 transform flex items-center justify-center gap-2 cursor-pointer" id="submitBuilderBtn" title="Shortcut: Ctrl+S" data-bs-toggle="tooltip">
+                <button type="button" class="px-6 py-3 bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-450 hover:to-orange-450 text-white font-extrabold text-xs uppercase tracking-wider rounded-xl shadow-lg shadow-amber-500/20 transform flex items-center justify-center gap-2 cursor-pointer" id="submitBuilderBtn" title="Shortcut: Ctrl+S">
                     <i class="bi bi-cloud-arrow-up"></i> Save All Questions
                 </button>
             </div>

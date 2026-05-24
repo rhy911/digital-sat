@@ -197,7 +197,8 @@ document.addEventListener('DOMContentLoaded', async function () {
     }
 
     // Modal listeners
-    document.getElementById('editQuestionModal')?.addEventListener('shown.bs.modal', function () {
+    window.addEventListener('open-modal', function (e) {
+        if (e.detail !== 'editQuestionModal') return;
         const question = window.__editingQuestion;
         if (!question) return;
 
@@ -267,7 +268,7 @@ document.addEventListener('DOMContentLoaded', async function () {
 
             if (response.ok) {
                 showAlert('success', 'Question updated successfully!');
-                bootstrap.Modal.getInstance(document.getElementById('editQuestionModal'))?.hide();
+                window.dispatchEvent(new CustomEvent('close-modal', { detail: 'editQuestionModal' }));
                 await refreshQuestionsTableOnly();
             } else {
                 const result = await response.json();

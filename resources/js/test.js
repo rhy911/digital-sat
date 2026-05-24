@@ -1,9 +1,6 @@
 /**
  * Main Entry Point for Test Module
  */
-import * as bootstrap from 'bootstrap';
-window.bootstrap = bootstrap;
-
 import { state } from './test/state.js';
 import { 
   toggleTimer, 

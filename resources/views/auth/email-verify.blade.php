@@ -19,12 +19,12 @@
 
     <form id="resendForm" action="{{ route('verification.send') }}" method="POST" novalidate>
         @csrf
-        <button type="submit" id="resendBtn" class="btn btn-primary w-100 mt-4" data-processing-text="Sending...">Resend Verification Email</button>
+        <button type="submit" id="resendBtn" class="submit-btn w-full mt-4" data-processing-text="Sending...">Resend Verification Email</button>
     </form>
 
     <form id="logoutForm" method="POST" action="{{ route('logout') }}">
         @csrf
-        <button type="submit" class="btn btn-link w-100">Logout</button>
+        <button type="submit" class="btn btn-link w-full">Logout</button>
     </form>
 
     @push('scripts')

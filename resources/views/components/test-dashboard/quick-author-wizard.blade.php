@@ -1,17 +1,14 @@
-<!-- Quick Authoring Wizard Modal -->
-<div class="modal fade" id="quickAuthorWizardModal" tabindex="-1" aria-labelledby="quickAuthorWizardModalLabel" aria-hidden="true">
-    <div class="modal-dialog modal-lg modal-dialog-centered">
-        <div class="modal-content border border-slate-800/80 rounded-2xl shadow-2xl overflow-hidden glass-panel">
-            <div class="modal-header px-6 py-4 border-b border-slate-800/80 bg-slate-950/40 flex justify-between items-center">
-                <h5 class="modal-title text-base font-extrabold text-white flex items-center gap-3 mb-0" id="quickAuthorWizardModalLabel">
-                    <div class="w-8 h-8 rounded-lg bg-indigo-500/10 border border-indigo-500/30 flex items-center justify-center">
-                        <i class="bi bi-magic text-indigo-400"></i>
-                    </div>
-                    Quick Authoring Wizard
-                </h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+<x-ui.modal id="quickAuthorWizardModal" max-width="lg">
+    <x-slot:title>
+        <div class="flex items-center gap-3">
+            <div class="w-8 h-8 rounded-lg bg-indigo-500/10 border border-indigo-500/30 flex items-center justify-center">
+                <i class="bi bi-magic text-indigo-400"></i>
             </div>
-            <div class="modal-body p-6 space-y-6">
+            Quick Authoring Wizard
+        </div>
+    </x-slot:title>
+
+    <div class="space-y-6">
                 
                 <!-- Recent Continuation Section -->
                 <div id="wizard-recent-work-container" class="d-none">
@@ -116,6 +113,5 @@
                     <p class="mt-4 text-slate-400 text-xs font-extrabold uppercase tracking-widest">Generating structure...</p>
                 </div>
             </div>
-        </div>
     </div>
-</div>
+</x-ui.modal>

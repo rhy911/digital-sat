@@ -9,7 +9,7 @@ import {
 
 export function isReviewSectionVisible() {
   const reviewSection = document.getElementById("review-section");
-  return reviewSection && !reviewSection.classList.contains("d-none");
+  return reviewSection && !reviewSection.classList.contains("hidden");
 }
 
 export function updateNavigationButtons() {
@@ -24,8 +24,8 @@ export function showQuestion(index) {
   const resizableContainer = document.querySelector(".resizable-container");
   const wasReviewVisible = isReviewSectionVisible();
 
-  if (reviewSection) reviewSection.classList.add("d-none");
-  if (resizableContainer) resizableContainer.classList.remove("d-none");
+  if (reviewSection) reviewSection.classList.add("hidden");
+  if (resizableContainer) resizableContainer.classList.remove("hidden");
 
   if (wasReviewVisible) {
     state.currentQuestionIndex = state.totalQuestions - 1;
@@ -34,8 +34,8 @@ export function showQuestion(index) {
     state.currentQuestionIndex = index;
   }
 
-  state.questionElements.forEach((el, i) => el.classList.toggle("d-none", i !== index));
-  state.passageElements.forEach((el, i) => el.classList.toggle("d-none", i !== index));
+  state.questionElements.forEach((el, i) => el.classList.toggle("hidden", i !== index));
+  state.passageElements.forEach((el, i) => el.classList.toggle("hidden", i !== index));
 
   // Layout logic for Math and SPR
   const currentQuestionEl = state.questionElements[index];
@@ -48,8 +48,8 @@ export function showQuestion(index) {
 
   if (sectionType === 'math' && questionType !== 'student_produced_response') {
     // 1-column layout for non-SPR Math
-    if (leftPanel) leftPanel.classList.add('d-none');
-    if (resizer) resizer.classList.add('d-none');
+    if (leftPanel) leftPanel.classList.add('hidden');
+    if (resizer) resizer.classList.add('hidden');
     if (rightPanel) {
       rightPanel.style.flex = '0 0 100%';
       rightPanel.style.maxWidth = 'none'; // Full width for panel
@@ -64,10 +64,10 @@ export function showQuestion(index) {
   } else {
     // Standard 2-column layout
     if (leftPanel) {
-      leftPanel.classList.remove('d-none');
+      leftPanel.classList.remove('hidden');
       leftPanel.style.flex = state.panelStates[index] ? `0 0 ${state.panelStates[index].left}%` : '0 0 50%';
     }
-    if (resizer) resizer.classList.remove('d-none');
+    if (resizer) resizer.classList.remove('hidden');
     if (rightPanel) {
       rightPanel.style.flex = state.panelStates[index] ? `0 0 ${state.panelStates[index].right}%` : '0 0 49%';
       rightPanel.style.maxWidth = 'none';
@@ -85,7 +85,7 @@ export function showQuestion(index) {
   if (state.questionNumberSpan) state.questionNumberSpan.textContent = index + 1;
 
   const popoverBtn = document.querySelector(".popover-btn");
-  if (popoverBtn) popoverBtn.classList.remove("d-none");
+  if (popoverBtn) popoverBtn.classList.remove("hidden");
 
   updateNavigationButtons();
   updateQuestionButtonStates();
@@ -118,25 +118,25 @@ export function showQuestion(index) {
   if (window.smartRenderMath) {
     window.smartRenderMath(currentQuestionEl);
     // If there's a passage, render it too
-    if (currentPassageEl && !currentPassageEl.classList.contains('d-none')) {
+    if (currentPassageEl && !currentPassageEl.classList.contains('hidden')) {
       window.smartRenderMath(currentPassageEl);
     }
   }
 }
 
 export function showReviewSection() {
-  state.questionElements.forEach(el => el.classList.add("d-none"));
-  state.passageElements.forEach(el => el.classList.add("d-none"));
+  state.questionElements.forEach(el => el.classList.add("hidden"));
+  state.passageElements.forEach(el => el.classList.add("hidden"));
   state.currentQuestionIndex = state.totalQuestions;
 
   const reviewSection = document.getElementById("review-section");
   const resizableContainer = document.querySelector(".resizable-container");
 
-  if (reviewSection) reviewSection.classList.remove("d-none");
-  if (resizableContainer) resizableContainer.classList.add("d-none");
+  if (reviewSection) reviewSection.classList.remove("hidden");
+  if (resizableContainer) resizableContainer.classList.add("hidden");
 
   const popoverBtn = document.querySelector(".popover-btn");
-  if (popoverBtn) popoverBtn.classList.add("d-none");
+  if (popoverBtn) popoverBtn.classList.add("hidden");
 
   updateNavigationButtons();
   updateQuestionButtonStates();

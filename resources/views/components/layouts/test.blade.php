@@ -11,7 +11,8 @@
     <link
         href="https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&family=Noto+Serif:ital,wght@0,100..900;1,100..900&display=swap"
         rel="stylesheet">
-    @vite(['resources/css/app.css', 'resources/css/test/test-main.css', 'resources/sass/app.scss', 'resources/js/app.js', 'resources/js/test.js'])
+    @vite(['resources/css/app.css', 'resources/css/test/test-main.css', 'resources/js/app.js', 'resources/js/test.js'])
+    @livewireStyles
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css">
     <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js"></script>
     <script src="https://www.desmos.com/api/v1.12/calculator.js?apiKey=db07a8e640bc4faca92a5c89e0745235"></script>
@@ -29,7 +30,7 @@
 
 <body>
     <!-- Secure Test Loading Screen -->
-    <div id="loadingScreen" class="loading-screen d-flex flex-column align-items-center justify-content-center">
+    <div id="loadingScreen" class="loading-screen flex flex-col items-center justify-center">
         <div class="loading-container text-center">
             <div class="loading-spinner-wrapper mb-4">
                 <div class="loading-spinner"></div>
@@ -45,7 +46,7 @@
     </div>
 
     <header>
-        <div class="d-flex flex-column justify-content-start">
+        <div class="flex flex-col justify-start">
             <h5>Section {{ $sectionNumber ?? '1' }}, Module {{ $moduleNumber ?? '1' }}:
                 {{ $sectionName ?? ($sectionTitle ?? 'Reading and Writing') }}</h5>
             <div class="dropdown">
@@ -67,19 +68,19 @@
                 </div>
             </div>
         </div>
-        <div class="d-flex justify-content-center">
+        <div class="flex justify-center">
             <div class="text-center justify-items-center">
                 <div class="timer" id="timerDisplay">00:00</div>
                 <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
                     stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
-                    class="feather feather-clock d-none" id="clockIcon">
+                    class="feather feather-clock hidden" id="clockIcon">
                     <circle cx="12" cy="12" r="10"></circle>
                     <polyline points="12 6 12 12 16 14"></polyline>
                 </svg>
                 <div class="hide-button" id="timerToggle" onclick="toggleTimer()">Hide</div>
             </div>
         </div>
-        <div class="d-flex justify-content-end">
+        <div class="flex justify-end">
             @if (($sectionType ?? '') !== 'math')
                 <div class="icon-container" id="highlightNotesBtn">
                     <div class="d-flex icon">
@@ -130,13 +131,13 @@
         {{ $slot }}
     </main>
     <footer>
-        <div class="d-flex justify-content-start">
+        <div class="flex justify-start">
             <div>
                 <h5 class="m-0">{{ $username ?? 'No Name Available' }}</h5>
             </div>
         </div>
-        <div class="d-flex justify-content-center">
-            <button type="button" class="popover-btn btn btn-secondary d-flex align-items-center gap-1"
+        <div class="flex justify-center">
+            <button type="button" class="popover-btn btn btn-secondary flex items-center gap-1"
                 data-bs-toggle="popover" data-bs-placement="top" data-bs-content-id="popover-content">
                 Question <span>{{ $currentQuestion ?? '...' }}</span> of <span
                     id="total">{{ $totalQuestions ?? '...' }}</span>
@@ -147,12 +148,12 @@
                 </svg>
             </button>
 
-            <div id="popover-content" class="d-none">
-                <div class="d-flex flex-column gap-4">
+            <div id="popover-content" class="hidden">
+                <div class="flex flex-col gap-4">
                     <h5 class="m-0 text-center"><strong>{{ $sectionTitle ?? 'No Section Title Available' }}
                             Questions</strong></h5>
                     <div class="row text-center question-nav-row">
-                        <div class="col d-flex align-items-center justify-content-center gap-2">
+                        <div class="col flex items-center justify-center gap-2">
                             <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16"
                                 viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"
                                 stroke-linecap="round" stroke-linejoin="round" class="feather feather-map-pin">
@@ -161,7 +162,7 @@
                             </svg>
                             Current
                         </div>
-                        <div class="col d-flex align-items-center justify-content-center gap-2">
+                        <div class="col flex items-center justify-center gap-2">
                             <svg fill="#000000" version="1.1" xmlns="http://www.w3.org/2000/svg" width="16px"
                                 height="16px" viewBox="0 0 389 389">
                                 <g>
@@ -197,7 +198,7 @@
                             </svg>
                             Unanswered
                         </div>
-                        <div class="col d-flex align-items-center justify-content-center gap-2">
+                        <div class="col flex items-center justify-center gap-2">
                             <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16"
                                 viewBox="0 0 24 24" fill="#ab2334" stroke="currentColor" stroke-width="2"
                                 stroke-linecap="round" stroke-linejoin="round" class="feather feather-bookmark">
@@ -206,7 +207,7 @@
                             For Review
                         </div>
                     </div>
-                    <div class="d-flex flex-wrap gap-3">
+                    <div class="flex flex-wrap gap-3">
                         <!-- Question buttons will be dynamically generated by JavaScript -->
                     </div>
                     <div class="text-center go-review-btn">
@@ -215,7 +216,7 @@
                 </div>
             </div>
         </div>
-        <div class="d-flex flex-row-reverse justify-content-start gap-3">
+        <div class="flex flex-row-reverse justify-start gap-3">
             <div class="navigate-btn" onclick="nextQuestion()" id="nextButton">Next</div>
             <div class="navigate-btn" onclick="prevQuestion()" id="backButton">Back</div>
         </div>
@@ -253,6 +254,7 @@
         </div>
     </div>
 
+    @livewireScripts
     @stack('scripts')
 </body>
 

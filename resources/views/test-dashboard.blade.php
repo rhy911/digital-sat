@@ -7,7 +7,7 @@
         @vite(['resources/css/test-dashboard-admin.css'])
     @endpush
 
-    <div class="fixed inset-0 z-40 flex h-screen w-screen overflow-hidden bg-[#0b0f19] dark-theme-dashboard">
+    <div class="fixed inset-0 z-40 flex h-screen w-screen overflow-hidden bg-[#0b0f19] dark-theme-dashboard" x-data="{ activeTab: 'tests' }">
         <div id="alert-container" class="fixed top-6 right-6 z-50"></div>
         
         <!-- Sidebar Navigation -->
@@ -23,28 +23,28 @@
             </div>
             
             <div class="p-6">
-                <button class="w-full px-5 py-4 bg-gradient-to-r from-indigo-600 via-violet-600 to-indigo-500 hover:from-indigo-500 hover:to-violet-500 text-white font-extrabold text-sm rounded-xl shadow-lg shadow-indigo-600/25 hover:shadow-indigo-600/45 flex items-center justify-center gap-3 border border-indigo-500/20" data-bs-toggle="modal" data-bs-target="#quickAuthorWizardModal">
+                <button class="w-full px-5 py-4 bg-gradient-to-r from-indigo-600 via-violet-600 to-indigo-500 hover:from-indigo-500 hover:to-violet-500 text-white font-extrabold text-sm rounded-xl shadow-lg shadow-indigo-600/25 hover:shadow-indigo-600/45 flex items-center justify-center gap-3 border border-indigo-500/20" x-on:click="$dispatch('open-modal', 'quickAuthorWizardModal')">
                     <i class="bi bi-magic text-base animate-pulse"></i> New Content
                 </button>
             </div>
             
             <nav class="flex-1 overflow-y-auto px-4 space-y-1.5" id="dashboardTabs" role="tablist">
-                <button class="w-full text-left px-4 py-3.5 rounded-xl text-sm text-slate-400 sidebar-link active flex items-center gap-3" id="tests-tab" data-bs-toggle="tab" data-bs-target="#tests" type="button" role="tab" aria-selected="true">
+                <button class="w-full text-left px-4 py-3.5 rounded-xl text-sm flex items-center gap-3" :class="activeTab === 'tests' ? 'text-white bg-slate-900/50' : 'text-slate-400 hover:text-slate-200'" id="tests-tab" x-on:click="activeTab = 'tests'" type="button" role="tab">
                     <i class="bi bi-journal-text text-lg"></i> Practice Tests
                 </button>
-                <button class="w-full text-left px-4 py-3.5 rounded-xl text-sm text-slate-400 sidebar-link flex items-center gap-3" id="sections-tab" data-bs-toggle="tab" data-bs-target="#sections" type="button" role="tab">
+                <button class="w-full text-left px-4 py-3.5 rounded-xl text-sm flex items-center gap-3" :class="activeTab === 'sections' ? 'text-white bg-slate-900/50' : 'text-slate-400 hover:text-slate-200'" id="sections-tab" x-on:click="activeTab = 'sections'" type="button" role="tab">
                     <i class="bi bi-folder2-open text-lg"></i> Sections
                 </button>
-                <button class="w-full text-left px-4 py-3.5 rounded-xl text-sm text-slate-400 sidebar-link flex items-center gap-3" id="modules-tab" data-bs-toggle="tab" data-bs-target="#modules" type="button" role="tab">
+                <button class="w-full text-left px-4 py-3.5 rounded-xl text-sm flex items-center gap-3" :class="activeTab === 'modules' ? 'text-white bg-slate-900/50' : 'text-slate-400 hover:text-slate-200'" id="modules-tab" x-on:click="activeTab = 'modules'" type="button" role="tab">
                     <i class="bi bi-box-seam text-lg"></i> Modules
                 </button>
-                <button class="w-full text-left px-4 py-3.5 rounded-xl text-sm text-slate-400 sidebar-link flex items-center gap-3" id="questions-tab" data-bs-toggle="tab" data-bs-target="#questions" type="button" role="tab">
+                <button class="w-full text-left px-4 py-3.5 rounded-xl text-sm flex items-center gap-3" :class="activeTab === 'questions' ? 'text-white bg-slate-900/50' : 'text-slate-400 hover:text-slate-200'" id="questions-tab" x-on:click="activeTab = 'questions'" type="button" role="tab">
                     <i class="bi bi-database text-lg"></i> Question Bank
                 </button>
                 <div class="py-2">
                     <div class="h-px bg-slate-900 w-full"></div>
                 </div>
-                <button class="w-full text-left px-4 py-3.5 rounded-xl text-sm text-amber-500/90 hover:text-amber-400 sidebar-link sidebar-link-builder flex items-center gap-3" id="builder-tab" data-bs-toggle="tab" data-bs-target="#builder" type="button" role="tab">
+                <button class="w-full text-left px-4 py-3.5 rounded-xl text-sm text-amber-500/90 hover:text-amber-400 sidebar-link-builder flex items-center gap-3" :class="activeTab === 'builder' ? 'bg-slate-900/50' : ''" id="builder-tab" x-on:click="activeTab = 'builder'" type="button" role="tab">
                     <i class="bi bi-magic text-lg"></i> Easy Builder
                 </button>
             </nav>

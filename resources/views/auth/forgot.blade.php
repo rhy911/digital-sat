@@ -38,6 +38,6 @@
             success-style="display: none; color: #155724; margin-bottom: 1rem; padding: 0.75rem; background-color: #d4edda; border-radius: 4px;"
         />
 
-        <button type="submit" id="submitBtn" class="btn btn-primary w-100 mt-4" data-processing-text="Sending..." disabled>Send Reset Link</button>
+        <button type="submit" id="submitBtn" class="submit-btn w-full mt-4" data-processing-text="Sending..." disabled>Send Reset Link</button>
     </form>
 </x-layouts.auth>

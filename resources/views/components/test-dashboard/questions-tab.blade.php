@@ -1,6 +1,6 @@
 @props(['tests', 'questions', 'questionsTotal'])
 
-<div class="tab-pane fade" id="questions" role="tabpanel">
+<div x-show="activeTab === 'questions'" id="questions" role="tabpanel" style="display: none;" x-transition.opacity.duration.300ms>
     <x-test-dashboard.questions.import-wizard :tests="$tests" />
     <x-test-dashboard.questions.validation-grid />
     <x-test-dashboard.questions.attach-question :tests="$tests" />

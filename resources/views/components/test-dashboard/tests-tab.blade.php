@@ -1,6 +1,6 @@
 @props(['tests'])
 
-<div class="tab-pane fade show active" id="tests" role="tabpanel">
+<div x-show="activeTab === 'tests'" id="tests" role="tabpanel" style="display: none;" x-transition.opacity.duration.300ms>
     <!-- Header Section -->
     <div class="flex mb-6">
         <div>

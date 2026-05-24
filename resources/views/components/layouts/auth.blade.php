@@ -6,7 +6,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{{ $title }}</title>
-    @vite(['resources/css/app.css', 'resources/css/auth.css','resources/sass/app.scss', 'resources/js/app.js', 'resources/js/auth.js'])
+    @vite(['resources/css/app.css', 'resources/css/auth.css', 'resources/js/app.js', 'resources/js/auth.js'])
+    @livewireStyles
     @stack('styles')
 </head>
 <body>
@@ -27,6 +28,7 @@
     <footer>
         
     </footer>
+    @livewireScripts
     @stack('scripts')
 </body>
 </html>

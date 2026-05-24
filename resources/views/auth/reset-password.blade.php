@@ -39,7 +39,7 @@
 
         <x-auth.alerts />
 
-        <button type="submit" id="submitBtn" class="btn btn-primary w-100 mt-4" data-processing-text="Processing..." disabled>Reset password</button>
+        <button type="submit" id="submitBtn" class="submit-btn w-full mt-4" data-processing-text="Processing..." disabled>Reset password</button>
     </form>
 
     @push('scripts')

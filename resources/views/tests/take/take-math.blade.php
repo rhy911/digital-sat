@@ -47,14 +47,14 @@
         @if ($hasSPR || $questions->contains(fn($q) => !empty($q->passage_id)))
             <div class="resizable-panel left-panel">
                 @foreach ($questions as $index => $q)
-                    <div class="passage-container @if (!$loop->first) d-none @endif"
+                    <div class="passage-container @if (!$loop->first) hidden @endif"
                         id="passage{{ $loop->iteration }}">
                         @if ($q->passage)
                             @markdown($q->passage->content)
                         @elseif($q->question_type === 'student_produced_response')
                             <div class="spr-directions p-3">
-                                <h5 class="fw-bold mb-3">Student-produced response directions</h5>
-                                <ul class="ps-6 list-disc">
+                                <h5 class="font-bold mb-3 text-lg">Student-produced response directions</h5>
+                                <ul class="pl-6 list-disc">
                                     <li>If you find <strong>more than one correct answers</strong>, enter only one
                                         answer.</li>
                                     <li>You can enter up to 5 characters for a <strong>positive</strong> answer and up
@@ -71,7 +71,7 @@
                                 </ul>
                             </div>
                         @else
-                            <p class="text-muted italic">Reference formulas or notes for this math question can be found
+                            <p class="text-slate-500 italic">Reference formulas or notes for this math question can be found
                                 here.</p>
                         @endif
                     </div>
@@ -90,11 +90,11 @@
         {{-- Right Panel: Centered if no left panel --}}
         <div class="resizable-panel right-panel">
             @foreach ($questions as $q)
-                <div class="question show-strike @if (!$loop->first) d-none @endif"
+                <div class="question show-strike @if (!$loop->first) hidden @endif"
                     id="question{{ $loop->iteration }}" data-question-id="{{ $q->id }}"
                     data-section-type="{{ $q->section_type }}" data-question-type="{{ $q->question_type }}">
-                    <div class="d-flex flex-column gap-3">
-                        <div class="question-header d-flex align-items-center gap-3">
+                    <div class="flex flex-col gap-3">
+                        <div class="question-header flex items-center gap-3">
                             <div class="number">{{ $loop->iteration }}</div>
                             <span class="bookmark">
                                 <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20"
@@ -104,7 +104,7 @@
                                 </svg>
                                 Mark for Review
                             </span>
-                            <button type="button" class="cross-out-toggle-btn ms-auto me-2 active"
+                            <button type="button" class="cross-out-toggle-btn ml-auto mr-2 active"
                                 title="Cross out answer choices you think are wrong">
                                 <svg width="20" height="20" viewBox="0 0 32 32" fill="none"
                                     xmlns="http://www.w3.org/2000/svg">
@@ -120,11 +120,11 @@
 
                             @if ($q->question_type === 'student_produced_response')
                                 <div class="answer-input-container">
-                                    <label class="d-block mb-2 fw-bold">Enter your answer:</label>
-                                    <input type="text" class="form-control spr-input" name="q{{ $loop->iteration }}"
+                                    <label class="block mb-2 font-bold">Enter your answer:</label>
+                                    <input type="text" class="w-full px-4 py-2 border border-slate-300 rounded focus:outline-hidden focus:ring-2 focus:ring-indigo-500 spr-input" name="q{{ $loop->iteration }}"
                                         placeholder="______" maxlength="6">
                                     @if ($q->spr_hint)
-                                        <div class="form-text mt-1 italic text-muted small">{{ $q->spr_hint }}
+                                        <div class="mt-1 italic text-slate-500 text-sm">{{ $q->spr_hint }}
                                         </div>
                                     @endif
 
@@ -132,10 +132,10 @@
                                     </h4>
                                 </div>
                             @else
-                                <div class="d-flex flex-column gap-3">
+                                <div class="flex flex-col gap-3">
                                     @foreach ($q->answerChoices->sortBy('order') as $choice)
-                                        <div class="answer-row d-flex align-items-center gap-3">
-                                            <div class="answer-option flex-grow-1">
+                                        <div class="answer-row flex items-center gap-3">
+                                            <div class="answer-option grow">
                                                 <input type="radio"
                                                     id="q{{ $loop->parent->iteration }}{{ $choice->label }}"
                                                     name="q{{ $loop->parent->iteration }}"

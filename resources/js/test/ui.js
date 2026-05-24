@@ -1,6 +1,4 @@
 import { state } from './state.js';
-import * as bootstrap from 'bootstrap';
-
 // ============================================================================
 // TIMER FUNCTIONALITY
 // ============================================================================
@@ -10,16 +8,16 @@ export function toggleTimer() {
   const clockIcon = document.getElementById("clockIcon");
   const timerToggle = document.getElementById("timerToggle");
 
-  if (timerDisplay.classList.contains("d-none")) {
-    timerDisplay.classList.remove("d-none");
-    clockIcon.classList.add("d-none");
+  if (timerDisplay.classList.contains("hidden")) {
+    timerDisplay.classList.remove("hidden");
+    clockIcon.classList.add("hidden");
     timerToggle.textContent = "Hide";
   } else {
-    timerDisplay.classList.add("d-none");
-    clockIcon.classList.remove("d-none");
+    timerDisplay.classList.add("hidden");
+    clockIcon.classList.remove("hidden");
     timerToggle.textContent = "Show";
   }
-  console.log(`Timer toggled: ${timerDisplay.classList.contains("d-none") ? "Hidden" : "Visible"}`);
+  console.log(`Timer toggled: ${timerDisplay.classList.contains("hidden") ? "Hidden" : "Visible"}`);
 }
 
 // ============================================================================
@@ -38,7 +36,7 @@ export function generateQuestionButtons() {
   const popoverTemplate = document.getElementById("popover-content");
   if (!popoverTemplate) return;
 
-  const questionButtonsContainer = popoverTemplate.querySelector(".d-flex.flex-wrap.gap-3");
+  const questionButtonsContainer = popoverTemplate.querySelector(".flex.flex-wrap.gap-3");
   if (!questionButtonsContainer || questionButtonsContainer.children.length > 0) return;
 
   for (let i = 1; i <= state.totalQuestions; i++) {
@@ -49,7 +47,7 @@ export function generateQuestionButtons() {
 }
 
 export function generateNavigationBoxButtons() {
-  const navBoxContainer = document.querySelector(".question-navigation-box .d-flex.flex-wrap");
+  const navBoxContainer = document.querySelector(".question-navigation-box .flex.flex-wrap");
   if (!navBoxContainer) return;
 
   navBoxContainer.innerHTML = "";
@@ -171,22 +169,24 @@ export function initializeDropdown() {
     if (closeButton) {
       closeButton.addEventListener("click", (e) => {
         e.preventDefault();
-        const dropdown = bootstrap.Dropdown.getInstance(dropdownButton);
-        if (dropdown) dropdown.hide();
+        dropdownMenu.classList.remove('show');
+        if (dropdownOverlay) dropdownOverlay.style.display = "none";
       });
     }
   }
 
-  dropdownButton.addEventListener("shown.bs.dropdown", () => {
-    if (dropdownOverlay) dropdownOverlay.style.display = "block";
-  });
-  dropdownButton.addEventListener("hidden.bs.dropdown", () => {
-    if (dropdownOverlay) dropdownOverlay.style.display = "none";
+  dropdownButton.addEventListener("click", (e) => {
+    e.stopPropagation();
+    const isShowing = dropdownMenu.classList.toggle('show');
+    if (dropdownOverlay) dropdownOverlay.style.display = isShowing ? "block" : "none";
   });
 
-  const dropdown = new bootstrap.Dropdown(dropdownButton);
-  dropdown.show();
-  if (dropdownOverlay) dropdownOverlay.style.display = "block";
+  document.addEventListener('click', (e) => {
+    if (!dropdownButton.contains(e.target) && dropdownMenu && !dropdownMenu.contains(e.target)) {
+        dropdownMenu.classList.remove('show');
+        if (dropdownOverlay) dropdownOverlay.style.display = "none";
+    }
+  });
 }
 
 export function initializeMoreDropdown() {

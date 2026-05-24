@@ -257,8 +257,7 @@ export async function openEditQuestionModal(id) {
         }
 
         const modalEl = document.getElementById('editQuestionModal');
-        const modal = bootstrap.Modal.getOrCreateInstance(modalEl);
-        modal.show();
+        window.dispatchEvent(new CustomEvent('open-modal', { detail: 'editQuestionModal' }));
 
     } catch (error) {
         showAlert('danger', error.message);

@@ -1,5 +1,4 @@
 import './bootstrap';
-import 'bootstrap';
 
 export function initDropdownToggle({
     triggerId = 'userDropdown',
