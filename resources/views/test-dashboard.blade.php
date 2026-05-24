@@ -106,12 +106,12 @@
     <x-test-dashboard.quick-author-wizard />
 
     @push('scripts')
-        <script src="https://cdn.jsdelivr.net/npm/marked@12.0.0/marked.min.js"></script>
-        <script src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js"></script>
-        <script src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/auto-render.min.js"></script>
-        <script src="https://cdn.jsdelivr.net/npm/tom-select@2.3.1/dist/js/tom-select.complete.min.js"></script>
-        <script src="https://cdn.jsdelivr.net/npm/easymde/dist/easymde.min.js"></script>
-        <script src="https://cdn.jsdelivr.net/npm/tabulator-tables@5.5.2/dist/js/tabulator.min.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/marked@12.0.0/marked.min.js" defer></script>
+        <script src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js" defer></script>
+        <script src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/auto-render.min.js" defer></script>
+        <script src="https://cdn.jsdelivr.net/npm/tom-select@2.3.1/dist/js/tom-select.complete.min.js" defer></script>
+        <script src="https://cdn.jsdelivr.net/npm/easymde/dist/easymde.min.js" defer></script>
+        <script src="https://cdn.jsdelivr.net/npm/tabulator-tables@5.5.2/dist/js/tabulator.min.js" defer></script>
         <script>
             window.TestDashboardConfig = {
                 SNAPSHOT_URL: "{{ route('test-dashboard.snapshot') }}",

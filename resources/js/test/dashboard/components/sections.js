@@ -22,7 +22,11 @@ export function sectionActionsFormatter(cell) {
     return `<button type="button" class="w-8 h-8 flex items-center justify-center text-slate-400 hover:text-rose-400 hover:bg-rose-500/10 rounded-xl delete-section-btn transition-all" data-id="${cell.getValue()}"><i class="bi bi-trash"></i></button>`;
 }
 
+let currentSectionsData = null;
+
 export function renderSectionsTable(tests) {
+    if (currentSectionsData === tests && sectionsTabulator) return;
+    currentSectionsData = tests;
     const tableContainer = document.getElementById('sectionsTableContainer');
     const emptyState = document.getElementById('sectionsEmptyState');
     const tableElem = document.getElementById('sectionsTabulatorTable');
@@ -56,6 +60,9 @@ export function renderSectionsTable(tests) {
             data: tableData,
             layout: "fitColumns",
             responsiveLayout: "collapse",
+            pagination: true,
+            paginationSize: 25,
+            paginationCounter: "rows",
             placeholder: "No sections found",
             columns: [
                 { title: "ID", field: "id", width: 70 },

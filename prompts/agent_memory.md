@@ -317,3 +317,30 @@
 *   `questions.js`: Removed spinner-grow span from dynamic usage badge template inside `renderQuestionsTable`.
 *   **Build**: Vite `npm run build` success.
 *   **Changes**: `pool-table.blade.php`, `questions.js` [UI] Removed spinner icon from Pretest badge.
+
+## [2026-05-24 02:00] - Perf: Dashboard Lazy Load & Script Defer
+*   **Topic**: JS execution time, layout thrashing fix.
+*   **Summary**: Defer scripts, lazy load Tabulator tables on tab switch, chunk TomSelect init.
+*   	est-dashboard.blade.php: Defer script tags (marked, katex, tom-select, easymde, tabulator).
+*   index.js: Cache payload. Add enderActiveTab. Bind shown.bs.tab. Chunk initTomSelectBatch with setTimeout.
+*   **Build**: Vite 
+pm run build success.
+*   **Changes**: index.js, 	est-dashboard.blade.php [PERF] Dashboard lazy loading, unblock main thread.
+
+## [2026-05-24 02:10] - Perf: Fix INP & Redundant Tabulator Renders
+*   **Topic**: High INP on tab switch, main thread blocking.
+*   **Summary**: Wrap renderActiveTab in rAF + setTimeout. Cache current data reference to skip redundant table renders.
+*   index.js: equestAnimationFrame + setTimeout for tab switch listener.
+*   	ests.js, sections.js, modules.js, questions.js: Add currentData strict equality guard before eplaceData / innerHTML.
+*   **Build**: Vite 
+pm run build success.
+*   **Changes**: index.js, components [PERF] INP fix, drop redundant tabulator layouts.
+
+## [2026-05-24 02:20] - Perf: Chunk Rendering & Tabulator Virtualization
+*   **Topic**: Huge dataset rendering bottlenecks.
+*   **Summary**: Added pagination to tests/sections Tabulator. Rewrote modules/questions rendering into progressive chunks.
+*   	ests.js, sections.js: Add pagination: true and paginationSize: 25 to Tabulator options.
+*   modules.js, questions.js: Extract innerHTML loops into equestAnimationFrame + setTimeout chunks appending via insertAdjacentHTML.
+*   **Build**: Vite 
+pm run build success.
+*   **Changes**: 	ests.js, sections.js, modules.js, questions.js [PERF] Progressive rendering for massive tables.

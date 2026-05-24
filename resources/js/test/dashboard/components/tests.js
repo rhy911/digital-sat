@@ -45,7 +45,11 @@ export function testActionsFormatter(cell) {
     `;
 }
 
+let currentTestsData = null;
+
 export function renderTestsTable(tests) {
+    if (currentTestsData === tests && testsTabulator) return;
+    currentTestsData = tests;
     const tableContainer = document.getElementById('testsTableContainer');
     const emptyState = document.getElementById('testsEmptyState');
     const tableElem = document.getElementById('testsTabulatorTable');
@@ -76,6 +80,9 @@ export function renderTestsTable(tests) {
             data: tableData,
             layout: "fitColumns",
             responsiveLayout: "collapse",
+            pagination: true,
+            paginationSize: 25,
+            paginationCounter: "rows",
             placeholder: "No tests found",
             columns: [
                 { title: "ID", field: "id", width: 70 },

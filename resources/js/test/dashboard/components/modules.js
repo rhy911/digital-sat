@@ -61,30 +61,63 @@ function renderModuleRowHtml(mod) {
         + '</tr>';
 }
 
+let currentModulesData = null;
+let currentModulesRenderId = 0;
+
+function _renderModulesChunked(tbody, items, emptyHtml) {
+    currentModulesRenderId++;
+    const renderId = currentModulesRenderId;
+    
+    if (!items.length) {
+        tbody.innerHTML = emptyHtml;
+        return;
+    }
+    
+    tbody.innerHTML = '';
+    let index = 0;
+    const chunkSize = 20;
+    
+    function renderChunk() {
+        if (renderId !== currentModulesRenderId) return; // Abort if a new render started
+        
+        const chunk = items.slice(index, index + chunkSize);
+        if (!chunk.length) return;
+        
+        tbody.insertAdjacentHTML('beforeend', chunk.map(renderModuleRowHtml).join(''));
+        index += chunkSize;
+        
+        if (index < items.length) {
+            requestAnimationFrame(() => setTimeout(renderChunk, 0));
+        }
+    }
+    
+    renderChunk();
+}
+
 export function renderModulesTable(allModules) {
+    if (currentModulesData === allModules) return;
+    currentModulesData = allModules;
     localAllModules = allModules;
     const tbody = document.getElementById('modulesTableBody');
     if (!tbody) {
         return;
     }
-    if (!allModules.length) {
-        tbody.innerHTML = '<tr>'
-            + '<td colspan="8" class="px-6 py-20 text-center">'
-            + '<div class="flex flex-col items-center justify-center">'
-            + '<div class="w-20 h-20 rounded-full bg-slate-900 flex items-center justify-center mb-6">'
-            + '<i class="bi bi-inbox text-4xl text-slate-500"></i>'
-            + '</div>'
-            + '<h4 class="text-lg font-bold text-white">No modules found</h4>'
-            + '<p class="text-sm text-slate-400 mt-1 max-w-xs mx-auto">You haven\'t created any reusable modules yet. Create one to start building your tests.</p>'
-            + '<button class="mt-8 px-6 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-sm rounded-xl transition-all shadow-lg shadow-indigo-600/20" data-bs-toggle="offcanvas" data-bs-target="#createModuleOffcanvas">'
-            + 'Create Your First Module'
-            + '</button>'
-            + '</div>'
-            + '</td>'
-            + '</tr>';
-        return;
-    }
-    tbody.innerHTML = allModules.map(renderModuleRowHtml).join('');
+    const emptyHtml = '<tr>'
+        + '<td colspan="8" class="px-6 py-20 text-center">'
+        + '<div class="flex flex-col items-center justify-center">'
+        + '<div class="w-20 h-20 rounded-full bg-slate-900 flex items-center justify-center mb-6">'
+        + '<i class="bi bi-inbox text-4xl text-slate-500"></i>'
+        + '</div>'
+        + '<h4 class="text-lg font-bold text-white">No modules found</h4>'
+        + '<p class="text-sm text-slate-400 mt-1 max-w-xs mx-auto">You haven\'t created any reusable modules yet. Create one to start building your tests.</p>'
+        + '<button class="mt-8 px-6 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-sm rounded-xl transition-all shadow-lg shadow-indigo-600/20" data-bs-toggle="offcanvas" data-bs-target="#createModuleOffcanvas">'
+        + 'Create Your First Module'
+        + '</button>'
+        + '</div>'
+        + '</td>'
+        + '</tr>';
+        
+    _renderModulesChunked(tbody, allModules, emptyHtml);
 }
 
 export function initModulesSearch() {
@@ -96,8 +129,16 @@ export function initModulesSearch() {
         const tbody = document.getElementById('modulesTableBody');
         if (!tbody) return;
 
+        const emptyHtml = '<tr>'
+            + '<td colspan="8" class="px-6 py-20 text-center">'
+            + '<div class="flex flex-col items-center justify-center">'
+            + '<h4 class="text-slate-450 font-bold">No matching modules found</h4>'
+            + '</div>'
+            + '</td>'
+            + '</tr>';
+
         if (!query) {
-            tbody.innerHTML = localAllModules.map(renderModuleRowHtml).join('');
+            _renderModulesChunked(tbody, localAllModules, emptyHtml);
             return;
         }
 
@@ -110,17 +151,6 @@ export function initModulesSearch() {
             return key.includes(query) || id.includes(query) || type.includes(query) || diff.includes(query);
         });
 
-        if (!filtered.length) {
-            tbody.innerHTML = '<tr>'
-                + '<td colspan="8" class="px-6 py-20 text-center">'
-                + '<div class="flex flex-col items-center justify-center">'
-                + '<h4 class="text-slate-450 font-bold">No matching modules found</h4>'
-                + '</div>'
-                + '</td>'
-                + '</tr>';
-            return;
-        }
-
-        tbody.innerHTML = filtered.map(renderModuleRowHtml).join('');
+        _renderModulesChunked(tbody, filtered, emptyHtml);
     });
 }

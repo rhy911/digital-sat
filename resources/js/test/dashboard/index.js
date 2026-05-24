@@ -32,10 +32,36 @@ import * as BulkImport from './components/bulk-import.js';
 document.addEventListener('DOMContentLoaded', function () {
 
     function rememberTestDashboardTab() {
-        const activeBtn = document.querySelector('#dashboardTabs .nav-link.active');
+        const activeBtn = document.querySelector('#dashboardTabs .nav-link.active') || document.querySelector('#dashboardTabs .sidebar-link.active');
         if (!activeBtn) return;
         const target = activeBtn.getAttribute('data-bs-target');
         if (target) sessionStorage.setItem(TEST_DASHBOARD_TAB_KEY, target);
+    }
+
+    window.__tdLatestTests = null;
+    window.__tdLatestPayload = null;
+    window.__tdLatestListJson = null;
+
+    function renderActiveTab(targetId = null) {
+        if (!targetId) {
+            const activeBtn = document.querySelector('#dashboardTabs .sidebar-link.active') || document.querySelector('#dashboardTabs .nav-link.active');
+            if (activeBtn) targetId = activeBtn.getAttribute('data-bs-target');
+        }
+        if (!targetId) return;
+
+        if (targetId === '#tests' && window.__tdLatestTests) {
+            renderTestsTable(window.__tdLatestTests);
+        } else if (targetId === '#sections' && window.__tdLatestTests) {
+            renderSectionsTable(window.__tdLatestTests);
+        } else if (targetId === '#modules' && window.__tdLatestPayload?.allModules) {
+            renderModulesTable(window.__tdLatestPayload.allModules);
+        } else if (targetId === '#questions' && window.__tdLatestListJson) {
+            const listJson = window.__tdLatestListJson;
+            renderQuestionsTable(listJson.data || []);
+            renderQuestionsPagination(listJson, refreshQuestionsTableOnly);
+            const qBadge = document.getElementById('questionsPoolCountBadge');
+            if (qBadge && listJson.total != null) qBadge.textContent = listJson.total + ' Total';
+        }
     }
 
     async function refreshQuestionsTableOnly() {
@@ -50,10 +76,8 @@ document.addEventListener('DOMContentLoaded', function () {
             window.__tdQuestionsPage = last;
             return refreshQuestionsTableOnly();
         }
-        renderQuestionsTable(listJson.data || []);
-        renderQuestionsPagination(listJson, refreshQuestionsTableOnly);
-        const qBadge = document.getElementById('questionsPoolCountBadge');
-        if (qBadge && listJson.total != null) qBadge.textContent = listJson.total + ' Total';
+        window.__tdLatestListJson = listJson;
+        renderActiveTab('#questions');
     }
 
     function rebuildAllTomSelects(payload, preserve) {
@@ -85,9 +109,7 @@ document.addEventListener('DOMContentLoaded', function () {
         try { payload = await snapRes.json(); } catch (e) { console.error('Snapshot JSON parse failed'); }
 
         window.__tdLatestTests = payload.tests || [];
-        renderTestsTable(payload.tests || []);
-        renderSectionsTable(payload.tests || []);
-        renderModulesTable(payload.allModules || []);
+        window.__tdLatestPayload = payload;
 
         let listJson = { data: [], total: 0, current_page: 1, last_page: 1 };
         if (listRes.ok) { try { listJson = await listRes.json(); } catch (e) {} }
@@ -97,10 +119,8 @@ document.addEventListener('DOMContentLoaded', function () {
             window.__tdQuestionsPage = last;
             await refreshQuestionsTableOnly();
         } else {
-            renderQuestionsTable(listJson.data || []);
-            renderQuestionsPagination(listJson, refreshQuestionsTableOnly);
-            const qBadge = document.getElementById('questionsPoolCountBadge');
-            if (qBadge && listJson.total != null) qBadge.textContent = listJson.total + ' Total';
+            window.__tdLatestListJson = listJson;
+            renderActiveTab();
         }
         rebuildAllTomSelects(payload, preserveTomSelects);
     }
@@ -344,7 +364,15 @@ document.addEventListener('DOMContentLoaded', function () {
     initTestDashboardDelegatedActions();
     initModulesSearch();
     document.querySelectorAll('#dashboardTabs [data-bs-toggle="tab"]').forEach(btn => {
-        btn.addEventListener('shown.bs.tab', e => sessionStorage.setItem(TEST_DASHBOARD_TAB_KEY, e.target.getAttribute('data-bs-target')));
+        btn.addEventListener('shown.bs.tab', e => {
+            const target = e.target.getAttribute('data-bs-target');
+            sessionStorage.setItem(TEST_DASHBOARD_TAB_KEY, target);
+            requestAnimationFrame(() => {
+                setTimeout(() => {
+                    renderActiveTab(target);
+                }, 0);
+            });
+        });
     });
 
     const savedTab = sessionStorage.getItem(TEST_DASHBOARD_TAB_KEY);
@@ -353,9 +381,16 @@ document.addEventListener('DOMContentLoaded', function () {
         if (trigger && typeof bootstrap !== 'undefined' && bootstrap.Tab) bootstrap.Tab.getOrCreateInstance(trigger).show();
     }
 
-    document.querySelectorAll('.tom-select').forEach(el => {
-        if (!el.classList.contains('tom-select-remote-question')) initTomSelectOn(el);
-    });
+    const tomSelectEls = Array.from(document.querySelectorAll('.tom-select')).filter(el => !el.classList.contains('tom-select-remote-question'));
+    function initTomSelectBatch(index = 0) {
+        if (index >= tomSelectEls.length) return;
+        const batchSize = 5;
+        for (let i = 0; i < batchSize && index + i < tomSelectEls.length; i++) {
+            initTomSelectOn(tomSelectEls[index + i]);
+        }
+        setTimeout(() => initTomSelectBatch(index + batchSize), 0);
+    }
+    initTomSelectBatch();
     
     initRemoteQuestionPicker('answerQuestionId', '');
     initRemoteQuestionPicker('explanationQuestionId', '');
