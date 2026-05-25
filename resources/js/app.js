@@ -1,4 +1,12 @@
 import './bootstrap';
+import Alpine from 'alpinejs';
+
+if (!window.Alpine) {
+    window.Alpine = Alpine;
+    Alpine.start();
+}
+
+
 
 export function initDropdownToggle({
     triggerId = 'userDropdown',
@@ -42,7 +50,7 @@ export function initRadioToggleSection({
     activeLabelText = 'Active',
     pastLabelText = 'Past',
     checkedPrefix = '✓ ',
-    hiddenClass = 'd-none',
+    hiddenClass = 'hidden',
 } = {}) {
     const activeRadioEl = document.getElementById(activeRadioId);
     const pastRadioEl = document.getElementById(pastRadioId);

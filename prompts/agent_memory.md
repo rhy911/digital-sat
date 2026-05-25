@@ -2,6 +2,51 @@
 
 > **RULE:** ALWAYS add new entries to the **TOP** of this log (immediately below this header block), so the newest items are seen first.
 
+## [2026-05-25 17:25] - UI: Alpine Dropdown Integration & Tailwind Important Clash Fix
+* **Topic**: Alpine.js native Vite integration + Tailwind important utility conflict fix.
+* **Summary**: Replace Vanilla JS toggler with Alpine directives for Directions + More dropdown in `test.blade.php`. Resolve Tailwind `@import "tailwindcss" important;` override conflict where static `.flex` class display rule forced visibility over inline `display: none`. Wrap Alpine boot in fail-safe registration. Add a premium, full-screen glassmorphic backdrop dimmer (`fixed inset-0 bg-black/40 backdrop-blur-xs z-40`) to satisfy "screen dim" design parity. Purge legacy, unused dropdown CSS rules (`.dropdown-menu`, `.dropdown-content`, etc.) from `test-header.css`.
+* `test.blade.php`: Dropdown refactor using `x-data`, `x-show`, `x-cloak`. Add glassmorphic dimmer element inside container. Use dynamic `:class="open ? 'flex' : 'hidden'"` on Directions dropdown to force `important` layout visibility states.
+* `resources/css/test/test-header.css`: Purge all legacy Bootstrap-dependent dropdown class rules.
+* `app.js`: Put Alpine.js import inside fail-safe `if (!window.Alpine)` boot block to resolve potential Livewire double-booting conflicts while keeping standard page rendering active.
+* `vite.config.js`: Add `test.js` + `test-main.css` entrypoints.
+* `app.css`: Add `[x-cloak]` styles.
+* `ui.js`, `test.js`: Strip custom dropdown helper logic.
+* **Build**: Vite production build success (custom bundle size reduced by 46KB).
+* **Changes**: `test.blade.php`, `app.js`, `vite.config.js`, `app.css`, `ui.js`, `test.js` [REFACTOR] Alpine dropdowns resolved, Livewire conflict fixed.
+
+## [2026-05-25 01:14] - UI: Hybrid Styling Refactor for Global App Header
+* **Topic**: Hybrid styling implementation.
+* **Summary**: Refactor `user-header.blade.php` and global `app.css` to use the hybrid model.
+* `resources/views/components/app/user-header.blade.php`:
+    * Implement Tailwind utility classes for simple sizing, alignments, and spacings.
+* `resources/css/app.css`:
+    * Strip simple layout rules. Define only complex styles (transitions, shadows, translate transforms, default color cascading states).
+* **Build**: Vite `npm.cmd run build` success.
+* **Changes**: `user-header.blade.php`, `resources/css/app.css` [REFACTOR] Global header refactored to hybrid Tailwind/CSS model.
+
+## [2026-05-25 01:12] - Rules: Add Styling Hybrid Rule to GEMINI.md
+* **Topic**: Frontend styling strategy.
+* **Summary**: Enforce hybrid model where Raw CSS styles complex rules (transitions, shadows, hovers) and Tailwind styles basic rules.
+* `GEMINI.md`:
+    * Update Styling guidelines with clear Raw CSS / Tailwind hybrid model rules.
+* **Changes**: `GEMINI.md` [DOC] Hybrid Tailwind/CSS rule logged.
+
+## [2026-05-25 01:10] - UI: Fix Global App Header in MyPractice Page
+* **Topic**: Broken header layout in practice page.
+* **Summary**: Move custom header styles from `home.css` to global `app.css`.
+* `resources/css/app.css`:
+    * Append all header (`bluebook-logo`, `user-dropdown`, etc.) styles to make them universally accessible.
+* **Build**: Vite `npm.cmd run build` success.
+* **Changes**: `resources/css/app.css` [UI] Global header styles moved to app.css, practice header fixed.
+
+## [2026-05-25 01:05] - UI: Center Portal Loading Screen
+* **Topic**: Loading screen layout.
+* **Summary**: Add `flex-direction: column` + `justify-content: center` to `.loading-screen`.
+* `resources/css/app.css`:
+    * Add flex column and center content.
+* **Build**: Vite `npm.cmd run build` success.
+* **Changes**: `resources/css/app.css` [UI] Loading screen centered.
+
 ## [2026-05-24 16:30] - UI: Purge Bootstrap & Migrate Test/Auth to Tailwind
 * **Topic**: Tailwind CSS UI migration completion.
 * **Summary**: Purge Bootstrap from Test Engine and Auth views. Swap `d-none` to `hidden`.

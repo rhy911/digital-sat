@@ -47,23 +47,34 @@
 
     <header>
         <div class="flex flex-col justify-start">
-            <h5>Section {{ $sectionNumber ?? '1' }}, Module {{ $moduleNumber ?? '1' }}:
-                {{ $sectionName ?? ($sectionTitle ?? 'Reading and Writing') }}</h5>
-            <div class="dropdown">
-                <button class="btn dropdown-toggle" type="button" id="dropdownMenuButton" data-bs-toggle="dropdown"
-                    aria-haspopup="true" aria-expanded="false">
-                    <strong>Directions</strong>
+            <h1 class="text-xl md:text-2xl font-medium">Section {{ $sectionNumber ?? '1' }}, Module {{ $moduleNumber ?? '1' }}:
+                {{ $sectionName ?? ($sectionTitle ?? 'Reading and Writing') }}</h1>
+            <div class="relative" x-data="{ open: true }" @click.outside="open = false">
+                <button class="dropdown-toggle flex items-center gap-2 font-bold relative z-50" type="button" @click="open = !open" :aria-expanded="open ? 'true' : 'false'" :class="open ? 'bg-white rounded-md' : ''">
+                    Directions <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-chevron-down"><polyline points="6 9 12 15 18 9"></polyline></svg>
                 </button>
-                <div class="dropdown-menu" aria-labelledby="dropdownMenuButton" id="dropdownMenu">
-                    <div class="dropdown-content">
+                <div class="fixed inset-0 bg-black/50 z-40"
+                     x-show="open"
+                     x-cloak
+                     style="display: none;"></div>
+                <div class="absolute mt-3 bg-white border border-gray-200 rounded-md shadow-lg z-50 flex-col w-[90vw] md:w-[52rem] max-h-[80vh] p-0" 
+                     x-show="open"
+                     x-cloak
+                     :class="open ? 'flex' : 'hidden'"
+                     style="display: none;">
+                     
+                    <!-- Dropdown Tail -->
+                    <div class="absolute -top-[8px] left-12 w-4 h-4 bg-white border-l border-t border-gray-200 rotate-45"></div>
+
+                    <div class="pt-8 pb-5 pl-7 pr-5 overflow-y-auto flex-1 min-h-0 bg-white rounded-t-md relative z-10">
                         @if (isset($sectionDirections))
                             {!! $sectionDirections !!}
                         @else
                             <p>No directions available.</p>
                         @endif
                     </div>
-                    <div class="dropdown-footer">
-                        <button class="btn btn-secondary">Close</button>
+                    <div class="py-4 px-7 flex justify-end bg-white rounded-b-md relative z-10">
+                        <button type="button" class="bg-[#fedb00] text-[#1e1e1e] py-2 px-[22px] rounded-full font-semibold text-sm transition-shadow duration-300 shadow-[inset_0_0_0_1px_#1e1e1e] hover:shadow-[inset_0_0_0_2px_#1e1e1e]" @click="open = false">Close</button>
                     </div>
                 </div>
             </div>
@@ -77,17 +88,17 @@
                     <circle cx="12" cy="12" r="10"></circle>
                     <polyline points="12 6 12 12 16 14"></polyline>
                 </svg>
-                <div class="hide-button" id="timerToggle" onclick="toggleTimer()">Hide</div>
+                <div class="hide-button mt-2" id="timerToggle" onclick="toggleTimer()">Hide</div>
             </div>
         </div>
         <div class="flex justify-end">
             @if (($sectionType ?? '') !== 'math')
                 <div class="icon-container" id="highlightNotesBtn">
-                    <div class="d-flex icon">
+                    <div class="flex icon">
                         <img src="{{ asset('/images/highlight.png') }}" alt="Highlights">
                         <img src="{{ asset('/images/notes.png') }}" alt="Notes">
                     </div>
-                    <p class="m-0">Highlights & Notes</p>
+                    <p class="m-0" data-text="Highlights & Notes">Highlights & Notes</p>
                 </div>
             @endif
             @if (($sectionType ?? '') === 'math')
@@ -101,25 +112,28 @@
                                 d="M4 2.5a.5.5 0 0 1 .5-.5h7a.5.5 0 0 1 .5.5v2a.5.5 0 0 1-.5.5h-7a.5.5 0 0 1-.5-.5zm0 4a.5.5 0 0 1 .5-.5h1a.5.5 0 0 1 .5.5v1a.5.5 0 0 1-.5.5h-1a.5.5 0 0 1-.5-.5zm0 3a.5.5 0 0 1 .5-.5h1a.5.5 0 0 1 .5.5v1a.5.5 0 0 1-.5.5h-1a.5.5 0 0 1-.5-.5zm0 3a.5.5 0 0 1 .5-.5h1a.5.5 0 0 1 .5.5v1a.5.5 0 0 1-.5.5h-1a.5.5 0 0 1-.5-.5zm3-6a.5.5 0 0 1 .5-.5h1a.5.5 0 0 1 .5.5v1a.5.5 0 0 1-.5.5h-1a.5.5 0 0 1-.5-.5zm0 3a.5.5 0 0 1 .5-.5h1a.5.5 0 0 1 .5.5v1a.5.5 0 0 1-.5.5h-1a.5.5 0 0 1-.5-.5zm0 3a.5.5 0 0 1 .5-.5h1a.5.5 0 0 1 .5.5v1a.5.5 0 0 1-.5.5h-1a.5.5 0 0 1-.5-.5zm3-6a.5.5 0 0 1 .5-.5h1a.5.5 0 0 1 .5.5v1a.5.5 0 0 1-.5.5h-1a.5.5 0 0 1-.5-.5zm0 3a.5.5 0 0 1 .5-.5h1a.5.5 0 0 1 .5.5v4a.5.5 0 0 1-.5.5h-1a.5.5 0 0 1-.5-.5z" />
                         </svg>
                     </div>
-                    <p class="m-0">Calculator</p>
+                    <p class="m-0" data-text="Calculator">Calculator</p>
                 </div>
             @endif
-            <div class="relative inline-block text-left">
-                <div class="icon-container" id="moreBtn">
+            <div class="relative inline-block text-left" x-data="{ open: false }" @click.outside="open = false">
+                <div class="icon-container" id="moreBtn" :class="open ? 'highlight-mode-active' : ''" @click="open = !open">
                     <div class="icon">
                         <img src="{{ asset('/images/more.png') }}" alt="More">
                     </div>
-                    <p class="m-0">More</p>
+                    <p class="m-0" data-text="More">More</p>
                 </div>
                 <div id="moreMenu"
-                    class="hidden absolute right-0 mt-2 w-48 bg-white border border-gray-200 rounded-md shadow-lg z-50">
-                    <div class="py-1">
-                        <button class="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-                            id="takeBreakBtn">
+                     class="absolute right-0 mt-2 w-48 bg-white border border-gray-200 rounded-md shadow-lg z-50"
+                     x-show="open"
+                     x-cloak
+                     style="display: none;">
+                    <div>
+                        <button class="block w-full text-left px-4 py-3 text-sm text-gray-700 hover:bg-gray-100"
+                            @click="open = false; window.showCustomAlert('Taking a break... (Functionality to be implemented)', 'info', 'Take a Break')">
                             Take a break
                         </button>
-                        <button class="block w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50"
-                            id="exitExamBtn">
+                        <button class="block w-full text-left px-4 py-3 text-sm text-red-600 hover:bg-red-50"
+                            @click="open = false; window.showCustomConfirm('Are you sure you want to exit the exam? Your progress will be saved.', 'warning', 'Exit Exam').then(confirmed => { if(confirmed) window.location.href = '/home'; })">
                             Exit the exam
                         </button>
                     </div>
@@ -133,12 +147,13 @@
     <footer>
         <div class="flex justify-start">
             <div>
-                <h5 class="m-0">{{ $username ?? 'No Name Available' }}</h5>
+                <h1 class="text-xl md:text-2xl font-medium">{{ $username ?? 'No Name Available' }}</h1>
             </div>
         </div>
-        <div class="flex justify-center">
-            <button type="button" class="popover-btn btn btn-secondary flex items-center gap-1"
-                data-bs-toggle="popover" data-bs-placement="top" data-bs-content-id="popover-content">
+        <div class="flex justify-center relative" x-data="{ popoverOpen: false }" @click.outside="popoverOpen = false">
+            <button type="button" class="popover-btn btn btn-secondary flex items-center gap-1 z-50 relative"
+                :class="popoverOpen ? 'popover-open' : ''"
+                @click="popoverOpen = !popoverOpen">
                 Question <span>{{ $currentQuestion ?? '...' }}</span> of <span
                     id="total">{{ $totalQuestions ?? '...' }}</span>
                 <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
@@ -148,12 +163,19 @@
                 </svg>
             </button>
 
-            <div id="popover-content" class="hidden">
-                <div class="flex flex-col gap-4">
-                    <h5 class="m-0 text-center"><strong>{{ $sectionTitle ?? 'No Section Title Available' }}
-                            Questions</strong></h5>
-                    <div class="row text-center question-nav-row">
-                        <div class="col flex items-center justify-center gap-2">
+            <div id="popover-content" 
+                 class="absolute bottom-full mb-4 bg-white rounded-xl shadow-[0_0_15px_rgba(0,0,0,0.15)] z-50 w-[90vw] md:w-[35rem]"
+                 x-show="popoverOpen"
+                 x-cloak
+                 style="display: none;"
+                 :class="popoverOpen ? 'block' : 'hidden'">
+                 
+                 <div class="absolute -bottom-2 left-1/2 h-4 w-4 -translate-x-1/2 rotate-45 bg-white shadow-md"></div>
+                 
+                 <div class="p-6 flex flex-col">
+                    <h3 class="m-0 text-center text-lg md:text-xl font-bold pb-4 border-b border-gray">{{ $sectionTitle ?? 'No Section Title Available' }} Questions</h3>
+                    <div class="flex justify-center items-center gap-4 md:gap-6 text-sm font-medium py-4 border-b border-gray">
+                        <div class="flex items-center justify-center gap-2">
                             <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16"
                                 viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"
                                 stroke-linecap="round" stroke-linejoin="round" class="feather feather-map-pin">
@@ -162,7 +184,7 @@
                             </svg>
                             Current
                         </div>
-                        <div class="col flex items-center justify-center gap-2">
+                        <div class="flex items-center justify-center gap-2 px-4 md:px-6 border-x border-gray">
                             <svg fill="#000000" version="1.1" xmlns="http://www.w3.org/2000/svg" width="16px"
                                 height="16px" viewBox="0 0 389 389">
                                 <g>
@@ -198,7 +220,7 @@
                             </svg>
                             Unanswered
                         </div>
-                        <div class="col flex items-center justify-center gap-2">
+                        <div class="flex items-center justify-center gap-2">
                             <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16"
                                 viewBox="0 0 24 24" fill="#ab2334" stroke="currentColor" stroke-width="2"
                                 stroke-linecap="round" stroke-linejoin="round" class="feather feather-bookmark">
@@ -207,11 +229,11 @@
                             For Review
                         </div>
                     </div>
-                    <div class="flex flex-wrap gap-3">
+                    <div class="flex flex-wrap justify-center gap-3 pt-5" @click="popoverOpen = false">
                         <!-- Question buttons will be dynamically generated by JavaScript -->
                     </div>
-                    <div class="text-center go-review-btn">
-                        <button class="btn btn-outline-primary">Go to Review Page</button>
+                    <div class="text-center go-review-btn pt-4" @click="popoverOpen = false">
+                        <button>Go to Review Page</button>
                     </div>
                 </div>
             </div>

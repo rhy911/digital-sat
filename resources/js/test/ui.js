@@ -26,7 +26,7 @@ export function toggleTimer() {
 
 export function createQuestionButton(questionNumber) {
   const button = document.createElement("button");
-  button.className = "btn question-btn";
+  button.className = "question-btn";
   button.textContent = questionNumber;
   button.setAttribute("data-question", questionNumber);
   return button;
@@ -86,153 +86,12 @@ export function updateQuestionButtonStates() {
   if (popoverTemplate) {
     popoverTemplate.querySelectorAll(".question-btn").forEach(button => updateButtonState(button));
   }
-  document.querySelectorAll(".popover .question-btn").forEach(button => updateButtonState(button));
   document.querySelectorAll(".question-navigation-box .question-btn").forEach(button => updateButtonState(button, false));
 }
 
-// ============================================================================
-// POPOVER & DROPDOWN
-// ============================================================================
 
-export function initializePopover() {
-  const popoverTrigger = document.querySelector('[data-bs-toggle="popover"]');
-  if (!popoverTrigger || !popoverTrigger.hasAttribute("data-bs-content-id")) return;
 
-  const popoverContent = document.getElementById(popoverTrigger.getAttribute("data-bs-content-id")).innerHTML;
-  state.persistentPopover = document.createElement("div");
-  state.persistentPopover.className = "popover custom-popover";
-  state.persistentPopover.style.position = "absolute";
-  state.persistentPopover.style.display = "none";
-  state.persistentPopover.innerHTML = `
-    <div class="popover-arrow"></div>
-    <div class="popover-body">${popoverContent}</div>
-  `;
 
-  document.body.appendChild(state.persistentPopover);
-  updateQuestionButtonStates();
-
-  popoverTrigger.addEventListener("click", (e) => {
-    e.preventDefault();
-    togglePopover(popoverTrigger);
-  });
-
-  document.addEventListener("click", (event) => {
-    if (state.persistentPopover && state.persistentPopover.style.display === "block") {
-      if (!popoverTrigger.contains(event.target) && !state.persistentPopover.contains(event.target)) {
-        hidePopover(popoverTrigger);
-      }
-    }
-  });
-}
-
-export function togglePopover(trigger) {
-  if (!state.persistentPopover) return;
-  if (state.persistentPopover.style.display === "none") {
-    state.persistentPopover.style.visibility = "hidden";
-    state.persistentPopover.style.display = "block";
-    
-    // Use offset coordinates which are relative to the zoomed body parent
-    const popoverWidth = state.persistentPopover.offsetWidth;
-    const popoverHeight = state.persistentPopover.offsetHeight;
-    
-    const triggerLeft = trigger.offsetLeft;
-    const triggerTop = trigger.offsetTop;
-    const triggerWidth = trigger.offsetWidth;
-    
-    const centerX = triggerLeft + triggerWidth / 2 - popoverWidth / 2;
-    const topY = triggerTop - popoverHeight - 10;
-    
-    state.persistentPopover.style.left = centerX + "px";
-    state.persistentPopover.style.top = topY + "px";
-    state.persistentPopover.style.visibility = "visible";
-    trigger.classList.add("popover-open");
-  } else {
-    hidePopover(trigger);
-  }
-}
-
-export function hidePopover(trigger) {
-  if (state.persistentPopover) {
-    state.persistentPopover.style.display = "none";
-    trigger.classList.remove("popover-open");
-  }
-}
-
-export function initializeDropdown() {
-  const dropdownButton = document.getElementById("dropdownMenuButton");
-  const dropdownOverlay = document.getElementById("dropdownOverlay");
-  const dropdownMenu = document.getElementById("dropdownMenu");
-  if (!dropdownButton) return;
-
-  if (dropdownMenu) {
-    const closeButton = dropdownMenu.querySelector('.btn-secondary');
-    if (closeButton) {
-      closeButton.addEventListener("click", (e) => {
-        e.preventDefault();
-        dropdownMenu.classList.remove('show');
-        if (dropdownOverlay) dropdownOverlay.style.display = "none";
-      });
-    }
-  }
-
-  dropdownButton.addEventListener("click", (e) => {
-    e.stopPropagation();
-    const isShowing = dropdownMenu.classList.toggle('show');
-    if (dropdownOverlay) dropdownOverlay.style.display = isShowing ? "block" : "none";
-  });
-
-  document.addEventListener('click', (e) => {
-    if (!dropdownButton.contains(e.target) && dropdownMenu && !dropdownMenu.contains(e.target)) {
-        dropdownMenu.classList.remove('show');
-        if (dropdownOverlay) dropdownOverlay.style.display = "none";
-    }
-  });
-}
-
-export function initializeMoreDropdown() {
-  const moreBtn = document.getElementById("moreBtn");
-  const moreMenu = document.getElementById("moreMenu");
-  const takeBreakBtn = document.getElementById("takeBreakBtn");
-  const exitExamBtn = document.getElementById("exitExamBtn");
-
-  if (!moreBtn || !moreMenu) return;
-
-  moreBtn.addEventListener("click", (e) => {
-    e.stopPropagation();
-    const isHidden = moreMenu.classList.toggle("hidden");
-    if (isHidden) {
-      moreBtn.classList.remove("highlight-mode-active");
-    } else {
-      moreBtn.classList.add("highlight-mode-active");
-    }
-  });
-
-  document.addEventListener("click", (event) => {
-    if (!moreBtn.contains(event.target) && !moreMenu.contains(event.target)) {
-      moreMenu.classList.add("hidden");
-      moreBtn.classList.remove("highlight-mode-active");
-    }
-  });
-
-  if (takeBreakBtn) {
-    takeBreakBtn.addEventListener("click", () => {
-      moreMenu.classList.add("hidden");
-      moreBtn.classList.remove("highlight-mode-active");
-      showCustomAlert("Taking a break... (Functionality to be implemented)", "info", "Take a Break");
-    });
-  }
-
-  if (exitExamBtn) {
-    exitExamBtn.addEventListener("click", async () => {
-      moreMenu.classList.add("hidden");
-      moreBtn.classList.remove("highlight-mode-active");
-      const confirmed = await showCustomConfirm("Are you sure you want to exit the exam? Your progress will be saved.", "warning", "Exit Exam");
-      if (confirmed) {
-        window.location.href = "/home";
-      }
-    });
-  }
-}
 
 // ============================================================================
 // SECURE LOADING SCREEN
@@ -344,9 +203,9 @@ export function showCustomAlert(message, type = 'info', title = 'Notification', 
     cancelBtn.classList.add('hidden');
     confirmBtn.className = 'custom-alert-btn btn-primary';
     if (!showConfirmBtn) {
-        confirmBtn.classList.add('hidden');
+      confirmBtn.classList.add('hidden');
     } else {
-        confirmBtn.classList.remove('hidden');
+      confirmBtn.classList.remove('hidden');
     }
     confirmBtn.textContent = 'OK';
 

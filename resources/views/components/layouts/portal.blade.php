@@ -33,29 +33,24 @@
 
         main .container {
             box-shadow: 0 0 10px rgba(0, 0, 0, 0.2);
-            padding: 50px 40px;
+            padding: 3rem 2.5rem;
             border-radius: 12px;
-            max-width: 32.5rem;
-        }
-
-        footer {
-            background-color: #fff;
         }
 
         .buttons {
             display: flex;
             flex-direction: row-reverse;
-            padding: 20px 40px;
+            padding: 1rem 2rem;
             border-top: 1px solid #cccccc;
-            gap: 20px;
+            gap: 1.25rem;
         }
 
         .btn {
             background-color: #2c53da;
             color: #fff;
             border: none;
-            padding: 10px 24px;
-            border-radius: 30px;
+            padding: 0.5rem 1.25rem;
+            border-radius: 1.5rem;
             cursor: pointer;
             font-size: 1rem;
             font-weight: 600;
@@ -72,7 +67,7 @@
 
 <body>
     <!-- Portal Loading Screen -->
-    <div id="loadingScreen" class="loading-screen hidden d-flex flex-column align-items-center justify-content-center">
+    <div id="loadingScreen" class="loading-screen hidden">
         <div class="loading-container text-center">
             <div class="loading-spinner-wrapper mb-4">
                 <div class="loading-spinner"></div>
@@ -90,7 +85,7 @@
     <header></header>
     <main>
         <h1>{{ $title }}</h1>
-        <div class="container">
+        <div class="container sm:max-w-screen-sm mx-auto">
             {{ $slot }}
         </div>
     </main>

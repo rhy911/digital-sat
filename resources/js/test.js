@@ -2,26 +2,22 @@
  * Main Entry Point for Test Module
  */
 import { state } from './test/state.js';
-import { 
-  toggleTimer, 
-  generateQuestionButtons, 
-  initializePopover, 
-  initializeDropdown, 
-  initializeMoreDropdown,
-  hidePopover,
+import {
+  toggleTimer,
+  generateQuestionButtons,
   showLoadingScreen,
   hideLoadingScreen
 } from './test/ui.js';
-import { 
-  showQuestion, 
-  showReviewSection, 
-  nextQuestion, 
-  prevQuestion 
+import {
+  showQuestion,
+  showReviewSection,
+  nextQuestion,
+  prevQuestion
 } from './test/navigation.js';
-import { 
-  initializeHighlightFeature, 
-  initializeQuestionTracking, 
-  initializeResizablePanels, 
+import {
+  initializeHighlightFeature,
+  initializeQuestionTracking,
+  initializeResizablePanels,
   preventNormalCursorBehavior,
   initializeSprInputValidation,
   initializeDesmosCalculator,
@@ -48,7 +44,7 @@ function initializeDOMElements() {
 
   state.questionElements = Array.from(document.querySelectorAll('.resizable-panel.right-panel .question'));
   state.passageElements = Array.from(document.querySelectorAll('.resizable-panel.left-panel .passage-container'));
-  
+
   state.questionNumberSpan = document.querySelector(".popover-btn span:first-child");
   state.totalQuestionsSpan = document.querySelector(".popover-btn #total");
 
@@ -70,18 +66,14 @@ function handleQuestionButtonClick(e) {
   if (questionNumber) {
     state.currentQuestionIndex = questionNumber - 1;
     showQuestion(state.currentQuestionIndex);
-    const popoverTrigger = document.querySelector('[data-bs-toggle="popover"]');
-    if (popoverTrigger) hidePopover(popoverTrigger);
   }
 }
 
 function handleReviewButtonClick(e) {
-  const button = e.target.closest(".go-review-btn button, .btn-outline-primary");
+  const button = e.target.closest(".go-review-btn button");
   if (!button) return;
   e.preventDefault();
   showReviewSection();
-  const popoverTrigger = document.querySelector('[data-bs-toggle="popover"]');
-  if (popoverTrigger) hidePopover(popoverTrigger);
 }
 
 // ============================================================================
@@ -90,12 +82,9 @@ function handleReviewButtonClick(e) {
 
 document.addEventListener("DOMContentLoaded", () => {
   console.log('=== TEST INITIALIZATION ===');
-  
+
   initializeDOMElements();
   generateQuestionButtons();
-  initializePopover();
-  initializeDropdown();
-  initializeMoreDropdown();
   initializeQuestionTracking();
   initializeHighlightFeature();
   initializeResizablePanels();

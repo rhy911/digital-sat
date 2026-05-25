@@ -62,7 +62,9 @@ Hệ thống sử dụng phương pháp **Item Response Theory (IRT)** với mô
 
 - **Asset Management:** Vite.
 - **JS Strategy:** Sử dụng Vanilla JS cho các tương tác hiệu năng cao trong Test Engine để đảm bảo tốc độ và sự ổn định.
-- **Styling:** Sử dụng Tailwind CSS (v4) làm framework chính cho UI. Không sử dụng Bootstrap 5 cho các thành phần mới. Các component cũ sẽ được chuyển đổi dần sang Tailwind. Ưu tiên utility classes trực tiếp trong Blade views để tối ưu hiệu năng và dễ bảo trì.
+- **Styling:** Sử dụng mô hình hybrid giữa Tailwind và Raw CSS:
+  - **Raw CSS:** Dùng cho các kiểu dáng phức tạp và nâng cao (complex styles) như transitions, animations, shadows, hover effects, custom gradients, etc.
+  - **Tailwind CSS (v4):** Dùng làm framework chính cho các utility classes đơn giản, cơ bản (layouts, padding, margin, flexbox, grid, text sizing, colors, etc.) trực tiếp trong Blade views để tối ưu hiệu năng và dễ bảo trì. Không sử dụng Bootstrap 5 cho các thành phần mới. Các component cũ sẽ được chuyển đổi dần sang hybrid model này.
 
 ### Database (MySQL)
 

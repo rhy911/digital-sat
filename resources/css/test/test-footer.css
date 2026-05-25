@@ -1,80 +1,54 @@
 footer {
-    display: grid;
-    grid-template-columns: 1fr 1fr 1fr;
-    width: 100%;
-    align-items: center;
-    background-color: #e6edf8;
-    padding: 10px 40px;
-    border-top: 2px dashed black;
-    z-index: 1;
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  width: 100%;
+  align-items: center;
+  background-color: #e6edf8;
+  padding: 10px 40px;
+  border-top: 2px dashed black;
+  z-index: 1;
 }
 
 .popover-btn {
-    font-size: 14px !important;
-    font-weight: 600 !important;
-    background-color: #000 !important;
-    color: white !important;
-    border-radius: 6px !important;
-    padding: 4px 6px 4px 12px !important;
-    transition: all 0.1s ease-in-out !important;
+  font-size: 14px !important;
+  font-weight: 600 !important;
+  background-color: #000 !important;
+  color: white !important;
+  border-radius: 6px !important;
+  padding: 4px 6px 4px 12px !important;
+  transition: all 0.1s ease-in-out !important;
 }
 
 .popover-btn:hover {
-    opacity: 0.6 !important;
-}
-
-/* Smooth rotation transition for chevron icon */
-.popover-btn .feather-chevron-up {
-    transition: transform 0.3s ease-in-out;
+  opacity: 0.6 !important;
 }
 
 /* Rotate the up chevron when popover is open */
 .popover-btn.popover-open .feather-chevron-up {
-    transform: rotate(180deg);
+  transform: rotate(180deg);
 }
 
-.popover-body {
-  padding: 1.25rem !important;
-}
 
-.custom-popover {
-    max-width: 35rem !important;
-    min-width: 30rem !important;
-    border-radius: 10px !important;
-    box-shadow: 0px 0px 6px 2px rgba(0, 0, 0, 0.2) !important;
-}
-
-/* Popover bubble tail */
-.custom-popover .popover-arrow {
-  position: absolute;
-  bottom: -10px;
-  left: 50%;
-  transform: translateX(-50%);
-  width: 0;
-  height: 0;
-  border-left: 20px solid transparent;
-  border-right: 20px solid transparent;
-  border-top: 10px solid #f8f9fa;
-}
 
 .question-btn {
-  border: dashed 1px black !important;
-  color: #324dc7 !important;
-  font-weight: 600 !important;
-  font-size: 18px !important;
-  border-radius: 0 !important;
-  width: 30px !important;
-  height: 30px !important;
-  display: inline-flex !important;
-  align-items: center !important;
-  justify-content: center !important;
-  background-color: transparent !important;
+  border: dashed 1px black;
+  color: #324dc7;
+  font-weight: 600;
+  font-size: 18px;
+  border-radius: 0;
+  width: 30px;
+  height: 30px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background-color: transparent;
   position: relative;
-  padding: 0 !important;
+  padding: 0;
+  cursor: pointer;
 }
 
 .question-btn:hover {
-  background-color: #80808030 !important;
+  background-color: #80808030;
 }
 
 /* Current question button */
@@ -93,9 +67,8 @@ footer {
 
 /* Answered question button */
 .question-btn.answered {
-  background-color: #324dc7 !important;
-  color: white !important;
-  border-color: #324dc7 !important;
+  background-color: #324dc7;
+  color: white;
 }
 
 /* Marked for review question button */
@@ -107,12 +80,19 @@ footer {
 }
 
 .go-review-btn button {
-  border-color: #324dc7;
   color: #324dc7;
+  border: 1px solid #324dc7;
+  padding: 6px 12px;
   border-radius: 20px;
   font-weight: 600;
   font-size: 0.875rem;
+  cursor: pointer;
   transition: background-color 0.3s, color 0.3s;
+}
+
+.go-review-btn button:hover {
+  background-color: #324dc7;
+  color: white;
 }
 
 .navigate-btn {

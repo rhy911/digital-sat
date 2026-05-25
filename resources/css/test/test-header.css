@@ -2,10 +2,19 @@ header {
     display: grid;
     grid-template-columns: 2fr 1fr 2fr;
     align-items: center;
-    padding: 10px 40px;
+    padding: 0.625rem 2.5rem;
     background-color: #e6edf8;
     box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
     border-bottom: 2px dashed #333;
+}
+
+.dropdown-toggle {
+    padding: 4px 8px;
+    transition: all 0.1s ease;
+}
+
+.dropdown-toggle:hover {
+    background-color: white;
 }
 
 .icon-container {
@@ -17,6 +26,8 @@ header {
     font-size: 12px;
     transition: background-color 0.3s;
     cursor: pointer;
+    border: 1px solid transparent;
+    border-radius: 4px;
 }
 
 .icon-container:hover {
@@ -26,7 +37,6 @@ header {
 .icon-container.highlight-mode-active {
     background-color: white;
     border: 1px solid #ccc;
-    border-radius: 4px;
 }
 
 .icon-container.highlight-mode-active p {
@@ -34,7 +44,17 @@ header {
     font-weight: 600;
 }
 
-.icon img, .icon svg {
+.icon-container p::after {
+    display: block;
+    content: attr(data-text);
+    font-weight: 600;
+    height: 0;
+    overflow: hidden;
+    visibility: hidden;
+}
+
+.icon img,
+.icon svg {
     width: 25px;
     height: 25px;
 }
@@ -48,7 +68,7 @@ header {
     height: 700px;
     background: white;
     border: 1px solid #ccc;
-    box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
     z-index: 1000;
     display: flex;
     flex-direction: column;
@@ -193,63 +213,4 @@ header {
 .hide-button:hover {
     box-shadow: inset 0 0 0 1px #000;
     cursor: pointer;
-}
-
-.dropdown .dropdown-toggle {
-    font-size: 0.875rem;
-    padding: 4px 8px;
-    background-color: transparent;
-    border: none;
-    color: #000;
-}
-
-.dropdown .dropdown-toggle:hover,
-.dropdown .dropdown-toggle:focus {
-    background-color: white;
-    color: #000;
-}
-.dropdown-menu.show {
-    display: flex !important;
-}
-
-.dropdown-menu {
-    width: 52rem;
-    padding: 0 !important;
-    max-height: 80vh;
-    flex-direction: column;
-}
-
-.dropdown-content {
-    padding: 2.5rem 1.25rem 1.25rem 1.75rem;
-    overflow-y: auto;
-    flex: 1;
-    min-height: 0;
-}
-
-.dropdown-footer {
-    padding: 1rem 1.75rem;
-    display: flex;
-    justify-content: flex-end;
-}
-
-@media (max-width: 768px) {
-    .dropdown-menu {
-        width: 90vw;
-        left: 5vw !important;
-        right: 5vw !important;
-    }
-}
-
-.dropdown-menu button {
-    background-color: #fedb00 !important;
-    color: #1e1e1e !important;
-    padding: 8px 22px;
-    border-radius: 24px;
-    font-weight: 600;
-    font-size: 14px;
-    transition: box-shadow 0.3s ease;
-}
-
-.dropdown-menu button:hover {
-    box-shadow: inset 0 0 0 1px #1e1e1e;
 }

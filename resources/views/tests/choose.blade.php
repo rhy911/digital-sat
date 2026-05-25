@@ -1,19 +1,6 @@
 <x-layouts.portal title="Choose a Full-Length Practice" nextUrl="#" backUrl="/home">
     @push('styles')
         <style>
-            h3 {
-                display: flex;
-                font-size: 1.25rem;
-                margin-bottom: 1rem;
-            }
-
-            sub {
-                margin-left: auto;
-                line-height: inherit;
-                font-size: 16px;
-                font-weight: 400;
-            }
-
             .form-select,
             .form-select {
                 padding: 12px 36px 12px 12px !important;
@@ -123,8 +110,8 @@
             }
         </style>
     @endpush
-    <h3>Test Type *
-        <sub>* = Required</sub>
+    <h3 class="text-xl md:text-2xl flex mb-3 font-bold">Test Type <span class="text-red-500 ml-2">*</span>
+        <sub class="font-light text-base ml-auto">* = Required</sub>
     </h3>
 
     <x-ui.custom-select id="testSelect" name="testSelect" placeholder="Choose a test" :options="$tests

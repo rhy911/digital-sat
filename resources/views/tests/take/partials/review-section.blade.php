@@ -1,5 +1,5 @@
 <div id="review-section" class="review-section hidden">
-    <h2>Check your Work</h2>
+    <h1 class="text-center text-2xl md:text-3xl mb-6">Check your Work</h1>
     <p>
         On test day, you won't be able to move on to the next module until time expires. <br>
         For these practice questions, you can click <strong>Next</strong> when you're ready to move on.
@@ -8,7 +8,7 @@
     <!-- Question Navigation Box -->
     <div class="question-navigation-box">
         <div class="text-center mb-4">
-            <h4>{{ $sectionTitle ?? 'Section Questions' }}</h4>
+            <h2 class="font-medium text-xl md:text-2xl">{{ $sectionTitle ?? 'Section Questions' }}</h2>
         </div>
         <div class="question-nav-row flex text-center">
             <div class="flex-1 flex items-center justify-center gap-2">

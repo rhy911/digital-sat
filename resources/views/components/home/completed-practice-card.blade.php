@@ -1,8 +1,9 @@
 @props(['userTest', 'compact' => false])
 
-<div class="option past-card d-flex flex-column align-items-start {{ $compact ? '' : 'w-100 mb-3' }}"
+<div class="option flex flex-col items-start text-start {{ $compact ? '' : 'w-100 mb-3' }}"
     style="{{ $compact ? '' : 'text-align: left;' }}">
-    <h4>{{ $userTest->test->title }}</h4>
+    <h3 class="text-xl md:text-2xl font-bold">{{ $userTest->test->title }}</h3>
     <div class="status-badge">✓ Completed</div>
-    <a href="{{ route('my-practice', $userTest->id) }}" class="view-response">View my responses</a>
+    <a href="{{ route('my-practice', $userTest->id) }}" class="text-[#324dc7] hover:underline text-lg font-bold ml-auto">View my
+        responses</a>
 </div>

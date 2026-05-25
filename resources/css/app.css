@@ -44,6 +44,7 @@ u {
     background: radial-gradient(circle at center, #0f172a 0%, #020617 100%);
     z-index: 100000;
     display: flex;
+    flex-direction: column;
     align-items: center;
     justify-content: center;
     /* Removed backdrop-filter: blur(12px) to guarantee flawless 60fps performance on heavy DOM loads */
@@ -82,7 +83,8 @@ u {
     animation: loading-spin 1s linear infinite;
     box-shadow: 0 0 20px rgba(59, 130, 246, 0.2);
     will-change: transform;
-    transform: translateZ(0); /* Hardware GPU trigger */
+    transform: translateZ(0);
+    /* Hardware GPU trigger */
 }
 
 .loading-spinner-inner {
@@ -111,17 +113,20 @@ u {
     0% {
         transform: rotate(0deg) translateZ(0);
     }
+
     100% {
         transform: rotate(360deg) translateZ(0);
     }
 }
 
 @keyframes loading-pulse-icon {
+
     0%,
     100% {
         transform: translate(-50%, -50%) scale(1) translateZ(0);
         opacity: 0.8;
     }
+
     50% {
         transform: translate(-50%, -50%) scale(1.05) translateZ(0);
         opacity: 1;
@@ -129,11 +134,69 @@ u {
 }
 
 @keyframes loading-pulse-text {
+
     0%,
     100% {
         opacity: 0.6;
     }
+
     50% {
         opacity: 1;
     }
 }
+
+/* ==================== GLOBAL APP HEADER ==================== */
+header {
+    background-color: #d9e3f0;
+}
+
+header .bluebook-logo {
+    color: #324dc7;
+}
+
+/* User Dropdown */
+header .user-dropdown .user {
+    transition: background-color 0.2s ease;
+}
+
+header .user-dropdown .user:hover {
+    background-color: rgba(0, 0, 0, 0.05);
+}
+
+header .user-dropdown .dropdown-menu {
+    background: white;
+    border-radius: 0.75rem;
+    box-shadow:
+        0 10px 25px -5px rgba(0, 0, 0, 0.1),
+        0 8px 10px -6px rgba(0, 0, 0, 0.1);
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(-10px);
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    border: 1px solid rgba(0, 0, 0, 0.05);
+}
+
+header .user-dropdown .dropdown-menu.show {
+    opacity: 1;
+    visibility: visible;
+    transform: translateY(0);
+}
+
+header .user-dropdown .dropdown-menu .dropdown-item {
+    transition: background-color 0.2s ease;
+}
+
+header .user-dropdown .dropdown-menu .dropdown-item:hover {
+    background-color: rgba(0, 0, 0, 0.05);
+    color: #324dc7;
+}
+
+header .user-dropdown .dropdown-menu .dropdown-item.logout-btn:hover {
+    background-color: rgba(239, 68, 68, 0.1);
+    color: #ef4444;
+}
+
+[x-cloak] {
+    display: none !important;
+}
+

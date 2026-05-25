@@ -29,6 +29,7 @@ Simple summary of implemented functions and logic for AI context.
   - **Loading Screen:** Glassmorphic dark overlay that masks unstyled content on start and visually manages adaptive grading delay during module transitions.
   - **Typography:** Uses premium academic 'Noto Serif' exclusively for test content (passages, stems, responses) to mirror official exam formatting.
   - **Custom Popups:** Promise-based `showCustomAlert()` and `showCustomConfirm()` modal systems replacing all standard browser blocking alerts/confirms with beautiful glassmorphism style, custom icons, and fluid animations. Supports dynamic self-generation on any page for 100% universal UI compatibility.
+  - **Alpine.js Native Dropdowns:** Completely refactored legacy Bootstrap-dependent dropdowns (**Directions** and **More** buttons) in the test engine layout to use lightweight, fast Alpine.js directives (`x-data`, `x-show`, `x-cloak`, `@click.outside`), fully compiled in the global Vite bundle, eliminating custom manual toggler logic.
 - **Logic:** Auto-save answers, sequential navigation, section/module flow.
 
 ## 4. Scoring & Adaptive Logic (Advanced IRT)
@@ -68,7 +69,7 @@ Simple summary of implemented functions and logic for AI context.
 ## 6. Technical Stack
 
 - **Backend:** Laravel 11, Service Layer architecture (`app/Services`).
-- **Frontend:** Blade, Vanilla JS (performance-critical engine), Tailwind CSS v4.
+- **Frontend:** Blade, Vanilla JS (performance-critical engine), Tailwind CSS v4, Alpine.js (reactive UI elements, using fail-safe boot wrapper and conditional Tailwind `:class` layouts to bypass global `!important` utility conflicts).
 - **Database:** MySQL, optimized Schema v3.0 for multi-level test content.
 - **[2026-05-24] Dashboard Performance Optimizations**: Implemented lazy-loading for Tabulator tables on the test dashboard to eliminate layout thrashing. Deferred heavy third-party scripts (KaTeX, EasyMDE, Tabulator, TomSelect) to unblock the main thread during initial page load, and batched TomSelect initialization using setTimeout chunking.
 - **[2026-05-24] Dashboard INP & Redundant Render Fix**: Drastically reduced Interaction to Next Paint (INP) times when switching tabs by yielding to the main thread via equestAnimationFrame and setTimeout. Added strict data reference checks to prevent Tabulator from unnecessarily destroying and re-rendering tables when navigating back to previously visited tabs.
