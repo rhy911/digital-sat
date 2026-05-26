@@ -1,5 +1,5 @@
 import { BASE_URL } from '../core/config.js';
-import { showAlert, showCustomConfirm } from '../utils/helpers.js';
+import { showAlert, showCustomConfirm, showCustomPrompt } from '../utils/helpers.js';
 
 export function initQuickAuthorWizard() {
     const fullSatBtn = document.getElementById('wizard-btn-full-sat');
@@ -24,18 +24,18 @@ export function initQuickAuthorWizard() {
     moduleOnlyBtn?.addEventListener('click', () => generateStructure('module_only'));
 
     customBtn.addEventListener('click', () => {
-        optionsGrid.classList.add('d-none');
-        customFlow.classList.remove('d-none');
+        optionsGrid.classList.add('hidden');
+        customFlow.classList.remove('hidden');
         populateTestSelect();
     });
 
     backBtn?.addEventListener('click', () => {
-        customFlow.classList.add('d-none');
-        optionsGrid.classList.remove('d-none');
+        customFlow.classList.add('hidden');
+        optionsGrid.classList.remove('hidden');
         if (testSelect) {
             testSelect.value = '';
-            targetStep?.classList.add('d-none');
-            launchStep?.classList.add('d-none');
+            targetStep?.classList.add('hidden');
+            launchStep?.classList.add('hidden');
         }
     });
 
@@ -71,12 +71,12 @@ export function initQuickAuthorWizard() {
 
     function showLoading(show) {
         if (show) {
-            optionsGrid.classList.add('d-none');
-            customFlow.classList.add('d-none');
-            loadingEl.classList.remove('d-none');
+            optionsGrid.classList.add('hidden');
+            customFlow.classList.add('hidden');
+            loadingEl.classList.remove('hidden');
         } else {
-            optionsGrid.classList.remove('d-none');
-            loadingEl.classList.add('d-none');
+            optionsGrid.classList.remove('hidden');
+            loadingEl.classList.add('hidden');
         }
     }
 
@@ -85,8 +85,8 @@ export function initQuickAuthorWizard() {
         if (testType === 'short_test') defaultTitle = 'New Short Practice Test';
         if (testType === 'module_only') defaultTitle = 'New Single Module Test';
         
-        // Using native prompt for simplicity in this wizard, or could be a custom modal step
-        const title = prompt('Enter a title for the new test:', defaultTitle);
+        // Using custom premium dark modal dialog
+        const title = await showCustomPrompt('Enter a title for the new test:', defaultTitle, 'Test Title');
         return title?.trim();
     }
 
@@ -107,11 +107,11 @@ export function initQuickAuthorWizard() {
     // Custom flow handling
     testSelect?.addEventListener('change', () => {
         if (testSelect.value) {
-            targetStep.classList.remove('d-none');
-            launchStep.classList.remove('d-none');
+            targetStep.classList.remove('hidden');
+            launchStep.classList.remove('hidden');
         } else {
-            targetStep.classList.add('d-none');
-            launchStep.classList.add('d-none');
+            targetStep.classList.add('hidden');
+            launchStep.classList.add('hidden');
         }
     });
 

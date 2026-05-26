@@ -196,6 +196,7 @@ export function getOrCreateAlertModal() {
             <div class="custom-alert-content">
                 <h5 class="custom-alert-title" id="customAlertTitle">Notification</h5>
                 <p id="customAlertMessage" class="custom-alert-message"></p>
+                <input type="text" id="customAlertInput" class="custom-alert-input hidden" placeholder="Enter value...">
             </div>
             <div class="custom-alert-actions">
                 <button id="customAlertCancelBtn" class="custom-alert-btn btn-secondary hidden">Cancel</button>
@@ -210,37 +211,48 @@ export function getOrCreateAlertModal() {
         style.textContent = `
             .custom-alert-modal {
                 position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; z-index: 10000;
-                display: flex; align-items: center; justify-content: center; opacity: 1; transition: opacity 0.25s ease;
+                display: flex; align-items: center; justify-content: center; opacity: 1; transition: opacity 0.2s ease;
+                will-change: opacity;
             }
             .custom-alert-modal.hidden { display: none !important; opacity: 0; }
             .custom-alert-backdrop {
                 position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-                background: rgba(15, 23, 42, 0.4); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
+                background: rgba(8, 12, 21, 0.7);
             }
             .custom-alert-box {
-                position: relative; background: #ffffff; border-radius: 16px;
-                box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1), 0 10px 10px -5px rgba(0,0,0,0.04);
-                width: 90%; max-width: 420px; padding: 24px; border: 1px solid rgba(226, 232, 240, 0.8);
+                position: relative; background: #111827; border-radius: 16px;
+                box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+                width: 90%; max-width: 440px; padding: 28px; border: 1px solid rgba(255, 255, 255, 0.08);
                 display: flex; flex-direction: column; align-items: center; text-align: center;
-                transform: scale(1); transition: transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1); z-index: 1;
+                transform: scale(1); transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1); z-index: 1;
+                will-change: transform;
+                transform-gpu: translate3d(0,0,0);
             }
-            .custom-alert-modal.hidden .custom-alert-box { transform: scale(0.9); }
+            .custom-alert-modal.hidden .custom-alert-box { transform: scale(0.95); }
             .custom-alert-icon {
                 display: flex; align-items: center; justify-content: center; width: 56px; height: 56px;
-                border-radius: 50%; background-color: rgba(30, 41, 59, 0.05); color: #1e293b; margin-bottom: 16px;
+                border-radius: 50%; background-color: rgba(99, 102, 241, 0.1); color: #818cf8; margin-bottom: 18px;
             }
-            .custom-alert-icon.warning { background-color: rgba(245, 158, 11, 0.1); color: #d97706; }
-            .custom-alert-icon.error { background-color: rgba(239, 68, 68, 0.1); color: #dc2626; }
-            .custom-alert-icon.success { background-color: rgba(16, 185, 129, 0.1); color: #059669; }
+            .custom-alert-icon.warning { background-color: rgba(245, 158, 11, 0.1); color: #fbbf24; }
+            .custom-alert-icon.error { background-color: rgba(239, 68, 68, 0.1); color: #f87171; }
+            .custom-alert-icon.success { background-color: rgba(16, 185, 129, 0.1); color: #34d399; }
             .custom-alert-content { margin-bottom: 24px; width: 100%; }
-            .custom-alert-title { font-size: 1.15rem; font-weight: 700; color: #0f172a; margin-bottom: 8px; font-family: sans-serif; }
-            .custom-alert-message { font-size: 0.95rem; color: #475569; line-height: 1.5; margin: 0; font-family: sans-serif; }
+            .custom-alert-title { font-size: 1.2rem; font-weight: 700; color: #f8fafc; margin-bottom: 10px; font-family: system-ui, -apple-system, sans-serif; }
+            .custom-alert-message { font-size: 0.95rem; color: #94a3b8; line-height: 1.6; margin: 0; font-family: system-ui, -apple-system, sans-serif; }
+            .custom-alert-input {
+                width: 100%; margin-top: 16px; padding: 10px 14px; background: #1e293b; color: #ffffff;
+                border: 1px solid rgba(255, 255, 255, 0.12); border-radius: 8px; font-size: 0.95rem; outline: none;
+                transition: all 0.2s ease; font-family: system-ui, -apple-system, sans-serif;
+            }
+            .custom-alert-input:focus {
+                border-color: #6366f1; box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.25); background: #1e293b;
+            }
             .custom-alert-actions { display: flex; gap: 12px; width: 100%; justify-content: center; }
-            .custom-alert-btn { flex: 1; max-width: 160px; padding: 10px 16px; border-radius: 8px; font-size: 0.95rem; font-weight: 600; cursor: pointer; transition: all 0.2s ease; border: none; outline: none; }
-            .custom-alert-btn.btn-primary { background-color: #1e293b; color: #ffffff; }
-            .custom-alert-btn.btn-primary:hover { background-color: #0f172a; transform: translateY(-1px); }
-            .custom-alert-btn.btn-secondary { background-color: #f1f5f9; color: #475569; border: 1px solid #e2e8f0; }
-            .custom-alert-btn.btn-secondary:hover { background-color: #e2e8f0; color: #334155; transform: translateY(-1px); }
+            .custom-alert-btn { flex: 1; max-width: 160px; padding: 10px 18px; border-radius: 8px; font-size: 0.95rem; font-weight: 600; cursor: pointer; transition: all 0.15s ease; border: none; outline: none; display: inline-flex; align-items: center; justify-content: center; }
+            .custom-alert-btn.btn-primary { background: linear-gradient(135deg, #4f46e5 0%, #4338ca 100%); color: #ffffff; box-shadow: 0 4px 10px rgba(79, 70, 229, 0.3); }
+            .custom-alert-btn.btn-primary:hover { background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%); transform: translateY(-1px); box-shadow: 0 6px 12px rgba(79, 70, 229, 0.4); }
+            .custom-alert-btn.btn-secondary { background-color: #1e293b; color: #e2e8f0; border: 1px solid rgba(255, 255, 255, 0.08); }
+            .custom-alert-btn.btn-secondary:hover { background-color: #334155; color: #ffffff; transform: translateY(-1px); }
         `;
         document.head.appendChild(style);
     }
@@ -371,6 +383,72 @@ export function showCustomConfirm(message, type = 'warning', title = 'Confirm Ac
 
         confirmBtn.addEventListener('click', handleConfirm);
         cancelBtn.addEventListener('click', handleCancel);
+    });
+}
+
+export function showCustomPrompt(message, defaultValue = '', title = 'Input Required') {
+    return new Promise((resolve) => {
+        const modal = getOrCreateAlertModal();
+        const titleEl = modal.querySelector('#customAlertTitle');
+        const msgEl = modal.querySelector('#customAlertMessage');
+        const inputEl = modal.querySelector('#customAlertInput');
+        const iconEl = modal.querySelector('#customAlertIcon');
+        const confirmBtn = modal.querySelector('#customAlertConfirmBtn');
+        const cancelBtn = modal.querySelector('#customAlertCancelBtn');
+
+        titleEl.textContent = title;
+        msgEl.textContent = message;
+
+        inputEl.classList.remove('hidden');
+        inputEl.value = defaultValue;
+
+        cancelBtn.classList.remove('hidden');
+        cancelBtn.textContent = 'Cancel';
+        confirmBtn.className = 'custom-alert-btn btn-primary';
+        confirmBtn.textContent = 'OK';
+
+        iconEl.className = 'custom-alert-icon info';
+        iconEl.innerHTML = `
+            <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+            </svg>
+        `;
+
+        modal.classList.remove('hidden');
+
+        setTimeout(() => {
+            inputEl.focus();
+            inputEl.select();
+        }, 50);
+
+        const handleConfirm = () => {
+            const val = inputEl.value;
+            cleanup();
+            resolve(val);
+        };
+
+        const handleCancel = () => {
+            cleanup();
+            resolve(null);
+        };
+
+        const handleKeyDown = (e) => {
+            if (e.key === 'Enter') {
+                handleConfirm();
+            }
+        };
+
+        const cleanup = () => {
+            modal.classList.add('hidden');
+            inputEl.classList.add('hidden');
+            confirmBtn.removeEventListener('click', handleConfirm);
+            cancelBtn.removeEventListener('click', handleCancel);
+            inputEl.removeEventListener('keydown', handleKeyDown);
+        };
+
+        confirmBtn.addEventListener('click', handleConfirm);
+        cancelBtn.addEventListener('click', handleCancel);
+        inputEl.addEventListener('keydown', handleKeyDown);
     });
 }
 
@@ -578,6 +656,72 @@ export function rebuildQuestionPassageTomSelect(passages, preserved) {
     initTomSelectOn(el);
     if (preserved && optionExistsInSelect(el, preserved)) {
         el.tomselect.setValue(String(preserved), true);
+    }
+}
+
+/**
+ * Display a hardware-accelerated translucent loading overlay native to the specific table container.
+ * @param {string} containerId - The DOM ID of the table container element.
+ */
+export function showTableLoader(containerId) {
+    const container = document.getElementById(containerId);
+    if (!container) return;
+    
+    let overlay = container.querySelector('.table-loading-overlay');
+    if (!overlay) {
+        overlay = document.createElement('div');
+        overlay.className = 'table-loading-overlay';
+        overlay.innerHTML = `
+            <div class="table-loading-spinner-wrapper">
+                <div class="table-loading-spinner"></div>
+                <div class="table-loading-text">Loading Data</div>
+            </div>
+        `;
+        container.appendChild(overlay);
+    }
+    
+    // Position overlay below header if header exists (custom search/filter headers)
+    const header = container.querySelector(':scope > div:first-child');
+    if (header && (header.classList.contains('px-6') || header.classList.contains('py-4') || header.querySelector('input') || header.querySelector('h5'))) {
+        overlay.style.top = `${header.offsetHeight}px`;
+    } else {
+        overlay.style.top = '0px';
+    }
+    
+    // Position overlay above pagination footer if pagination wrap exists
+    const footer = container.querySelector('#modulesPoolPagination, .tabulator-footer');
+    if (footer) {
+        overlay.style.bottom = `${footer.offsetHeight}px`;
+    } else {
+        overlay.style.bottom = '0px';
+    }
+    
+    // Ensure the container is relatively positioned to anchor absolute overlay
+    container.classList.add('relative');
+    
+    // Force a browser reflow to trigger CSS transition correctly
+    overlay.getBoundingClientRect();
+    
+    overlay.classList.add('show');
+}
+
+/**
+ * Hide the translucent loading overlay from the specific table container with a smooth fade-out.
+ * @param {string} containerId - The DOM ID of the table container element.
+ */
+export function hideTableLoader(containerId) {
+    const container = document.getElementById(containerId);
+    if (!container) return;
+    
+    const overlay = container.querySelector('.table-loading-overlay');
+    if (overlay) {
+        overlay.classList.remove('show');
+        // Remove from DOM after CSS transition completes to free layout memory
+        setTimeout(() => {
+            if (!overlay.classList.contains('show')) {
+                overlay.remove();
+            }
+        }, 300);
     }
 }
 

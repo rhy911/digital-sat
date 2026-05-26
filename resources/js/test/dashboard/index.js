@@ -1,6 +1,6 @@
 import { 
     SKILL_DOMAINS, TEST_DASHBOARD_TAB_KEY, SNAPSHOT_URL, TESTS_STORE_URL, SECTIONS_STORE_URL, 
-    MODULES_STORE_URL, SECTIONS_LINK_MODULE_URL, QUESTIONS_ATTACH_URL, BASE_URL, BULK_STORE_URL,
+    MODULES_STORE_URL, SECTIONS_LINK_MODULE_URL, BASE_URL, BULK_STORE_URL,
     CSV_BULK_URL, MEDIA_UPLOAD_URL
 } from './core/config.js';
 import './core/examples.js';
@@ -9,7 +9,7 @@ import {
     rebuildSectionTestTomSelect, rebuildModuleSectionTomSelect, rebuildQuestionModuleTomSelect,
     rebuildQuestionPassageTomSelect, rebuildLinkModuleTomSelect, initTomSelectOn,
     destroyTomSelectIfAny, optionExistsInSelect, humanizeUnderscores, capitalizeFirstLetter,
-    loadHeavyDependencies
+    loadHeavyDependencies, showTableLoader, hideTableLoader
 } from './utils/helpers.js';
 import { 
     initEditModalEditors, refreshEditMediaList, debouncedEditQuestionPreview, 
@@ -34,7 +34,7 @@ document.addEventListener('DOMContentLoaded', async function () {
     await loadHeavyDependencies();
 
     function rememberTestDashboardTab() {
-        const activeBtn = document.querySelector('#dashboardTabs .nav-link.active') || document.querySelector('#dashboardTabs .sidebar-link.active');
+        const activeBtn = document.querySelector('#dashboardTabs .sidebar-link.active') || document.querySelector('#dashboardTabs .nav-link.active');
         if (!activeBtn) return;
         const target = activeBtn.getAttribute('data-bs-target');
         if (target) sessionStorage.setItem(TEST_DASHBOARD_TAB_KEY, target);
@@ -46,10 +46,13 @@ document.addEventListener('DOMContentLoaded', async function () {
 
     async function renderActiveTab(targetId = null) {
         if (!targetId) {
+            targetId = sessionStorage.getItem(TEST_DASHBOARD_TAB_KEY);
+        }
+        if (!targetId) {
             const activeBtn = document.querySelector('#dashboardTabs .sidebar-link.active') || document.querySelector('#dashboardTabs .nav-link.active');
             if (activeBtn) targetId = activeBtn.getAttribute('data-bs-target');
         }
-        if (!targetId) return;
+        if (!targetId) targetId = '#tests';
 
         await loadHeavyDependencies();
 
@@ -69,19 +72,30 @@ document.addEventListener('DOMContentLoaded', async function () {
     }
 
     async function refreshQuestionsTableOnly() {
-        const response = await fetch(questionsListFetchUrl(), {
-            headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
-            credentials: 'same-origin'
-        });
-        if (!response.ok) throw new Error('Questions list failed (' + response.status + ')');
-        const listJson = await response.json();
-        const last = listJson.last_page || 1;
-        if ((listJson.current_page || 1) > last) {
-            window.__tdQuestionsPage = last;
-            return refreshQuestionsTableOnly();
+        showTableLoader('questionsTableContainer');
+        const startTime = Date.now();
+        
+        try {
+            const response = await fetch(questionsListFetchUrl(), {
+                headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
+                credentials: 'same-origin'
+            });
+            if (!response.ok) throw new Error('Questions list failed (' + response.status + ')');
+            const listJson = await response.json();
+            const last = listJson.last_page || 1;
+            if ((listJson.current_page || 1) > last) {
+                window.__tdQuestionsPage = last;
+                return refreshQuestionsTableOnly();
+            }
+            window.__tdLatestListJson = listJson;
+            await renderActiveTab('#questions');
+        } finally {
+            const elapsed = Date.now() - startTime;
+            const remaining = Math.max(0, 400 - elapsed);
+            setTimeout(() => {
+                hideTableLoader('questionsTableContainer');
+            }, remaining);
         }
-        window.__tdLatestListJson = listJson;
-        await renderActiveTab('#questions');
     }
 
     function rebuildAllTomSelects(payload, preserve) {
@@ -199,33 +213,59 @@ document.addEventListener('DOMContentLoaded', async function () {
     // Modal listeners
     window.addEventListener('open-modal', function (e) {
         if (e.detail !== 'editQuestionModal') return;
+        const loader = document.getElementById('editQuestionModalLoader');
+        if (loader) {
+            loader.style.opacity = '1';
+            loader.style.pointerEvents = 'auto';
+            loader.style.display = 'flex';
+        }
+
         const question = window.__editingQuestion;
         if (!question) return;
 
-        initEditModalEditors();
-
-        const stemEditor = getEditStemEditor();
-        const passageEditor = getEditPassageEditor();
-        const explanationEditor = getEditExplanationEditor();
-
-        if (stemEditor) { stemEditor.value(question.stem || ''); stemEditor.codemirror.refresh(); }
-        if (passageEditor) {
-            const pContent = question.passage_content || (question.passage ? (typeof question.passage === 'string' ? question.passage : question.passage.content) : '');
-            passageEditor.value(pContent || ''); passageEditor.codemirror.refresh();
-        }
-        if (explanationEditor) {
-            const expContent = question.explanation ? (question.explanation.explanation || '') : '';
-            explanationEditor.value(expContent); explanationEditor.codemirror.refresh();
-        }
-
-        refreshEditMediaList();
-        updateEditQuestionPreview();
-
+        // Delay heavy initialization to ensure 60fps modal entry transition
         setTimeout(() => {
-            if (stemEditor) stemEditor.codemirror.refresh();
-            if (passageEditor) passageEditor.codemirror.refresh();
-            if (explanationEditor) explanationEditor.codemirror.refresh();
-        }, 100);
+            let stemEditor, passageEditor, explanationEditor;
+            try {
+                initEditModalEditors();
+
+                stemEditor = getEditStemEditor();
+                passageEditor = getEditPassageEditor();
+                explanationEditor = getEditExplanationEditor();
+
+                if (stemEditor) { stemEditor.value(question.stem || ''); stemEditor.codemirror.refresh(); }
+                if (passageEditor) {
+                    const pContent = question.passage_content || (question.passage ? (typeof question.passage === 'string' ? question.passage : question.passage.content) : '');
+                    passageEditor.value(pContent || ''); passageEditor.codemirror.refresh();
+                }
+                if (explanationEditor) {
+                    const expContent = question.explanation ? (question.explanation.explanation || '') : '';
+                    explanationEditor.value(expContent); explanationEditor.codemirror.refresh();
+                }
+
+                refreshEditMediaList();
+                updateEditQuestionPreview();
+
+                setTimeout(() => {
+                    if (stemEditor) stemEditor.codemirror.refresh();
+                    if (passageEditor) passageEditor.codemirror.refresh();
+                    if (explanationEditor) explanationEditor.codemirror.refresh();
+                }, 100);
+            } catch (err) {
+                console.error("Failed to initialize edit question editors:", err);
+            } finally {
+                // ALWAYS hide the loader overlay, even if initialization failed!
+                setTimeout(() => {
+                    if (loader) {
+                        loader.style.opacity = '0';
+                        loader.style.pointerEvents = 'none'; // prevent blocking any clicks
+                        setTimeout(() => {
+                            loader.style.display = 'none';
+                        }, 300);
+                    }
+                }, 150);
+            }
+        }, 250); // Exact time for Alpine modal enter transition to complete
     });
 
     document.getElementById('editQuestionForm')?.addEventListener('submit', async function (e) {
@@ -314,10 +354,10 @@ document.addEventListener('DOMContentLoaded', async function () {
         if (type === 'reading_writing') {
             if (qTypeSelect && qTypeSelect.value === 'student_produced_response') qTypeSelect.value = 'multiple_choice';
             if (sprOption) sprOption.style.display = 'none';
-            if (sprHintContainer) sprHintContainer.classList.add('d-none');
+            if (sprHintContainer) sprHintContainer.classList.add('hidden');
         } else {
             if (sprOption) sprOption.style.display = 'block';
-            if (sprHintContainer) sprHintContainer.classList.remove('d-none');
+            if (sprHintContainer) sprHintContainer.classList.remove('hidden');
         }
 
         domainSelect.innerHTML = '<option value="">Select domain...</option>';
@@ -363,28 +403,24 @@ document.addEventListener('DOMContentLoaded', async function () {
     setupForm('sectionForm', SECTIONS_STORE_URL);
     setupForm('moduleForm', MODULES_STORE_URL);
     setupForm('linkModuleForm', SECTIONS_LINK_MODULE_URL);
-    setupForm('attachQuestionForm', QUESTIONS_ATTACH_URL);
 
     // Initializations
     initTestDashboardDelegatedActions();
     initModulesSearch();
-    document.querySelectorAll('#dashboardTabs [data-bs-toggle="tab"]').forEach(btn => {
-        btn.addEventListener('shown.bs.tab', e => {
-            const target = e.target.getAttribute('data-bs-target');
-            sessionStorage.setItem(TEST_DASHBOARD_TAB_KEY, target);
-            requestAnimationFrame(() => {
-                setTimeout(() => {
-                    renderActiveTab(target);
-                }, 0);
-            });
+
+    document.querySelectorAll('#dashboardTabs .sidebar-link, #dashboardTabs .sidebar-link-builder').forEach(btn => {
+        btn.addEventListener('click', () => {
+            const target = btn.getAttribute('data-bs-target');
+            if (target) {
+                sessionStorage.setItem(TEST_DASHBOARD_TAB_KEY, target);
+                requestAnimationFrame(() => {
+                    setTimeout(() => {
+                        renderActiveTab(target);
+                    }, 0);
+                });
+            }
         });
     });
-
-    const savedTab = sessionStorage.getItem(TEST_DASHBOARD_TAB_KEY);
-    if (savedTab) {
-        const trigger = document.querySelector('#dashboardTabs [data-bs-target="' + savedTab + '"]');
-        if (trigger && typeof bootstrap !== 'undefined' && bootstrap.Tab) bootstrap.Tab.getOrCreateInstance(trigger).show();
-    }
 
     const tomSelectEls = Array.from(document.querySelectorAll('.tom-select')).filter(el => !el.classList.contains('tom-select-remote-question'));
     function initTomSelectBatch(index = 0) {
@@ -406,6 +442,7 @@ document.addEventListener('DOMContentLoaded', async function () {
     });
 
     initQuickAuthorWizard();
+    BulkImport.initBulkImport();
 
     // Question Bank Filters Event Listeners
     const applyFilterBtn = document.getElementById('questionsTableFilterBtn');

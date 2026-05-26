@@ -72,7 +72,7 @@ export function updateEditQuestionPreview() {
 
     // Check if reading_writing / passage container is visible
     const passageContainer = document.getElementById('editPassageContainer');
-    const showPassage = passageContainer && !passageContainer.classList.contains('d-none');
+    const showPassage = passageContainer && !passageContainer.classList.contains('hidden');
 
     let passageHtml = '';
     if (showPassage && passageValue.trim()) {
@@ -97,7 +97,7 @@ export function updateEditQuestionPreview() {
                     <div class="rounded-circle d-flex align-items-center justify-content-center text-white bg-${isCorrect ? 'success' : 'secondary'} fw-bold" style="width: 24px; height: 24px; font-size: 12px; flex-shrink: 0;">
                         ${label}
                     </div>
-                    <div class="flex-grow-1 small">${content}</div>
+                    <div class="grow small">${content}</div>
                 </div>
             `;
         });
@@ -108,7 +108,7 @@ export function updateEditQuestionPreview() {
         questionBodyHtml = `
             <div class="answer-input-container p-3 bg-light rounded-3 mt-3 border border-warning border-opacity-25">
                 <label class="d-block mb-2 fw-bold text-dark small"><i class="bi bi-pencil-fill text-warning"></i> Student Produced Response:</label>
-                <div class="form-control bg-white font-monospace text-center py-2 fs-5 border-warning border-opacity-50" style="max-width: 150px; letter-spacing: 2px;">
+                <div class="form-control bg-white font-monospace text-black text-center py-2 fs-5 border-warning border-opacity-50" style="max-width: 150px; letter-spacing: 2px;">
                     ${sprVal || '______'}
                 </div>
             </div>
@@ -180,53 +180,46 @@ export function refreshEditMediaList() {
     }
 
     if (foundUrls.size === 0 && foundPlaceholders.size === 0) {
-        mediaList.innerHTML = '<div class="col-12 text-muted small">No media found in this question.</div>';
+        mediaList.innerHTML = '<div class="text-slate-500 text-xs font-semibold py-4">No media found in this question.</div>';
     } else {
         foundUrls.forEach(url => {
             const col = document.createElement('div');
-            col.className = 'col-md-3 col-6 mb-2';
+            col.className = 'relative group border border-slate-800/80 rounded-xl p-2 bg-slate-900/60 shadow-md flex items-center justify-center h-28 transition-all hover:border-indigo-500/30';
             col.innerHTML = `
-                <div class="position-relative border rounded p-1 bg-white shadow-sm d-flex align-items-center justify-content-center" style="height: 100px;">
-                    <img src="${url}" class="img-fluid rounded" style="max-height: 90px; object-fit: contain;" onerror="this.src='https://placehold.co/100x100?text=Error'">
-                    <button type="button" class="btn btn-danger btn-sm position-absolute top-0 end-0 rounded-circle shadow-sm d-flex align-items-center justify-content-center" 
-                            style="width: 24px; height: 24px; margin: -10px -10px 0 0; z-index: 10;"
-                            data-action="remove-media" data-url="${url}" data-is-url="true" title="Remove from all fields">
-                        &times;
-                    </button>
-                </div>
+                <img src="${url}" class="max-h-24 rounded-lg object-contain w-full h-full" onerror="this.src='https://placehold.co/100x100?text=Error'">
+                <button type="button" class="absolute -top-2 -right-2 w-6 h-6 bg-rose-600 hover:bg-rose-500 text-white rounded-full shadow-lg flex items-center justify-center text-xs font-black transition-all cursor-pointer hover:scale-110" 
+                        data-action="remove-media" data-url="${url}" data-is-url="true" title="Remove from all fields">
+                    &times;
+                </button>
             `;
             mediaList.appendChild(col);
         });
 
         foundPlaceholders.forEach(filename => {
             const col = document.createElement('div');
-            col.className = 'col-md-3 col-6 mb-2';
+            col.className = 'relative group border border-slate-800/80 rounded-xl p-2 bg-slate-900/60 shadow-md flex flex-col items-center justify-center h-28 transition-all hover:border-indigo-500/30';
             const predictedUrl = `/storage/media/${filename}`;
             col.innerHTML = `
-                <div class="position-relative border rounded p-1 bg-light shadow-sm d-flex flex-column align-items-center justify-content-center" style="height: 100px;">
-                    <img src="${predictedUrl}" class="img-fluid rounded mb-1" style="max-height: 60px; object-fit: contain;" onerror="this.style.display='none'; this.nextElementSibling.style.display='block'">
-                    <div class="text-center" style="display:none;">
-                        <i class="bi bi-file-earmark-image text-muted" style="font-size: 1.5rem;"></i>
-                        <div class="x-small text-truncate px-1" style="max-width: 80px;">${filename}</div>
-                    </div>
-                    <div class="x-small text-muted text-center fw-bold">Placeholder</div>
-                    <button type="button" class="btn btn-danger btn-sm position-absolute top-0 end-0 rounded-circle shadow-sm d-flex align-items-center justify-content-center" 
-                            style="width: 24px; height: 24px; margin: -10px -10px 0 0; z-index: 10;"
-                            data-action="remove-media" data-url="${filename}" data-is-url="false" title="Remove from all fields">
-                        &times;
-                    </button>
+                <img src="${predictedUrl}" class="max-h-16 rounded-lg object-contain w-full mb-1" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex'">
+                <div class="flex flex-col items-center justify-center" style="display:none;">
+                    <i class="bi bi-file-earmark-image text-slate-500" style="font-size: 1.5rem;"></i>
+                    <div class="text-[9px] text-slate-400 text-truncate px-1 max-w-[80px] font-mono">${filename}</div>
                 </div>
+                <div class="text-[9px] text-slate-500 font-extrabold uppercase tracking-wider mt-1">Placeholder</div>
+                <button type="button" class="absolute -top-2 -right-2 w-6 h-6 bg-rose-600 hover:bg-rose-500 text-white rounded-full shadow-lg flex items-center justify-center text-xs font-black transition-all cursor-pointer hover:scale-110" 
+                        data-action="remove-media" data-url="${filename}" data-is-url="false" title="Remove from all fields">
+                    &times;
+                </button>
             `;
             mediaList.appendChild(col);
         });
-
+    }
         // Re-bind remove media buttons since they are dynamic
         mediaList.querySelectorAll('[data-action="remove-media"]').forEach(btn => {
             btn.addEventListener('click', () => {
                 removeMediaFromEditModal(btn.dataset.url, btn.dataset.isUrl === 'true');
             });
         });
-    }
 }
 
 export async function removeMediaFromEditModal(identifier, isUrl) {

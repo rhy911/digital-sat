@@ -59,7 +59,7 @@ export function renderLivePreviewCard(block) {
                     <div class="rounded-circle d-flex align-items-center justify-content-center text-white bg-${isCorrect ? 'success' : 'secondary'} fw-bold" style="width: 24px; height: 24px; font-size: 12px; flex-shrink: 0;">
                         ${label}
                     </div>
-                    <div class="flex-grow-1 small">${content}</div>
+                    <div class="grow small">${content}</div>
                 </div>
             `;
         });
@@ -199,11 +199,11 @@ export function addBuilderBlock() {
 
     const updateFormatView = () => {
         if (mcqRadio.checked) {
-            mcqContainer.classList.remove('d-none');
-            sprContainer.classList.add('d-none');
+            mcqContainer.classList.remove('hidden');
+            sprContainer.classList.add('hidden');
         } else {
-            mcqContainer.classList.add('d-none');
-            sprContainer.classList.remove('d-none');
+            mcqContainer.classList.add('hidden');
+            sprContainer.classList.remove('hidden');
         }
         debouncedUpdateLivePreview(block);
         updateSidebarNavigator();
@@ -279,7 +279,7 @@ export function syncBuilderBlockDomain(block) {
     const index = block.dataset.index;
 
     if (type === 'reading_writing') {
-        passageContainer.classList.remove('d-none');
+        passageContainer.classList.remove('hidden');
         if (!builderEditors[`passage_${index}`]) {
             builderEditors[`passage_${index}`] = new EasyMDE({
                 element: block.querySelector('.builder-passage'),
@@ -294,7 +294,7 @@ export function syncBuilderBlockDomain(block) {
                 if (window.triggerBuilderAutoSave) window.triggerBuilderAutoSave();
             });
         }
-    } else passageContainer.classList.add('d-none');
+    } else passageContainer.classList.add('hidden');
 
     const domainSelect = block.querySelector('.builder-domain');
     const currentVal = domainSelect.value;

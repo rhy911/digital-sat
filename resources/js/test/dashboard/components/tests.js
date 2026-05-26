@@ -1,5 +1,5 @@
 import { BASE_URL, TESTS_STORE_URL } from '../core/config.js';
-import { showAlert, escapeHtml, humanizeUnderscores } from '../utils/helpers.js';
+import { showAlert, escapeHtml, humanizeUnderscores, showTableLoader, hideTableLoader } from '../utils/helpers.js';
 
 let testsTabulator = null;
 
@@ -57,13 +57,13 @@ export function renderTestsTable(tests) {
     if (!tableElem) return;
 
     if (!tests.length) {
-        if (emptyState) emptyState.classList.remove('d-none');
-        if (tableContainer) tableContainer.classList.add('d-none');
+        if (emptyState) emptyState.classList.remove('hidden');
+        if (tableContainer) tableContainer.classList.add('hidden');
         return;
     }
 
-    if (emptyState) emptyState.classList.add('d-none');
-    if (tableContainer) tableContainer.classList.remove('d-none');
+    if (emptyState) emptyState.classList.add('hidden');
+    if (tableContainer) tableContainer.classList.remove('hidden');
 
     const tableData = tests.map(function(t) {
         return {
@@ -75,13 +75,15 @@ export function renderTestsTable(tests) {
         };
     });
 
+    let testsSearchTimeout = null;
+
     if (!testsTabulator) {
         testsTabulator = new Tabulator("#testsTabulatorTable", {
             data: tableData,
             layout: "fitColumns",
             responsiveLayout: "collapse",
             pagination: true,
-            paginationSize: 25,
+            paginationSize: 30,
             paginationCounter: "rows",
             placeholder: "No tests found",
             columns: [
@@ -91,10 +93,22 @@ export function renderTestsTable(tests) {
                 { title: "Status", field: "status", formatter: testStatusFormatter },
                 { title: "Duration", field: "duration", formatter: (cell) => cell.getValue() + 'm' },
                 { title: "Actions", field: "id", headerSort: false, formatter: testActionsFormatter, width: 280 }
-            ]
+            ],
+            pageChanged: function(page) {
+                showTableLoader('testsTableContainer');
+                setTimeout(() => {
+                    hideTableLoader('testsTableContainer');
+                }, 400);
+            }
         });
         document.getElementById('testsTableSearch')?.addEventListener('input', function(e) {
-            testsTabulator.setFilter("title", "like", e.target.value);
+            const val = e.target.value;
+            showTableLoader('testsTableContainer');
+            if (testsSearchTimeout) clearTimeout(testsSearchTimeout);
+            testsSearchTimeout = setTimeout(() => {
+                testsTabulator.setFilter("title", "like", val);
+                setTimeout(() => hideTableLoader('testsTableContainer'), 200);
+            }, 400);
         });
     } else {
         testsTabulator.replaceData(tableData);

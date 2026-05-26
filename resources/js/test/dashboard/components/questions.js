@@ -20,7 +20,7 @@ export function questionsListFetchUrl() {
         u = new URL(QUESTIONS_LIST_URL, window.location.origin);
     }
     u.searchParams.set('page', String(window.__tdQuestionsPage || 1));
-    u.searchParams.set('per_page', String(window.__tdQuestionsPerPage || 25));
+    u.searchParams.set('per_page', String(window.__tdQuestionsPerPage || 30));
     if (window.__tdQuestionsQuery) {
         u.searchParams.set('q', window.__tdQuestionsQuery);
     }
@@ -51,10 +51,17 @@ export function renderQuestionsTable(questions) {
     const renderId = currentQuestionsRenderId;
     
     if (!questions.length) {
-        tbody.innerHTML = '<tr><td colspan="8" class="text-center text-muted py-5">'
-            + '<i class="bi bi-database-fill-x display-6 mb-2 d-block text-secondary opacity-50"></i>'
-            + 'No questions found in bank.'
-            + '</td></tr>';
+        tbody.innerHTML = '<tr>'
+            + '<td colspan="8" class="px-5 py-12 text-center text-slate-500">'
+            + '<div class="flex flex-col items-center justify-center">'
+            + '<div class="w-12 h-12 rounded-full bg-slate-900/40 border border-slate-800/80 flex items-center justify-center mb-3">'
+            + '<i class="bi bi-database-fill-x text-2xl text-slate-400"></i>'
+            + '</div>'
+            + '<p class="text-sm font-semibold text-slate-400">No questions found</p>'
+            + '<p class="text-xs text-slate-500 mt-1">Populate your bank by importing items above!</p>'
+            + '</div>'
+            + '</td>'
+            + '</tr>';
         return;
     }
     
@@ -70,51 +77,51 @@ export function renderQuestionsTable(questions) {
         
         const html = chunk.map(function (q) {
             const secBadge = q.section_type === 'reading_writing'
-                ? '<span class="badge bg-primary-subtle text-primary border border-primary-subtle px-2.5 py-1 rounded-pill fw-semibold">R&W</span>'
-                : '<span class="badge bg-success-subtle text-success border border-success-subtle px-2.5 py-1 rounded-pill fw-semibold">Math</span>';
+                ? '<span class="inline-flex items-center px-2.5 py-1 rounded-lg text-[10px] font-extrabold bg-indigo-500/10 text-indigo-400 border border-indigo-500/20 uppercase tracking-wide">R&amp;W</span>'
+                : '<span class="inline-flex items-center px-2.5 py-1 rounded-lg text-[10px] font-extrabold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 uppercase tracking-wide">Math</span>';
 
             const usageBadge = q.is_pretest
-                ? '<span class="badge bg-danger-subtle text-danger border border-danger-subtle px-2.5 py-1 rounded-pill fw-semibold">Pretest</span>'
-                : '<span class="badge bg-light text-muted border px-2.5 py-1 rounded-pill fw-semibold">Active</span>';
+                ? '<span class="inline-flex items-center px-2.5 py-1 rounded-lg text-[10px] font-extrabold bg-rose-500/10 text-rose-400 border border-rose-500/20 uppercase tracking-wide">Pretest</span>'
+                : '<span class="inline-flex items-center px-2.5 py-1 rounded-lg text-[10px] font-extrabold bg-slate-800/60 text-slate-400 border border-slate-700/60 uppercase tracking-wide">Active</span>';
 
             const status = q.is_complete
                 ? ''
-                : ' <span class="badge bg-danger-subtle text-danger border border-danger-subtle px-2 py-0.5 rounded" title="Missing Domain or Difficulty" style="font-size: 0.7rem;"><i class="bi bi-exclamation-triangle-fill"></i> Incomplete</span>';
+                : ' <span class="inline-flex items-center px-2 py-0.5 rounded-md text-[9px] font-extrabold bg-rose-500/10 text-rose-400 border border-rose-500/20 uppercase tracking-wide" title="Missing Domain or Difficulty"><i class="bi bi-exclamation-triangle-fill mr-1 text-[9px]"></i> Incomplete</span>';
 
             const stem = stripTags(q.stem || '');
-            const snippet = stem.length <= 50 ? stem : stem.slice(0, 50) + '…';
+            const snippet = stem.length <= 300 ? stem : stem.slice(0, 300) + '…';
             const qNum = q.question_number != null ? escapeHtml(q.question_number) : '-';
 
             let diffBadge = '';
             const diffLower = (q.difficulty || '').toLowerCase();
             if (diffLower === 'easy') {
-                diffBadge = '<span class="badge bg-success-subtle text-success border border-success-subtle px-2 py-0.5 rounded">Easy</span>';
+                diffBadge = '<span class="inline-flex items-center px-2.5 py-1 rounded-lg text-[10px] font-extrabold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 uppercase tracking-wide">Easy</span>';
             } else if (diffLower === 'medium') {
-                diffBadge = '<span class="badge bg-warning-subtle text-warning border border-warning-subtle px-2 py-0.5 rounded">Medium</span>';
+                diffBadge = '<span class="inline-flex items-center px-2.5 py-1 rounded-lg text-[10px] font-extrabold bg-amber-500/10 text-amber-400 border border-amber-500/20 uppercase tracking-wide">Medium</span>';
             } else {
-                diffBadge = '<span class="badge bg-danger-subtle text-danger border border-danger-subtle px-2 py-0.5 rounded">' + escapeHtml(capitalizeFirstLetter(q.difficulty || '')) + '</span>';
+                diffBadge = '<span class="inline-flex items-center px-2.5 py-1 rounded-lg text-[10px] font-extrabold bg-rose-500/10 text-rose-400 border border-rose-500/20 uppercase tracking-wide">' + escapeHtml(capitalizeFirstLetter(q.difficulty || '')) + '</span>';
             }
 
-            return '<tr>'
-                + '<td class="p-3 font-monospace fw-bold text-secondary text-center">' + escapeHtml(q.id) + '</td>'
-                + '<td class="text-center">'
-                + '<div class="d-flex align-items-center justify-content-center gap-2">'
-                + '<span class="fw-semibold text-dark">' + qNum + '</span>'
+            return '<tr class="hover:bg-indigo-500/5 border-b border-slate-800/40">'
+                + '<td class="px-5 py-3.5 font-mono font-bold text-slate-500 text-center">' + escapeHtml(q.id) + '</td>'
+                + '<td class="px-5 py-3.5 text-center">'
+                + '<div class="flex items-center justify-center gap-2">'
+                + '<span class="font-bold text-slate-200">' + qNum + '</span>'
                 + status
                 + '</div>'
                 + '</td>'
-                + '<td class="text-center">' + secBadge + '</td>'
-                + '<td class="text-secondary text-truncate" style="max-width: 280px;" title="' + escapeHtml(stem) + '">' + escapeHtml(snippet) + '</td>'
-                + '<td class="text-center">' + usageBadge + '</td>'
-                + '<td><span class="text-secondary small font-monospace">' + escapeHtml(q.skill_domain || '') + '</span></td>'
-                + '<td class="text-center">' + diffBadge + '</td>'
-                + '<td class="pe-3 text-end">'
-                + '<div class="d-flex justify-content-end gap-1.5">'
-                + '<button type="button" class="btn btn-sm btn-outline-primary d-inline-flex align-items-center gap-1 edit-question-btn rounded-pill px-2.5 py-1" data-id="' + escapeHtml(q.id) + '">'
-                + '<i class="bi bi-pencil-square"></i> Edit'
+                + '<td class="px-5 py-3.5 text-center">' + secBadge + '</td>'
+                + '<td class="px-5 py-3.5 text-slate-400 truncate font-medium min-w-[120px] max-w-[140px] md:max-w-[280px] lg:max-w-[480px]" title="' + escapeHtml(stem) + '">' + escapeHtml(snippet) + '</td>'
+                + '<td class="px-5 py-3.5 text-center">' + usageBadge + '</td>'
+                + '<td class="px-5 py-3.5"><span class="text-slate-400 font-semibold font-mono text-[11px]">' + escapeHtml(q.skill_domain || '') + '</span></td>'
+                + '<td class="px-5 py-3.5 text-center">' + diffBadge + '</td>'
+                + '<td class="px-5 py-3.5 text-center">'
+                + '<div class="flex justify-center gap-1.5">'
+                + '<button type="button" class="px-2.5 py-1 border border-indigo-500/20 text-indigo-400 bg-indigo-500/5 hover:bg-indigo-500/15 rounded-lg text-xs font-bold flex items-center gap-1 edit-question-btn cursor-pointer" data-id="' + escapeHtml(q.id) + '">'
+                + '<i class="bi bi-pencil-square text-xs leading-none"></i> Edit'
                 + '</button>'
-                + '<button type="button" class="btn btn-sm btn-outline-danger d-inline-flex align-items-center justify-content-center delete-question-btn rounded-circle" style="width: 30px; height: 30px;" data-id="' + escapeHtml(q.id) + '">'
-                + '<i class="bi bi-trash"></i>'
+                + '<button type="button" class="w-7 h-7 flex items-center justify-center border border-rose-500/20 text-rose-400 bg-rose-500/5 hover:bg-rose-500/15 rounded-full delete-question-btn cursor-pointer" data-id="' + escapeHtml(q.id) + '" title="Delete">'
+                + '<i class="bi bi-trash text-xs"></i>'
                 + '</button>'
                 + '</div>'
                 + '</td>'
@@ -144,11 +151,11 @@ export function renderQuestionsPagination(meta, refreshCallback) {
     const cur = meta.current_page || 1;
     const last = meta.last_page || 1;
     const total = meta.total || 0;
-    let html = '<div class="d-flex flex-wrap justify-content-between align-items-center gap-2">';
-    html += '<span class="small text-muted">Page ' + cur + ' of ' + last + ' · ' + total + ' questions</span>';
-    html += '<div class="btn-group btn-group-sm">';
-    html += '<button type="button" class="btn btn-outline-secondary" data-q-page="prev"' + (cur <= 1 ? ' disabled' : '') + '>Previous</button>';
-    html += '<button type="button" class="btn btn-outline-secondary" data-q-page="next"' + (cur >= last ? ' disabled' : '') + '>Next</button>';
+    let html = '<div class="flex flex-wrap justify-between items-center w-full gap-3 px-2">';
+    html += '<span class="text-xs font-extrabold text-slate-500 uppercase tracking-wide">Page ' + cur + ' of ' + last + ' <span class="mx-1 text-slate-700">•</span> ' + total + ' questions</span>';
+    html += '<div class="flex gap-2">';
+    html += '<button type="button" class="px-3 py-1.5 text-xs font-extrabold uppercase tracking-wider rounded-xl border border-slate-800/80 bg-slate-900/60 text-slate-200 hover:bg-slate-800 hover:text-white transition-all duration-200 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer" data-q-page="prev"' + (cur <= 1 ? ' disabled' : '') + '>Previous</button>';
+    html += '<button type="button" class="px-3 py-1.5 text-xs font-extrabold uppercase tracking-wider rounded-xl border border-slate-800/80 bg-slate-900/60 text-slate-200 hover:bg-slate-800 hover:text-white transition-all duration-200 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer" data-q-page="next"' + (cur >= last ? ' disabled' : '') + '>Next</button>';
     html += '</div></div>';
     wrap.innerHTML = html;
 
@@ -170,6 +177,7 @@ export function renderQuestionsPagination(meta, refreshCallback) {
         });
     }
 }
+
 
 export async function openEditQuestionModal(id) {
     try {
@@ -194,9 +202,9 @@ export async function openEditQuestionModal(id) {
         const sprHintContainer = document.getElementById('editSprHintContainer');
         const sectionType = question.section_type || (question.section?.type) || '';
         if (sectionType === 'reading_writing') {
-            sprHintContainer.classList.add('d-none');
+            sprHintContainer.classList.add('hidden');
         } else {
-            sprHintContainer.classList.remove('d-none');
+            sprHintContainer.classList.remove('hidden');
         }
 
         const domainSelect = document.getElementById('editSkillDomain');
@@ -213,15 +221,15 @@ export async function openEditQuestionModal(id) {
 
         const passageContainer = document.getElementById('editPassageContainer');
         if (sectionType === 'reading_writing' && (question.passage || question.passage_content)) {
-            passageContainer.classList.remove('d-none');
+            passageContainer.classList.remove('hidden');
         } else {
-            passageContainer.classList.add('d-none');
+            passageContainer.classList.add('hidden');
         }
 
         // Populate Choices
         if (question.question_type === 'multiple_choice') {
-            document.getElementById('editMcqChoicesContainer').classList.remove('d-none');
-            document.getElementById('editSprAnswersContainer').classList.add('d-none');
+            document.getElementById('editMcqChoicesContainer').classList.remove('hidden');
+            document.getElementById('editSprAnswersContainer').classList.add('hidden');
             // Clear choices first
             ['A', 'B', 'C', 'D'].forEach(lbl => {
                 const ci = document.getElementById(`editChoice${lbl}Content`);
@@ -237,8 +245,8 @@ export async function openEditQuestionModal(id) {
                 if (correctRadio && (choice.is_correct || choice.is_correct === 1)) correctRadio.checked = true;
             });
         } else {
-            document.getElementById('editMcqChoicesContainer').classList.add('d-none');
-            document.getElementById('editSprAnswersContainer').classList.remove('d-none');
+            document.getElementById('editMcqChoicesContainer').classList.add('hidden');
+            document.getElementById('editSprAnswersContainer').classList.remove('hidden');
             const answers = (question.spr_correct_answers || []).map(a => a.answer).join(', ');
             document.getElementById('editSprAnswers').value = answers;
         }

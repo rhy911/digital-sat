@@ -1,6 +1,6 @@
 @props(['tests'])
 
-<div x-show="activeTab === 'builder'" id="builder" role="tabpanel" style="display: none;" x-transition.opacity.duration.300ms>
+<div x-show="activeTab === 'builder'" id="builder" role="tabpanel" style="display: none;">
     <!-- Easy Question Builder Card -->
     <div class="rounded-2xl border border-slate-800/60 bg-slate-900/20 shadow-2xl overflow-hidden border-l-4 border-amber-500 mb-6 glass-panel">
         <div class="px-6 py-4 bg-slate-950/40 border-b border-slate-800/80 flex justify-between items-center">
@@ -54,14 +54,14 @@
                     <div class="sticky top-6">
                         <div class="rounded-2xl border border-slate-800/60 bg-slate-900/40 shadow-xl overflow-hidden">
                             <div class="px-4 py-3 bg-slate-950/40 border-b border-slate-800/80">
-                                <h6 class="text-xs font-extrabold text-slate-350 flex items-center gap-2 mb-0 uppercase tracking-wider">
-                                    <i class="bi bi-compass text-amber-450"></i> Workspace Index
+                                <h6 class="text-xs font-extrabold text-slate-400 flex items-center gap-2 mb-0 uppercase tracking-wider">
+                                    <i class="bi bi-compass text-amber-400"></i> Workspace Index
                                 </h6>
                             </div>
                             <div class="p-3">
                                 <div class="flex flex-col gap-1.5 max-h-[400px] overflow-y-auto" id="builderSidebarNavigator">
                                     <div class="text-slate-500 text-center py-8 text-xs font-medium">
-                                        <i class="bi bi-layers text-2xl block mb-2 text-slate-650"></i>
+                                        <i class="bi bi-layers text-2xl block mb-2 text-slate-600"></i>
                                         Add a question to start indexing
                                     </div>
                                 </div>
@@ -73,11 +73,11 @@
                 <!-- Middle Question Builder Workspace -->
                 <div class="lg:col-span-5 relative builder-workspace-scroller" id="builderWorkspaceScroller">
                     <!-- Sticky Breadcrumb -->
-                    <div class="sticky top-0 bg-[#0b0f19]/80 border-b border-slate-850 pb-3 mb-4 pt-1 z-3 hidden" id="builderInteractiveBreadcrumb">
+                    <div class="sticky top-0 bg-[#0b0f19]/80 border-b border-slate-800 pb-3 mb-4 pt-1 z-3 hidden" id="builderInteractiveBreadcrumb">
                         <nav aria-label="breadcrumb">
                           <ol class="flex items-center gap-1.5 text-xs text-slate-400 mb-0">
                             <li class="flex items-center gap-1.5">
-                                <i class="bi bi-journal-text text-sm text-slate-450"></i>
+                                <i class="bi bi-journal-text text-sm text-slate-400"></i>
                                 <span id="bc-test-title" class="truncate font-semibold text-slate-300 max-w-[100px]" title="">Test</span>
                             </li>
                             <li class="flex items-center gap-1.5">
@@ -114,13 +114,13 @@
                     <div class="sticky top-6">
                         <div class="rounded-2xl border border-slate-800/60 bg-slate-900/40 shadow-xl overflow-hidden flex flex-col live-preview-drawer-container">
                             <div class="px-4 py-3 bg-slate-950 border-b border-slate-800/80">
-                                <h6 class="text-xs font-extrabold text-slate-350 flex items-center gap-2 mb-0 uppercase tracking-wider">
-                                    <i class="bi bi-eye-fill text-amber-450"></i> Bluebook Live Preview
+                                <h6 class="text-xs font-extrabold text-slate-400 flex items-center gap-2 mb-0 uppercase tracking-wider">
+                                    <i class="bi bi-eye-fill text-amber-400"></i> Bluebook Live Preview
                                 </h6>
                             </div>
                             <div class="p-4 overflow-y-auto flex-grow bg-slate-950/40" id="builderLivePreviewDrawer">
                                 <div class="text-slate-500 text-center py-12 text-xs font-medium">
-                                    <i class="bi bi-file-earmark-richtext text-3xl block mb-2 text-slate-650"></i>
+                                    <i class="bi bi-file-earmark-richtext text-3xl block mb-2 text-slate-600"></i>
                                     Live compilation of STEM and formulas will appear here in real-time
                                 </div>
                             </div>
@@ -131,14 +131,14 @@
         </div>
         
         <div class="px-6 py-4 bg-slate-950/40 border-t border-slate-800/80 flex justify-between items-center gap-4">
-            <span id="builderAutoSaveIndicator" class="text-slate-450 text-xs font-medium -opacity opacity-0 flex items-center gap-2">
+            <span id="builderAutoSaveIndicator" class="text-slate-400 text-xs font-medium -opacity opacity-0 flex items-center gap-2">
                 <i class="bi bi-cloud-check text-emerald-450 text-base"></i> Draft saved at <span class="time font-extrabold text-white"></span>
             </span>
             <div class="flex gap-2">
-                <button type="button" class="px-5 py-3 bg-slate-900/60 border border-slate-800/80 text-slate-200 font-extrabold text-xs uppercase tracking-wider rounded-xl hover:bg-slate-850 hover:text-white shadow-lg flex items-center justify-center gap-2 cursor-pointer" id="clearBuilderBtn">
+                <button type="button" class="px-5 py-3 bg-slate-900/60 border border-slate-800/80 text-slate-200 font-extrabold text-xs uppercase tracking-wider rounded-xl hover:bg-slate-800 hover:text-white shadow-lg flex items-center justify-center gap-2 cursor-pointer" id="clearBuilderBtn">
                     <i class="bi bi-trash"></i> Clear All
                 </button>
-                <button type="button" class="px-6 py-3 bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-450 hover:to-orange-450 text-white font-extrabold text-xs uppercase tracking-wider rounded-xl shadow-lg shadow-amber-500/20 transform flex items-center justify-center gap-2 cursor-pointer" id="submitBuilderBtn" title="Shortcut: Ctrl+S">
+                <button type="button" class="px-6 py-3 bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-400 text-white font-extrabold text-xs uppercase tracking-wider rounded-xl shadow-lg shadow-amber-500/20 transform flex items-center justify-center gap-2 cursor-pointer" id="submitBuilderBtn" title="Shortcut: Ctrl+S">
                     <i class="bi bi-cloud-arrow-up"></i> Save All Questions
                 </button>
             </div>

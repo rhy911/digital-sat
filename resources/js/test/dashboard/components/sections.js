@@ -1,5 +1,5 @@
 import { BASE_URL } from '../core/config.js';
-import { humanizeUnderscores } from '../utils/helpers.js';
+import { humanizeUnderscores, showTableLoader, hideTableLoader } from '../utils/helpers.js';
 
 let sectionsTabulator = null;
 
@@ -47,13 +47,15 @@ export function renderSectionsTable(tests) {
     });
 
     if (!tableData.length) {
-        if (emptyState) emptyState.classList.remove('d-none');
-        if (tableContainer) tableContainer.classList.add('d-none');
+        if (emptyState) emptyState.classList.remove('hidden');
+        if (tableContainer) tableContainer.classList.add('hidden');
         return;
     }
 
-    if (emptyState) emptyState.classList.add('d-none');
-    if (tableContainer) tableContainer.classList.remove('d-none');
+    if (emptyState) emptyState.classList.add('hidden');
+    if (tableContainer) tableContainer.classList.remove('hidden');
+
+    let sectionsSearchTimeout = null;
 
     if (!sectionsTabulator) {
         sectionsTabulator = new Tabulator("#sectionsTabulatorTable", {
@@ -61,7 +63,7 @@ export function renderSectionsTable(tests) {
             layout: "fitColumns",
             responsiveLayout: "collapse",
             pagination: true,
-            paginationSize: 25,
+            paginationSize: 30,
             paginationCounter: "rows",
             placeholder: "No sections found",
             columns: [
@@ -71,10 +73,31 @@ export function renderSectionsTable(tests) {
                 { title: "Type", field: "type" },
                 { title: "Order", field: "order", width: 90 },
                 { title: "Actions", field: "id", headerSort: false, formatter: sectionActionsFormatter }
-            ]
+            ],
+            pageChanged: function(page) {
+                showTableLoader('sectionsTableContainer');
+                setTimeout(() => {
+                    hideTableLoader('sectionsTableContainer');
+                }, 400);
+            }
         });
         document.getElementById('sectionsTableSearch')?.addEventListener('input', function(e) {
-            sectionsTabulator.setFilter("name", "like", e.target.value);
+            const val = e.target.value;
+            showTableLoader('sectionsTableContainer');
+            if (sectionsSearchTimeout) clearTimeout(sectionsSearchTimeout);
+            sectionsSearchTimeout = setTimeout(() => {
+                if (!val) {
+                    sectionsTabulator.clearFilter();
+                } else {
+                    sectionsTabulator.setFilter(function(data, filterParams) {
+                        const searchVal = filterParams.value.toLowerCase();
+                        const nameMatch = data.name ? data.name.toLowerCase().includes(searchVal) : false;
+                        const testTitleMatch = data.test_title ? data.test_title.toLowerCase().includes(searchVal) : false;
+                        return nameMatch || testTitleMatch;
+                    }, {value: val});
+                }
+                setTimeout(() => hideTableLoader('sectionsTableContainer'), 200);
+            }, 400);
         });
     } else {
         sectionsTabulator.replaceData(tableData);

@@ -10,7 +10,7 @@
         </div>
         <div class="p-5 space-y-5">
             <!-- R&W Passage (Hidden by default, shown if module is R&W) -->
-            <div class="builder-passage-container d-none">
+            <div class="builder-passage-container hidden">
                 <label class="block text-xs font-extrabold text-slate-400 tracking-wider uppercase mb-2">Passage (Reading & Writing only)</label>
                 <textarea class="w-full px-4 py-2.5 text-sm rounded-xl border border-slate-800/80 bg-slate-900/60 text-white placeholder-slate-500 focus:border-amber-500 focus:ring-4 focus:ring-amber-500/10 outline-none builder-passage" rows="3" placeholder="Enter passage text..."></textarea>
             </div>
@@ -59,7 +59,7 @@
             <div class="border-t border-slate-800/80 pt-4">
                 <!-- MCQ Container -->
                 <div class="builder-mcq-container space-y-3">
-                    <h6 class="text-xs font-extrabold text-amber-450 uppercase tracking-wider flex items-center gap-1.5 mb-3"><i class="bi bi-list-stars"></i> MCQ Choices (Mark correct one)</h6>
+                    <h6 class="text-xs font-extrabold text-amber-400 uppercase tracking-wider flex items-center gap-1.5 mb-3"><i class="bi bi-list-stars"></i> MCQ Choices (Mark correct one)</h6>
                     <div class="builder-choices-container space-y-2.5">
                         <!-- 4 choices -->
                         @foreach(['A', 'B', 'C', 'D'] as $choiceLabel)
@@ -68,23 +68,23 @@
                                 <input class="w-4 h-4 text-amber-600 border-slate-800/80 bg-slate-900 focus:ring-amber-500 focus:ring-offset-slate-900 builder-correct-radio" type="radio" name="correct_{INDEX}" value="{{ $choiceLabel }}" @if($choiceLabel === 'A') checked @endif>
                                 <span class="text-xs font-extrabold text-slate-400">{{ $choiceLabel }}</span>
                             </div>
-                            <input type="text" class="w-full px-4 py-2.5 text-sm text-white bg-slate-900/60 placeholder-slate-550 focus:border-amber-500 focus:ring-4 focus:ring-amber-500/10 outline-none builder-choice-content" data-label="{{ $choiceLabel }}" placeholder="Option {{ $choiceLabel }} content" required>
+                            <input type="text" class="w-full px-4 py-2.5 text-sm text-white bg-slate-900/60 placeholder-slate-400 focus:border-amber-500 focus:ring-4 focus:ring-amber-500/10 outline-none builder-choice-content" data-label="{{ $choiceLabel }}" placeholder="Option {{ $choiceLabel }} content" required>
                         </div>
                         @endforeach
                     </div>
                 </div>
 
                 <!-- SPR Container -->
-                <div class="builder-spr-container d-none space-y-2">
-                    <h6 class="text-xs font-extrabold text-amber-450 uppercase tracking-wider flex items-center gap-1.5 mb-3"><i class="bi bi-check-all"></i> SPR Accepted Answers <span class="text-rose-500">*</span></h6>
-                    <input type="text" class="w-full px-4 py-2.5 text-sm rounded-xl border border-slate-800/80 bg-slate-900/60 text-white placeholder-slate-550 focus:border-amber-500 focus:ring-4 focus:ring-amber-500/10 outline-none builder-spr-answers" placeholder="e.g. 3|3.0 (separate multiple answers with | or ;)">
-                    <div class="text-[11px] text-slate-450 mt-2 flex items-center gap-1.5 font-medium"><i class="bi bi-info-circle"></i> Use | or ; to specify multiple accepted formats (e.g. decimal and fraction).</div>
+                <div class="builder-spr-container hidden space-y-2">
+                    <h6 class="text-xs font-extrabold text-amber-400 uppercase tracking-wider flex items-center gap-1.5 mb-3"><i class="bi bi-check-all"></i> SPR Accepted Answers <span class="text-rose-500">*</span></h6>
+                    <input type="text" class="w-full px-4 py-2.5 text-sm rounded-xl border border-slate-800/80 bg-slate-900/60 text-white placeholder-slate-400 focus:border-amber-500 focus:ring-4 focus:ring-amber-500/10 outline-none builder-spr-answers" placeholder="e.g. 3|3.0 (separate multiple answers with | or ;)">
+                    <div class="text-[11px] text-slate-400 mt-2 flex items-center gap-1.5 font-medium"><i class="bi bi-info-circle"></i> Use | or ; to specify multiple accepted formats (e.g. decimal and fraction).</div>
                 </div>
             </div>
 
             <div class="border-t border-slate-800/80 pt-4">
                 <label class="block text-xs font-extrabold text-slate-400 tracking-wider uppercase mb-2">Explanation (Optional)</label>
-                <textarea class="w-full px-4 py-2.5 text-sm rounded-xl border border-slate-800/80 bg-slate-900/60 text-white placeholder-slate-550 focus:border-amber-500 focus:ring-4 focus:ring-amber-500/10 outline-none builder-explanation" rows="2" placeholder="Why is this answer correct?"></textarea>
+                <textarea class="w-full px-4 py-2.5 text-sm rounded-xl border border-slate-800/80 bg-slate-900/60 text-white placeholder-slate-400 focus:border-amber-500 focus:ring-4 focus:ring-amber-500/10 outline-none builder-explanation" rows="2" placeholder="Why is this answer correct?"></textarea>
             </div>
         </div>
     </div>

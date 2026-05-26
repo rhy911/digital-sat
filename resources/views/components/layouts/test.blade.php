@@ -151,7 +151,7 @@
             </div>
         </div>
         <div class="flex justify-center relative" x-data="{ popoverOpen: false }" @click.outside="popoverOpen = false">
-            <button type="button" class="popover-btn btn btn-secondary flex items-center gap-1 z-50 relative"
+            <button type="button" class="popover-btn flex items-center gap-1 z-50 relative"
                 :class="popoverOpen ? 'popover-open' : ''"
                 @click="popoverOpen = !popoverOpen">
                 Question <span>{{ $currentQuestion ?? '...' }}</span> of <span

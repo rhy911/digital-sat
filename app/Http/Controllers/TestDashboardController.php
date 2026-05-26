@@ -25,7 +25,7 @@ use Illuminate\Support\Facades\DB;
 
 class TestDashboardController extends Controller
 {
-    private const QUESTIONS_TABLE_PER_PAGE = 25;
+    private const QUESTIONS_TABLE_PER_PAGE = 30;
 
     protected TestManagementService $testManagement;
 

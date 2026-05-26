@@ -200,3 +200,86 @@ header .user-dropdown .dropdown-menu .dropdown-item.logout-btn:hover {
     display: none !important;
 }
 
+/* ==================== PREMIUM NATIVE TABLE LOADING OVERLAY ==================== */
+.table-loading-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(15, 23, 42, 0.65); /* Sleek translucent slate-900 background */
+    backdrop-filter: blur(8px); /* Smooth premium glassmorphism blur */
+    -webkit-backdrop-filter: blur(8px);
+    z-index: 100;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.3s cubic-bezier(0.4, 0, 0.2, 1), visibility 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    will-change: opacity, backdrop-filter;
+    transform: translateZ(0); /* GPU acceleration */
+}
+
+.table-loading-overlay.show {
+    opacity: 1;
+    visibility: visible;
+}
+
+.table-loading-spinner-wrapper {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1rem;
+    animation: table-loader-pulse 2s ease-in-out infinite;
+}
+
+.table-loading-spinner {
+    width: 44px;
+    height: 44px;
+    border: 3.5px solid rgba(99, 102, 241, 0.1); /* Translucent Indigo */
+    border-top-color: #6366f1; /* Solid Indigo */
+    border-radius: 50%;
+    animation: table-spin 0.75s cubic-bezier(0.5, 0.1, 0.5, 0.9) infinite;
+    box-shadow: 0 0 15px rgba(99, 102, 241, 0.15);
+    will-change: transform;
+    transform: translateZ(0); /* Force GPU thread */
+}
+
+.table-loading-text {
+    font-size: 0.75rem;
+    font-weight: 800;
+    color: #818cf8;
+    text-transform: uppercase;
+    letter-spacing: 0.15em;
+    animation: table-text-pulse 1.5s ease-in-out infinite;
+}
+
+@keyframes table-spin {
+    0% {
+        transform: rotate(0deg) translateZ(0);
+    }
+    100% {
+        transform: rotate(360deg) translateZ(0);
+    }
+}
+
+@keyframes table-loader-pulse {
+    0%, 100% {
+        transform: scale(1) translateZ(0);
+    }
+    50% {
+        transform: scale(1.02) translateZ(0);
+    }
+}
+
+@keyframes table-text-pulse {
+    0%, 100% {
+        opacity: 0.6;
+    }
+    50% {
+        opacity: 1;
+    }
+}
+
+
