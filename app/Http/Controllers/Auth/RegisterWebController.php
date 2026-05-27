@@ -20,12 +20,15 @@ class RegisterWebController extends Controller
                 'username' => 'required|string|max:255|unique:users',
                 'email' => 'required|string|email|max:255|unique:users',
                 'password' => 'required|string|min:8|confirmed',
+                'role' => 'nullable|string|in:student,teacher',
             ]);
 
             $user = User::create([
                 'username' => $request->username,
+                'name' => $request->username,
                 'email' => $request->email,
                 'password' => Hash::make($request->password),
+                'role' => $request->input('role', 'student'),
             ]);
 
             Log::info('User created via Web', $user->toArray());

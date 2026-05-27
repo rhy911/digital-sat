@@ -1,5 +1,5 @@
 header {
-    background-color: #324dc7;
+    background-color: #4361EE; /* Softer trustworthy indigo/blue */
     padding: 20px 40px;
     display: flex;
     justify-content: space-between;
@@ -16,13 +16,13 @@ header {
 }
 
 .test-device-btn {
-    background-color: #7e96dd;
+    background-color: rgba(255, 255, 255, 0.15);
     color: white;
-    border: 2px solid white;
+    border: 1px solid rgba(255, 255, 255, 0.25);
     padding: 10px 24px;
     border-radius: 25px;
     font-weight: 600;
-    transition: all 0.3s ease;
+    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
     display: flex;
     flex-direction: row;
     align-items: center;
@@ -32,84 +32,76 @@ header {
 
 .test-device-btn:hover {
     background-color: white;
-    color: #324dc7;
+    color: #4361EE;
+    border-color: white;
 }
 
 main {
-    background-color: #324dc7;
+    background-color: #4361EE; /* Softer trustworthy indigo/blue */
     flex: 1;
     padding: 40px 20px clamp(20px, 8vh, 80px);
 }
 
 /* ── Auth card ── */
 .auth-container {
-    background: white;
     border-radius: 20px;
-    padding: 40px;
-    max-width: 500px;
-    width: 100%;
-    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15);
-    display: flex;
-    flex-direction: column;
-    gap: 1.5rem;
+    box-shadow: 0 15px 35px rgba(0, 0, 0, 0.08);
 }
 
 /* ── Shared form elements (signin & signup) ── */
 .back-link {
     display: flex;
     align-items: center;
+    align-self: flex-start;
     gap: 6px;
-    color: #1a1a1a;
+    color: #475569;
     text-decoration: none;
     font-weight: 600;
     font-size: 15px;
     width: fit-content;
+    transition: color 0.2s ease;
 }
 
 .back-link:hover {
     text-decoration: underline;
-    color: #1a1a1a;
-}
-
-.signin-title {
-    font-weight: 700;
-    font-size: 1.6rem;
-    text-align: center;
-    margin: 0;
+    color: #1e293b;
 }
 
 .form-label {
     display: inline-block;
     font-weight: 600;
-    font-size: 1rem;
+    font-size: 0.95rem;
     margin-bottom: 0.5rem;
+    color: #475569;
 }
 
 .form-control {
     display: block;
     width: 100%;
-    border: 1.5px solid #b0b0b0;
+    border: 1.5px solid #cbd5e1;
     border-radius: 8px;
-    padding: 0.375rem 0.75rem;
+    padding: 0.5rem 0.75rem;
     font-size: 1rem;
-    transition: border-color 0.2s;
+    color: #1e293b;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .form-control:focus {
-    border-color: #324dc7;
-    box-shadow: 0 0 0 3px rgba(50, 77, 199, 0.15);
+    border-color: #4361EE;
+    box-shadow: 0 0 0 3px rgba(67, 97, 238, 0.15);
+    outline: none;
 }
 
 .submit-btn {
-    background-color: #e0e0e0;
-    color: #888;
+    background-color: #f1f5f9;
+    color: #94a3b8;
     border: none;
     border-radius: 2rem;
     font-weight: 600;
     font-size: 1rem;
     width: 100%;
     padding: 0.875rem 1.5rem;
-    transition: all 0.3s ease;
+    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
     cursor: not-allowed;
 }
 
@@ -167,28 +159,20 @@ main {
 .password-toggle svg {
     width: 20px;
     height: 20px;
-    stroke: #000;
+    stroke: #475569;
     fill: none;
 }
 
 /* ── Shared auth link styles ── */
-.help-link,
-.signin-footer-links a,
-.signin-link a {
+.links a {
     font-size: 1rem;
     color: #324dc7;
     text-decoration: none;
     font-weight: 500;
 }
 
-.help-link:hover,
-.signin-footer-links a:hover,
-.signin-link a:hover {
+.links a:hover {
     text-decoration: underline;
-}
-
-.help-link {
-    text-align: center;
 }
 
 /* ── Index page ── */
@@ -197,12 +181,12 @@ main {
     border: 1px solid #000;
     padding: 14px 24px;
     border-radius: 2rem;
-    font-weight: 500;
+    font-weight: 600;
     transition: all 0.3s ease;
     display: flex;
     align-items: center;
     justify-content: center;
-    gap: 10px;
+    gap: 8px;
     color: #000;
 }
 
@@ -234,9 +218,7 @@ main {
     border: 1px solid #000;
     padding: 12px 24px;
     border-radius: 2rem;
-    font-weight: 500;
-    width: 100%;
-    font-size: 16px;
+    font-weight: 600;
     transition: all 0.3s ease;
 }
 
@@ -245,27 +227,18 @@ main {
     box-shadow: 0 0 0 1px #000;
 }
 
-.signin-footer-links {
-    text-align: center;
-}
-
-.signin-footer-links a {
-    display: block;
-    margin: 8px 0;
-}
-
 /* ── Sign‑up page ── */
 .form-control.is-invalid {
-    border-color: #dc3545;
+    border-color: #ef4444;
 }
 
 .form-control.is-invalid:focus {
-    box-shadow: 0 0 0 3px rgba(220, 53, 69, 0.15);
+    box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.15);
 }
 
 .invalid-feedback {
     font-size: 13px;
-    color: #dc3545;
+    color: #ef4444;
     margin-top: 5px;
 }
 
@@ -273,10 +246,10 @@ main {
 #errorMessage {
     font-size: 14px;
     padding: 12px 16px;
-    background-color: #f8d7da;
-    border: 1px solid #f5c6cb;
-    border-radius: 6px;
-    color: #dc3545;
+    background-color: #fef2f2;
+    border: 1px solid #fee2e2;
+    border-radius: 8px;
+    color: #ef4444;
 }
 
 .name-row {
@@ -291,4 +264,91 @@ main {
 .signin-link {
     text-align: center;
     font-size: 15px;
+}
+
+.motivational-prompt {
+    font-size: 0.85rem;
+    color: #64748b;
+    text-align: center;
+    margin-top: -0.75rem;
+    font-weight: 500;
+}
+
+.encouraging-footer {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    font-size: 0.85rem;
+    color: #94a3b8;
+    text-align: center;
+    margin-top: 0.5rem;
+}
+
+.encouraging-footer svg {
+    color: #10b981;
+}
+
+/* ── Custom Premium Role Selector for Signup ── */
+.role-selector-container {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+}
+
+.role-option-card {
+    position: relative;
+    border: 1.5px solid #e2e8f0;
+    border-radius: 12px;
+    padding: 16px 12px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+    background: #f8fafc;
+}
+
+.role-option-card:hover {
+    border-color: #cbd5e1;
+    background: #f1f5f9;
+}
+
+.role-option-card.selected {
+    border-color: #4361EE;
+    background: #f0f3ff;
+    box-shadow: 0 0 0 3px rgba(67, 97, 238, 0.15);
+}
+
+.role-option-card input[type="radio"] {
+    position: absolute;
+    opacity: 0;
+    width: 0;
+    height: 0;
+}
+
+.role-icon {
+    font-size: 1.5rem;
+}
+
+.role-title {
+    font-weight: 700;
+    font-size: 0.95rem;
+    color: #1e293b;
+}
+
+.role-desc {
+    font-size: 0.75rem;
+    color: #64748b;
+    line-height: 1.3;
+}
+
+/* Multi-step registration */
+.signup-step {
+    display: none !important;
+}
+.signup-step.active {
+    display: flex !important;
 }

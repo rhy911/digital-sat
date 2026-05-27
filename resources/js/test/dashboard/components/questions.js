@@ -110,10 +110,10 @@ export function renderQuestionsTable(questions) {
                 + status
                 + '</div>'
                 + '</td>'
-                + '<td class="px-5 py-3.5 text-center">' + secBadge + '</td>'
-                + '<td class="px-5 py-3.5 text-slate-400 truncate font-medium min-w-[120px] max-w-[140px] md:max-w-[280px] lg:max-w-[480px]" title="' + escapeHtml(stem) + '">' + escapeHtml(snippet) + '</td>'
+                + '<td class="px-5 py-3.5 text-slate-400 text-center">' + secBadge + '</td>'
+                + '<td class="px-5 py-3.5 text-slate-400 font-medium stem-column" title="' + escapeHtml(stem) + '">' + escapeHtml(snippet) + '</td>'
                 + '<td class="px-5 py-3.5 text-center">' + usageBadge + '</td>'
-                + '<td class="px-5 py-3.5"><span class="text-slate-400 font-semibold font-mono text-[11px]">' + escapeHtml(q.skill_domain || '') + '</span></td>'
+                + '<td class="px-5 py-3.5"><span class="text-slate-400 font-semibold text-[11px] block truncate" title="' + escapeHtml(humanizeUnderscores(q.skill_domain || '')) + '">' + escapeHtml(humanizeUnderscores(q.skill_domain || '')) + '</span></td>'
                 + '<td class="px-5 py-3.5 text-center">' + diffBadge + '</td>'
                 + '<td class="px-5 py-3.5 text-center">'
                 + '<div class="flex justify-center gap-1.5">'

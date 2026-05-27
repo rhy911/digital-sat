@@ -30,7 +30,10 @@
     <x-auth.back-link href="/" />
 
     <!-- Title -->
-    <h2 class="signin-title">Reset Your Password</h2>
+    <div class="flex flex-col justify-center items-center gap-1">
+        <h1 class="text-3xl font-bold text-center m-0 text-black">Reset Your Password</h1>
+        <p class="text-base text-gray-600 text-center">Create a secure new password for your account.</p>
+    </div>
 
     <!-- Form -->
     <form id="resetForm" action="{{ route('password.update') }}" method="POST" novalidate>
@@ -70,5 +73,7 @@
     </form>
 
     <!-- Help -->
-    <a href="/signin" class="help-link">Back to sign in</a>
+    <div class="links text-center">
+        <a href="/signin">Back to sign in</a>
+    </div>
 </x-layouts.auth>

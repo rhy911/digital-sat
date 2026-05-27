@@ -175,12 +175,13 @@ async function submitModule() {
   if (!confirmNext) return;
 
   if (window.isPreview) {
-    showLoadingScreen("Saving responses and loading next section...");
     if (window.nextModuleId) {
+      showLoadingScreen("Saving responses and loading next section...");
       window.location.href = `/take-test/${window.nextModuleId}`;
     } else {
-      showLoadingScreen("Completing test preview...");
+      hideLoadingScreen();
       await showCustomAlert("Test Preview completed! Redirecting home...", "success", "Test Completed");
+      showLoadingScreen("Completing test preview...");
       window.location.href = '/home';
     }
     return;
@@ -204,8 +205,9 @@ async function submitModule() {
     const data = await response.json();
 
     if (data.test_completed) {
-      showLoadingScreen("Scoring exam & loading results...");
+      hideLoadingScreen();
       await showCustomAlert("Test completed! Redirecting to results...", "success", "Test Completed");
+      showLoadingScreen("Scoring exam & loading results...");
       window.location.href = data.redirect_url;
     } else if (data.fallback_module_id) {
       hideLoadingScreen();

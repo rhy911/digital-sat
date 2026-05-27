@@ -2,6 +2,37 @@
 
 > **RULE:** ALWAYS add new entries to TOP of log. Newest items first.
 
+## [2026-05-27 16:40] - Bug Fix: Resolve test completion stuck loading screen
+- **Topic**: Prevent z-index lockout during test preview and real exam completion.
+- **Summary**: Identified that the `.loading-screen` z-index (`100000`) was blocking the custom confirmation/alert dialogs (`z-index: 10000`), hiding them behind the dark loading overlay. Changed `.custom-alert-modal` z-index to `200000` in both `ui.js` and `test-main.css`. Surgical update to `navigation.js` to dismiss the loading screen *before* presenting the alert modals, then showing a transitional status text during actual redirects. Clean production compilation confirmed.
+
+## [2026-05-27 16:30] - UI: Fix container and title naming mismatches
+- **Topic**: Solve container conflicts and page header layout mismatches.
+- **Summary**: Rename `.container` to `.auth-container` in `layouts/auth.blade.php` and `auth.css` to bypass default Tailwind v4 `.container` layout constraints. Cleaned up `forgot.blade.php`, `reset-password.blade.php` and `email-verify.blade.php` to leverage unified dynamic flex headers and remove stray `.signin-title` styles. Optimized email verification page's logout button styling.
+
+## [2026-05-27 11:30] - Auth: Warm & Personalized 3-Role Authentication Flow Redesign
+
+- **Topic**: Overhaul Sign-in, Sign-up, and Entry screens to be warm, supportive, and customizable by role.
+- **Summary**: Replace intense `#324dc7` with soft academic indigo `#4361EE` and custom role picker cards in `auth.css`. Enable dynamic `role` query headers in `signin.blade.php`. Implement high-fidelity visual cards for Student/Teacher selector in `signup.blade.php`. Save selected roles securely via `RegisterWebController.php`.
+- `resources/css/auth.css`: Shift brand colors to soft academic indigo, style dynamic segmented role radio cards. Reverted buttons and links to exact legacy border and hover outline styles. Added `.signup-step` classes with `!important` to bypass Tailwind specificity.
+- `resources/views/index.blade.php`: Personalized brand copy ("PrepSat™"), add direct "Continue as Student" and "Continue as Teacher" pathways.
+- `resources/views/auth/signin.blade.php`: Dynamically style subtitles based on query param roles. Added conditional check to omit "Don't have an account?" link for the admin role.
+- `resources/views/auth/signup.blade.php`: Visually pleasing icon-based account type selector cards. Refactored into a snappy, compact 2-step multi-step form to avoid scroll fatigue (Step 1: Role, Step 2: Credentials), using `.signup-step` toggle states. Repurposed the original top back link (`#backBtn`) to navigate back to Step 1 when in Step 2, and removed the duplicate bottom back button.
+- `app/Http/Controllers/Auth/RegisterWebController.php`: Validate and store the user chosen role on signup. Defaulted `name` attribute to `username` to satisfy database integrity constraints during creation.
+- `resources/js/auth.js`: Overhauled `checkFormValidity()` to support radio buttons by verifying if at least one item in the radio group is checked, resolving registration button activation lockouts.
+- **Build**: Vite dynamic compiler and PHP syntax checks OK.
+- **Changes**: Softer educational branding, streamlined role-based flows, encouraging progress tracking prompts. Exact legacy button visual specs preserved. Button lockout resolved.
+
+## [2026-05-27 08:11] - UI: Bulletproof Responsive Fixed Questions Pool Table Fix
+
+- **Topic**: Eliminate layout clipping and unbroken word overflow in Questions Pool Table.
+- **Summary**: Force `table-layout: fixed` and `min-width: 1000px` to enforce explicit column sizes. Humanize and `block truncate` snake_case Domain identifiers (`problem_solving_and_data_analysis`) in both Blade and JS renderers to enable clean wrapping/tooltips.
+- `resources/views/components/test-dashboard/questions/pool-table.blade.php`: Added inline `table-layout: fixed; min-width: 1000px;` and humanized/truncated Domain cells.
+- `resources/js/test/dashboard/components/questions.js`: Dynamic JS cell update to call `humanizeUnderscores()` and apply `block truncate` styles.
+- **Build**: Vite compile success.
+- **Changes**: Bulletproof table rendering. No overflow/horizontal page scroll. Seamless inner card scrolling on small viewports.
+
+
 ## [2026-05-27 00:59] - UI: Convert Media Management List to Premium Tailwind Grid
 
 - **Topic**: Convert legacy Bootstrap classes in dynamic media list generator to Tailwind.

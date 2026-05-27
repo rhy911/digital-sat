@@ -146,7 +146,7 @@ function getOrCreateAlertModal() {
     style.setAttribute('data-custom-alerts', 'true');
     style.textContent = `
       .custom-alert-modal {
-        position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; z-index: 10000;
+        position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; z-index: 200000;
         display: flex; align-items: center; justify-content: center; opacity: 1; transition: opacity 0.25s ease;
       }
       .custom-alert-modal.hidden { display: none !important; opacity: 0; }

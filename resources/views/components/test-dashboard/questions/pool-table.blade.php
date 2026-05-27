@@ -18,9 +18,9 @@
     </div>
     <div class="p-6">
         <div
-            class="flex flex-wrap gap-4 items-center justify-between mb-5 bg-slate-950/40 p-4 rounded-xl border border-slate-800/80 shadow-inner">
-            <div class="flex flex-wrap gap-2.5 items-center flex-1">
-                <div class="relative max-w-xs w-full">
+            class="questions-filter-row flex flex-wrap gap-4 items-center justify-between mb-5 bg-slate-950/40 p-4 rounded-xl border border-slate-800/80 shadow-inner">
+            <div class="questions-filter-inputs flex flex-wrap gap-2.5 items-center flex-1">
+                <div class="relative w-full max-w-xs">
                     <span class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-500">
                         <i class="bi bi-search text-sm"></i>
                     </span>
@@ -30,7 +30,7 @@
                 </div>
 
                 <select
-                    class="px-3 py-2 text-xs rounded-xl border border-slate-800/80 bg-slate-900/60 text-white focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 max-w-[130px]"
+                    class="px-3 py-2 text-xs rounded-xl border border-slate-800/80 bg-slate-900/60 text-white focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 w-full max-w-[130px]"
                     id="questionsTableSectionFilter">
                     <option value="">All Sections</option>
                     <option value="reading_writing">R&amp;W</option>
@@ -38,7 +38,7 @@
                 </select>
 
                 <select
-                    class="px-3 py-2 text-xs rounded-xl border border-slate-800/80 bg-slate-900/60 text-white focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 max-w-[130px]"
+                    class="px-3 py-2 text-xs rounded-xl border border-slate-800/80 bg-slate-900/60 text-white focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 w-full max-w-[130px]"
                     id="questionsTableStatusFilter">
                     <option value="">All Status</option>
                     <option value="1">Complete</option>
@@ -46,7 +46,7 @@
                 </select>
 
                 <select
-                    class="text-xs rounded-xl border border-slate-800/80 bg-slate-900/60 text-white focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 w-[280px] tom-select tom-select-filter"
+                    class="text-xs rounded-xl border border-slate-800/80 bg-slate-900/60 text-white focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 w-full max-w-[280px] tom-select tom-select-filter"
                     id="questionsTableModuleFilter">
                     <option value="">All Modules</option>
                     @foreach ($tests as $test)
@@ -62,7 +62,7 @@
                     @endforeach
                 </select>
             </div>
-            <div class="flex gap-2">
+            <div class="questions-filter-actions flex gap-2">
                 <button type="button"
                     class="px-4 py-2 bg-linear-to-r from-indigo-600 to-violet-600 hover:from-indigo-500 hover:to-violet-500 text-white rounded-xl shadow-lg shadow-indigo-600/20 hover:shadow-indigo-600/35 text-xs font-extrabold uppercase tracking-wider flex items-center gap-1.5 cursor-pointer"
                     id="questionsTableFilterBtn">
@@ -77,18 +77,18 @@
         </div>
 
         <div class="overflow-x-auto rounded-xl border border-slate-800/80 shadow-2xl">
-            <table class="w-full text-left text-xs text-slate-400">
+            <table class="w-full text-left text-xs text-slate-400" style="table-layout: fixed; min-width: 1000px;">
                 <thead
                     class="bg-slate-950/50 text-slate-400 border-b border-slate-800/80 font-bold uppercase tracking-wider">
                     <tr>
-                        <th class="py-3 font-extrabold text-[10px] text-slate-400 w-24 text-center">Id</th>
-                        <th class="py-3 font-extrabold text-[10px] text-slate-400 w-24 text-center">Q. Number</th>
-                        <th class="py-3 font-extrabold text-[10px] text-slate-400 w-24 text-center">Section</th>
-                        <th class="px-5 py-3 font-extrabold text-[10px] text-slate-400">Stem Snippet</th>
-                        <th class="py-3 font-extrabold text-[10px] text-slate-400 w-32 text-center">Usage</th>
-                        <th class="px-5 py-3 font-extrabold text-[10px] text-slate-400 w-60">Domain</th>
-                        <th class="py-3 font-extrabold text-[10px] text-slate-400 w-40 text-center">Difficulty</th>
-                        <th class="py-3 font-extrabold text-[10px] text-slate-400 text-center w-48">Actions</th>
+                        <th class="py-3 font-extrabold text-[10px] text-slate-400 w-16 text-center">Id</th>
+                        <th class="py-3 font-extrabold text-[10px] text-slate-400 w-20 text-center">Q. Number</th>
+                        <th class="py-3 font-extrabold text-[10px] text-slate-400 w-20 text-center">Section</th>
+                        <th class="px-5 py-3 font-extrabold text-[10px] text-slate-400 stem-column">Stem Snippet</th>
+                        <th class="py-3 font-extrabold text-[10px] text-slate-400 w-24 text-center">Usage</th>
+                        <th class="px-5 py-3 font-extrabold text-[10px] text-slate-400 w-44">Domain</th>
+                        <th class="py-3 font-extrabold text-[10px] text-slate-400 w-28 text-center">Difficulty</th>
+                        <th class="py-3 font-extrabold text-[10px] text-slate-400 text-center w-36">Actions</th>
                     </tr>
                 </thead>
                 <tbody id="questionsTableBody" class="divide-y divide-slate-800/40 bg-transparent">
@@ -117,7 +117,7 @@
                                         class="inline-flex items-center px-2.5 py-1 rounded-lg text-[10px] font-extrabold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 uppercase tracking-wide">Math</span>
                                 @endif
                             </td>
-                            <td class="px-5 py-3.5 text-slate-400 truncate font-medium min-w-[150px] max-w-[200px] md:max-w-[450px] lg:max-w-[800px]"
+                            <td class="px-5 py-3.5 text-slate-400 font-medium stem-column"
                                 title="{{ strip_tags($question->stem) }}">
                                 {{ strip_tags($question->stem) }}
                             </td>
@@ -133,7 +133,7 @@
                                 @endif
                             </td>
                             <td class="px-5 py-3.5"><span
-                                    class="text-slate-400 font-semibold font-mono text-[11px]">{{ $question->skill_domain }}</span>
+                                    class="text-slate-400 font-semibold text-[11px] block truncate" title="{{ ucwords(str_replace('_', ' ', $question->skill_domain)) }}">{{ ucwords(str_replace('_', ' ', $question->skill_domain)) }}</span>
                             </td>
                             <td class="px-5 py-3.5 text-center">
                                 @if (strtolower($question->difficulty) === 'easy')

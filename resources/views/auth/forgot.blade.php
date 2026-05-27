@@ -21,7 +21,10 @@
     <x-auth.back-link href="/" />
 
     <!-- Title -->
-    <h2 class="signin-title">Forgot Your Password?</h2>
+    <div class="flex flex-col justify-center items-center gap-1">
+        <h1 class="text-3xl font-bold text-center m-0 text-black">Forgot Your Password?</h1>
+        <p class="text-base text-gray-600 text-center">We'll help you get back on track.</p>
+    </div>
 
     <!-- Form -->
     <form id="forgotForm" action="{{ route('forgot') }}" method="POST" novalidate>
@@ -38,5 +41,7 @@
     </form>
 
     <!-- Help -->
-    <a href="/signin" class="help-link">Back to sign in</a>
+    <div class="links text-center">
+        <a href="/signin">Back to sign in</a>
+    </div>
 </x-layouts.auth>
