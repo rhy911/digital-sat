@@ -173,12 +173,151 @@ export function smartRenderMath(element, options = {}) {
     window.renderMathInElement(element || document.body, finalOptions);
 }
 
+export function getOrCreateAlertModal() {
+    let modal = document.getElementById('customAlertModal');
+    if (modal) return modal;
+
+    modal = document.createElement('div');
+    modal.id = 'customAlertModal';
+    modal.className = 'custom-alert-modal hidden';
+    modal.innerHTML = `
+        <div class="custom-alert-backdrop"></div>
+        <div class="custom-alert-box">
+            <div class="custom-alert-icon" id="customAlertIcon"></div>
+            <div class="custom-alert-content">
+                <h5 class="custom-alert-title" id="customAlertTitle">Notification</h5>
+                <p id="customAlertMessage" class="custom-alert-message"></p>
+                <input type="text" id="customAlertInput" class="custom-alert-input hidden" placeholder="Enter value...">
+            </div>
+            <div class="custom-alert-actions">
+                <button id="customAlertCancelBtn" class="custom-alert-btn btn-secondary hidden">Cancel</button>
+                <button id="customAlertConfirmBtn" class="custom-alert-btn btn-primary">OK</button>
+            </div>
+        </div>
+    `;
+
+    if (!document.querySelector('style[data-custom-alerts]')) {
+        const style = document.createElement('style');
+        style.setAttribute('data-custom-alerts', 'true');
+        style.textContent = `
+            .custom-alert-modal {
+                position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; z-index: 10000;
+                display: flex; align-items: center; justify-content: center; opacity: 1; transition: opacity 0.2s ease;
+                will-change: opacity;
+            }
+            .custom-alert-modal.hidden { display: none !important; opacity: 0; }
+            .custom-alert-backdrop {
+                position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+                background: rgba(8, 12, 21, 0.7);
+            }
+            .custom-alert-box {
+                position: relative; background: #111827; border-radius: 16px;
+                box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+                width: 90%; max-width: 440px; padding: 28px; border: 1px solid rgba(255, 255, 255, 0.08);
+                display: flex; flex-direction: column; align-items: center; text-align: center;
+                transform: scale(1); transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1); z-index: 1;
+                will-change: transform;
+                transform-gpu: translate3d(0,0,0);
+            }
+            .custom-alert-modal.hidden .custom-alert-box { transform: scale(0.95); }
+            .custom-alert-icon {
+                display: flex; align-items: center; justify-content: center; width: 56px; height: 56px;
+                border-radius: 50%; background-color: rgba(99, 102, 241, 0.1); color: #818cf8; margin-bottom: 18px;
+            }
+            .custom-alert-icon.warning { background-color: rgba(245, 158, 11, 0.1); color: #fbbf24; }
+            .custom-alert-icon.error { background-color: rgba(239, 68, 68, 0.1); color: #f87171; }
+            .custom-alert-icon.success { background-color: rgba(16, 185, 129, 0.1); color: #34d399; }
+            .custom-alert-content { margin-bottom: 24px; width: 100%; }
+            .custom-alert-title { font-size: 1.2rem; font-weight: 700; color: #f8fafc; margin-bottom: 10px; font-family: system-ui, -apple-system, sans-serif; }
+            .custom-alert-message { font-size: 0.95rem; color: #94a3b8; line-height: 1.6; margin: 0; font-family: system-ui, -apple-system, sans-serif; }
+            .custom-alert-input {
+                width: 100%; margin-top: 16px; padding: 10px 14px; background: #1e293b; color: #ffffff;
+                border: 1px solid rgba(255, 255, 255, 0.12); border-radius: 8px; font-size: 0.95rem; outline: none;
+                transition: all 0.2s ease; font-family: system-ui, -apple-system, sans-serif;
+            }
+            .custom-alert-input:focus {
+                border-color: #6366f1; box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.25); background: #1e293b;
+            }
+            .custom-alert-actions { display: flex; gap: 12px; width: 100%; justify-content: center; }
+            .custom-alert-btn { flex: 1; max-width: 160px; padding: 10px 18px; border-radius: 8px; font-size: 0.95rem; font-weight: 600; cursor: pointer; transition: all 0.15s ease; border: none; outline: none; display: inline-flex; align-items: center; justify-content: center; }
+            .custom-alert-btn.btn-primary { background: linear-gradient(135deg, #4f46e5 0%, #4338ca 100%); color: #ffffff; box-shadow: 0 4px 10px rgba(79, 70, 229, 0.3); }
+            .custom-alert-btn.btn-primary:hover { background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%); transform: translateY(-1px); box-shadow: 0 6px 12px rgba(79, 70, 229, 0.4); }
+            .custom-alert-btn.btn-secondary { background-color: #1e293b; color: #e2e8f0; border: 1px solid rgba(255, 255, 255, 0.08); }
+            .custom-alert-btn.btn-secondary:hover { background-color: #334155; color: #ffffff; transform: translateY(-1px); }
+        `;
+        document.head.appendChild(style);
+    }
+
+    document.body.appendChild(modal);
+    return modal;
+}
+
+export function showCustomConfirm(message, type = 'warning', title = 'Confirm Action') {
+    return new Promise((resolve) => {
+        const modal = getOrCreateAlertModal();
+        const titleEl = modal.querySelector('#customAlertTitle');
+        const msgEl = modal.querySelector('#customAlertMessage');
+        const iconEl = modal.querySelector('#customAlertIcon');
+        const confirmBtn = modal.querySelector('#customAlertConfirmBtn');
+        const cancelBtn = modal.querySelector('#customAlertCancelBtn');
+
+        titleEl.textContent = title;
+        msgEl.textContent = message;
+
+        cancelBtn.classList.remove('hidden');
+        cancelBtn.textContent = 'Cancel';
+        confirmBtn.className = 'custom-alert-btn btn-primary';
+        confirmBtn.textContent = 'Confirm';
+
+        iconEl.className = 'custom-alert-icon ' + type;
+        if (type === 'warning') {
+            iconEl.innerHTML = `
+                <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path>
+                    <line x1="12" y1="9" x2="12" y2="13"></line>
+                    <line x1="12" y1="17" x2="12.01" y2="17"></line>
+                </svg>
+            `;
+        } else {
+            iconEl.innerHTML = `
+                <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="12" cy="12" r="10"></circle>
+                    <line x1="12" y1="16" x2="12" y2="12"></line>
+                    <line x1="12" y1="8" x2="12.01" y2="8"></line>
+                </svg>
+            `;
+        }
+
+        modal.classList.remove('hidden');
+
+        const handleConfirm = () => {
+            cleanup();
+            resolve(true);
+        };
+
+        const handleCancel = () => {
+            cleanup();
+            resolve(false);
+        };
+
+        const cleanup = () => {
+            modal.classList.add('hidden');
+            confirmBtn.removeEventListener('click', handleConfirm);
+            cancelBtn.removeEventListener('click', handleCancel);
+        };
+
+        confirmBtn.addEventListener('click', handleConfirm);
+        cancelBtn.addEventListener('click', handleCancel);
+    });
+}
+
 window.initDropdownToggle = initDropdownToggle;
 window.initRadioToggleSection = initRadioToggleSection;
 window.initAjaxLogout = initAjaxLogout;
 window.initHomeDashboardPage = initHomeDashboardPage;
 window.initPracticeDashboardPage = initPracticeDashboardPage;
 window.smartRenderMath = smartRenderMath;
+window.showCustomConfirm = showCustomConfirm;
 
 export function initScoreDetailsPage() {
     // ── Sticky tabs bar ─────────────────────────────────────────

@@ -176,6 +176,11 @@
                     <i class="bi bi-trash"></i> Clear All
                 </button>
                 <button type="button"
+                    class="px-5 py-3 bg-slate-900/60 border border-slate-800/80 text-slate-200 font-extrabold text-xs uppercase tracking-wider rounded-xl hover:bg-slate-800 hover:text-white shadow-lg flex items-center justify-center gap-2 cursor-pointer"
+                    id="clearUnchangedBtn" title="Clear opened questions with no modifications">
+                    <i class="bi bi-eraser"></i> Clear Unchanged
+                </button>
+                <button type="button"
                     class="px-6 py-3 bg-linear-to-r from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-400 text-white font-extrabold text-xs uppercase tracking-wider rounded-xl shadow-lg shadow-amber-500/20 transform flex items-center justify-center gap-2 cursor-pointer"
                     id="submitBuilderBtn" title="Shortcut: Ctrl+S">
                     <i class="bi bi-cloud-arrow-up"></i> Save All Questions

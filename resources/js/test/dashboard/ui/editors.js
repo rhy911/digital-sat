@@ -93,8 +93,8 @@ export function updateEditQuestionPreview() {
             const isCorrect = correctRadio ? correctRadio.checked : false;
 
             choicesHtml += `
-                <div class="d-flex align-items-center gap-2 mb-2 p-2 rounded border ${isCorrect ? 'border-success bg-success-subtle' : 'border-light'}" style="transition: all 0.2s;">
-                    <div class="rounded-circle d-flex align-items-center justify-content-center text-white bg-${isCorrect ? 'success' : 'secondary'} fw-bold" style="width: 24px; height: 24px; font-size: 12px; flex-shrink: 0;">
+                <div class="flex items-center gap-2 mb-2 p-2 rounded border ${isCorrect ? 'border-success bg-success-subtle' : 'border-light'}" style="transition: all 0.2s;">
+                    <div class="rounded-circle flex items-center justify-center text-white bg-${isCorrect ? 'success' : 'secondary'} fw-bold" style="width: 24px; height: 24px; font-size: 12px; flex-shrink: 0;">
                         ${label}
                     </div>
                     <div class="grow small">${content}</div>

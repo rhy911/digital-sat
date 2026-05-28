@@ -458,11 +458,12 @@ select.ts-hidden-accessible,
 }
 
 .editor-toolbar button {
-    color: #ffffff;
+    /* color: #ffffff; */
 }
 
+.editor-toolbar button.active,
 .editor-toolbar button:hover {
-    background-color: rgba(255, 255, 255, 0.05);
+    background-color: rgba(255, 255, 255, 0.05) !important;
 }
 
 .CodeMirror {

@@ -25,7 +25,9 @@ import {
 } from './components/questions.js';
 import { 
     addBuilderBlock, syncBuilderBlockDomain, updateSidebarNavigator, 
-    debouncedUpdateLivePreview, getBuilderEditors, resetBuilderBlockCount 
+    debouncedUpdateLivePreview, getBuilderEditors, resetBuilderBlockCount,
+    clearBuilderWorkspace, fetchModuleQuestions, submitBuilderQuestions, handleClearBuilder,
+    restoreBuilderDraft, clearUnchangedQuestions
 } from './components/builder.js';
 import { initQuickAuthorWizard } from './components/wizard.js';
 import * as BulkImport from './components/bulk-import.js';
@@ -438,8 +440,23 @@ document.addEventListener('DOMContentLoaded', async function () {
     initRemoteQuestionPicker('explanationQuestionId', '');
 
     document.getElementById('addBuilderBlockBtn')?.addEventListener('click', addBuilderBlock);
-    document.getElementById('builderModuleId')?.addEventListener('change', (e) => {
-        document.querySelectorAll('.builder-block').forEach(syncBuilderBlockDomain);
+    
+    // Clear All button
+    document.getElementById('clearBuilderBtn')?.addEventListener('click', handleClearBuilder);
+    
+    // Clear Unchanged button
+    document.getElementById('clearUnchangedBtn')?.addEventListener('click', clearUnchangedQuestions);
+    
+    // Save All button
+    document.getElementById('submitBuilderBtn')?.addEventListener('click', submitBuilderQuestions);
+    
+    // Module ID select change handler
+    document.getElementById('builderModuleId')?.addEventListener('change', async (e) => {
+        const moduleId = e.target.value;
+        clearBuilderWorkspace();
+        if (moduleId) {
+            await fetchModuleQuestions(moduleId);
+        }
     });
 
     initQuickAuthorWizard();
@@ -501,5 +518,9 @@ document.addEventListener('DOMContentLoaded', async function () {
     }
 
     // Start data fetch
-    refreshTestDashboardData(captureTomSelectPreservation(null)).catch(err => console.error('Initial dashboard load failed:', err));
+    refreshTestDashboardData(captureTomSelectPreservation(null))
+        .then(() => {
+            restoreBuilderDraft();
+        })
+        .catch(err => console.error('Initial dashboard load failed:', err));
 });

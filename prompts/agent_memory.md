@@ -2,6 +2,26 @@
 
 > **RULE:** ALWAYS add new entries to TOP of log. Newest items first.
 
+## [2026-05-28 23:46] - Feat: Easy Question Builder Live Preview Synchronized Scroll
+- **Topic**: Align Right Live Preview drawer scrolling in sync with active builder questions.
+- **Summary**: Implemented `syncLivePreviewScroll(block)` that smoothly scrolls (`scrollIntoView` nearest) the corresponding live preview card inside `#builderLivePreviewDrawer` when focused. Integrated synchronizations inside: Workspace Index list-item clicking (existing/draft questions), initial AJAX loaders (`loadExistingQuestionIntoWorkspace`), and new question draft initial additions (`addBuilderBlock`). Rebuilt production assets successfully.
+
+## [2026-05-28 23:31] - Feat: Easy Question Builder Auto Save & Recovery
+- **Topic**: Debounced draft autosave to localStorage and automatic workspace recovery.
+- **Summary**: Implemented a comprehensive auto-save mechanism for the Easy Question Builder workspace. Form inputs, select values, start positions, existing question IDs, and CodeMirror editor contents are automatically compiled and stored in `localStorage` under `sat_builder_draft` using debounced triggers (1s). On page load, `restoreBuilderDraft()` automatically reconstructs all active builder blocks sequentially from local drafts. Saved drafts are cleanly cleared from `localStorage` upon successful database saves or manual workspace resets. Vite assets successfully compiled.
+
+## [2026-05-28 23:59] - Bug Fix: Easy Question Builder Helper Function Imports
+- **Topic**: Fix ReferenceError for missing helper functions in builder.js.
+- **Summary**: Imported missing helper functions `stripTags` and `humanizeUnderscores` from `../utils/helpers.js` into `builder.js`. This resolves the 'stripTags is not defined' ReferenceError thrown when drawing the Workspace Index cards after a module selection. Vite build successfully re-compiled.
+
+## [2026-05-28 23:55] - Bug Fix: Easy Question Builder Module List Fetch URL
+- **Topic**: Fix fetch URL error when selecting target module.
+- **Summary**: Corrected the fetch target inside `fetchModuleQuestions` from the invalid `/test-dashboard/questions` URL to `/test-dashboard/questions/list` by importing and leveraging `QUESTIONS_LIST_URL` from core config. This successfully resolves the 'Failed to fetch module questions' HTTP 404 response on Target Module dropdown selection. Vite build successfully re-compiled.
+
+## [2026-05-28 23:46] - Feat: Easy Question Builder Existing Questions Support
+- **Topic**: Load, edit, and update stored module questions in Easy Builder workspace.
+- **Summary**: Integrated asynchronous details fetching and workspace block loading/pre-population for existing module questions. Selected module displays existing stored questions in left sidebar Workspace Index; clicking a question lazy-loads full details via API and renders a populated, editable builder block with unique `data-question-id` references. Formatted MCQ/SPR toggle views and CodeMirror (EasyMDE) configurations load cleanly with existing data. Re-engineered saving logic: clicking "Save All Questions" executes PUT updates for active stored questions and bulk POST stores for newly drafted ones before executing fresh dashboard/TomSelect regenerations. Added confirmation-guarded cleanups. Vite assets successfully compiled.
+
 ## [2026-05-28 11:25] - Feat: Email Verification Success Screen & Auto-redirect
 - **Topic**: Implement successful email verification screen with dynamic countdown and auto-routing.
 - **Summary**: Created a high-fidelity visual success screen (`email-verified.blade.php`) in English featuring a green checkmark animation, a dynamic 3-second redirect countdown, and a manual "Continue Now" fallback button. Refactored the styling to a hybrid layout using Tailwind CSS for simple classes and isolated Raw CSS strictly for animations, borders, and shadows. Updated `VerifyEmailWebController.php` to return the new success view upon verification success (or if already verified) instead of immediately redirecting to home.
