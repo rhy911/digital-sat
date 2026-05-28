@@ -13,6 +13,12 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
+    if (Illuminate\Support\Facades\Auth::check()) {
+        if (request()->hasCookie(Illuminate\Support\Facades\Auth::getRecallerName())) {
+            return view('auth.remembered', ['user' => Illuminate\Support\Facades\Auth::user()]);
+        }
+        return redirect()->route('home');
+    }
     return view('index');
 });
 

@@ -176,8 +176,7 @@ async function submitModule() {
 
   if (window.isPreview) {
     if (window.nextModuleId) {
-      showLoadingScreen("Saving responses and loading next section...");
-      window.location.href = `/take-test/${window.nextModuleId}`;
+      navigateModule(`/take-test/${window.nextModuleId}`);
     } else {
       hideLoadingScreen();
       await showCustomAlert("Test Preview completed! Redirecting home...", "success", "Test Completed");
@@ -219,8 +218,7 @@ async function submitModule() {
       showCustomAlert(message, "warning", "Module Unavailable", false).then(() => {
         // If user clicks OK, redirect immediately
         if (timer) clearInterval(timer);
-        showLoadingScreen("Re-routing to alternative module...");
-        window.location.href = `/take-test/${data.fallback_module_id}`;
+        navigateModule(`/take-test/${data.fallback_module_id}`);
       });
       
       timer = setInterval(() => {
@@ -230,13 +228,11 @@ async function submitModule() {
         
         if (secondsLeft <= 0) {
           clearInterval(timer);
-          showLoadingScreen("Re-routing to alternative module...");
-          window.location.href = `/take-test/${data.fallback_module_id}`;
+          navigateModule(`/take-test/${data.fallback_module_id}`);
         }
       }, 1000);
     } else if (data.next_module_id) {
-      showLoadingScreen("Adaptive routing complete! Loading next module...");
-      window.location.href = `/take-test/${data.next_module_id}`;
+      navigateModule(`/take-test/${data.next_module_id}`);
     } else {
       hideLoadingScreen();
       console.error("Submission failed", data);
@@ -259,3 +255,153 @@ export function prevQuestion() {
     showQuestion(state.currentQuestionIndex);
   }
 }
+
+export async function navigateModule(url) {
+  const isFullscreen = document.fullscreenElement || 
+                       document.webkitFullscreenElement || 
+                       document.mozFullScreenElement || 
+                       document.msFullscreenElement;
+
+  if (!isFullscreen) {
+    window.location.href = url;
+    return;
+  }
+
+  showLoadingScreen("Saving responses and loading next section...");
+  try {
+    const response = await fetch(url);
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+    const htmlText = await response.text();
+    const newDoc = new DOMParser().parseFromString(htmlText, 'text/html');
+
+    // 1. Update Title
+    document.title = newDoc.title;
+
+    // 2. Update Main Content
+    const currentMain = document.querySelector('main');
+    const newMain = newDoc.querySelector('main');
+    if (currentMain && newMain) {
+      currentMain.innerHTML = newMain.innerHTML;
+    }
+
+    // 3. Update Header title & directions surgically
+    const currentH1 = document.querySelector('header h1');
+    const newH1 = newDoc.querySelector('header h1');
+    if (currentH1 && newH1) {
+      currentH1.innerHTML = newH1.innerHTML;
+    }
+
+    const currentDirections = document.querySelector('header .overflow-y-auto');
+    const newDirections = newDoc.querySelector('header .overflow-y-auto');
+    if (currentDirections && newDirections) {
+      currentDirections.innerHTML = newDirections.innerHTML;
+    }
+
+    // 4. Update Header buttons surgically (highlight / calculator)
+    const currentButtonsContainer = document.querySelector('header .flex.justify-end');
+    const newButtonsContainer = newDoc.querySelector('header .flex.justify-end');
+    if (currentButtonsContainer && newButtonsContainer) {
+      const currentCalc = currentButtonsContainer.querySelector('#calculatorBtn');
+      const currentHighlight = currentButtonsContainer.querySelector('#highlightNotesBtn');
+      const newCalc = newButtonsContainer.querySelector('#calculatorBtn');
+      const newHighlight = newButtonsContainer.querySelector('#highlightNotesBtn');
+      
+      if (currentCalc) currentCalc.remove();
+      if (currentHighlight) currentHighlight.remove();
+      
+      if (newCalc) {
+        currentButtonsContainer.insertBefore(newCalc.cloneNode(true), currentButtonsContainer.firstChild);
+      } else if (newHighlight) {
+        currentButtonsContainer.insertBefore(newHighlight.cloneNode(true), currentButtonsContainer.firstChild);
+      }
+    }
+
+    // 5. Update footer popover counts and clear buttons
+    const currentPopoverBtn = document.querySelector('footer .popover-btn');
+    const newPopoverBtn = newDoc.querySelector('footer .popover-btn');
+    if (currentPopoverBtn && newPopoverBtn) {
+      currentPopoverBtn.innerHTML = newPopoverBtn.innerHTML;
+    }
+
+    const popoverTemplate = document.getElementById("popover-content");
+    if (popoverTemplate) {
+      const questionButtonsContainer = popoverTemplate.querySelector(".flex.flex-wrap.gap-3");
+      if (questionButtonsContainer) {
+        questionButtonsContainer.innerHTML = "";
+      }
+    }
+
+    // 6. Extract and evaluate window variables from script inside new main/footer
+    const scriptTag = Array.from(newDoc.querySelectorAll('script')).find(s => s.textContent.includes('window.nextModuleId'));
+    if (scriptTag) {
+      try {
+        (0, eval)(scriptTag.textContent);
+      } catch (err) {
+        console.error("Error evaluating next module scripts:", err);
+      }
+    }
+
+    // 7. Update browser history/URL without reloading
+    history.pushState(null, '', url);
+
+    // 8. Re-initialize elements and state for the new module
+    const { startTimer } = await import('./timer.js');
+    const {
+      initializeHighlightFeature,
+      initializeQuestionTracking,
+      initializeResizablePanels,
+      preventNormalCursorBehavior,
+      initializeSprInputValidation,
+      initializeDesmosCalculator,
+      initializeSimpleFullscreen
+    } = await import('./features.js');
+    const { generateQuestionButtons } = await import('./ui.js');
+
+    // Reset state variables
+    state.currentQuestionIndex = 0;
+    state.totalQuestions = 0;
+    state.highlightMode = false;
+    state.panelStates = [];
+
+    // Re-query DOM Elements
+    state.backButton = document.getElementById("backButton");
+    state.nextButton = document.getElementById("nextButton");
+    state.questionElements = Array.from(document.querySelectorAll('.resizable-panel.right-panel .question'));
+    state.passageElements = Array.from(document.querySelectorAll('.resizable-panel.left-panel .passage-container'));
+    state.questionNumberSpan = document.querySelector(".popover-btn span:first-child");
+    state.totalQuestionsSpan = document.querySelector(".popover-btn #total");
+
+    state.totalQuestions = state.questionElements.length;
+    state.panelStates = new Array(state.totalQuestions).fill(null);
+
+    if (state.totalQuestionsSpan) state.totalQuestionsSpan.textContent = state.totalQuestions;
+    if (state.questionNumberSpan) state.questionNumberSpan.textContent = state.currentQuestionIndex + 1;
+
+    // Run initializers
+    generateQuestionButtons();
+    initializeQuestionTracking();
+    initializeHighlightFeature();
+    initializeResizablePanels();
+    preventNormalCursorBehavior();
+    initializeSprInputValidation();
+    initializeDesmosCalculator();
+    initializeSimpleFullscreen();
+
+    // Start new timer
+    const duration = window.durationMinutes || 32;
+    startTimer(duration);
+
+    // Show initial question
+    showQuestion(state.currentQuestionIndex);
+
+    // Done! Hide loading
+    hideLoadingScreen();
+
+  } catch (err) {
+    console.error("Dynamic transition failed, falling back to standard redirect:", err);
+    window.location.href = url;
+  }
+}
+

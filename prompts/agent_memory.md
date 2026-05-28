@@ -615,3 +615,37 @@
 - **Topic**: Exam security mock.
 - **Summary**: Fullscreen on first user interaction.
 - **Changes**: Auto fullscreen engine.
+
+## [2026-05-28 18:45] - Seamless Fullscreen Across Modules
+
+- **Topic**: Fullscreen persistence.
+- **Summary**: Implement dynamic page load (SPA-style) during module transitions when fullscreen is active to prevent browser exiting fullscreen.
+- **Changes**: Refactored `resources/js/test/navigation.js` and `resources/js/test/features.js` to support dynamic fetches, DOM updates, and re-initializations while protecting global event listeners from duplication.
+
+## [2026-05-28 19:15] - Dashboard Refresh & Global Logout Confirmation
+
+- **Topic**: UI fixes & global security logs.
+- **Summary**: Fix broken dashboard refresh button click ReferenceError, resolve raw JSON responses on logout via AJAX routing, and enforce global confirmation modals before sign-out.
+- **Changes**: Modified `app.js`, dashboard `index.js`, `test-dashboard.blade.php`, and `home.blade.php`.
+
+## [2026-05-28 19:25] - Remembered User Redirect Dashboard Screen
+
+- **Topic**: Auth UX & layout synchronizations.
+- **Summary**: Implement a dedicated "Welcome Back" screen for authenticated users attempting to access guest-only routes like `/signin` or `/signup`. Prevent silent redirects to home.
+- **Changes**: Modified `app.php`, `web.php`, and created new `remembered.blade.php` view.
+
+## [2026-05-28 19:30] - Smart Remember-Me Redirection Flow
+
+- **Topic**: Advanced Auth Routing.
+- **Summary**: Distinguish standard session cookies from remember cookies. Standard sessions bypass auth screens straight to `/home`. "Remember me" checkbox displays the remembered screen right at `/` (index).
+- **Changes**: Optimized `app.php` and `web.php`. Removed standalone `/remembered-user` route in favor of smart `/` root index rendering.
+
+## [2026-05-28 23:30] - Smart Session Redirect & Static Remember Screen
+
+- **Topic**: Auth UX Refinements.
+- **Summary**: Session cookies auto-redirect on `/` to `/home`. Checkbox remember users display standard static remembered screen on `/` without auto-redirect to let them choose flow.
+- **Changes**: Modified `web.php` and `remembered.blade.php`.
+
+
+
+

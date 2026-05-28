@@ -13,7 +13,9 @@
             <x-home.tests-toggle-header />
             <x-home.empty-state-box title="You Have No Upcoming Tests" id="active-tests">
                 <p class="text-lg">Tests appear here a few weeks before test day. <strong>If you got a paper ticket from
-                        your school, <a class="text-[#324dc7] underline" href="/logout">sign out</a> and sign in with
+                        your school, <a class="text-[#324dc7] underline cursor-pointer"
+                            onclick="event.preventDefault(); const btn = document.querySelector('header form button[type=\'submit\']') || document.querySelector('form button[type=\'submit\']'); if(btn) btn.click(); else document.querySelector('form')?.submit();">sign
+                            out</a> and sign in with
                         it.</strong></p>
             </x-home.empty-state-box>
             <x-home.empty-state-box title="You Haven't Taken Any Digital Tests Yet" class="hidden" id="past-tests">

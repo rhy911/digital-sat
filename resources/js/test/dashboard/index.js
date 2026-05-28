@@ -150,6 +150,7 @@ document.addEventListener('DOMContentLoaded', async function () {
     };
     window.removeMediaFromEditModal = removeMediaFromEditModal;
     window.addBuilderBlock = addBuilderBlock;
+    window.showCustomConfirm = showCustomConfirm;
 
     function initTestDashboardDelegatedActions() {
         const root = document.getElementById('dashboardTabContent');

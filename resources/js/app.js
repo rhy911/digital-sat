@@ -84,6 +84,19 @@ export function initAjaxLogout({
     formEl.addEventListener('submit', async (e) => {
         e.preventDefault();
 
+        const message = 'Are you sure you want to log out?';
+        let confirmed = false;
+        if (typeof window.showCustomConfirm === 'function') {
+            confirmed = await window.showCustomConfirm(message, 'warning', 'Confirm Logout');
+        } else if (typeof showCustomConfirm === 'function') {
+            // eslint-disable-next-line no-undef
+            confirmed = await showCustomConfirm(message, 'warning', 'Confirm Logout');
+        } else {
+            confirmed = window.confirm(message);
+        }
+
+        if (!confirmed) return;
+
         try {
             const response = await fetch(formEl.action, {
                 method: 'POST',

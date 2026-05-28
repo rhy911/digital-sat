@@ -44,9 +44,17 @@ export function highlightSelection() {
   }
 }
 
+let highlightInitialized = false;
+
 export function initializeHighlightFeature() {
   const highlightBtn = document.getElementById('highlightNotesBtn');
-  if (highlightBtn) highlightBtn.addEventListener('click', toggleHighlightMode);
+  if (highlightBtn) {
+    highlightBtn.removeEventListener('click', toggleHighlightMode);
+    highlightBtn.addEventListener('click', toggleHighlightMode);
+  }
+
+  if (highlightInitialized) return;
+  highlightInitialized = true;
 
   document.addEventListener('mouseup', () => {
     if (state.highlightMode) setTimeout(highlightSelection, 10);
@@ -276,7 +284,12 @@ export function initializeResizablePanels() {
 // SECURITY
 // ============================================================================
 
+let cursorBehaviorPrevented = false;
+
 export function preventNormalCursorBehavior() {
+  if (cursorBehaviorPrevented) return;
+  cursorBehaviorPrevented = true;
+
   document.addEventListener('contextmenu', (e) => e.preventDefault());
   document.addEventListener('keydown', (e) => {
     if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return true;
@@ -296,6 +309,8 @@ export function preventNormalCursorBehavior() {
 let graphingInstance = null;
 let scientificInstance = null;
 
+let desmosModalSetupDone = false;
+
 export function initializeDesmosCalculator() {
   const calcBtn = document.getElementById('calculatorBtn');
   const modal = document.getElementById('calculatorModal');
@@ -307,7 +322,7 @@ export function initializeDesmosCalculator() {
   const scientificDiv = document.getElementById('scientificCalc');
 
   // Toggle Modal
-  calcBtn.addEventListener('click', () => {
+  calcBtn.onclick = () => {
     modal.classList.toggle('hidden');
     
     // Update button active state
@@ -320,16 +335,20 @@ export function initializeDesmosCalculator() {
       const activeTab = modal.querySelector('.calc-tab.active').getAttribute('data-tab');
       initCalculator(activeTab);
     }
-  });
+  };
 
   // Close Modal
   if (closeBtn) {
-    closeBtn.addEventListener('click', () => {
+    closeBtn.onclick = () => {
       modal.classList.add('hidden');
-      calcBtn.classList.remove('highlight-mode-active');
+      const currentCalcBtn = document.getElementById('calculatorBtn');
+      if (currentCalcBtn) currentCalcBtn.classList.remove('highlight-mode-active');
       document.body.classList.remove('calculator-active');
-    });
+    };
   }
+
+  if (desmosModalSetupDone) return;
+  desmosModalSetupDone = true;
 
   // Tab Switching
   tabs.forEach(tab => {
@@ -351,26 +370,6 @@ export function initializeDesmosCalculator() {
       }
     });
   });
-
-  function initCalculator(type) {
-    if (type === 'graphing' && !graphingInstance && typeof Desmos !== 'undefined') {
-      graphingInstance = Desmos.GraphingCalculator(graphingDiv, {
-        keypad: true,
-        keypadActivated: true,
-        expressions: true,
-        settingsMenu: true,
-        smartRenderer: true
-      });
-      // Explicitly focus to open keypad
-      graphingInstance.focusFirstExpression();
-    } else if (type === 'scientific' && !scientificInstance && typeof Desmos !== 'undefined') {
-      scientificInstance = Desmos.ScientificCalculator(scientificDiv, {
-        keypad: true
-      });
-    } else if (type === 'graphing' && graphingInstance) {
-      graphingInstance.resize();
-    }
-  }
 
   // Dragging logic
   const header = modal.querySelector('.calculator-modal-header');
@@ -426,12 +425,40 @@ export function initializeDesmosCalculator() {
   }
 }
 
+function initCalculator(type) {
+  const graphingDiv = document.getElementById('graphingCalc');
+  const scientificDiv = document.getElementById('scientificCalc');
+  if (type === 'graphing' && !graphingInstance && typeof Desmos !== 'undefined') {
+    graphingInstance = Desmos.GraphingCalculator(graphingDiv, {
+      keypad: true,
+      keypadActivated: true,
+      expressions: true,
+      settingsMenu: true,
+      smartRenderer: true
+    });
+    // Explicitly focus to open keypad
+    graphingInstance.focusFirstExpression();
+  } else if (type === 'scientific' && !scientificInstance && typeof Desmos !== 'undefined') {
+    scientificInstance = Desmos.ScientificCalculator(scientificDiv, {
+      keypad: true
+    });
+  } else if (type === 'graphing' && graphingInstance) {
+    graphingInstance.resize();
+  }
+}
+
 // ============================================================================
 // SIMPLE FULLSCREEN
 // ============================================================================
 
+let fullscreenListener = null;
+
 export function initializeSimpleFullscreen() {
-  const enterFullscreen = () => {
+  if (fullscreenListener) {
+    document.removeEventListener('click', fullscreenListener);
+  }
+
+  fullscreenListener = () => {
     // Check if not already in fullscreen
     const isFullscreen = document.fullscreenElement || 
                          document.webkitFullscreenElement || 
@@ -451,10 +478,11 @@ export function initializeSimpleFullscreen() {
     }
     
     // Remove listener after first interaction attempt
-    document.removeEventListener('click', enterFullscreen);
+    document.removeEventListener('click', fullscreenListener);
+    fullscreenListener = null;
   };
 
-  document.addEventListener('click', enterFullscreen);
+  document.addEventListener('click', fullscreenListener);
 }
 
 

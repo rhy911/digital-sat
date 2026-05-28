@@ -73,7 +73,7 @@
             <div class="p-6 border-t border-slate-900 bg-slate-950/40">
                 <button
                     class="btn-refresh-data w-full px-4 py-2.5 text-xs rounded-xl flex items-center justify-center gap-2.5"
-                    onclick="refreshTestDashboardData(captureTomSelectPreservation(null))">
+                    onclick="refreshTestDashboardData()">
                     <i class="bi bi-arrow-clockwise"></i> Refresh Data
                 </button>
             </div>
@@ -104,7 +104,7 @@
                                 title="Go to home">
                                 <i class="bi bi-house text-xl"></i>
                             </a>
-                            <form action="{{ route('logout') }}" method="POST">
+                            <form id="logoutForm" action="{{ route('logout') }}" method="POST">
                                 @csrf
                                 <button type="submit"
                                     class="text-slate-400 hover:text-rose-400 flex items-center justify-center w-10 h-10 rounded-xl hover:bg-slate-900 cursor-pointer"
@@ -154,5 +154,13 @@
             };
         </script>
         @vite(['resources/js/test-dashboard.js'])
+        <script>
+            document.addEventListener('DOMContentLoaded', () => {
+                const logoutForm = document.getElementById('logoutForm');
+                if (logoutForm && typeof window.initAjaxLogout === 'function') {
+                    window.initAjaxLogout({ formEl: logoutForm, redirectTo: '/' });
+                }
+            });
+        </script>
     @endpush
 </x-layouts.admin>

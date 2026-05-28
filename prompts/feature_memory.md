@@ -5,7 +5,8 @@ Summary of implemented functions/logic.
 ## 1. Authentication & User Management
 
 - **Identity:** Laravel Sanctum + Fortify.
-- **Flow:** Sign-up, Sign-in (Custom UI), Email Verification (req for dashboard), Password Reset.
+- **Flow:** Sign-up, Sign-in (Custom UI), Email Verification (req for dashboard), Password Reset, and Remembered User Screen.
+  - **Smart Redirects**: Standard session-cookie authenticated users auto-redirect on `/` directly to `/home`. Checkbox "Remember me" users display the static remembered screen right at the index `/`, leaving them to manually choose to continue or sign out.
 - **Security:** Soft deletes, rate limiting, secure session.
 
 ## 2. Student Portal
@@ -25,7 +26,7 @@ Summary of implemented functions/logic.
   - **Strike-through**: Visual MCQ choice exclusion.
   - **Highlight**: Persistent text highlighting.
   - **Review Page**: Grid view, "Mark for Review" status.
-  - **Fullscreen**: Browser fullscreen on first interaction.
+  - **Fullscreen**: Browser fullscreen on first interaction. Preserved seamlessly across module transitions using dynamic SPA-style page swapping when active.
   - **Loading Screen**: Glassmorphic dark overlay, mask unstyled content, adaptive grading delay.
   - **Typography**: 'Noto Serif' for test content.
   - **Custom Popups**: Promise-based `showCustomAlert()`/`showCustomConfirm()` glassmorphic modals. Universal UI compat.
