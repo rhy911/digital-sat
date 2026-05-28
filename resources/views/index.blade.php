@@ -1,6 +1,6 @@
 <x-layouts.auth>
     <div class="flex flex-col justify-center items-center gap-1">
-        <h1 class="text-3xl font-bold text-center m-0 text-black">Digital SAT Practice</h1>
+        <h1 class="text-3xl md:text-2xl font-bold text-center m-0 text-black">Digital SAT Practice</h1>
         <p class="text-base text-gray-600 text-center">Build confidence one test at a time.</p>
     </div>
 

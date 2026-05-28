@@ -50,7 +50,12 @@
                 toggle-id="passwordToggle" target-id="password" />
         </div>
 
-        <div class="links mb-6">
+        <div class="links mb-6 flex justify-between items-center w-full">
+            <label class="flex items-center gap-2 cursor-pointer text-sm font-semibold text-slate-500 select-none">
+                <input type="checkbox" name="remember" id="remember"
+                    class="w-4 h-4 rounded border-slate-300 accent-[#4361EE] cursor-pointer">
+                <span>Remember me</span>
+            </label>
             <a href="{{ route('forgot') }}">Forgot password?</a>
         </div>
 

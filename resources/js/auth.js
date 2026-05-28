@@ -47,7 +47,7 @@ export class AuthForm {
         // General "all required fields filled" check
         const inputs = Array.from(this.form.querySelectorAll('input[required], input:not([type="hidden"])'));
         const allFilled = inputs.every(input => {
-            if (input.type === 'checkbox') return input.checked;
+            if (input.type === 'checkbox') return input.required ? input.checked : true;
             if (input.type === 'radio') {
                 const name = input.name;
                 return this.form.querySelector(`input[type="radio"][name="${name}"]:checked`) !== null;

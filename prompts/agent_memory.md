@@ -2,6 +2,14 @@
 
 > **RULE:** ALWAYS add new entries to TOP of log. Newest items first.
 
+## [2026-05-28 11:25] - Feat: Email Verification Success Screen & Auto-redirect
+- **Topic**: Implement successful email verification screen with dynamic countdown and auto-routing.
+- **Summary**: Created a high-fidelity visual success screen (`email-verified.blade.php`) in English featuring a green checkmark animation, a dynamic 3-second redirect countdown, and a manual "Continue Now" fallback button. Refactored the styling to a hybrid layout using Tailwind CSS for simple classes and isolated Raw CSS strictly for animations, borders, and shadows. Updated `VerifyEmailWebController.php` to return the new success view upon verification success (or if already verified) instead of immediately redirecting to home.
+
+## [2026-05-28 10:35] - Feat: Add Remember me checkbox to Sign-In page
+- **Topic**: Align remember-me option in user credentials panel.
+- **Summary**: Added flex-aligned "Remember me" checkbox to the right of "Forgot password?" in `signin.blade.php`. Updated `checkFormValidity()` inside `auth.js` to only require checkboxes to be checked if they carry the `required` attribute. This guarantees the optional "Remember me" checkbox does not lock out form submissions. Rebuilt production assets successfully.
+
 ## [2026-05-27 16:40] - Bug Fix: Resolve test completion stuck loading screen
 - **Topic**: Prevent z-index lockout during test preview and real exam completion.
 - **Summary**: Identified that the `.loading-screen` z-index (`100000`) was blocking the custom confirmation/alert dialogs (`z-index: 10000`), hiding them behind the dark loading overlay. Changed `.custom-alert-modal` z-index to `200000` in both `ui.js` and `test-main.css`. Surgical update to `navigation.js` to dismiss the loading screen *before* presenting the alert modals, then showing a transitional status text during actual redirects. Clean production compilation confirmed.

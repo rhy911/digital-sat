@@ -1,18 +1,9 @@
 header {
     background-color: #4361EE; /* Softer trustworthy indigo/blue */
-    padding: 20px 40px;
+    padding: 12px 30px;
     display: flex;
     justify-content: space-between;
     align-items: center;
-}
-
-.bluebook-logo {
-    color: white;
-    font-size: 28px;
-    font-weight: 700;
-    display: flex;
-    align-items: center;
-    gap: 10px;
 }
 
 .test-device-btn {
