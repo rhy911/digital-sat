@@ -142,7 +142,7 @@ export class AuthForm {
 
     showError(message) {
         if (this.errorMsg) {
-            this.errorMsg.textContent = message;
+            this.errorMsg.innerHTML = message;
             this.errorMsg.style.display = 'block';
         } else {
             alert(message);

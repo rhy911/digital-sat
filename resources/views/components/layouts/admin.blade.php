@@ -11,7 +11,7 @@
     @stack('styles')
 </head>
 
-<body>
+<body class="@stack('body_class')">
 
     <main>
         {{ $slot }}

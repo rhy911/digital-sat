@@ -1,4 +1,5 @@
-import { escapeHtml, capitalizeFirstLetter, showTableLoader, hideTableLoader } from '../utils/helpers.js';
+import { escapeHtml, capitalizeFirstLetter, showTableLoader, hideTableLoader, showAlert } from '../utils/helpers.js';
+import { BASE_URL } from '../core/config.js';
 
 export function moduleDifficultyBadgeClass(level) {
     if (level === 'hard') {
@@ -32,8 +33,26 @@ function renderModuleRowHtml(mod) {
         }).join('') + '</div>';
     }
 
-    return '<tr class="hover:bg-slate-800/20 border-b border-slate-800/30 transition-colors">'
-        + '<td class="px-6 py-4 font-semibold text-slate-400">' + escapeHtml(mod.id) + '</td>'
+    const isOwner = mod.created_by === window.__currentUserId || window.__currentUserRole === 'admin';
+    const creatorName = mod.created_by_name || (mod.creator ? (mod.creator.username || mod.creator.email) : 'Admin');
+
+    const createdByHtml = '<span class="text-xs font-semibold text-slate-350 truncate max-w-[110px] block" title="' + escapeHtml(creatorName) + '">' + escapeHtml(creatorName) + '</span>';
+
+    const publicHtml = isOwner
+        ? '<div class="flex items-center"><input type="checkbox" data-id="' + escapeHtml(mod.id) + '" class="w-4 h-4 text-indigo-600 border-slate-800 bg-slate-400/60 rounded-xs cursor-pointer module-public-toggle" ' + (mod.is_public ? 'checked' : '') + '></div>'
+        : '<span class="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-extrabold bg-indigo-500/10 text-indigo-400 border border-indigo-500/20 uppercase tracking-wider"><i class="bi bi-globe mr-1"></i> Shared</span>';
+
+    const actionsHtml = isOwner
+        ? '<div class="flex justify-end gap-1">'
+          + '<button class="w-8 h-8 flex items-center justify-center text-slate-400 hover:text-indigo-400 hover:bg-indigo-500/10 rounded-xl clone-module-btn transition-all cursor-pointer" data-id="' + escapeHtml(mod.id) + '" title="Clone Module"><i class="bi bi-copy"></i></button>'
+          + '<button class="w-8 h-8 flex items-center justify-center text-slate-400 hover:text-rose-400 hover:bg-rose-500/10 rounded-xl delete-module-btn transition-all cursor-pointer" data-id="' + escapeHtml(mod.id) + '" title="Delete"><i class="bi bi-trash"></i></button>'
+          + '</div>'
+        : '<div class="text-slate-500 text-[11px] font-semibold text-right pr-2">Read-Only</div>';
+
+    const rowClass = isOwner ? 'hover:bg-slate-800/20 border-b border-slate-800/30 transition-colors' : 'hover:bg-slate-800/20 border-b border-slate-800/30 transition-colors row-shared opacity-80 border-dashed';
+
+    return '<tr class="' + rowClass + '">'
+        + '<td class="px-6 py-4 font-semibold text-slate-500">' + escapeHtml(mod.id) + '</td>'
         + '<td class="px-6 py-4">'
         + '<code class="font-mono text-xs bg-slate-800/60 px-2 py-1 rounded-lg text-indigo-400 font-bold border border-slate-700/40">' + escapeHtml(mod.key || 'N/A') + '</code>'
         + '</td>'
@@ -46,18 +65,11 @@ function renderModuleRowHtml(mod) {
         + escapeHtml(capitalizeFirstLetter(mod.difficulty_level))
         + '</span>'
         + '</td>'
+        + '<td class="px-6 py-4">' + createdByHtml + '</td>'
+        + '<td class="px-6 py-4">' + publicHtml + '</td>'
         + '<td class="px-6 py-4 font-bold text-slate-300">' + escapeHtml(mod.duration_minutes) + '<span class="text-[10px] ml-0.5 opacity-40 text-slate-400 uppercase tracking-tighter">min</span></td>'
         + '<td class="px-6 py-4 font-extrabold text-white">' + escapeHtml(mod.total_questions) + '</td>'
-        + '<td class="px-6 py-4 text-right">'
-        + '<div class="flex justify-end gap-1">'
-        + '<button class="w-8 h-8 flex items-center justify-center text-slate-400 hover:text-indigo-400 hover:bg-indigo-500/10 rounded-xl clone-module-btn transition-all" data-id="' + escapeHtml(mod.id) + '" title="Clone Module">'
-        + '<i class="bi bi-copy"></i>'
-        + '</button>'
-        + '<button class="w-8 h-8 flex items-center justify-center text-slate-400 hover:text-rose-400 hover:bg-rose-500/10 rounded-xl delete-module-btn transition-all" data-id="' + escapeHtml(mod.id) + '" title="Delete">'
-        + '<i class="bi bi-trash"></i>'
-        + '</button>'
-        + '</div>'
-        + '</td>'
+        + '<td class="px-6 py-4 text-right">' + actionsHtml + '</td>'
         + '</tr>';
 }
 
@@ -177,15 +189,53 @@ export function renderModulesPagination(total) {
     }
 }
 
+function applyModulesFilterAndSearch() {
+    const searchInput = document.getElementById('modulesTableSearch');
+    const query = searchInput ? searchInput.value.toLowerCase().trim() : '';
+    const showShared = document.getElementById('modulesShowSharedToggle')?.checked;
+
+    let filtered = localAllModules;
+    if (window.__currentUserRole === 'teacher' && !showShared) {
+        filtered = localAllModules.filter(mod => mod.created_by === window.__currentUserId);
+    }
+
+    if (query) {
+        filtered = filtered.filter(mod => {
+            const key = (mod.key || '').toLowerCase();
+            const id = String(mod.id);
+            const type = ('module ' + mod.module_number).toLowerCase();
+            const diff = (mod.difficulty_level || '').toLowerCase();
+            
+            const matchesBasic = key.includes(query) || id.includes(query) || type.includes(query) || diff.includes(query);
+            if (matchesBasic) return true;
+            
+            const sections = mod.sections || [];
+            return sections.some(sec => {
+                const secName = (sec.name || '').toLowerCase();
+                const secType = (sec.type || '').toLowerCase();
+                const testTitle = (sec.test && sec.test.title) ? sec.test.title.toLowerCase() : '';
+                const testName = (sec.test && sec.test.name) ? sec.test.name.toLowerCase() : '';
+                
+                return secName.includes(query) || 
+                       secType.includes(query) || 
+                       testTitle.includes(query) || 
+                       testName.includes(query);
+            });
+        });
+    }
+
+    currentFilteredModules = filtered;
+}
+
 export function renderModulesTable(allModules) {
     if (currentModulesData === allModules) return;
     currentModulesData = allModules;
     localAllModules = allModules;
-    currentFilteredModules = allModules;
     
     const tbody = document.getElementById('modulesTableBody');
     if (!tbody) return;
 
+    applyModulesFilterAndSearch();
     window.__tdModulesPage = 1;
     renderModulesPage();
 }
@@ -197,45 +247,55 @@ export function initModulesSearch() {
     let modulesSearchTimeout = null;
 
     searchInput.addEventListener('input', function(e) {
-        const query = e.target.value.toLowerCase().trim();
-        
         showTableLoader('modulesTableContainer');
-        
         if (modulesSearchTimeout) clearTimeout(modulesSearchTimeout);
         modulesSearchTimeout = setTimeout(() => {
-            if (!query) {
-                currentFilteredModules = localAllModules;
-            } else {
-                currentFilteredModules = localAllModules.filter(mod => {
-                    const key = (mod.key || '').toLowerCase();
-                    const id = String(mod.id);
-                    const type = ('module ' + mod.module_number).toLowerCase();
-                    const diff = (mod.difficulty_level || '').toLowerCase();
-                    
-                    const matchesBasic = key.includes(query) || id.includes(query) || type.includes(query) || diff.includes(query);
-                    if (matchesBasic) return true;
-                    
-                    const sections = mod.sections || [];
-                    return sections.some(sec => {
-                        const secName = (sec.name || '').toLowerCase();
-                        const secType = (sec.type || '').toLowerCase();
-                        const testTitle = (sec.test && sec.test.title) ? sec.test.title.toLowerCase() : '';
-                        const testName = (sec.test && sec.test.name) ? sec.test.name.toLowerCase() : '';
-                        
-                        return secName.includes(query) || 
-                               secType.includes(query) || 
-                               testTitle.includes(query) || 
-                               testName.includes(query);
-                    });
-                });
-            }
-            
+            applyModulesFilterAndSearch();
             window.__tdModulesPage = 1;
             renderModulesPage();
-            
             setTimeout(() => {
                 hideTableLoader('modulesTableContainer');
             }, 200);
         }, 400);
+    });
+
+    document.getElementById('modulesShowSharedToggle')?.addEventListener('change', function() {
+        showTableLoader('modulesTableContainer');
+        setTimeout(() => {
+            applyModulesFilterAndSearch();
+            window.__tdModulesPage = 1;
+            renderModulesPage();
+            hideTableLoader('modulesTableContainer');
+        }, 300);
+    });
+
+    document.getElementById('modulesTableBody')?.addEventListener('change', function(e) {
+        const checkbox = e.target.closest('.module-public-toggle');
+        if (!checkbox) return;
+        
+        const moduleId = checkbox.dataset.id;
+        const checked = checkbox.checked;
+        
+        fetch(`${BASE_URL}/modules/${moduleId}`, {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+                'Accept': 'application/json'
+            },
+            body: JSON.stringify({ is_public: checked })
+        }).then(res => res.json()).then(res => {
+            if (res.status === 'success') {
+                showAlert('success', 'Module visibility updated!');
+                const mod = localAllModules.find(m => String(m.id) === String(moduleId));
+                if (mod) mod.is_public = checked;
+            } else {
+                showAlert('danger', res.message || 'Failed to update visibility');
+                checkbox.checked = !checked;
+            }
+        }).catch(() => {
+            showAlert('danger', 'Error updating module visibility');
+            checkbox.checked = !checked;
+        });
     });
 }

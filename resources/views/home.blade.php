@@ -23,15 +23,15 @@
             </x-home.empty-state-box>
         </section>
 
-        <section class="practice">
+        <section>
             <x-home.practice-toggle-header />
-            <div class="practice-options flex gap-4" id="practice-active">
+            <div class=" flex gap-4" id="practice-active">
                 <x-home.practice-option-link :href="route('test.preview')" :image="asset('images/test_preview.png')"
                     alt="Test Preview" title="Test Preview" />
                 <x-home.practice-option-link :href="route('choose-test')" :image="asset('images/test.png')"
                     alt="Full-Length Practice" title="Full-Length Practice" />
             </div>
-            <div class="practice-options flex gap-4 hidden" id="practice-past">
+            <div class="flex gap-4 hidden" id="practice-past">
                 @forelse ($completedTests as $userTest)
                     <x-home.completed-practice-card :user-test="$userTest" compact />
                 @empty

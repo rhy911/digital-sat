@@ -537,7 +537,7 @@ export function captureTomSelectPreservation(submittedForm) {
     const ids = [
         'sectionTest', 'moduleSection', 'questionModule', 'bulkQuestionModule',
         'questionPassage', 'answerQuestionId', 'explanationQuestionId',
-        'linkSection', 'linkTest', 'linkModule'
+        'linkSection', 'linkTest', 'linkModule', 'builderModuleId', 'questionsTableModuleFilter'
     ];
     const preserve = {};
     ids.forEach(function (id) {
@@ -619,18 +619,35 @@ export function rebuildQuestionModuleTomSelect(tests, preserved, selectId) {
         return;
     }
     destroyTomSelectIfAny(el);
-    el.innerHTML = '<option value="">Search module...</option>';
+    el.innerHTML = selectId === 'questionsTableModuleFilter' ? '<option value="">All Modules</option>' : '<option value="">Search module...</option>';
+    let hasData = false;
     tests.forEach(function (test) {
         (test.sections || []).forEach(function (section) {
             (section.modules || []).forEach(function (mod) {
+                if (window.__currentUserRole === 'teacher' && mod.created_by !== window.__currentUserId) {
+                    return;
+                }
+                hasData = true;
                 const opt = document.createElement('option');
                 opt.value = mod.id;
                 opt.setAttribute('data-section-type', section.type);
-                opt.textContent = test.title + ' - ' + section.name + ' - Mod ' + mod.module_number + ' (' + humanizeUnderscores(mod.difficulty_level) + ')';
+                if (selectId === 'questionsTableModuleFilter') {
+                    const secType = section.type === 'reading_writing' ? 'R&W' : 'Math';
+                    opt.textContent = test.title + ' | ' + secType + ' - Mod ' + mod.module_number;
+                } else {
+                    opt.textContent = test.title + ' - ' + section.name + ' - Mod ' + mod.module_number + ' (' + humanizeUnderscores(mod.difficulty_level) + ')';
+                }
                 el.appendChild(opt);
             });
         });
     });
+    if (!hasData) {
+        const opt = document.createElement('option');
+        opt.value = "";
+        opt.disabled = true;
+        opt.textContent = "No data yet";
+        el.appendChild(opt);
+    }
     initTomSelectOn(el);
     if (preserved && optionExistsInSelect(el, preserved)) {
         el.tomselect.setValue(String(preserved), true);
@@ -724,4 +741,30 @@ export function hideTableLoader(containerId) {
         }, 300);
     }
 }
+
+/**
+ * Format date string to DD/MM/YY (e.g. 29/05/26) safely and without timezone shifts.
+ * @param {string} dateStr - Date string from database (Y-m-d H:i:s or ISO)
+ * @returns {string} Formatted date
+ */
+export function formatDateToShort(dateStr) {
+    if (!dateStr) return 'N/A';
+    const parts = dateStr.split(/[\sT]/);
+    if (parts[0]) {
+        const dateParts = parts[0].split('-');
+        if (dateParts.length === 3) {
+            const year = dateParts[0].slice(-2);
+            const month = dateParts[1];
+            const day = dateParts[2];
+            return `${day}/${month}/${year}`;
+        }
+    }
+    const date = new Date(dateStr);
+    if (isNaN(date.getTime())) return dateStr;
+    const day = String(date.getDate()).padStart(2, '0');
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const year = String(date.getFullYear()).slice(-2);
+    return `${day}/${month}/${year}`;
+}
+
 

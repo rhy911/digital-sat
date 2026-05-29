@@ -16,7 +16,8 @@ class LoginWebController extends Controller
             $request->validate([
                 'email' => 'required|string|email',
                 'password' => 'required|string',
-                'remember' => 'boolean'
+                'remember' => 'boolean',
+                'role' => 'nullable|string|in:student,teacher,admin'
             ]);
 
             $credentials = $request->only('email', 'password');
@@ -30,6 +31,30 @@ class LoginWebController extends Controller
 
             /** @var \App\Models\User $user */
             $user = Auth::user();
+
+            $expectedRole = $request->input('role');
+            if ($expectedRole && in_array($expectedRole, ['student', 'teacher', 'admin'], true)) {
+                if ($user->role !== $expectedRole) {
+                    Auth::logout();
+                    
+                    $roleLabels = [
+                        'student' => 'Student',
+                        'teacher' => 'Teacher',
+                        'admin' => 'Administrator',
+                    ];
+                    
+                    $actualLabel = $roleLabels[$user->role] ?? ucfirst($user->role);
+                    $article = ($user->role === 'admin') ? 'an' : 'a';
+                    $targetUrl = route('login', ['role' => $user->role]);
+
+                    $message = "This account is registered as {$article} " . strtolower($actualLabel) . ". " .
+                               "<a href=\"{$targetUrl}\">Sign in as {$article} {$actualLabel} instead</a>.";
+
+                    throw ValidationException::withMessages([
+                        'email' => [$message],
+                    ]);
+                }
+            }
 
             // Check if email is verified
             if (!$user->hasVerifiedEmail()) {

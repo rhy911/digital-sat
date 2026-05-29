@@ -434,6 +434,33 @@ export function updateSidebarNavigator() {
 }
 
 export function addBuilderBlock() {
+    const moduleId = getTomSelectValue('builderModuleId');
+    if (!moduleId) {
+        const tsControl = document.querySelector('#builderModuleId + .ts-wrapper .ts-control');
+        if (tsControl) {
+            tsControl.classList.add('ring-2', 'ring-rose-500', 'border-rose-500', 'animate-shake');
+            tsControl.style.borderColor = '#ef4444';
+            tsControl.style.boxShadow = '0 0 0 2px rgba(239, 68, 68, 0.2)';
+            
+            setTimeout(() => {
+                tsControl.classList.remove('animate-shake');
+            }, 600);
+
+            const selectEl = document.getElementById('builderModuleId');
+            if (selectEl) {
+                const clearHighlight = () => {
+                    tsControl.classList.remove('ring-2', 'ring-rose-500', 'border-rose-500');
+                    tsControl.style.borderColor = '';
+                    tsControl.style.boxShadow = '';
+                    selectEl.removeEventListener('change', clearHighlight);
+                };
+                selectEl.addEventListener('change', clearHighlight);
+            }
+        }
+        showAlert('danger', 'Please select a target module first!');
+        return;
+    }
+
     builderBlockCount++;
     const template = document.getElementById('builderBlockTemplate').innerHTML;
     const html = template.replace(/{INDEX}/g, builderBlockCount).replace(/{DISPLAY_INDEX}/g, builderBlockCount);

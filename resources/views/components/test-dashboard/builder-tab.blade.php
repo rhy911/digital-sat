@@ -40,16 +40,34 @@
                         class="text-xs font-extrabold text-slate-400 tracking-wider uppercase mb-2 block">1. Select
                         Target Module <span class="text-rose-500">*</span></label>
                     <select
-                        class="form-select tom-select bg-slate-900/60 border border-slate-800/80 rounded-lg focus:outline-hidden focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
+                        class="form-select tom-select w-full bg-slate-900/60 border border-slate-800/80 text-white text-sm placeholder-slate-500 hover:border-indigo-500/40 focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 focus:outline-hidden transition-all duration-200 rounded-xl"
                         id="builderModuleId" required>
                         <option value="">Search module...</option>
+                        @php
+                            $hasModules = false;
+                            foreach($tests as $test) {
+                                foreach($test->sections as $section) {
+                                    foreach($section->modules as $module) {
+                                        if (auth()->user()->role !== 'teacher' || $module->created_by === auth()->id()) {
+                                            $hasModules = true;
+                                            break 3;
+                                        }
+                                    }
+                                }
+                            }
+                        @endphp
+                        @if (!$hasModules)
+                            <option value="" disabled>No data yet</option>
+                        @endif
                         @foreach($tests as $test)
                             @foreach($test->sections as $section)
                                 @foreach($section->modules as $module)
-                                    <option value="{{ $module->id }}" data-section-type="{{ $section->type }}">
-                                        {{ $test->title }} | {{ $section->type === 'reading_writing' ? 'R&W' : 'Math' }} - Mod
-                                        {{ $module->module_number }} ({{ $module->difficulty_level }})
-                                    </option>
+                                    @if(auth()->user()->role !== 'teacher' || $module->created_by === auth()->id())
+                                        <option value="{{ $module->id }}" data-section-type="{{ $section->type }}">
+                                            {{ $test->title }} | {{ $section->type === 'reading_writing' ? 'R&W' : 'Math' }} - Mod
+                                            {{ $module->module_number }} ({{ $module->difficulty_level }})
+                                        </option>
+                                    @endif
                                 @endforeach
                             @endforeach
                         @endforeach
@@ -60,7 +78,7 @@
                         class="text-xs font-extrabold text-slate-400 tracking-wider uppercase mb-2 block">2. Start
                         Position</label>
                     <input type="number"
-                        class="w-full px-4 py-2.5 rounded-xl border border-slate-800/80 bg-slate-900/60 text-white placeholder-slate-500 focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 outline-none"
+                        class="w-full px-4 py-2.5 rounded-xl border border-slate-800/80 bg-slate-900/60 text-white text-sm placeholder-slate-500 hover:border-indigo-500/40 focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 focus:outline-hidden transition-all duration-200"
                         id="builderStartPosition" value="1" min="1">
                 </div>
             </div>

@@ -1,5 +1,5 @@
 import { BASE_URL, TESTS_STORE_URL } from '../core/config.js';
-import { showAlert, escapeHtml, humanizeUnderscores, showTableLoader, hideTableLoader } from '../utils/helpers.js';
+import { showAlert, escapeHtml, humanizeUnderscores, showTableLoader, hideTableLoader, formatDateToShort } from '../utils/helpers.js';
 
 let testsTabulator = null;
 
@@ -27,11 +27,29 @@ export function testStatusFormatter(cell) {
     return `<span class="inline-flex items-center px-2.5 py-1 rounded-lg text-[10px] font-extrabold uppercase tracking-wider border ${bgClass}">${escapeHtml(val)}</span>`;
 }
 
+export function testCreatedByFormatter(cell) {
+    const data = cell.getRow().getData();
+    const name = data.created_by_name || 'Admin';
+    return `<span class="text-xs font-semibold text-slate-350 truncate max-w-[110px] block" title="${escapeHtml(name)}">${escapeHtml(name)}</span>`;
+}
+
+export function testPublicFormatter(cell) {
+    const data = cell.getRow().getData();
+    if (data.is_owner) {
+        return `<div class="flex items-center justify-center h-full"><input type="checkbox" class="w-4 h-4 text-indigo-600 border-slate-800 bg-slate-400/60 rounded-xs cursor-pointer test-public-checkbox" ${data.is_public ? 'checked' : ''}></div>`;
+    } else {
+        return `<span class="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-extrabold bg-indigo-500/10 text-indigo-400 border border-indigo-500/20 uppercase tracking-wider"><i class="bi bi-globe mr-1"></i> Shared</span>`;
+    }
+}
+
 export function testActionsFormatter(cell) {
     const id = cell.getValue();
     const data = cell.getRow().getData();
+    if (!data.is_owner) {
+        return `<span class="text-xs font-semibold text-slate-500">Read-Only</span>`;
+    }
     return `
-        <div class="flex items-center gap-3">
+        <div class="flex items-center gap-3">   
             <select class="px-3 py-1.5 text-xs font-bold rounded-xl border border-slate-800/80 shadow-sm focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition-all outline-none bg-slate-900/60 text-slate-200 status-select cursor-pointer hover:bg-slate-850 hover:text-white" data-test-id="${id}">
                 <option value="draft" ${data.status === 'draft' ? 'selected' : ''}>Draft</option>
                 <option value="active" ${data.status === 'active' ? 'selected' : ''}>Active</option>
@@ -48,7 +66,19 @@ export function testActionsFormatter(cell) {
 let currentTestsData = null;
 
 export function renderTestsTable(tests) {
-    if (currentTestsData === tests && testsTabulator) return;
+    if (currentTestsData === tests && testsTabulator) {
+        setTimeout(() => {
+            if (testsTabulator) {
+                testsTabulator.redraw(true);
+                const el = document.getElementById('testsTabulatorTable');
+                if (el) {
+                    el.classList.remove('opacity-0');
+                    el.classList.add('opacity-100');
+                }
+            }
+        }, 50);
+        return;
+    }
     currentTestsData = tests;
     const tableContainer = document.getElementById('testsTableContainer');
     const emptyState = document.getElementById('testsEmptyState');
@@ -71,7 +101,12 @@ export function renderTestsTable(tests) {
             title: t.title,
             type: humanizeUnderscores(t.test_type),
             status: t.status,
-            duration: t.total_duration_minutes
+            duration: t.total_duration_minutes,
+            created_by: t.created_by,
+            created_by_name: t.created_by_name || (t.creator ? (t.creator.username || t.creator.email) : 'Admin'),
+            created_at: formatDateToShort(t.created_at),
+            is_public: t.is_public,
+            is_owner: t.is_owner !== undefined ? t.is_owner : (t.created_by === window.__currentUserId || window.__currentUserRole === 'admin')
         };
     });
 
@@ -80,18 +115,71 @@ export function renderTestsTable(tests) {
     if (!testsTabulator) {
         testsTabulator = new Tabulator("#testsTabulatorTable", {
             data: tableData,
+            minHeight: 400,
             layout: "fitColumns",
             responsiveLayout: "collapse",
             pagination: true,
             paginationSize: 30,
             paginationCounter: "rows",
             placeholder: "No tests found",
+            rowFormatter: function(row) {
+                const data = row.getData();
+                if (!data.is_owner) {
+                    row.getElement().classList.add("row-shared");
+                }
+            },
             columns: [
                 { title: "ID", field: "id", width: 70 },
-                { title: "Title <i class='bi bi-pencil ms-1 text-muted' style='font-size:0.75rem'></i>", field: "title", editor: "input", cellEdited: handleTestTitleEdit },
+                { 
+                    title: "Title <i class='bi bi-pencil ms-1 text-muted' style='font-size:0.75rem'></i>", 
+                    field: "title", 
+                    editable: function(cell) {
+                        return cell.getRow().getData().is_owner;
+                    },
+                    editor: "input", 
+                    cellEdited: handleTestTitleEdit 
+                },
                 { title: "Type", field: "type" },
-                { title: "Status", field: "status", formatter: testStatusFormatter },
-                { title: "Duration", field: "duration", formatter: (cell) => cell.getValue() + 'm' },
+                { title: "Created At", field: "created_at", width: 140 },
+                { title: "Created By", field: "is_owner", formatter: testCreatedByFormatter, headerSort: false, width: 140 },
+                { 
+                    title: "Public", 
+                    field: "is_public", 
+                    formatter: testPublicFormatter, 
+                    headerSort: false, 
+                    width: 95,
+                    cellClick: function(e, cell) {
+                        const target = e.target;
+                        if (target.classList.contains('test-public-checkbox')) {
+                            const data = cell.getRow().getData();
+                            const checked = target.checked;
+                            
+                            fetch(`${BASE_URL}/tests/${data.id}`, {
+                                method: 'PUT',
+                                headers: {
+                                    'Content-Type': 'application/json',
+                                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+                                    'Accept': 'application/json'
+                                },
+                                body: JSON.stringify({ is_public: checked })
+                            }).then(res => res.json()).then(res => {
+                                if (res.status === 'success') {
+                                    showAlert('success', 'Test visibility updated!');
+                                    data.is_public = checked;
+                                    cell.getRow().update(data);
+                                } else {
+                                    showAlert('danger', res.message || 'Failed to update visibility');
+                                    target.checked = !checked;
+                                }
+                            }).catch(() => {
+                                showAlert('danger', 'Error updating test visibility');
+                                target.checked = !checked;
+                            });
+                        }
+                    }
+                },
+                { title: "Status", field: "status", formatter: testStatusFormatter, width: 100 },
+                { title: "Duration", field: "duration", formatter: (cell) => cell.getValue() + 'm', width: 90 },
                 { title: "Actions", field: "id", headerSort: false, formatter: testActionsFormatter, width: 280 }
             ],
             pageChanged: function(page) {
@@ -101,17 +189,62 @@ export function renderTestsTable(tests) {
                 }, 400);
             }
         });
+        const updateFilters = () => {
+            const searchVal = document.getElementById('testsTableSearch')?.value || '';
+            const showShared = document.getElementById('testsShowSharedToggle')?.checked;
+            
+            testsTabulator.clearFilter();
+            
+            if (searchVal) {
+                testsTabulator.setFilter("title", "like", searchVal);
+            }
+            if (window.__currentUserRole === 'teacher' && !showShared) {
+                testsTabulator.setFilter("is_owner", "==", true);
+            }
+        };
+
+        document.getElementById('testsShowSharedToggle')?.addEventListener('change', function() {
+            showTableLoader('testsTableContainer');
+            updateFilters();
+            setTimeout(() => hideTableLoader('testsTableContainer'), 200);
+        });
+
         document.getElementById('testsTableSearch')?.addEventListener('input', function(e) {
             const val = e.target.value;
             showTableLoader('testsTableContainer');
             if (testsSearchTimeout) clearTimeout(testsSearchTimeout);
             testsSearchTimeout = setTimeout(() => {
-                testsTabulator.setFilter("title", "like", val);
+                updateFilters();
                 setTimeout(() => hideTableLoader('testsTableContainer'), 200);
             }, 400);
         });
+
+        if (window.__currentUserRole === 'teacher' && !document.getElementById('testsShowSharedToggle')?.checked) {
+            testsTabulator.setFilter("is_owner", "==", true);
+        }
+
+        setTimeout(() => {
+            if (testsTabulator) {
+                testsTabulator.redraw(true);
+                const el = document.getElementById('testsTabulatorTable');
+                if (el) {
+                    el.classList.remove('opacity-0');
+                    el.classList.add('opacity-100');
+                }
+            }
+        }, 100);
     } else {
         testsTabulator.replaceData(tableData);
+        setTimeout(() => {
+            if (testsTabulator) {
+                testsTabulator.redraw(true);
+                const el = document.getElementById('testsTabulatorTable');
+                if (el) {
+                    el.classList.remove('opacity-0');
+                    el.classList.add('opacity-100');
+                }
+            }
+        }, 50);
     }
 }
 

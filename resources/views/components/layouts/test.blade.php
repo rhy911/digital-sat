@@ -35,8 +35,9 @@
             <div class="loading-spinner-wrapper mb-4">
                 <div class="loading-spinner"></div>
                 <div class="loading-spinner-inner">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                        <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+                    <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none"
+                        stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
                     </svg>
                 </div>
             </div>
@@ -47,24 +48,28 @@
 
     <header>
         <div class="flex flex-col justify-start">
-            <h1 class="text-xl md:text-2xl font-medium">Section {{ $sectionNumber ?? '1' }}, Module {{ $moduleNumber ?? '1' }}:
-                {{ $sectionName ?? ($sectionTitle ?? 'Reading and Writing') }}</h1>
+            <h1 class="text-xl md:text-2xl font-medium">Section {{ $sectionNumber ?? '1' }}, Module
+                {{ $moduleNumber ?? '1' }}:
+                {{ $sectionName ?? ($sectionTitle ?? 'Reading and Writing') }}
+            </h1>
             <div class="relative" x-data="{ open: true }" @click.outside="open = false">
-                <button class="dropdown-toggle flex items-center gap-2 font-bold relative z-50" type="button" @click="open = !open" :aria-expanded="open ? 'true' : 'false'" :class="open ? 'bg-white rounded-md' : ''">
-                    Directions <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-chevron-down"><polyline points="6 9 12 15 18 9"></polyline></svg>
+                <button class="dropdown-toggle flex items-center gap-2 font-bold relative z-50" type="button"
+                    @click="open = !open" :aria-expanded="open ? 'true' : 'false'"
+                    :class="open ? 'bg-white rounded-md' : ''">
+                    Directions <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24"
+                        fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                        stroke-linejoin="round" class="feather feather-chevron-down">
+                        <polyline points="6 9 12 15 18 9"></polyline>
+                    </svg>
                 </button>
-                <div class="fixed inset-0 bg-black/50 z-40"
-                     x-show="open"
-                     x-cloak
-                     style="display: none;"></div>
-                <div class="absolute mt-3 bg-white border border-gray-200 rounded-md shadow-lg z-50 flex-col w-[90vw] md:w-[52rem] max-h-[80vh] p-0" 
-                     x-show="open"
-                     x-cloak
-                     :class="open ? 'flex' : 'hidden'"
-                     style="display: none;">
-                     
+                <div class="fixed inset-0 bg-black/50 z-40" x-show="open" x-cloak style="display: none;"></div>
+                <div class="absolute mt-3 bg-white border border-gray-200 rounded-md shadow-lg z-50 flex-col w-[90vw] md:w-208 max-h-[80vh] p-0"
+                    x-show="open" x-cloak :class="open ? 'flex' : 'hidden'" style="display: none;">
+
                     <!-- Dropdown Tail -->
-                    <div class="absolute -top-[8px] left-12 w-4 h-4 bg-white border-l border-t border-gray-200 rotate-45"></div>
+                    <div
+                        class="absolute -top-[8px] left-12 w-4 h-4 bg-white border-l border-t border-gray-200 rotate-45">
+                    </div>
 
                     <div class="pt-8 pb-5 pl-7 pr-5 overflow-y-auto flex-1 min-h-0 bg-white rounded-t-md relative z-10">
                         @if (isset($sectionDirections))
@@ -74,7 +79,9 @@
                         @endif
                     </div>
                     <div class="py-4 px-7 flex justify-end bg-white rounded-b-md relative z-10">
-                        <button type="button" class="bg-[#fedb00] text-[#1e1e1e] py-2 px-[22px] rounded-full font-semibold text-sm transition-shadow duration-300 shadow-[inset_0_0_0_1px_#1e1e1e] hover:shadow-[inset_0_0_0_2px_#1e1e1e]" @click="open = false">Close</button>
+                        <button type="button"
+                            class="bg-[#fedb00] text-[#1e1e1e] py-2 px-[22px] rounded-full font-semibold text-sm transition-shadow duration-300 shadow-[inset_0_0_0_1px_#1e1e1e] hover:shadow-[inset_0_0_0_2px_#1e1e1e]"
+                            @click="open = false">Close</button>
                     </div>
                 </div>
             </div>
@@ -116,17 +123,16 @@
                 </div>
             @endif
             <div class="relative inline-block text-left" x-data="{ open: false }" @click.outside="open = false">
-                <div class="icon-container" id="moreBtn" :class="open ? 'highlight-mode-active' : ''" @click="open = !open">
+                <div class="icon-container" id="moreBtn" :class="open ? 'highlight-mode-active' : ''"
+                    @click="open = !open">
                     <div class="icon">
                         <img src="{{ asset('/images/more.png') }}" alt="More">
                     </div>
                     <p class="m-0" data-text="More">More</p>
                 </div>
                 <div id="moreMenu"
-                     class="absolute right-0 mt-2 w-48 bg-white border border-gray-200 rounded-md shadow-lg z-50"
-                     x-show="open"
-                     x-cloak
-                     style="display: none;">
+                    class="absolute right-0 mt-2 w-48 bg-white border border-gray-200 rounded-md shadow-lg z-50"
+                    x-show="open" x-cloak style="display: none;">
                     <div>
                         <button class="block w-full text-left px-4 py-3 text-sm text-gray-700 hover:bg-gray-100"
                             @click="open = false; window.showCustomAlert('Taking a break... (Functionality to be implemented)', 'info', 'Take a Break')">
@@ -152,8 +158,7 @@
         </div>
         <div class="flex justify-center relative" x-data="{ popoverOpen: false }" @click.outside="popoverOpen = false">
             <button type="button" class="popover-btn flex items-center gap-1 z-50 relative"
-                :class="popoverOpen ? 'popover-open' : ''"
-                @click="popoverOpen = !popoverOpen">
+                :class="popoverOpen ? 'popover-open' : ''" @click="popoverOpen = !popoverOpen">
                 Question <span>{{ $currentQuestion ?? '...' }}</span> of <span
                     id="total">{{ $totalQuestions ?? '...' }}</span>
                 <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
@@ -163,22 +168,21 @@
                 </svg>
             </button>
 
-            <div id="popover-content" 
-                 class="absolute bottom-full mb-4 bg-white rounded-xl shadow-[0_0_15px_rgba(0,0,0,0.15)] z-50 w-[90vw] md:w-[35rem]"
-                 x-show="popoverOpen"
-                 x-cloak
-                 style="display: none;"
-                 :class="popoverOpen ? 'block' : 'hidden'">
-                 
-                 <div class="absolute -bottom-2 left-1/2 h-4 w-4 -translate-x-1/2 rotate-45 bg-white shadow-md"></div>
-                 
-                 <div class="p-6 flex flex-col">
-                    <h3 class="m-0 text-center text-lg md:text-xl font-bold pb-4 border-b border-gray">{{ $sectionTitle ?? 'No Section Title Available' }} Questions</h3>
-                    <div class="flex justify-center items-center gap-4 md:gap-6 text-sm font-medium py-4 border-b border-gray">
+            <div id="popover-content"
+                class="absolute bottom-full mb-4 bg-white rounded-xl shadow-[0_0_15px_rgba(0,0,0,0.15)] z-50 w-[90vw] md:w-140"
+                x-show="popoverOpen" x-cloak style="display: none;" :class="popoverOpen ? 'block' : 'hidden'">
+
+                <div class="absolute -bottom-2 left-1/2 h-4 w-4 -translate-x-1/2 rotate-45 bg-white shadow-md"></div>
+
+                <div class="p-6 flex flex-col">
+                    <h3 class="m-0 text-center text-lg md:text-xl font-bold pb-4 border-b border-gray">
+                        {{ $sectionTitle ?? 'No Section Title Available' }} Questions</h3>
+                    <div
+                        class="flex justify-center items-center gap-4 md:gap-6 text-sm font-medium py-4 border-b border-gray">
                         <div class="flex items-center justify-center gap-2">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16"
-                                viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"
-                                stroke-linecap="round" stroke-linejoin="round" class="feather feather-map-pin">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24"
+                                fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"
+                                stroke-linejoin="round" class="feather feather-map-pin">
                                 <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
                                 <circle cx="12" cy="10" r="3"></circle>
                             </svg>
@@ -221,9 +225,9 @@
                             Unanswered
                         </div>
                         <div class="flex items-center justify-center gap-2">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16"
-                                viewBox="0 0 24 24" fill="#ab2334" stroke="currentColor" stroke-width="2"
-                                stroke-linecap="round" stroke-linejoin="round" class="feather feather-bookmark">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24"
+                                fill="#ab2334" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                stroke-linejoin="round" class="feather feather-bookmark">
                                 <path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"></path>
                             </svg>
                             For Review

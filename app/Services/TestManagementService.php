@@ -14,14 +14,16 @@ class TestManagementService
     /**
      * Auto-generate full SAT structure safely using transactions.
      */
-    public function generateFullSatStructure(string $title, string $testType): Test
+    public function generateFullSatStructure(string $title, string $testType, ?int $userId = null): Test
     {
-        return DB::transaction(function () use ($title, $testType) {
+        return DB::transaction(function () use ($title, $testType, $userId) {
             $test = Test::create([
                 'title' => $title,
                 'test_type' => $testType,
                 'break_duration_minutes' => ($testType === 'module_only' ? 0 : 10),
                 'status' => 'draft',
+                'created_by' => $userId,
+                'is_public' => false,
             ]);
 
             $isShort = ($testType === 'short_test');
@@ -38,8 +40,10 @@ class TestManagementService
                     'type' => Section::TYPE_RW,
                     'name' => 'Focused Module',
                     'order' => 1,
+                    'created_by' => $userId,
+                    'is_public' => false,
                 ]);
-                $this->createStandardModuleForSection($section, 1, Module::DIFFICULTY_STANDARD, 32, 27);
+                $this->createStandardModuleForSection($section, 1, Module::DIFFICULTY_STANDARD, 32, 27, $userId);
             } else {
                 // Create R&W Section
                 $rwSection = Section::create([
@@ -47,12 +51,14 @@ class TestManagementService
                     'type' => Section::TYPE_RW,
                     'name' => 'Reading and Writing',
                     'order' => 1,
+                    'created_by' => $userId,
+                    'is_public' => false,
                 ]);
 
                 // Create R&W Modules
-                $this->createStandardModuleForSection($rwSection, 1, Module::DIFFICULTY_STANDARD, $rwDuration, $rwQuestions);
-                $this->createStandardModuleForSection($rwSection, 2, Module::DIFFICULTY_EASY, $rwDuration, $rwQuestions);
-                $this->createStandardModuleForSection($rwSection, 2, Module::DIFFICULTY_HARD, $rwDuration, $rwQuestions);
+                $this->createStandardModuleForSection($rwSection, 1, Module::DIFFICULTY_STANDARD, $rwDuration, $rwQuestions, $userId);
+                $this->createStandardModuleForSection($rwSection, 2, Module::DIFFICULTY_EASY, $rwDuration, $rwQuestions, $userId);
+                $this->createStandardModuleForSection($rwSection, 2, Module::DIFFICULTY_HARD, $rwDuration, $rwQuestions, $userId);
 
                 // Create Math Section
                 $mathSection = Section::create([
@@ -60,12 +66,14 @@ class TestManagementService
                     'type' => Section::TYPE_MATH,
                     'name' => 'Math',
                     'order' => 2,
+                    'created_by' => $userId,
+                    'is_public' => false,
                 ]);
 
                 // Create Math Modules
-                $this->createStandardModuleForSection($mathSection, 1, Module::DIFFICULTY_STANDARD, $mathDuration, $mathQuestions);
-                $this->createStandardModuleForSection($mathSection, 2, Module::DIFFICULTY_EASY, $mathDuration, $mathQuestions);
-                $this->createStandardModuleForSection($mathSection, 2, Module::DIFFICULTY_HARD, $mathDuration, $mathQuestions);
+                $this->createStandardModuleForSection($mathSection, 1, Module::DIFFICULTY_STANDARD, $mathDuration, $mathQuestions, $userId);
+                $this->createStandardModuleForSection($mathSection, 2, Module::DIFFICULTY_EASY, $mathDuration, $mathQuestions, $userId);
+                $this->createStandardModuleForSection($mathSection, 2, Module::DIFFICULTY_HARD, $mathDuration, $mathQuestions, $userId);
             }
             
             $test->refreshTotalDuration();
@@ -77,7 +85,7 @@ class TestManagementService
     /**
      * Create standard module helper.
      */
-    private function createStandardModuleForSection(Section $section, int $moduleNumber, string $difficultyLevel, int $duration, int $totalQuestions): Module
+    private function createStandardModuleForSection(Section $section, int $moduleNumber, string $difficultyLevel, int $duration, int $totalQuestions, ?int $userId = null): Module
     {
         $uniqueKey = strtoupper(substr($section->type, 0, 2)) . '_M' . $moduleNumber . '_' . strtoupper($difficultyLevel) . '_' . strtoupper(Str::random(6));
         $order = ($moduleNumber === 1) ? 1 : (($difficultyLevel === Module::DIFFICULTY_EASY) ? 2 : 3);
@@ -89,6 +97,8 @@ class TestManagementService
             'total_questions' => $totalQuestions,
             'key' => $uniqueKey,
             'order' => $order,
+            'created_by' => $userId,
+            'is_public' => false,
         ]);
         
         $module->sections()->attach($section->id);
@@ -98,24 +108,30 @@ class TestManagementService
     /**
      * Clone a Test (Hierarchy only).
      */
-    public function cloneTest(int $id): Test
+    public function cloneTest(int $id, ?int $userId = null): Test
     {
-        return DB::transaction(function () use ($id) {
+        return DB::transaction(function () use ($id, $userId) {
             $originalTest = Test::with('sections.modules')->findOrFail($id);
             
             $clonedTest = $originalTest->replicate();
             $clonedTest->title = $originalTest->title . ' (Clone)';
             $clonedTest->status = 'draft';
+            $clonedTest->created_by = $userId;
+            $clonedTest->is_public = false;
             $clonedTest->save();
 
             foreach ($originalTest->sections as $section) {
                 $clonedSection = $section->replicate();
                 $clonedSection->test_id = $clonedTest->id;
+                $clonedSection->created_by = $userId;
+                $clonedSection->is_public = false;
                 $clonedSection->save();
 
                 foreach ($section->modules as $module) {
                     $clonedModule = $module->replicate();
                     $clonedModule->key = $module->key . '_CLONE_' . strtoupper(Str::random(4));
+                    $clonedModule->created_by = $userId;
+                    $clonedModule->is_public = false;
                     $clonedModule->save();
 
                     // Attach to the new section
@@ -131,13 +147,15 @@ class TestManagementService
     /**
      * Clone a Module (Hierarchy only).
      */
-    public function cloneModule(int $id, ?int $sectionId = null): Module
+    public function cloneModule(int $id, ?int $sectionId = null, ?int $userId = null): Module
     {
-        return DB::transaction(function () use ($id, $sectionId) {
+        return DB::transaction(function () use ($id, $sectionId, $userId) {
             $originalModule = Module::findOrFail($id);
             
             $clonedModule = $originalModule->replicate();
             $clonedModule->key = $originalModule->key . '_CLONE_' . strtoupper(Str::random(4));
+            $clonedModule->created_by = $userId;
+            $clonedModule->is_public = false;
             $clonedModule->save();
 
             if ($sectionId) {

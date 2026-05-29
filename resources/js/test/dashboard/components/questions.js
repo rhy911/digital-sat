@@ -33,6 +33,10 @@ export function questionsListFetchUrl() {
     if (window.__tdQuestionsStatus !== undefined && window.__tdQuestionsStatus !== '') {
         u.searchParams.set('is_complete', window.__tdQuestionsStatus);
     }
+    const showSharedEl = document.getElementById('questionsShowSharedToggle');
+    if (showSharedEl && showSharedEl.checked) {
+        u.searchParams.set('show_shared', '1');
+    }
     return u.toString();
 }
 
@@ -102,6 +106,21 @@ export function renderQuestionsTable(questions) {
                 diffBadge = '<span class="inline-flex items-center px-2.5 py-1 rounded-lg text-[10px] font-extrabold bg-rose-500/10 text-rose-400 border border-rose-500/20 uppercase tracking-wide">' + escapeHtml(capitalizeFirstLetter(q.difficulty || '')) + '</span>';
             }
 
+            const isOwner = q.created_by === window.__currentUserId || window.__currentUserRole === 'admin';
+            let actionButtons = '';
+            if (isOwner) {
+                actionButtons = '<button type="button" class="px-2.5 py-1 border border-indigo-500/20 text-indigo-400 bg-indigo-500/5 hover:bg-indigo-500/15 rounded-lg text-xs font-bold flex items-center gap-1 edit-question-btn cursor-pointer" data-id="' + escapeHtml(q.id) + '">'
+                    + '<i class="bi bi-pencil-square text-xs leading-none"></i> Edit'
+                    + '</button>'
+                    + '<button type="button" class="w-7 h-7 flex items-center justify-center border border-rose-500/20 text-rose-400 bg-rose-500/5 hover:bg-rose-500/15 rounded-full delete-question-btn cursor-pointer" data-id="' + escapeHtml(q.id) + '" title="Delete">'
+                    + '<i class="bi bi-trash text-xs"></i>'
+                    + '</button>';
+            } else {
+                actionButtons = '<button type="button" class="px-2.5 py-1 border border-slate-700 text-slate-350 bg-slate-800/40 hover:bg-slate-800 rounded-lg text-xs font-bold flex items-center gap-1 edit-question-btn cursor-pointer" data-id="' + escapeHtml(q.id) + '">'
+                    + '<i class="bi bi-eye text-xs leading-none"></i> View'
+                    + '</button>';
+            }
+
             return '<tr class="hover:bg-indigo-500/5 border-b border-slate-800/40">'
                 + '<td class="px-5 py-3.5 font-mono font-bold text-slate-500 text-center">' + escapeHtml(q.id) + '</td>'
                 + '<td class="px-5 py-3.5 text-center">'
@@ -117,12 +136,7 @@ export function renderQuestionsTable(questions) {
                 + '<td class="px-5 py-3.5 text-center">' + diffBadge + '</td>'
                 + '<td class="px-5 py-3.5 text-center">'
                 + '<div class="flex justify-center gap-1.5">'
-                + '<button type="button" class="px-2.5 py-1 border border-indigo-500/20 text-indigo-400 bg-indigo-500/5 hover:bg-indigo-500/15 rounded-lg text-xs font-bold flex items-center gap-1 edit-question-btn cursor-pointer" data-id="' + escapeHtml(q.id) + '">'
-                + '<i class="bi bi-pencil-square text-xs leading-none"></i> Edit'
-                + '</button>'
-                + '<button type="button" class="w-7 h-7 flex items-center justify-center border border-rose-500/20 text-rose-400 bg-rose-500/5 hover:bg-rose-500/15 rounded-full delete-question-btn cursor-pointer" data-id="' + escapeHtml(q.id) + '" title="Delete">'
-                + '<i class="bi bi-trash text-xs"></i>'
-                + '</button>'
+                + actionButtons
                 + '</div>'
                 + '</td>'
                 + '</tr>';

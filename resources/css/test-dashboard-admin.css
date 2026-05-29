@@ -49,18 +49,6 @@ input[type=number] {
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
 }
 
-/* Form field uniform overrides (High specificity) */
-.dark-theme-dashboard input[type="text"],
-.dark-theme-dashboard input[type="number"],
-.dark-theme-dashboard select,
-.dark-theme-dashboard textarea {
-    background-color: #1e293b;
-    color: #ffffff;
-    border: 1px solid rgba(255, 255, 255, 0.15);
-    box-shadow: none;
-    border-radius: 0.75rem;
-}
-
 .dark-theme-dashboard input::placeholder,
 .dark-theme-dashboard textarea::placeholder,
 .ts-control input::placeholder,
@@ -68,21 +56,7 @@ input[type=number] {
     color: #cbd5e1;
 }
 
-.dark-theme-dashboard input:hover,
-.dark-theme-dashboard select:hover,
-.dark-theme-dashboard textarea:hover {
-    border-color: rgba(99, 102, 241, 0.4);
-    background-color: rgba(30, 41, 59, 0.8);
-}
 
-.dark-theme-dashboard input:focus,
-.dark-theme-dashboard select:focus,
-.dark-theme-dashboard textarea:focus {
-    border-color: #818cf8;
-    box-shadow: 0 0 0 2px rgba(129, 140, 248, 0.2);
-    background-color: #1e293b;
-    outline: none;
-}
 
 .dark-theme-dashboard select option {
     background-color: #131b2e;
@@ -457,10 +431,6 @@ select.ts-hidden-accessible,
     border-radius: 0.75rem 0.75rem 0 0;
 }
 
-.editor-toolbar button {
-    /* color: #ffffff; */
-}
-
 .editor-toolbar button.active,
 .editor-toolbar button:hover {
     background-color: rgba(255, 255, 255, 0.05) !important;
@@ -688,21 +658,29 @@ select.ts-hidden-accessible,
     z-index: 10;
 }
 
-/* Sizing utility classes for Tabulator layouts */
-.w-80 { width: 80px; }
-.w-100 { width: 100px; }
-.w-110 { width: 110px; }
-.w-120 { width: 120px; }
-.w-130 { width: 130px; }
-.w-180 { width: 180px; }
-.max-w-280 { max-width: 280px; }
-.max-w-450 { max-width: 450px; }
-.validation-grid-container { min-height: 380px; }
+
+
+/* Dashboard Tables Min-Height Consistency */
+#testsTableContainer,
+#sectionsTableContainer,
+#modulesTableContainer,
+#questionsTableContainer {
+    min-height: 480px;
+    display: flex;
+    flex-direction: column;
+}
+
+#testsTabulatorTable,
+#sectionsTabulatorTable {
+    flex: 1;
+}
+
+#modulesTableBody {
+    min-height: 350px;
+}
 
 /* Status select custom styles */
 .dark-theme-dashboard select.status-select {
-    background-color: #1e293b;
-    color: #ffffff;
     border: 1px solid rgba(255, 255, 255, 0.15);
 }
 
@@ -910,4 +888,18 @@ select.ts-hidden-accessible,
     .questions-filter-inputs {
         grid-template-columns: 1fr !important;
     }
+}
+
+/* Shake animation for input validation */
+@keyframes shake {
+    0%, 100% { transform: translateX(0); }
+    10%, 30%, 50%, 70%, 90% { transform: translateX(-5px); }
+    20%, 40%, 60%, 80% { transform: translateX(5px); }
+}
+
+.animate-shake {
+    animation: shake 0.6s cubic-bezier(.36,.07,.19,.97) both;
+    transform: translate3d(0, 0, 0);
+    backface-visibility: hidden;
+    perspective: 1000px;
 }

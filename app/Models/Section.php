@@ -17,7 +17,36 @@ class Section extends Model
         'name',
         'type',
         'order',
+        'created_by',
+        'is_public',
     ];
+
+    protected $casts = [
+        'is_public' => 'boolean',
+    ];
+
+    public function creator()
+    {
+        return $this->belongsTo(User::class, 'created_by');
+    }
+
+    public function scopeVisibleTo($query, $user)
+    {
+        if (!$user) {
+            return $query->where('is_public', true);
+        }
+        if ($user->role === 'admin') {
+            return $query;
+        }
+        return $query->where(function ($q) use ($user) {
+            $q->where('created_by', $user->id)
+              ->orWhere('is_public', true)
+              ->orWhereHas('test', function ($t) use ($user) {
+                  $t->where('created_by', $user->id)
+                    ->orWhere('is_public', true);
+              });
+        });
+    }
 
     public function test()
     {

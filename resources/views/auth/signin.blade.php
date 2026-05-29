@@ -39,6 +39,7 @@
     <!-- Form -->
     <form class="w-11/12" id="signinForm" action="{{ route('signin') }}" method="POST" novalidate>
         @csrf
+        <input type="hidden" name="role" value="{{ in_array($role, ['student', 'teacher', 'admin']) ? $role : 'student' }}">
 
         <div class="mb-3">
             <label for="email" class="form-label">Email Address</label>

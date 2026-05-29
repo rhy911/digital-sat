@@ -22,6 +22,7 @@ class StoreModuleRequest extends FormRequest
             'difficulty_level' => 'required|in:standard,easy,hard',
             'duration_minutes' => 'required|integer|min:1',
             'total_questions' => 'required|integer|min:1',
+            'is_public' => 'nullable|boolean',
         ];
     }
 }

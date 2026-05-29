@@ -22,10 +22,10 @@
             <!-- Background backdrop, show/hide based on slide-over state. -->
             <div
                 x-show="show"
-                x-transition:enter="transition-opacity ease-in-out duration-200"
+                x-transition:enter="transition-opacity ease-in-out duration-300"
                 x-transition:enter-start="opacity-0"
                 x-transition:enter-end="opacity-100"
-                x-transition:leave="transition-opacity ease-in-out duration-200"
+                x-transition:leave="transition-opacity ease-in-out duration-300"
                 x-transition:leave-start="opacity-100"
                 x-transition:leave-end="opacity-0"
                 class="fixed inset-0 bg-slate-950/80 transform-gpu"
@@ -39,10 +39,10 @@
                         <!-- Slide-over panel, show/hide based on slide-over state. -->
                         <div
                             x-show="show"
-                            x-transition:enter="transition-transform ease-in-out duration-200"
+                            x-transition:enter="transition-transform ease-in-out duration-300"
                             x-transition:enter-start="translate-x-full"
                             x-transition:enter-end="translate-x-0"
-                            x-transition:leave="transition-transform ease-in-out duration-200"
+                            x-transition:leave="transition-transform ease-in-out duration-300"
                             x-transition:leave-start="translate-x-0"
                             x-transition:leave-end="translate-x-full"
                             class="pointer-events-auto {{ $width }} bg-slate-900 border-l border-slate-800 flex flex-col shadow-2xl h-full transform-gpu"

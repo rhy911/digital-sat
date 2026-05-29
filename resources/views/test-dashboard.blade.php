@@ -8,7 +8,9 @@
         @vite(['resources/css/test-dashboard-admin.css'])
     @endpush
 
-    <div class="fixed inset-0 z-40 flex h-screen w-screen overflow-hidden bg-[#0b0f19] dark-theme-dashboard"
+    @push('body_class', 'dark-theme-dashboard')
+
+    <div class="fixed inset-0 z-40 flex h-screen w-screen overflow-hidden bg-[#0b0f19]"
         x-data="{ activeTab: sessionStorage.getItem('testDashboardActiveTab') ? sessionStorage.getItem('testDashboardActiveTab').replace('#', '') : 'tests' }">
         <div id="alert-container" class="fixed top-6 right-6 z-50"></div>
 
@@ -94,8 +96,9 @@
                             <span
                                 class="text-sm font-bold text-slate-200 leading-none">{{ auth()->user()->username ?? auth()->user()->email }}</span>
                             <span
-                                class="text-[10px] text-indigo-400 font-extrabold uppercase tracking-widest mt-1.5 flex items-center gap-1"><span
-                                    class="w-1.5 h-1.5 rounded-full bg-indigo-500 animate-ping"></span> Administrator</span>
+                                class="text-[10px] text-indigo-400 font-extrabold uppercase tracking-widest mt-1.5 flex items-center gap-2"><span
+                                    class="w-1.5 h-1.5 rounded-full bg-indigo-500 animate-ping"></span>
+                                {{ auth()->user()->role === 'teacher' ? 'Teacher' : 'Administrator' }}</span>
                         </div>
                         <div class="w-px h-8 bg-slate-800"></div>
                         <div class="flex items-center gap-2">
@@ -135,6 +138,8 @@
 
     @push('scripts')
         <script>
+            window.__currentUserRole = "{{ auth()->user()->role }}";
+            window.__currentUserId = {{ auth()->id() }};
             window.TestDashboardConfig = {
                 SNAPSHOT_URL: "{{ route('test-dashboard.snapshot') }}",
                 QUESTIONS_LIST_URL: "{{ route('test-dashboard.questions.list') }}",

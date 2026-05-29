@@ -23,13 +23,31 @@
                         class="w-full text-sm text-white bg-slate-900/60 border border-slate-800/80 rounded-lg focus:outline-hidden focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 tom-select"
                         id="bulkQuestionModule" required>
                         <option value="">Search module to import into...</option>
+                        @php
+                            $hasModules = false;
+                            foreach ($tests as $test) {
+                                foreach ($test->sections as $section) {
+                                    foreach ($section->modules as $module) {
+                                        if (auth()->user()->role !== 'teacher' || $module->created_by === auth()->id()) {
+                                            $hasModules = true;
+                                            break 3;
+                                        }
+                                    }
+                                }
+                            }
+                        @endphp
+                        @if (!$hasModules)
+                            <option value="" disabled>No data yet</option>
+                        @endif
                         @foreach ($tests as $test)
                             @foreach ($test->sections as $section)
                                 @foreach ($section->modules as $module)
-                                    <option value="{{ $module->id }}" data-section-type="{{ $section->type }}">
-                                        {{ $test->title }} | {{ $section->type === 'reading_writing' ? 'R&W' : 'Math' }} - Mod
-                                        {{ $module->module_number }} ({{ $module->difficulty_level }})
-                                    </option>
+                                    @if(auth()->user()->role !== 'teacher' || $module->created_by === auth()->id())
+                                        <option value="{{ $module->id }}" data-section-type="{{ $section->type }}">
+                                            {{ $test->title }} | {{ $section->type === 'reading_writing' ? 'R&W' : 'Math' }} - Mod
+                                            {{ $module->module_number }} ({{ $module->difficulty_level }})
+                                        </option>
+                                    @endif
                                 @endforeach
                             @endforeach
                         @endforeach
@@ -39,14 +57,14 @@
                     <label for="bulkStartPosition" class="block text-sm font-semibold text-slate-300 mb-1.5">Starting
                         Position <span class="text-rose-500">*</span></label>
                     <input type="number"
-                    class="w-full px-3 py-2 text-sm text-white bg-slate-900/60 border border-slate-800/80 rounded-lg placeholder-slate-500 focus:outline-hidden focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
-                    id="bulkStartPosition" min="1" value="1" required>
+                        class="w-full px-3 py-2 text-sm text-white bg-slate-900/60 border border-slate-800/80 rounded-lg placeholder-slate-500 focus:outline-hidden focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
+                        id="bulkStartPosition" min="1" value="1" required>
                     <div class="text-xs text-slate-500 mt-1.5">Existing questions will be shifted down.</div>
-                    </div>
-                    </div>
-                    </div>
+                </div>
+            </div>
+        </div>
 
-                    <hr class="border-slate-800/60 ml-11">
+        <hr class="border-slate-800/60 ml-11">
         <!-- STEP 2 -->
         <div x-data="{ importTab: 'json' }">
             <div class="flex items-center gap-3 mb-4">
@@ -174,7 +192,7 @@
                                 <i class="bi bi-eye text-base leading-none"></i> Preview
                             </button>
                             <button type="button"
-                                class="px-5 py-2 bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-500 hover:to-violet-500 hover:shadow-indigo-500/20 text-white font-semibold text-sm rounded-lg shadow-lg flex items-center gap-1.5"
+                                class="px-5 py-2 bg-linear-to-r from-indigo-600 to-violet-600 hover:from-indigo-500 hover:to-violet-500 hover:shadow-indigo-500/20 text-white font-semibold text-sm rounded-lg shadow-lg flex items-center gap-1.5"
                                 id="bulkImportSubmitBtn">
                                 <i class="bi bi-cloud-arrow-up text-base leading-none"></i> Import from Editor
                             </button>
@@ -237,7 +255,7 @@
                                 <i class="bi bi-eye text-base leading-none"></i> Preview
                             </button>
                             <button type="button"
-                                class="px-5 py-2 bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-500 hover:to-violet-500 hover:shadow-indigo-500/20 text-white font-semibold text-sm rounded-lg shadow-lg flex items-center gap-1.5"
+                                class="px-5 py-2 bg-linear-to-r from-indigo-600 to-violet-600 hover:from-indigo-500 hover:to-violet-500 hover:shadow-indigo-500/20 text-white font-semibold text-sm rounded-lg shadow-lg flex items-center gap-1.5"
                                 id="bulkCsvImportSubmitBtn">
                                 <i class="bi bi-cloud-arrow-up text-base leading-none"></i> Import CSV
                             </button>
@@ -272,7 +290,7 @@
                                         class="bi bi-file-earmark-zip text-4xl text-slate-500 mb-3 block leading-none"></i>
                                     <span class="font-semibold block text-slate-200 text-sm mb-1 drag-instruction">Drag
                                         &amp; drop ZIP here</span>
-                                    <span class="text-slate-400 text-xs text-slate-500">or click to browse file</span>
+                                    <span class="text-slate-400 text-xs">or click to browse file</span>
                                     <div
                                         class="file-name-display mt-2.5 text-xs text-emerald-400 font-bold hidden animate-pulse">
                                     </div>
@@ -299,7 +317,7 @@
                             </div>
                             <div class="lg:col-span-4">
                                 <button type="button"
-                                    class="w-full py-4 bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-500 hover:to-violet-500 hover:shadow-indigo-500/20 text-white font-bold rounded-lg shadow-lg flex items-center justify-center gap-2"
+                                    class="w-full py-4 bg-linear-to-r from-indigo-600 to-violet-600 hover:from-indigo-500 hover:to-violet-500 hover:shadow-indigo-500/20 text-white font-bold rounded-lg shadow-lg flex items-center justify-center gap-2"
                                     id="bulkZipImportBtn">
                                     <i class="bi bi-cloud-arrow-up text-lg leading-none"></i> Import ZIP Package
                                 </button>

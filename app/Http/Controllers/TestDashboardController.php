@@ -15,7 +15,9 @@ use App\Services\TestManagementService;
 use App\Http\Requests\StoreTestRequest;
 use App\Http\Requests\UpdateTestRequest;
 use App\Http\Requests\StoreSectionRequest;
+use App\Http\Requests\UpdateSectionRequest;
 use App\Http\Requests\StoreModuleRequest;
+use App\Http\Requests\UpdateModuleRequest;
 use App\Http\Requests\LinkModuleRequest;
 use App\Http\Requests\UpdateQuestionRequest;
 use App\Http\Requests\AttachQuestionRequest;
@@ -40,7 +42,7 @@ class TestDashboardController extends Controller
     public function index()
     {
         try {
-            $tests = Test::with('sections.modules')->latest()->get();
+            $tests = Test::visibleTo(auth()->user())->with(['creator', 'sections.creator', 'sections.modules.creator'])->latest()->get();
         } catch (\Exception $e) {
             $tests = collect();
         }
@@ -52,9 +54,13 @@ class TestDashboardController extends Controller
         }
 
         try {
-            $questionsTotal = Question::query()->count();
-            $questions = Question::query()
-                ->select(['id', 'section_type', 'stem', 'is_pretest', 'is_complete', 'skill_domain', 'difficulty'])
+            $qQuery = Question::visibleTo(auth()->user());
+            if (auth()->user()->role === 'teacher') {
+                $qQuery->where('created_by', auth()->id());
+            }
+            $questionsTotal = $qQuery->count();
+            $questions = $qQuery
+                ->select(['id', 'section_type', 'stem', 'is_pretest', 'is_complete', 'skill_domain', 'difficulty', 'created_by'])
                 ->orderByDesc('id')
                 ->limit(self::QUESTIONS_TABLE_PER_PAGE)
                 ->get();
@@ -64,7 +70,7 @@ class TestDashboardController extends Controller
         }
 
         try {
-            $allModules = Module::with('sections.test')->latest()->get();
+            $allModules = Module::visibleTo(auth()->user())->with(['creator', 'sections.test'])->latest()->get();
         } catch (\Exception $e) {
             $allModules = collect();
         }
@@ -79,9 +85,9 @@ class TestDashboardController extends Controller
      */
     public function snapshot()
     {
-        $tests = Test::with('sections.modules')->latest()->get();
+        $tests = Test::visibleTo(auth()->user())->with(['creator', 'sections.creator', 'sections.modules.creator'])->latest()->get();
         $passages = Passage::latest()->get();
-        $allModules = Module::with('sections.test')->latest()->get();
+        $allModules = Module::visibleTo(auth()->user())->with(['creator', 'sections.test'])->latest()->get();
 
         return response()->json([
             'tests' => $tests,
@@ -102,9 +108,13 @@ class TestDashboardController extends Controller
         $moduleId = $request->input('module_id');
         $isComplete = $request->input('is_complete');
 
-        $query = Question::query()
-            ->select(['questions.id', 'questions.section_type', 'questions.stem', 'questions.is_pretest', 'questions.is_complete', 'questions.skill_domain', 'questions.difficulty'])
-            ->orderByDesc('questions.id');
+        $showShared = $request->boolean('show_shared', false);
+
+        $query = Question::visibleTo(auth()->user());
+        if (auth()->user()->role === 'teacher' && !$showShared) {
+            $query->where('questions.created_by', auth()->id());
+        }
+        $query->select(['questions.id', 'questions.section_type', 'questions.stem', 'questions.is_pretest', 'questions.is_complete', 'questions.skill_domain', 'questions.difficulty', 'questions.created_by']);
 
         if ($q !== '') {
             if (ctype_digit($q)) {
@@ -130,6 +140,9 @@ class TestDashboardController extends Controller
                   ->where('module_questions.module_id', (int) $moduleId)
                   ->addSelect('module_questions.position as question_number')
                   ->reorder('module_questions.position', 'asc');
+        } else {
+            $query->orderByRaw('CASE WHEN questions.created_by = ? THEN 0 ELSE 1 END ASC', [auth()->id()])
+                  ->orderByDesc('questions.id');
         }
 
         $paginator = $query->paginate($perPage, ['*'], 'page', $page);
@@ -167,10 +180,10 @@ class TestDashboardController extends Controller
 
         $pinned = null;
         if ($id !== null && $id !== '' && ctype_digit((string) $id)) {
-            $pinned = Question::query()->select(['id', 'stem'])->find((int) $id);
+            $pinned = Question::visibleTo(auth()->user())->select(['id', 'stem'])->find((int) $id);
         }
 
-        $query = Question::query()->select(['id', 'stem'])->orderByDesc('id');
+        $query = Question::visibleTo(auth()->user())->select(['id', 'stem'])->orderByDesc('id');
         if ($pinned) {
             $query->where('id', '!=', $pinned->id);
         }
@@ -204,8 +217,9 @@ class TestDashboardController extends Controller
     public function storeTest(StoreTestRequest $request)
     {
         $validated = $request->validated();
-
         $validated['total_duration_minutes'] = 0;
+        $validated['created_by'] = auth()->id();
+        $validated['is_public'] = $request->boolean('is_public', false);
         $test = Test::create($validated);
 
         return response()->json([
@@ -221,7 +235,13 @@ class TestDashboardController extends Controller
     public function updateTest(UpdateTestRequest $request, $id)
     {
         $test = Test::findOrFail($id);
+        if (auth()->user()->role === 'teacher' && $test->created_by !== auth()->id()) {
+            abort(403, 'Unauthorized. You do not own this resource.');
+        }
         $validated = $request->validated();
+        if (isset($validated['is_public'])) {
+            $validated['is_public'] = filter_var($validated['is_public'], FILTER_VALIDATE_BOOLEAN);
+        }
         $test->update($validated);
 
         return response()->json([
@@ -238,6 +258,11 @@ class TestDashboardController extends Controller
     {
         $validated = $request->validated();
 
+        $test = Test::findOrFail($validated['test_id']);
+        if (auth()->user()->role === 'teacher' && $test->created_by !== auth()->id()) {
+            abort(403, 'Unauthorized. You do not own the parent test.');
+        }
+
         if (Section::where('test_id', $validated['test_id'])->where('type', $validated['type'])->exists()) {
             return response()->json([
                 'status' => 'error',
@@ -249,6 +274,8 @@ class TestDashboardController extends Controller
         if (empty($validated['name'])) {
             $validated['name'] = $validated['type'] === Section::TYPE_RW ? 'Reading and Writing' : 'Math';
         }
+        $validated['created_by'] = auth()->id();
+        $validated['is_public'] = $request->boolean('is_public', false);
         $section = Section::create($validated);
 
         return response()->json([
@@ -258,24 +285,57 @@ class TestDashboardController extends Controller
         ], 201);
     }
 
+    /**
+     * Update an existing section.
+     */
+    public function updateSection(UpdateSectionRequest $request, $id)
+    {
+        $section = Section::findOrFail($id);
+        if (auth()->user()->role === 'teacher' && $section->created_by !== auth()->id()) {
+            abort(403, 'Unauthorized. You do not own this resource.');
+        }
+        $validated = $request->validated();
+        if (isset($validated['is_public'])) {
+            $validated['is_public'] = filter_var($validated['is_public'], FILTER_VALIDATE_BOOLEAN);
+        }
+        $section->update($validated);
+
+        return response()->json([
+            'status' => 'success',
+            'message' => 'Section updated successfully',
+            'data' => $section,
+        ]);
+    }
+
     public function storeModule(StoreModuleRequest $request)
     {
         $validated = $request->validated();
 
         // Auto-generate section if test_id and section_type are provided and section_id is empty
         if (empty($validated['section_id']) && !empty($validated['test_id']) && !empty($validated['section_type'])) {
+            $test = Test::findOrFail($validated['test_id']);
+            if (auth()->user()->role === 'teacher' && $test->created_by !== auth()->id()) {
+                abort(403, 'Unauthorized. You do not own the parent test.');
+            }
+
             $section = Section::firstOrCreate([
                 'test_id' => $validated['test_id'],
                 'type' => $validated['section_type'],
             ], [
                 'name' => $validated['section_type'] === Section::TYPE_RW ? 'Reading and Writing' : 'Math',
                 'order' => $validated['section_type'] === Section::TYPE_RW ? 1 : 2,
+                'created_by' => auth()->id(),
+                'is_public' => $request->boolean('is_public', false),
             ]);
             $validated['section_id'] = $section->id;
         }
 
         if (!empty($validated['section_id'])) {
             $section = Section::findOrFail($validated['section_id']);
+            if (auth()->user()->role === 'teacher' && $section->created_by !== auth()->id()) {
+                abort(403, 'Unauthorized. You do not own the parent section.');
+            }
+
             $baseOrder = (($section->order - 1) * 2) + (int) $validated['module_number'];
             $existingMax = Module::where('section_id', $section->id)
                 ->where('module_number', $validated['module_number'])
@@ -290,6 +350,8 @@ class TestDashboardController extends Controller
             $validated['key'] = 'MOD_' . strtoupper(Str::random(8));
         }
 
+        $validated['created_by'] = auth()->id();
+        $validated['is_public'] = $request->boolean('is_public', false);
         $module = Module::create($validated);
 
         if (!empty($validated['section_id'])) {
@@ -309,6 +371,32 @@ class TestDashboardController extends Controller
     }
 
     /**
+     * Update an existing module.
+     */
+    public function updateModule(UpdateModuleRequest $request, $id)
+    {
+        $module = Module::findOrFail($id);
+        if (auth()->user()->role === 'teacher' && $module->created_by !== auth()->id()) {
+            abort(403, 'Unauthorized. You do not own this resource.');
+        }
+        $validated = $request->validated();
+        if (isset($validated['is_public'])) {
+            $validated['is_public'] = filter_var($validated['is_public'], FILTER_VALIDATE_BOOLEAN);
+        }
+        $module->update($validated);
+        
+        if ($module->section && $module->section->test) {
+            $module->section->test->refreshTotalDuration();
+        }
+        
+        return response()->json([
+            'status' => 'success',
+            'message' => 'Module updated successfully',
+            'data' => $module,
+        ]);
+    }
+
+    /**
      * Link an existing reusable module to a section.
      */
     public function linkModuleToSection(LinkModuleRequest $request)
@@ -316,6 +404,15 @@ class TestDashboardController extends Controller
         $validated = $request->validated();
 
         $module = Module::findOrFail($validated['module_id']);
+        if (auth()->user()->role === 'teacher') {
+            if ($module->created_by !== auth()->id() && !$module->is_public && !($module->section && $module->section->is_public)) {
+                // Wait, our recursively cascaded check is visibleTo scope.
+                // Let's just check using visibleTo on the model:
+                if (!Module::visibleTo(auth()->user())->where('id', $module->id)->exists()) {
+                    abort(403, 'Unauthorized. This module is private.');
+                }
+            }
+        }
 
         if (empty($validated['section_id'])) {
             if (empty($validated['test_id']) || empty($validated['section_type'])) {
@@ -332,9 +429,15 @@ class TestDashboardController extends Controller
             ], [
                 'name' => $validated['section_type'] === Section::TYPE_RW ? 'Reading and Writing' : 'Math',
                 'order' => $validated['section_type'] === Section::TYPE_RW ? 1 : 2,
+                'created_by' => auth()->id(),
+                'is_public' => false,
             ]);
         } else {
             $section = Section::findOrFail($validated['section_id']);
+        }
+
+        if (auth()->user()->role === 'teacher' && $section->created_by !== auth()->id()) {
+            abort(403, 'Unauthorized. You do not own this section.');
         }
 
         if ($section->modules()->where('module_id', $module->id)->exists()) {
@@ -361,7 +464,7 @@ class TestDashboardController extends Controller
      */
     public function showQuestion($id)
     {
-        $question = Question::with(['passage', 'answerChoices', 'explanation', 'sprCorrectAnswers'])->findOrFail($id);
+        $question = Question::visibleTo(auth()->user())->with(['passage', 'answerChoices', 'explanation', 'sprCorrectAnswers'])->findOrFail($id);
         return response()->json([
             'status' => 'success',
             'data' => $question,
@@ -371,12 +474,12 @@ class TestDashboardController extends Controller
     /**
      * Update an existing question and its associated passage (if R&W).
      */
-    /**
-     * Update an existing question and its associated passage (if R&W).
-     */
     public function updateQuestion(UpdateQuestionRequest $request, $id)
     {
         $question = Question::with(['passage', 'answerChoices', 'explanation'])->findOrFail($id);
+        if (auth()->user()->role === 'teacher' && $question->created_by !== auth()->id()) {
+            abort(403, 'Unauthorized. You do not own this question.');
+        }
         $validated = $request->validated();
 
         DB::transaction(function () use ($question, $validated) {
@@ -457,7 +560,14 @@ class TestDashboardController extends Controller
         $validated = $request->validated();
 
         $module = Module::findOrFail($validated['module_id']);
-        if ($module->questions()->where('question_id', $validated['question_id'])->exists()) {
+        if (auth()->user()->role === 'teacher' && $module->created_by !== auth()->id()) {
+            abort(403, 'Unauthorized. You do not own this module.');
+        }
+
+        // Validate the question is visible to the user
+        $question = Question::visibleTo(auth()->user())->findOrFail($validated['question_id']);
+
+        if ($module->questions()->where('question_id', $question->id)->exists()) {
             return response()->json([
                 'status' => 'error',
                 'message' => 'Question is already attached to this module.',
@@ -478,7 +588,7 @@ class TestDashboardController extends Controller
                 ->increment('position');
         });
 
-        $module->questions()->attach($validated['question_id'], ['position' => $position]);
+        $module->questions()->attach($question->id, ['position' => $position]);
 
         return response()->json([
             'status' => 'success',
@@ -605,7 +715,7 @@ class TestDashboardController extends Controller
         $testType = $validated['test_type'] ?? 'full_length';
 
         try {
-            $test = $this->testManagement->generateFullSatStructure($validated['title'], $testType);
+            $test = $this->testManagement->generateFullSatStructure($validated['title'], $testType, auth()->id());
 
             return response()->json([
                 'status' => 'success',
@@ -625,8 +735,11 @@ class TestDashboardController extends Controller
      */
     public function cloneTest(Request $request, $id)
     {
+        // Check visibility first
+        $originalTest = Test::visibleTo(auth()->user())->findOrFail($id);
+
         try {
-            $test = $this->testManagement->cloneTest((int) $id);
+            $test = $this->testManagement->cloneTest((int) $id, auth()->id());
 
             return response()->json([
                 'status' => 'success',
@@ -646,9 +759,19 @@ class TestDashboardController extends Controller
      */
     public function cloneModule(Request $request, $id)
     {
+        // Check visibility first
+        $originalModule = Module::visibleTo(auth()->user())->findOrFail($id);
+
+        $sectionId = $request->input('section_id');
+        if ($sectionId) {
+            $section = Section::findOrFail($sectionId);
+            if (auth()->user()->role === 'teacher' && $section->created_by !== auth()->id()) {
+                abort(403, 'Unauthorized. You do not own the target section.');
+            }
+        }
+
         try {
-            $sectionId = $request->input('section_id');
-            $module = $this->testManagement->cloneModule((int) $id, $sectionId ? (int) $sectionId : null);
+            $module = $this->testManagement->cloneModule((int) $id, $sectionId ? (int) $sectionId : null, auth()->id());
 
             return response()->json([
                 'status' => 'success',
@@ -668,6 +791,11 @@ class TestDashboardController extends Controller
      */
     public function deleteTest(Request $request, $id)
     {
+        $test = Test::findOrFail($id);
+        if (auth()->user()->role === 'teacher' && $test->created_by !== auth()->id()) {
+            abort(403, 'Unauthorized. You do not own this test.');
+        }
+
         try {
             $this->testManagement->deleteTest((int) $id, $request->boolean('delete_children'));
             return response()->json(['status' => 'success', 'message' => 'Test deleted.']);
@@ -678,6 +806,11 @@ class TestDashboardController extends Controller
 
     public function deleteSection(Request $request, $id)
     {
+        $section = Section::findOrFail($id);
+        if (auth()->user()->role === 'teacher' && $section->created_by !== auth()->id()) {
+            abort(403, 'Unauthorized. You do not own this section.');
+        }
+
         try {
             $this->testManagement->deleteSection((int) $id, $request->boolean('delete_children'));
             return response()->json(['status' => 'success', 'message' => 'Section deleted.']);
@@ -688,6 +821,11 @@ class TestDashboardController extends Controller
 
     public function deleteModule(Request $request, $id)
     {
+        $module = Module::findOrFail($id);
+        if (auth()->user()->role === 'teacher' && $module->created_by !== auth()->id()) {
+            abort(403, 'Unauthorized. You do not own this module.');
+        }
+
         try {
             $this->testManagement->deleteModule((int) $id, $request->boolean('delete_children'));
             return response()->json(['status' => 'success', 'message' => 'Module deleted.']);
@@ -698,7 +836,12 @@ class TestDashboardController extends Controller
 
     public function deleteQuestion($id)
     {
-        Question::findOrFail($id)->delete();
+        $question = Question::findOrFail($id);
+        if (auth()->user()->role === 'teacher' && $question->created_by !== auth()->id()) {
+            abort(403, 'Unauthorized. You do not own this question.');
+        }
+
+        $question->delete();
         return response()->json(['status' => 'success', 'message' => 'Question deleted.']);
     }
 }

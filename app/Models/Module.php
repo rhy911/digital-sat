@@ -29,7 +29,35 @@ class Module extends Model
         'duration_minutes',
         'total_questions',
         'order',
+        'created_by',
+        'is_public',
     ];
+
+    protected $casts = [
+        'is_public' => 'boolean',
+    ];
+
+    public function creator()
+    {
+        return $this->belongsTo(User::class, 'created_by');
+    }
+
+    public function scopeVisibleTo($query, $user)
+    {
+        if (!$user) {
+            return $query->where('is_public', true);
+        }
+        if ($user->role === 'admin') {
+            return $query;
+        }
+        return $query->where(function ($q) use ($user) {
+            $q->where('created_by', $user->id)
+              ->orWhere('is_public', true)
+              ->orWhereHas('sections', function ($s) use ($user) {
+                  $s->visibleTo($user);
+              });
+        });
+    }
 
     protected static function booted()
     {

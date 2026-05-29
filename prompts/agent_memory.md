@@ -2,6 +2,48 @@
 
 > **RULE:** ALWAYS add new entries to TOP of log. Newest items first.
 
+## [2026-05-30 01:45] - Refactor: Standardize Form Controls & Input Styling Across Dashboard
+- **Topic**: Standardize inputs, selects, textareas with Tailwind v4 classes + transitions.
+- **Summary**: Purge redundant styles from `test-dashboard-admin.css`. Upgrade inputs, selects, textareas in `tests-tab.blade.php`, `sections-tab.blade.php`, `modules-tab.blade.php`, and `builder-tab.blade.php` to use: `bg-slate-900/60 border border-slate-800/80 rounded-xl text-white text-sm placeholder-slate-500 hover:border-indigo-500/40 focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 focus:outline-hidden transition-all duration-200`. Recompile assets via `npm.cmd run build` successfully.
+
+## [2026-05-30 00:45] - Refactor: Section Tab Offcanvas Migration for Unified Creation Workflow
+- **Topic**: Refactor inline section creation form to offcanvas, align headers & buttons.
+- **Summary**: Moved inline section creation card in `sections-tab.blade.php` to `createSectionOffcanvas` side panel. Integrated "Create Section" button in header, and wired empty state button to trigger it. Leveraged existing generic JS form listener to handle ajax submits and auto-dismissals seamlessly.
+
+## [2026-05-30 00:35] - Bug Fix: Tabulator Layout Shifts & Data Column Jumps on Tab Switches
+- **Topic**: Tabulator `.redraw(true)` with timeouts and premium opacity transitions to prevent visual snaps/jumping.
+- **Summary**: Implemented `transition-opacity duration-200 opacity-0` on `testsTabulatorTable` and `sectionsTabulatorTable` containers in Blade. Modified `tests.js` and `sections.js` to trigger `.redraw(true)` followed by setting opacity to 100% with timeouts after init, replacements, and tab reactivations. Updated `index.js` to immediately hide the tables with `opacity-0` when sidebar links are clicked to ensure no visual snap or data shifting is ever visible. Rebuilt Vite assets.
+
+## [2026-05-29 12:30] - Feat: Complete Questions Tab Show-Shared Toggle Integration & Build
+- **Topic**: Pass show_shared in questions URL fetcher, bind change event listener, compile assets & run verification.
+- **Summary**: Modified `questionsListFetchUrl()` inside `questions.js` to detect the checked state of `#questionsShowSharedToggle` and append `show_shared=1` query parameter when true. Bound change event listener to `#questionsShowSharedToggle` inside `index.js` to reset current page index (`window.__tdQuestionsPage = 1`) and trigger `refreshQuestionsTableOnly()`. Re-compiled Vite production asset bundle successfully via `npm.cmd run build`. Ran PHPUnit feature test suite `OwnershipAccessControlTest` - all 6 backend integration tests completed successfully.
+
+## [2026-05-29 12:15] - Refactor: Questions Initial View Parity & Dynamic Selector Filters
+- **Topic**: Fix pool-table.blade.php initial load button visibility, filter module selects, rebuild questionsTableModuleFilter.
+- **Summary**: Implemented dynamic `$isOwner` check in `pool-table.blade.php` to render `"View"` instead of `"Edit/Delete"` for unowned questions on initial server-render. Restructured module filter select in `pool-table.blade.php` to only show owned modules for teachers. Updated `rebuildQuestionModuleTomSelect` in `helpers.js` to support custom layouts and option naming for `questionsTableModuleFilter`. Registered `questionsTableModuleFilter` in `captureTomSelectPreservation()` and `rebuildAllTomSelects()` in `index.js` to preserve filter states across AJAX reloads. Run all tests and recompiled Vite bundle successfully.
+
+## [2026-05-29 12:05] - Feat: Dynamic Question View Mode, Owned Prioritization & Column Layout Overhaul
+- **Topic**: Hide unowned modules in builder/import selections, change edit to view for unowned questions, prioritize owned questions, overhaul created-by/public columns.
+- **Summary**: Updated `rebuildQuestionModuleTomSelect` in `helpers.js`, `builder-tab.blade.php`, and `import-wizard.blade.php` to completely filter out unowned modules in builder/questions dropdowns when user is a teacher. Modified backend query scopes in `TestDashboardController.php` (both `index()` and `questionsList()`) to select `questions.created_by` and sort by `orderByRaw('CASE WHEN created_by = ? THEN 0 ELSE 1 END ASC')` to float owned questions to the top of the general questions list. Updated `renderQuestionsTable` in `questions.js` to show a static `"View"` button instead of `"Edit"`, and hide the `"Delete"` button for unowned questions. Refactored the open-modal event listener in `index.js` to automatically lock all inputs/textarea/select elements, set EasyMDE editors to read-only (`readOnly: 'nocursor'`), de-activate EasyMDE toolbars, and hide the submit button if the question is unowned. Overhauled `"Created By"` and `"Public"` columns across tests, sections, and modules tables to hide unowned badges, truncate/strip long usernames with hover full-name tooltips, and display a prominent `"Shared"` globe badge in the Public column for non-owned rows. Rebuilt production assets successfully.
+
+## [2026-05-29 11:45] - Bug Fix: Dynamic Date Formats & Owner Display Sync
+- **Topic**: Shorten Created At date format, clean System/Admin labels to Admin, fix teacher creation badge evaluation.
+- **Summary**: Implemented `formatDateToShort(dateStr)` utility inside `helpers.js` to format Eloquent datetime strings to `DD/MM/YY` safely. Added formatters inside Tabulator columns and initial Blade data mapping arrays in `tests-tab.blade.php`, `sections-tab.blade.php`, and `modules-tab.blade.php`. Changed all fallback occurrences of `'System/Admin'` to `'Admin'`. Resolved teacher test creation visual bugs by calculating `is_owner` and `created_by_name` dynamically on the client-side inside Tabulator maps for `tests.js` and `sections.js` when AJAX reloads retrieve raw Eloquent models lacking pre-processed properties. Rebuilt Vite production assets successfully. All backend feature tests remain perfectly green.
+
+## [2026-05-29 11:30] - Feat: Test Data Dynamic Ownership & Role-Based Access Control
+- **Topic**: Restrict teacher access to owned/public resources, prevent edit/delete of shared assets, add dynamic toggles & clone.
+- **Summary**: Implement `is_public` and `created_by` columns via migration. Add `visibleTo` scopes in `Test`, `Section`, `Module`, `Question` models with cascading visibility. Inject user metadata globally. Update controllers to merge owner on creation, validate edit/delete ownership outside try blocks returning 403, and filter queries. Define new PUT update routes for sections and modules. Enhance Tabulator & HTML tables to render Created At, "Mine"/"Shared" badges, interactive public checkbox toggles (read-only for non-owners), and dotted `.row-shared` styling. Wire clone button fetch click listeners. Created integration test `OwnershipAccessControlTest` - all 6 tests passed.
+
+## [2026-05-29 10:50] - Feat: Dynamic Dashboard Role Badge
+- **Topic**: Dynamic Admin/Teacher badge based on auth role.
+- **Summary**: Edit `test-dashboard.blade.php` to output 'Teacher' or 'Administrator' dynamically via `auth()->user()->role === 'teacher' ? 'Teacher' : 'Administrator'`. Student checks omitted since student dashboard access blocked. Run PHPUnit `AuthRoleTest` successfully.
+
+## [2026-05-29 10:45] - Feat: Enforce Role-Based Web Auth Restrictions with Dynamic Link
+- **Topic**: Restrict student/teacher sign-ins based on visual pathway expectations.
+- **Summary**: Add hidden `role` input in `signin.blade.php`. Update `LoginWebController.php` to validate `role` against DB. Mismatches block sign-in, returning custom English warning showing registered role and clickable dynamic routing link (e.g. "This account is registered as a teacher. Sign in as a Teacher instead."). Refactored `auth.js` to render HTML warnings via `innerHTML` and styled links inside `#errorMessage` in `auth.css`. Rebuilt production assets. Created `AuthRoleTest.php` to verify.
+
+
+
 ## [2026-05-28 23:46] - Feat: Easy Question Builder Live Preview Synchronized Scroll
 - **Topic**: Align Right Live Preview drawer scrolling in sync with active builder questions.
 - **Summary**: Implemented `syncLivePreviewScroll(block)` that smoothly scrolls (`scrollIntoView` nearest) the corresponding live preview card inside `#builderLivePreviewDrawer` when focused. Integrated synchronizations inside: Workspace Index list-item clicking (existing/draft questions), initial AJAX loaders (`loadExistingQuestionIntoWorkspace`), and new question draft initial additions (`addBuilderBlock`). Rebuilt production assets successfully.

@@ -35,12 +35,23 @@
                 </div>
                 Existing Reusable Modules
             </h5>
-            <div class="relative">
-                <span class="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"><i
-                        class="bi bi-search text-xs"></i></span>
-                <input type="text"
-                    class="pl-9 pr-4 py-2.5 w-full md:w-64 text-sm rounded-xl border border-slate-800/80 bg-slate-900/60 text-white placeholder-slate-400 focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 outline-none"
-                    id="modulesTableSearch" placeholder="Search modules...">
+            <div class="flex items-center gap-4 flex-wrap md:flex-nowrap">
+                @if(auth()->user()->role === 'teacher')
+                    <div class="flex items-center gap-2 bg-slate-900/40 px-3 py-1.5 rounded-xl border border-slate-800/80">
+                        <label for="modulesShowSharedToggle"
+                            class="text-xs font-extrabold text-slate-400 cursor-pointer select-none uppercase tracking-wider">Show
+                            Shared</label>
+                        <input type="checkbox" id="modulesShowSharedToggle"
+                            class="w-4 h-4 text-indigo-600 border-slate-800 bg-slate-400/60 rounded-xs cursor-pointer modules-show-shared-toggle">
+                    </div>
+                @endif
+                <div class="relative">
+                    <span class="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"><i
+                            class="bi bi-search text-xs"></i></span>
+                    <input type="text"
+                        class="pl-9 pr-4 py-2.5 w-full md:w-64 text-sm rounded-xl border border-slate-800/80 bg-slate-900/60 text-white placeholder-slate-500 hover:border-indigo-500/40 focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 focus:outline-hidden transition-all duration-200"
+                        id="modulesTableSearch" placeholder="Search modules...">
+                </div>
             </div>
         </div>
         <div class="overflow-x-auto">
@@ -53,6 +64,8 @@
                         <th class="px-6 py-3.5 font-extrabold text-[10px] text-slate-400">Target</th>
                         <th class="px-6 py-3.5 font-extrabold text-[10px] text-slate-400">Type</th>
                         <th class="px-6 py-3.5 font-extrabold text-[10px] text-slate-400">Difficulty</th>
+                        <th class="px-6 py-3.5 font-extrabold text-[10px] text-slate-400">Created By</th>
+                        <th class="px-6 py-3.5 font-extrabold text-[10px] text-slate-400">Public</th>
                         <th class="px-6 py-3.5 font-extrabold text-[10px] text-slate-400">Time</th>
                         <th class="px-6 py-3.5 font-extrabold text-[10px] text-slate-400">Q's</th>
                         <th class="px-6 py-3.5 font-extrabold text-[10px] text-slate-400 text-right">Actions</th>
@@ -60,7 +73,15 @@
                 </thead>
                 <tbody id="modulesTableBody" class="divide-y divide-slate-800/40 bg-transparent">
                     @forelse($allModules as $module)
-                        <tr class="hover:bg-indigo-500/5 border-b border-slate-800/40">
+                        @php
+                            $isOwner = $module->created_by === auth()->id() || auth()->user()->role === 'admin';
+                            if (auth()->user()->role === 'teacher' && !$isOwner) {
+                                continue;
+                            }
+                            $creatorName = $module->creator ? ($module->creator->username ?? $module->creator->email) : 'Admin';
+                        @endphp
+                        <tr
+                            class="hover:bg-indigo-500/5 border-b border-slate-800/40 {{ !$isOwner ? 'row-shared opacity-80 border-dashed' : '' }}">
                             <td class="px-6 py-4 font-semibold text-slate-500">{{ $module->id }}</td>
                             <td class="px-6 py-4">
                                 <code
@@ -108,27 +129,47 @@
                                     {{ ucfirst($module->difficulty_level) }}
                                 </span>
                             </td>
+                            <td class="px-6 py-4">
+                                <span class="text-xs font-semibold text-slate-350 truncate max-w-[110px] block"
+                                    title="{{ $creatorName }}">{{ $creatorName }}</span>
+                            </td>
+                            <td class="px-6 py-4">
+                                @if($isOwner)
+                                    <div class="flex items-center">
+                                        <input type="checkbox" data-id="{{ $module->id }}"
+                                            class="w-4 h-4 text-indigo-600 border-slate-800 bg-slate-400/60 rounded-xs cursor-pointer module-public-toggle"
+                                            {{ $module->is_public ? 'checked' : '' }}>
+                                    </div>
+                                @else
+                                    <span
+                                        class="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-extrabold bg-indigo-500/10 text-indigo-400 border border-indigo-500/20 uppercase tracking-wider">
+                                        <i class="bi bi-globe mr-1"></i> Shared
+                                    </span>
+                                @endif
+                            </td>
                             <td class="px-6 py-4 font-bold text-slate-200">{{ $module->duration_minutes }}<span
                                     class="text-[10px] ml-0.5 opacity-50 uppercase tracking-tighter">min</span></td>
                             <td class="px-6 py-4 font-extrabold text-white text-sm">{{ $module->total_questions }}</td>
                             <td class="px-6 py-4 text-right">
                                 <div class="flex justify-end gap-1">
-                                    <button
-                                        class="w-8 h-8 flex items-center justify-center text-slate-400 hover:text-indigo-400 hover:bg-indigo-500/10 rounded-xl clone-module-btn cursor-pointer"
-                                        data-id="{{ $module->id }}" title="Clone Module">
-                                        <i class="bi bi-copy"></i>
-                                    </button>
-                                    <button
-                                        class="w-8 h-8 flex items-center justify-center text-slate-400 hover:text-rose-400 hover:bg-rose-500/10 rounded-xl delete-module-btn cursor-pointer"
-                                        data-id="{{ $module->id }}" title="Delete">
-                                        <i class="bi bi-trash"></i>
-                                    </button>
+                                    @if($isOwner)
+                                        <button
+                                            class="w-8 h-8 flex items-center justify-center text-slate-400 hover:text-indigo-400 hover:bg-indigo-500/10 rounded-xl clone-module-btn cursor-pointer"
+                                            data-id="{{ $module->id }}" title="Clone Module">
+                                            <i class="bi bi-copy"></i>
+                                        </button>
+                                        <button
+                                            class="w-8 h-8 flex items-center justify-center text-slate-400 hover:text-rose-400 hover:bg-rose-500/10 rounded-xl delete-module-btn cursor-pointer"
+                                            data-id="{{ $module->id }}" title="Delete">
+                                            <i class="bi bi-trash"></i>
+                                        </button>
+                                    @endif
                                 </div>
                             </td>
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="8" class="px-6 py-20 text-center">
+                            <td colspan="10" class="px-6 py-20 text-center">
                                 <div class="flex flex-col items-center justify-center">
                                     <div
                                         class="w-20 h-20 rounded-full bg-slate-900/40 border border-slate-800/60 flex items-center justify-center mb-6">
@@ -163,7 +204,8 @@
                 <label for="moduleTest"
                     class="text-xs font-extrabold text-slate-400 tracking-wider uppercase mb-2 block">Target Test <span
                         class="text-slate-500 font-normal normal-case">(Optional)</span></label>
-                <select class="form-select tom-select" id="moduleTest" name="test_id">
+                <select class="form-select tom-select w-full bg-slate-900/60 border border-slate-800/80 text-white text-sm placeholder-slate-500 hover:border-indigo-500/40 focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 focus:outline-hidden transition-all duration-200 rounded-xl"
+                    id="moduleTest" name="test_id">
                     <option value="">No test (Standalone reusable module)</option>
                     @foreach ($tests as $test)
                         <option value="{{ $test->id }}">{{ $test->title }}</option>
@@ -179,7 +221,7 @@
                     class="text-xs font-extrabold text-slate-400 tracking-wider uppercase mb-2 block">Section Type <span
                         class="text-rose-500">*</span></label>
                 <select
-                    class="w-full px-4 py-2.5 rounded-xl border border-slate-800/80 bg-slate-900/60 text-white focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 outline-none appearance-none bg-no-repeat bg-position-[right_1rem_center] bg-size-[1em_1em]"
+                    class="w-full px-4 py-2.5 rounded-xl border border-slate-800/80 bg-slate-900/60 text-white text-sm hover:border-indigo-500/40 focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 focus:outline-hidden transition-all duration-200 appearance-none bg-no-repeat bg-position-[right_1rem_center] bg-size-[1em_1em]"
                     style="background-image: url('data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 fill=%22none%22 viewBox=%220 0 24 24%22 stroke=%22%2394a3b8%22 stroke-width=%222%22%3E%3Cpath stroke-linecap=%22round%22 stroke-linejoin=%22round%22 d=%22M19 9l-7 7-7-7%22 /%3E%3C/svg%3E')"
                     id="moduleSectionType" name="section_type" required onchange="applyModuleDefaults(this)">
                     <option value="reading_writing" data-type="reading_writing">Reading and Writing</option>
@@ -192,7 +234,7 @@
                     class="text-xs font-extrabold text-slate-400 tracking-wider uppercase mb-2 block">Module Key /
                     Unique Code <span class="text-slate-500 font-normal normal-case">(Optional)</span></label>
                 <input type="text"
-                    class="w-full px-4 py-2.5 rounded-xl border border-slate-800/80 bg-slate-900/60 text-white focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 outline-none font-mono font-bold"
+                    class="w-full px-4 py-2.5 rounded-xl border border-slate-800/80 bg-slate-900/60 text-white text-sm placeholder-slate-500 hover:border-indigo-500/40 focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 focus:outline-hidden transition-all duration-200 font-mono font-bold"
                     id="moduleKey" name="key" placeholder="e.g. RW_M1_STANDARD_01">
             </div>
 
@@ -202,7 +244,7 @@
                         class="text-xs font-extrabold text-slate-400 tracking-wider uppercase mb-2 block">Module Type #
                         <span class="text-rose-500">*</span></label>
                     <select
-                        class="w-full px-4 py-2.5 rounded-xl border border-slate-800/80 bg-slate-900/60 text-white focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 outline-none appearance-none bg-no-repeat bg-position-[right_1rem_center] bg-size-[1em_1em]"
+                        class="w-full px-4 py-2.5 rounded-xl border border-slate-800/80 bg-slate-900/60 text-white text-sm hover:border-indigo-500/40 focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 focus:outline-hidden transition-all duration-200 appearance-none bg-no-repeat bg-position-[right_1rem_center] bg-size-[1em_1em]"
                         style="background-image: url('data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 fill=%22none%22 viewBox=%220 0 24 24%22 stroke=%22%2394a3b8%22 stroke-width=%222%22%3E%3Cpath stroke-linecap=%22round%22 stroke-linejoin=%22round%22 d=%22M19 9l-7 7-7-7%22 /%3E%3C/svg%3E')"
                         id="moduleNumber" name="module_number" required>
                         <option value="1">1 (Standard)</option>
@@ -214,7 +256,7 @@
                         class="text-xs font-extrabold text-slate-400 tracking-wider uppercase mb-2 block">Difficulty
                         <span class="text-rose-500">*</span></label>
                     <select
-                        class="w-full px-4 py-2.5 rounded-xl border border-slate-800/80 bg-slate-900/60 text-white focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 outline-none appearance-none bg-no-repeat bg-position-[right_1rem_center] bg-size-[1em_1em]"
+                        class="w-full px-4 py-2.5 rounded-xl border border-slate-800/80 bg-slate-900/60 text-white text-sm hover:border-indigo-500/40 focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 focus:outline-hidden transition-all duration-200 appearance-none bg-no-repeat bg-position-[right_1rem_center] bg-size-[1em_1em]"
                         style="background-image: url('data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 fill=%22none%22 viewBox=%220 0 24 24%22 stroke=%22%2394a3b8%22 stroke-width=%222%22%3E%3Cpath stroke-linecap=%22round%22 stroke-linejoin=%22round%22 d=%22M19 9l-7 7-7-7%22 /%3E%3C/svg%3E')"
                         id="difficultyLevel" name="difficulty_level" required>
                         <option value="standard">Standard (M1)</option>
@@ -230,7 +272,7 @@
                         class="text-xs font-extrabold text-slate-400 tracking-wider uppercase mb-2 block">Duration
                         (min) <span class="text-rose-500">*</span></label>
                     <input type="number"
-                        class="w-full px-4 py-2.5 rounded-xl border border-slate-800/80 bg-slate-900/60 text-white focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 outline-none"
+                        class="w-full px-4 py-2.5 rounded-xl border border-slate-800/80 bg-slate-900/60 text-white text-sm placeholder-slate-500 hover:border-indigo-500/40 focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 focus:outline-hidden transition-all duration-200"
                         id="moduleDuration" name="duration_minutes" value="32" required>
                 </div>
                 <div>
@@ -238,9 +280,19 @@
                         class="text-xs font-extrabold text-slate-400 tracking-wider uppercase mb-2 block">Questions
                         <span class="text-rose-500">*</span></label>
                     <input type="number"
-                        class="w-full px-4 py-2.5 rounded-xl border border-slate-800/80 bg-slate-900/60 text-white focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 outline-none"
+                        class="w-full px-4 py-2.5 rounded-xl border border-slate-800/80 bg-slate-900/60 text-white text-sm placeholder-slate-500 hover:border-indigo-500/40 focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 focus:outline-hidden transition-all duration-200"
                         id="totalQuestions" name="total_questions" value="27" required>
                 </div>
+            </div>
+
+            <div class="flex items-center">
+                <label class="flex items-center group cursor-pointer">
+                    <input type="checkbox" name="is_public" value="1"
+                        class="w-4 h-4 text-indigo-600 border-slate-800 bg-slate-400/60 rounded-xs cursor-pointer">
+                    <span
+                        class="ml-2.5 text-xs font-extrabold text-slate-400 group-hover:text-indigo-400 uppercase tracking-wider">Public
+                        visibility</span>
+                </label>
             </div>
 
             <div class="bg-indigo-500/5 border border-indigo-500/15 rounded-xl p-4 flex gap-3 shadow-xl">
@@ -294,7 +346,7 @@
                 <label for="linkSection"
                     class="text-xs font-extrabold text-slate-400 tracking-wider uppercase mb-2 block">Target Section
                     <span class="text-rose-500">*</span></label>
-                <select class="form-select tom-select" id="linkSection" name="section_id"
+                <select class="form-select tom-select w-full bg-slate-900/60 border border-slate-800/80 text-white text-sm placeholder-slate-500 hover:border-indigo-500/40 focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 focus:outline-hidden transition-all duration-200 rounded-xl" id="linkSection" name="section_id"
                     x-bind:required="linkTargetType === 'section'">
                     <option value="">Select section...</option>
                     @foreach ($tests as $test)
@@ -310,7 +362,7 @@
                     <label for="linkTest"
                         class="text-xs font-extrabold text-slate-400 tracking-wider uppercase mb-2 block">Target Test
                         <span class="text-rose-500">*</span></label>
-                    <select class="form-select tom-select" id="linkTest" name="test_id"
+                    <select class="form-select tom-select w-full bg-slate-900/60 border border-slate-800/80 text-white text-sm placeholder-slate-500 hover:border-indigo-500/40 focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 focus:outline-hidden transition-all duration-200 rounded-xl" id="linkTest" name="test_id"
                         x-bind:required="linkTargetType === 'test'">
                         <option value="">Select test...</option>
                         @foreach ($tests as $test)
@@ -323,7 +375,7 @@
                         class="text-xs font-extrabold text-slate-400 tracking-wider uppercase mb-2 block">Section Type
                         <span class="text-rose-500">*</span></label>
                     <select
-                        class="w-full px-4 py-2.5 rounded-xl border border-slate-800/80 bg-slate-900/60 text-white focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 outline-none appearance-none bg-no-repeat bg-position-[right_1rem_center] bg-size-[1em_1em]"
+                        class="w-full px-4 py-2.5 rounded-xl border border-slate-800/80 bg-slate-900/60 text-white text-sm hover:border-indigo-500/40 focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 focus:outline-hidden transition-all duration-200 appearance-none bg-no-repeat bg-position-[right_1rem_center] bg-size-[1em_1em]"
                         style="background-image: url('data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 fill=%22none%22 viewBox=%220 0 24 24%22 stroke=%22%2394a3b8%22 stroke-width=%222%22%3E%3Cpath stroke-linecap=%22round%22 stroke-linejoin=%22round%22 d=%22M19 9l-7 7-7-7%22 /%3E%3C/svg%3E')"
                         id="linkSectionType" name="section_type" x-bind:required="linkTargetType === 'test'">
                         <option value="">Select type...</option>
@@ -337,7 +389,7 @@
                 <label for="linkModule"
                     class="text-xs font-extrabold text-slate-400 tracking-wider uppercase mb-2 block">Reusable Module
                     <span class="text-rose-500">*</span></label>
-                <select class="form-select tom-select" id="linkModule" name="module_id" required>
+                <select class="form-select tom-select w-full bg-slate-900/60 border border-slate-800/80 text-white text-sm placeholder-slate-500 hover:border-indigo-500/40 focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 focus:outline-hidden transition-all duration-200 rounded-xl" id="linkModule" name="module_id" required>
                     <option value="">Select module by key/ID...</option>
                     @foreach ($allModules as $mod)
                         <option value="{{ $mod->id }}">[{{ $mod->key ?? 'ID: ' . $mod->id }}] - Mod

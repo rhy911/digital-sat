@@ -49,6 +49,7 @@ class Question extends Model
         'irt_b',
         'irt_c',
         'external_id',
+        'created_by',
     ];
 
     protected $casts = [
@@ -59,6 +60,29 @@ class Question extends Model
         'irt_b' => 'float',
         'irt_c' => 'float',
     ];
+
+    public function creator()
+    {
+        return $this->belongsTo(User::class, 'created_by');
+    }
+
+    public function scopeVisibleTo($query, $user)
+    {
+        if (!$user) {
+            return $query->whereHas('modules', function ($m) {
+                $m->where('is_public', true);
+            });
+        }
+        if ($user->role === 'admin') {
+            return $query;
+        }
+        return $query->where(function ($q) use ($user) {
+            $q->where('created_by', $user->id)
+              ->orWhereHas('modules', function ($m) use ($user) {
+                  $m->visibleTo($user);
+              });
+        });
+    }
 
     public function passage()
     {

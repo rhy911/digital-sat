@@ -199,8 +199,10 @@ Route::middleware(['auth'])->prefix('test-dashboard')->name('test-dashboard.')->
     Route::post('/tests/{id}/clone', [TestDashboardController::class, 'cloneTest'])->name('tests.clone');
     Route::put('/tests/{id}', [TestDashboardController::class, 'updateTest'])->name('tests.update');
     Route::post('/sections', [TestDashboardController::class, 'storeSection'])->name('sections.store');
+    Route::put('/sections/{id}', [TestDashboardController::class, 'updateSection'])->name('sections.update');
     Route::post('/sections/link-module', [TestDashboardController::class, 'linkModuleToSection'])->name('sections.link-module');
     Route::post('/modules', [TestDashboardController::class, 'storeModule'])->name('modules.store');
+    Route::put('/modules/{id}', [TestDashboardController::class, 'updateModule'])->name('modules.update');
     Route::post('/modules/{id}/clone', [TestDashboardController::class, 'cloneModule'])->name('modules.clone');
     Route::get('/questions/{id}', [TestDashboardController::class, 'showQuestion'])->name('questions.show');
     Route::put('/questions/{id}', [TestDashboardController::class, 'updateQuestion'])->name('questions.update');

@@ -29,6 +29,13 @@
                         id="questionsTableFilter" placeholder="Search stem text...">
                 </div>
 
+                @if(auth()->user()->role === 'teacher')
+                    <div class="flex items-center gap-2 bg-slate-900/40 px-3 py-2 rounded-xl border border-slate-800/80">
+                        <label for="questionsShowSharedToggle" class="text-xs font-extrabold text-slate-400 cursor-pointer select-none uppercase tracking-wider">Show Shared</label>
+                        <input type="checkbox" id="questionsShowSharedToggle" class="w-4 h-4 text-indigo-600 border-slate-800 bg-slate-400/60 rounded-xs cursor-pointer questions-show-shared-toggle">
+                    </div>
+                @endif
+
                 <select
                     class="px-3 py-2 text-xs rounded-xl border border-slate-800/80 bg-slate-900/60 text-white focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 w-full max-w-[130px]"
                     id="questionsTableSectionFilter">
@@ -49,14 +56,32 @@
                     class="text-xs rounded-xl border border-slate-800/80 bg-slate-900/60 text-white focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 w-full max-w-[280px] tom-select tom-select-filter"
                     id="questionsTableModuleFilter">
                     <option value="">All Modules</option>
+                    @php
+                        $hasModules = false;
+                        foreach($tests as $test) {
+                            foreach($test->sections as $section) {
+                                foreach($section->modules as $module) {
+                                    if (auth()->user()->role !== 'teacher' || $module->created_by === auth()->id()) {
+                                        $hasModules = true;
+                                        break 3;
+                                    }
+                                }
+                            }
+                        }
+                    @endphp
+                    @if (!$hasModules)
+                        <option value="" disabled>No data yet</option>
+                    @endif
                     @foreach ($tests as $test)
                         @foreach ($test->sections as $section)
                             @foreach ($section->modules as $module)
-                                <option value="{{ $module->id }}">
-                                    {{ $test->title }} |
-                                    {{ $section->type === 'reading_writing' ? 'R&W' : 'Math' }} - Mod
-                                    {{ $module->module_number }}
-                                </option>
+                                @if(auth()->user()->role !== 'teacher' || $module->created_by === auth()->id())
+                                    <option value="{{ $module->id }}">
+                                        {{ $test->title }} |
+                                        {{ $section->type === 'reading_writing' ? 'R&W' : 'Math' }} - Mod
+                                        {{ $module->module_number }}
+                                    </option>
+                                @endif
                             @endforeach
                         @endforeach
                     @endforeach
@@ -93,6 +118,9 @@
                 </thead>
                 <tbody id="questionsTableBody" class="divide-y divide-slate-800/40 bg-transparent">
                     @forelse($questions as $question)
+                        @php
+                            $isOwner = $question->created_by === auth()->id() || auth()->user()->role === 'admin';
+                        @endphp
                         <tr class="hover:bg-indigo-500/5 border-b border-slate-800/40">
                             <td class="px-5 py-3.5 font-mono font-bold text-slate-500 text-center">{{ $question->id }}
                             </td>
@@ -149,16 +177,24 @@
                             </td>
                             <td class="px-5 py-3.5 text-center">
                                 <div class="flex justify-center gap-1.5">
-                                    <button
-                                        class="px-2.5 py-1 border border-indigo-500/20 text-indigo-400 bg-indigo-500/5 hover:bg-indigo-500/15 rounded-lg text-xs font-bold flex items-center gap-1 edit-question-btn cursor-pointer"
-                                        data-id="{{ $question->id }}">
-                                        <i class="bi bi-pencil-square text-xs leading-none"></i> Edit
-                                    </button>
-                                    <button
-                                        class="w-7 h-7 flex items-center justify-center border border-rose-500/20 text-rose-400 bg-rose-500/5 hover:bg-rose-500/15 rounded-full delete-question-btn cursor-pointer"
-                                        data-id="{{ $question->id }}" title="Delete">
-                                        <i class="bi bi-trash text-xs"></i>
-                                    </button>
+                                    @if ($isOwner)
+                                        <button
+                                            class="px-2.5 py-1 border border-indigo-500/20 text-indigo-400 bg-indigo-500/5 hover:bg-indigo-500/15 rounded-lg text-xs font-bold flex items-center gap-1 edit-question-btn cursor-pointer"
+                                            data-id="{{ $question->id }}">
+                                            <i class="bi bi-pencil-square text-xs leading-none"></i> Edit
+                                        </button>
+                                        <button
+                                            class="w-7 h-7 flex items-center justify-center border border-rose-500/20 text-rose-400 bg-rose-500/5 hover:bg-rose-500/15 rounded-full delete-question-btn cursor-pointer"
+                                            data-id="{{ $question->id }}" title="Delete">
+                                            <i class="bi bi-trash text-xs"></i>
+                                        </button>
+                                    @else
+                                        <button
+                                            class="px-2.5 py-1 border border-slate-700 text-slate-350 bg-slate-800/40 hover:bg-slate-800 rounded-lg text-xs font-bold flex items-center gap-1 edit-question-btn cursor-pointer"
+                                            data-id="{{ $question->id }}">
+                                            <i class="bi bi-eye text-xs leading-none"></i> View
+                                        </button>
+                                    @endif
                                 </div>
                             </td>
                         </tr>

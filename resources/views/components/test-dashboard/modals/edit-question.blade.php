@@ -1,7 +1,7 @@
 <x-ui.modal id="editQuestionModal" max-width="80%">
     <x-slot:title>
         <div class="flex items-center gap-2">
-            <i class="bi bi-pencil-square text-indigo-400"></i> Edit Question #<span id="editQuestionIdDisplay"></span>
+            <i class="bi bi-pencil-square text-indigo-400" id="editQuestionModalIcon"></i> <span id="editQuestionModalTitleText">Edit Question</span> #<span id="editQuestionIdDisplay"></span>
         </div>
     </x-slot:title>
 

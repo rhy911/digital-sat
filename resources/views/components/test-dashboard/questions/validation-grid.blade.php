@@ -74,7 +74,7 @@
 
         <!-- Spreadsheet container -->
         <div class="border border-slate-800/80 rounded-xl shadow-2xl bg-transparent overflow-hidden mb-4">
-            <div id="validation-grid" class="w-full bg-transparent validation-grid-container"></div>
+            <div id="validation-grid" class="w-full bg-transparent min-h-[380px]"></div>
         </div>
 
         <!-- Actions row -->

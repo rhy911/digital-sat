@@ -19,6 +19,7 @@ class UpdateTestRequest extends FormRequest
             'test_type' => 'sometimes|required|in:full_length,section_only,module_only,short_test',
             'break_duration_minutes' => 'sometimes|required|integer|min:0',
             'status' => 'sometimes|required|in:draft,active,archived',
+            'is_public' => 'nullable|boolean',
         ];
     }
 }

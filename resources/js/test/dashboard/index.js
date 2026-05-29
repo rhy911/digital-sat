@@ -111,6 +111,8 @@ document.addEventListener('DOMContentLoaded', async function () {
         rebuildModuleSectionTomSelect(tests, p.linkSection, 'linkSection');
         rebuildQuestionModuleTomSelect(tests, p.questionModule, 'questionModule');
         rebuildQuestionModuleTomSelect(tests, p.bulkQuestionModule, 'bulkQuestionModule');
+        rebuildQuestionModuleTomSelect(tests, p.builderModuleId, 'builderModuleId');
+        rebuildQuestionModuleTomSelect(tests, p.questionsTableModuleFilter, 'questionsTableModuleFilter');
         rebuildQuestionPassageTomSelect(passages, p.questionPassage);
         rebuildLinkModuleTomSelect(allModules, p.linkModule);
         
@@ -174,8 +176,63 @@ document.addEventListener('DOMContentLoaded', async function () {
                 return;
             }
 
-            // Clone handled separately via another listener but kept for delegation safety
-            if (btn.classList.contains('clone-test-btn') || btn.classList.contains('clone-module-btn')) return;
+            if (btn.classList.contains('clone-test-btn')) {
+                const preserve = captureTomSelectPreservation(null);
+                if (!await showCustomConfirm('Clone this test?', 'info', 'Clone Test')) return;
+                showTableLoader('testsTableContainer');
+                try {
+                    const response = await fetch(`${BASE_URL}/tests/${id}/clone`, {
+                        method: 'POST',
+                        headers: { 
+                            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content, 
+                            'Accept': 'application/json',
+                            'X-Requested-With': 'XMLHttpRequest'
+                        },
+                        credentials: 'same-origin'
+                    });
+                    const result = await response.json();
+                    if (response.ok) {
+                        showAlert('success', 'Test cloned successfully!');
+                        await refreshTestDashboardData(preserve);
+                    } else {
+                        showAlert('danger', result.message || 'Clone failed');
+                    }
+                } catch (error) {
+                    showAlert('danger', 'Error: ' + error.message);
+                } finally {
+                    hideTableLoader('testsTableContainer');
+                }
+                return;
+            }
+
+            if (btn.classList.contains('clone-module-btn')) {
+                const preserve = captureTomSelectPreservation(null);
+                if (!await showCustomConfirm('Clone this module?', 'info', 'Clone Module')) return;
+                showTableLoader('modulesTableContainer');
+                try {
+                    const response = await fetch(`${BASE_URL}/modules/${id}/clone`, {
+                        method: 'POST',
+                        headers: { 
+                            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content, 
+                            'Accept': 'application/json',
+                            'X-Requested-With': 'XMLHttpRequest'
+                        },
+                        credentials: 'same-origin'
+                    });
+                    const result = await response.json();
+                    if (response.ok) {
+                        showAlert('success', 'Module cloned successfully!');
+                        await refreshTestDashboardData(preserve);
+                    } else {
+                        showAlert('danger', result.message || 'Clone failed');
+                    }
+                } catch (error) {
+                    showAlert('danger', 'Error: ' + error.message);
+                } finally {
+                    hideTableLoader('modulesTableContainer');
+                }
+                return;
+            }
 
             if (!await showCustomConfirm('Permanently delete this item?', 'warning', 'Permanently Delete')) return;
 
@@ -248,6 +305,39 @@ document.addEventListener('DOMContentLoaded', async function () {
 
                 refreshEditMediaList();
                 updateEditQuestionPreview();
+
+                // Disablement & Mode Toggling based on ownership
+                const isOwner = question.created_by === window.__currentUserId || window.__currentUserRole === 'admin';
+                const titleText = document.getElementById('editQuestionModalTitleText');
+                const titleIcon = document.getElementById('editQuestionModalIcon');
+                const submitBtn = document.querySelector('#editQuestionForm button[type="submit"]');
+
+                if (titleText) titleText.textContent = isOwner ? 'Edit Question' : 'View Question';
+                if (titleIcon) {
+                    titleIcon.className = isOwner ? 'bi bi-pencil-square text-indigo-400' : 'bi bi-eye text-slate-400';
+                }
+                if (submitBtn) {
+                    if (isOwner) submitBtn.classList.remove('hidden');
+                    else submitBtn.classList.add('hidden');
+                }
+
+                // Disable form fields
+                const formElements = document.querySelectorAll('#editQuestionForm input, #editQuestionForm select, #editQuestionForm textarea:not(.easy-mde-textarea)');
+                formElements.forEach(el => {
+                    if (el.id === 'editQuestionId' || el.name === '_token') return;
+                    el.disabled = !isOwner;
+                });
+
+                // Set EasyMDE read-only mode
+                if (stemEditor) stemEditor.codemirror.setOption('readOnly', isOwner ? false : 'nocursor');
+                if (passageEditor) passageEditor.codemirror.setOption('readOnly', isOwner ? false : 'nocursor');
+                if (explanationEditor) explanationEditor.codemirror.setOption('readOnly', isOwner ? false : 'nocursor');
+
+                // Toggle toolbar styling for readonly state
+                document.querySelectorAll('#editQuestionModal .editor-toolbar').forEach(tb => {
+                    tb.style.pointerEvents = isOwner ? 'auto' : 'none';
+                    tb.style.opacity = isOwner ? '1' : '0.5';
+                });
 
                 setTimeout(() => {
                     if (stemEditor) stemEditor.codemirror.refresh();
@@ -393,6 +483,12 @@ document.addEventListener('DOMContentLoaded', async function () {
                     const preserve = captureTomSelectPreservation(this);
                     this.reset();
                     await refreshTestDashboardData(preserve);
+
+                    // Auto-close offcanvas if form is inside one
+                    const offcanvas = this.closest('[id$="Offcanvas"]');
+                    if (offcanvas) {
+                        window.dispatchEvent(new CustomEvent('close-offcanvas', { detail: offcanvas.id }));
+                    }
                 } else {
                     let msg = result.message || 'Validation failed';
                     if (result.errors) msg = Object.values(result.errors).flat().join(' ');
@@ -415,11 +511,23 @@ document.addEventListener('DOMContentLoaded', async function () {
         btn.addEventListener('click', () => {
             const target = btn.getAttribute('data-bs-target');
             if (target) {
+                // Immediately hide tables to prevent any visual snap or data jumping
+                const testsTable = document.getElementById('testsTabulatorTable');
+                if (testsTable) {
+                    testsTable.classList.remove('opacity-100');
+                    testsTable.classList.add('opacity-0');
+                }
+                const sectionsTable = document.getElementById('sectionsTabulatorTable');
+                if (sectionsTable) {
+                    sectionsTable.classList.remove('opacity-100');
+                    sectionsTable.classList.add('opacity-0');
+                }
+
                 sessionStorage.setItem(TEST_DASHBOARD_TAB_KEY, target);
                 requestAnimationFrame(() => {
                     setTimeout(() => {
                         renderActiveTab(target);
-                    }, 0);
+                    }, 50);
                 });
             }
         });
@@ -516,6 +624,15 @@ document.addEventListener('DOMContentLoaded', async function () {
             }
         });
     }
+
+    document.getElementById('questionsShowSharedToggle')?.addEventListener('change', async function () {
+        window.__tdQuestionsPage = 1;
+        try {
+            await refreshQuestionsTableOnly();
+        } catch (err) {
+            showAlert('danger', 'Filter failed: ' + err.message);
+        }
+    });
 
     // Start data fetch
     refreshTestDashboardData(captureTomSelectPreservation(null))
