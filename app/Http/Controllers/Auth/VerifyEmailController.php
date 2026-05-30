@@ -12,6 +12,10 @@ class VerifyEmailController extends Controller
     {
         $user = User::findOrFail($request->route('id'));
 
+        if (!$request->hasValidSignature()) {
+            return response()->json(['message' => 'Link xác minh không hợp lệ hoặc đã hết hạn.'], 403);
+        }
+
         if (!hash_equals(
             (string) $request->route('hash'),
             sha1($user->getEmailForVerification())

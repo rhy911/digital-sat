@@ -14,7 +14,7 @@ class RegisterWebController extends Controller
 {
     public function __invoke(Request $request)
     {
-        Log::info('RegisterWeb called', $request->all());
+        Log::info('RegisterWeb called', ['email' => $request->email]);
         try {
             $request->validate([
                 'username' => 'required|string|max:255|unique:users',
@@ -31,7 +31,7 @@ class RegisterWebController extends Controller
                 'role' => $request->input('role', 'student'),
             ]);
 
-            Log::info('User created via Web', $user->toArray());
+            Log::info('User created via Web', ['id' => $user->id, 'email' => $user->email]);
 
             // Gửi email xác minh
             $user->notify(new VerifyEmailNotification());
@@ -43,7 +43,6 @@ class RegisterWebController extends Controller
                 return response()->json([
                     'message' => 'Đăng ký thành công! Vui lòng xác minh email để tiếp tục.',
                     'user' => $user,
-                    'token' => $user->createToken('api-token')->plainTextToken,
                     'redirect' => route('verify.email.notice')
                 ], 201);
             }
@@ -55,7 +54,7 @@ class RegisterWebController extends Controller
 
             Log::error('Register error details (Web):', [
                 'error' => $message,
-                'request_data' => $request->all(),
+                'email' => $request->email,
             ]);
 
             // Return JSON for AJAX requests

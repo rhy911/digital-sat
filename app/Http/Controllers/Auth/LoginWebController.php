@@ -76,7 +76,6 @@ class LoginWebController extends Controller
                     'message' => 'Đăng nhập thành công.',
                     'user' => $user,
                     'email_verified' => $user->hasVerifiedEmail(),
-                    'token' => $user->createToken('api-token')->plainTextToken,
                 ], 200);
             }
 

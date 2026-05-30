@@ -15,6 +15,11 @@ class VerifyEmailWebController extends Controller
         try {
             $user = User::findOrFail($request->route('id'));
 
+            if (!$request->hasValidSignature()) {
+                return redirect()->route('signin')
+                    ->with('error', 'Link xác minh không hợp lệ hoặc đã hết hạn.');
+            }
+
             if (!hash_equals(
                 (string) $request->route('hash'),
                 sha1($user->getEmailForVerification())

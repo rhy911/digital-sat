@@ -33,11 +33,13 @@ Summary of implemented functions/logic.
   - **Custom Popups**: Promise-based `showCustomAlert()`/`showCustomConfirm()` glassmorphic modals. Universal UI compat.
   - **Alpine.js Dropdowns**: Directions/More buttons refactored to Alpine (`x-data`, `x-show`, `x-cloak`). Vite bundle.
 - **Logic**: Auto-save, sequential navigation, section/module flow.
+  - **IDOR Prevention [2026-05-30]**: Enforced strict ownership on `submitModule` in `TestTakingController.php`, ensuring the submitted `user_test_id` belongs to the authenticated user.
 
 ## 4. Scoring & Adaptive Logic (Advanced IRT)
 
 - **Method**: 3-Parameter Logistic (3PL) IRT.
 - **Estimation**: MLE via Newton-Raphson (30 iters).
+- **Background Execution [2026-05-30]**: Scoring calculations (Newton-Raphson M1 Theta and Final Scoring) run asynchronously via Laravel Queue (`ScoreModuleJob`) to prevent CPU blocking. The frontend polls `/submit-status` for the routing decision cached by the job.
 - **Adaptive Routing**: M1 results (Theta) determine M2 path (Easy vs. Hard).
 - **Scoring**: Sigmoid mapping Theta [-4, 4] to Scaled Score [200, 800].
 - **Pretest**: `is_pretest = true` excluded from scoring.

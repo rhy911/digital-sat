@@ -8,7 +8,7 @@ class StoreTestRequest extends FormRequest
 {
     public function authorize(): bool
     {
-        return true;
+        return in_array(auth()->user()?->role, ['admin', 'teacher']);
     }
 
     public function rules(): array

@@ -73,151 +73,55 @@ Route::middleware('guest')->group(function () {
     Route::post('/reset-password', ResetPasswordController::class)->name('password.update');
 });
 
-Route::get('/test-preview', function () {
-    return view('tests.preview');
+Route::middleware(['auth', 'verified'])->group(function () {
+    Route::get('/test-preview', function () {
+        return view('tests.preview');
 })->name('test.preview');
 
 Route::get('choose-test', function () {
     $tests = \App\Models\Test::where('status', 'active')
         ->where('title', '!=', 'Test Preview')
+        ->limit(100)
         ->get();
     return view('tests.choose', compact('tests'));
 })->name('choose-test');
 
-Route::get('/take-test/{module_id?}', function ($module_id = null) {
-    $module = null;
-    if ($module_id) {
-        $module = \App\Models\Module::with([
-            'section.test.sections.modules.questions.passage',
-            'section.test.sections.modules.questions.answerChoices' => fn($q) => $q->orderBy('order'),
-            'questions.passage',
-            'questions.answerChoices' => fn($q) => $q->orderBy('order'),
-        ])->find($module_id);
-
-        if (!$module) {
-            abort(404, 'Module not found.');
-        }
-        $test = $module->section->test;
-        $section = $module->section;
-    } else {
-        $test = \App\Models\Test::with([
-            'sections.modules.questions.passage',
-            'sections.modules.questions.answerChoices' => fn($q) => $q->orderBy('order'),
-        ])->whereIn('status', ['active', 'draft'])
-          ->orderByRaw("CASE WHEN title = 'Test Preview' THEN 0 ELSE 1 END")
-          ->first();
-
-        if (! $test) {
-            abort(404, 'No test available. Please create a test first.');
-        }
-
-        if ($test->sections->isEmpty()) {
-            abort(404, 'Test has no sections. Please add sections and modules first.');
-        }
-
-        // Default to first module of first section
-        $section = $test->sections->firstWhere('type', 'reading_writing') ?? $test->sections->first();
-        $module = $section->modules->first() ?? null;
-    }
-
-    if (! $module) {
-        abort(404, 'No module found. Please add modules first.');
-    }
-
-    // Get questions ordered by position (defined in Module::questions relationship)
-    $questions = $module->questions;
-    if ($questions->isEmpty()) {
-        abort(404, 'Module has no questions.');
-    }
-
-    $currentQuestion = 1;
-    $totalQuestions = $questions->count();
-
-    $testData = (object) [
-        'id' => $test->id,
-        'page_title' => "Section {$section->order}, Module {$module->module_number}: {$section->name}",
-        'section_title' => "{$section->name} - Module {$module->module_number}",
-        'section_number' => $section->order,
-        'module_number' => $module->module_number,
-        'module_id' => $module->id,
-        'username' => \Illuminate\Support\Facades\Auth::user()?->username ?? 'Guest',
-        'is_preview' => ($test->title === 'Test Preview'),
-        'duration_minutes' => $module->duration_minutes ?? ($section->type === 'math' ? 35 : 32),
-    ];
-
-    // Determine next module for navigation (simple logic for now)
-    $nextModule = null;
-    if ($module->module_number == 1) {
-        // Find Module 2 in same section (prefer hard for mock/preview if available)
-        $nextModule = $section->modules->where('module_number', 2)->firstWhere('difficulty_level', 'hard');
-    } else {
-        // Move to next section's first module
-        $nextSection = $test->sections->where('order', '>', $section->order)->sortBy('order')->first();
-        if ($nextSection) {
-            $nextModule = $nextSection->modules->where('module_number', 1)->first();
-        }
-    }
-
-    // Determine which view to use based on section type
-    $viewName = $section->type === 'math' ? 'tests.take.take-math' : 'tests.take.take-reading';
-
-    // Get user test record
-    $userTest = null;
-    if (Auth::check()) {
-        $userTest = \App\Models\UserTest::firstOrCreate([
-            'user_id' => Auth::id(),
-            'test_id' => $test->id,
-            'status' => 'in_progress',
-        ]);
-    }
-
-    return view($viewName, [
-        'testData' => $testData,
-        'questions' => $questions,
-        'currentQuestion' => $currentQuestion,
-        'totalQuestions' => $totalQuestions,
-        'sectionNumber' => $section->order,
-        'moduleNumber' => $module->module_number,
-        'sectionName' => $section->name,
-        'sectionType' => $section->type,
-        'nextModuleId' => $nextModule ? $nextModule->id : null,
-        'nextModuleName' => $nextModule ? ($nextModule->module_number == 2 ? 'Module 2' : 'Section ' . ($nextModule->section?->order ?? '')) : null,
-        'userTestId' => $userTest ? $userTest->id : null,
-    ]);
-})->name('take-test');
+Route::get('/take-test/{module_id?}', [\App\Http\Controllers\TestTakingController::class, 'showModule'])->name('take-test');
+Route::get('/submit-status/{userTestId}', [\App\Http\Controllers\TestTakingController::class, 'checkScoringStatus'])->name('submit-status');
+});
 
 // Test Dashboard Routes
-Route::middleware(['auth'])->prefix('test-dashboard')->name('test-dashboard.')->group(function () {
-    Route::get('/', [TestDashboardController::class, 'index'])->name('index');
-    Route::get('/snapshot', [TestDashboardController::class, 'snapshot'])->name('snapshot');
-    Route::get('/questions/list', [TestDashboardController::class, 'questionsList'])->name('questions.list');
-    Route::get('/questions/search', [TestDashboardController::class, 'questionsSearch'])->name('questions.search');
+Route::middleware(['auth', 'verified', 'role:admin,teacher'])->prefix('test-dashboard')->name('test-dashboard.')->group(function () {
+    Route::get('/', [\App\Http\Controllers\TestDashboardController::class, 'index'])->name('index');
+    Route::get('/snapshot', [\App\Http\Controllers\TestDashboardController::class, 'snapshot'])->name('snapshot');
+    Route::get('/questions/list', [\App\Http\Controllers\QuestionController::class, 'questionsList'])->name('questions.list');
+    Route::get('/questions/search', [\App\Http\Controllers\QuestionController::class, 'questionsSearch'])->name('questions.search');
 
     // API endpoints for creating and updating data
-    Route::post('/tests', [TestDashboardController::class, 'storeTest'])->name('tests.store');
-    Route::post('/tests/generate-full', [TestDashboardController::class, 'generateFullSatStructure'])->name('tests.generate-full');
-    Route::post('/tests/{id}/clone', [TestDashboardController::class, 'cloneTest'])->name('tests.clone');
-    Route::put('/tests/{id}', [TestDashboardController::class, 'updateTest'])->name('tests.update');
-    Route::post('/sections', [TestDashboardController::class, 'storeSection'])->name('sections.store');
-    Route::put('/sections/{id}', [TestDashboardController::class, 'updateSection'])->name('sections.update');
-    Route::post('/sections/link-module', [TestDashboardController::class, 'linkModuleToSection'])->name('sections.link-module');
-    Route::post('/modules', [TestDashboardController::class, 'storeModule'])->name('modules.store');
-    Route::put('/modules/{id}', [TestDashboardController::class, 'updateModule'])->name('modules.update');
-    Route::post('/modules/{id}/clone', [TestDashboardController::class, 'cloneModule'])->name('modules.clone');
-    Route::get('/questions/{id}', [TestDashboardController::class, 'showQuestion'])->name('questions.show');
-    Route::put('/questions/{id}', [TestDashboardController::class, 'updateQuestion'])->name('questions.update');
-    Route::post('/questions/bulk', [TestDashboardController::class, 'bulkStoreQuestions'])->name('questions.bulk-store');
-    Route::post('/questions/bulk-preview', [TestDashboardController::class, 'bulkPreviewQuestions'])->name('questions.bulk-preview');
-    Route::post('/questions/bulk-csv', [TestDashboardController::class, 'bulkStoreQuestionsFromCsv'])->name('questions.bulk-csv-store');
-    Route::post('/questions/bulk-csv-preview', [TestDashboardController::class, 'bulkPreviewQuestionsFromCsv'])->name('questions.bulk-csv-preview');
-    Route::post('/questions/bulk-zip', [TestDashboardController::class, 'bulkStoreQuestionsFromZip'])->name('questions.bulk-zip');
-    Route::post('/questions/attach', [TestDashboardController::class, 'attachQuestionToModule'])->name('questions.attach');
+    Route::post('/tests', [\App\Http\Controllers\TestController::class, 'storeTest'])->name('tests.store');
+    Route::post('/tests/generate-full', [\App\Http\Controllers\TestStructureController::class, 'generateFullSatStructure'])->name('tests.generate-full');
+    Route::post('/tests/{id}/clone', [\App\Http\Controllers\TestStructureController::class, 'cloneTest'])->name('tests.clone');
+    Route::put('/tests/{id}', [\App\Http\Controllers\TestController::class, 'updateTest'])->name('tests.update');
+    Route::post('/sections', [\App\Http\Controllers\SectionController::class, 'storeSection'])->name('sections.store');
+    Route::put('/sections/{id}', [\App\Http\Controllers\SectionController::class, 'updateSection'])->name('sections.update');
+    Route::post('/sections/link-module', [\App\Http\Controllers\SectionController::class, 'linkModuleToSection'])->name('sections.link-module');
+    Route::post('/modules', [\App\Http\Controllers\ModuleController::class, 'storeModule'])->name('modules.store');
+    Route::put('/modules/{id}', [\App\Http\Controllers\ModuleController::class, 'updateModule'])->name('modules.update');
+    Route::post('/modules/{id}/clone', [\App\Http\Controllers\TestStructureController::class, 'cloneModule'])->name('modules.clone');
+    Route::get('/questions/{id}', [\App\Http\Controllers\QuestionController::class, 'showQuestion'])->name('questions.show');
+    Route::put('/questions/{id}', [\App\Http\Controllers\QuestionController::class, 'updateQuestion'])->name('questions.update');
+    Route::post('/questions/bulk', [\App\Http\Controllers\QuestionController::class, 'bulkStoreQuestions'])->name('questions.bulk-store');
+    Route::post('/questions/bulk-preview', [\App\Http\Controllers\QuestionController::class, 'bulkPreviewQuestions'])->name('questions.bulk-preview');
+    Route::post('/questions/bulk-csv', [\App\Http\Controllers\QuestionController::class, 'bulkStoreQuestionsFromCsv'])->name('questions.bulk-csv-store');
+    Route::post('/questions/bulk-csv-preview', [\App\Http\Controllers\QuestionController::class, 'bulkPreviewQuestionsFromCsv'])->name('questions.bulk-csv-preview');
+    Route::post('/questions/bulk-zip', [\App\Http\Controllers\QuestionController::class, 'bulkStoreQuestionsFromZip'])->name('questions.bulk-zip');
+    Route::post('/questions/attach', [\App\Http\Controllers\QuestionController::class, 'attachQuestionToModule'])->name('questions.attach');
 
     // Delete endpoints
-    Route::delete('/tests/{id}', [TestDashboardController::class, 'deleteTest'])->name('tests.delete');
-    Route::delete('/sections/{id}', [TestDashboardController::class, 'deleteSection'])->name('sections.delete');
-    Route::delete('/modules/{id}', [TestDashboardController::class, 'deleteModule'])->name('modules.delete');
-    Route::delete('/questions/{id}', [TestDashboardController::class, 'deleteQuestion'])->name('questions.delete');
+    Route::delete('/tests/{id}', [\App\Http\Controllers\TestController::class, 'deleteTest'])->name('tests.delete');
+    Route::delete('/sections/{id}', [\App\Http\Controllers\SectionController::class, 'deleteSection'])->name('sections.delete');
+    Route::delete('/modules/{id}', [\App\Http\Controllers\ModuleController::class, 'deleteModule'])->name('modules.delete');
+    Route::delete('/questions/{id}', [\App\Http\Controllers\QuestionController::class, 'deleteQuestion'])->name('questions.delete');
 
     // Media
     Route::post('/media/upload', [\App\Http\Controllers\MediaController::class, 'upload'])->name('media.upload');

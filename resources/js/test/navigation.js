@@ -201,12 +201,30 @@ async function submitModule() {
       })
     });
 
-    const data = await response.json();
+    let data = await response.json();
+
+    if (data.status === 'scoring') {
+        data = await new Promise((resolve) => {
+            const poll = setInterval(async () => {
+                try {
+                    const statusRes = await fetch(`/submit-status/${window.userTestId}`);
+                    const statusData = await statusRes.json();
+                    if (statusData.status !== 'scoring') {
+                        clearInterval(poll);
+                        resolve(statusData);
+                    }
+                } catch (e) {
+                    clearInterval(poll);
+                    resolve({ error: "Polling error" });
+                }
+            }, 1500);
+        });
+    }
 
     if (data.test_completed) {
       hideLoadingScreen();
       await showCustomAlert("Test completed! Redirecting to results...", "success", "Test Completed");
-      showLoadingScreen("Scoring exam & loading results...");
+      showLoadingScreen("Loading results...");
       window.location.href = data.redirect_url;
     } else if (data.fallback_module_id) {
       hideLoadingScreen();
@@ -216,7 +234,6 @@ async function submitModule() {
       let timer;
       
       showCustomAlert(message, "warning", "Module Unavailable", false).then(() => {
-        // If user clicks OK, redirect immediately
         if (timer) clearInterval(timer);
         navigateModule(`/take-test/${data.fallback_module_id}`);
       });

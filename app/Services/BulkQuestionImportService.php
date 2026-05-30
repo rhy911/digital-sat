@@ -58,6 +58,15 @@ class BulkQuestionImportService
             throw ValidationException::withMessages(['zip_file' => ['Could not open ZIP file.']]);
         }
 
+        // Security check for path traversal
+        for ($i = 0; $i < $zip->numFiles; $i++) {
+            $filename = $zip->getNameIndex($i);
+            if (str_contains($filename, '..') || str_starts_with($filename, '/') || str_starts_with($filename, '\\')) {
+                $zip->close();
+                throw ValidationException::withMessages(['zip_file' => ['ZIP file contains invalid paths (path traversal risk).']]);
+            }
+        }
+
         $tempDir = 'temp/import_' . Str::random(10);
         try {
             Storage::makeDirectory($tempDir);

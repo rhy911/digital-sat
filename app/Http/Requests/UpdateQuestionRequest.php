@@ -8,7 +8,8 @@ class UpdateQuestionRequest extends FormRequest
 {
     public function authorize(): bool
     {
-        return true;
+        $question = \App\Models\Question::findOrFail($this->route('id'));
+        return $this->user()?->can('update', $question) ?? false;
     }
 
     protected function prepareForValidation()

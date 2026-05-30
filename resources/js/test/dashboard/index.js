@@ -63,7 +63,8 @@ document.addEventListener('DOMContentLoaded', async function () {
         } else if (targetId === '#sections' && window.__tdLatestTests) {
             renderSectionsTable(window.__tdLatestTests);
         } else if (targetId === '#modules' && window.__tdLatestPayload?.allModules) {
-            renderModulesTable(window.__tdLatestPayload.allModules);
+            const mods = window.__tdLatestPayload.allModules.data || window.__tdLatestPayload.allModules;
+            renderModulesTable(mods);
         } else if (targetId === '#questions' && window.__tdLatestListJson) {
             const listJson = window.__tdLatestListJson;
             renderQuestionsTable(listJson.data || []);
@@ -102,9 +103,9 @@ document.addEventListener('DOMContentLoaded', async function () {
 
     function rebuildAllTomSelects(payload, preserve) {
         const p = preserve || {};
-        const tests = payload.tests || [];
-        const passages = payload.passages || [];
-        const allModules = payload.allModules || [];
+        const tests = payload.tests ? (payload.tests.data || payload.tests) : [];
+        const passages = payload.passages ? (payload.passages.data || payload.passages) : [];
+        const allModules = payload.allModules ? (payload.allModules.data || payload.allModules) : [];
         rebuildSectionTestTomSelect(tests, p.sectionTest, 'sectionTest');
         rebuildSectionTestTomSelect(tests, p.linkTest, 'linkTest');
         rebuildModuleSectionTomSelect(tests, p.moduleSection, 'moduleSection');
@@ -130,7 +131,7 @@ document.addEventListener('DOMContentLoaded', async function () {
         let payload = { tests: [], passages: [], allModules: [] };
         try { payload = await snapRes.json(); } catch (e) { console.error('Snapshot JSON parse failed'); }
 
-        window.__tdLatestTests = payload.tests || [];
+        window.__tdLatestTests = payload.tests ? (payload.tests.data || payload.tests) : [];
         window.__tdLatestPayload = payload;
 
         let listJson = { data: [], total: 0, current_page: 1, last_page: 1 };

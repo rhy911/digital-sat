@@ -14,6 +14,10 @@ class UserTest extends Model
         'total_score',
         'status',
         'completed_at',
+        'rw_m2_path',
+        'math_m2_path',
+        'rw_theta',
+        'math_theta',
     ];
 
     protected $casts = [

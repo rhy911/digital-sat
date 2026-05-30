@@ -17,11 +17,13 @@ class SatScoringService
      *
      * @param  Collection  $module1Responses Each item should have 'is_correct' and 'question' relation with irt_a, irt_b, irt_c
      * @param  Collection  $module2Responses
+     * @param  string|null $m2Path The path taken for Module 2. If null, it will be recalculated.
      * @return array{scaled_score: int, theta: float, module2_path: string}
      */
     public function scoreSection(
         Collection $module1Responses,
-        Collection $module2Responses
+        Collection $module2Responses,
+        ?string $m2Path = null
     ): array {
         // Step 1: Filter pretest questions
         $m1 = $module1Responses->filter(fn($r) => !$r->question->is_pretest);
@@ -29,7 +31,7 @@ class SatScoringService
 
         // Step 2: Estimate Theta after Module 1 for routing
         $thetaM1 = $this->estimateTheta($m1);
-        $m2Path = $this->routeModule2($thetaM1);
+        $m2Path = $m2Path ?? $this->routeModule2($thetaM1);
 
         // Step 3: Final Theta using all responses
         $allResponses = $m1->concat($m2);
@@ -49,11 +51,11 @@ class SatScoringService
      * Calculate total SAT score
      */
     public function scoreFull(
-        Collection $rwM1, Collection $rwM2,
-        Collection $mathM1, Collection $mathM2
+        Collection $rwM1, Collection $rwM2, ?string $rwPath = null,
+        Collection $mathM1, Collection $mathM2, ?string $mathPath = null
     ): array {
-        $rw = $this->scoreSection($rwM1, $rwM2);
-        $math = $this->scoreSection($mathM1, $mathM2);
+        $rw = $this->scoreSection($rwM1, $rwM2, $rwPath);
+        $math = $this->scoreSection($mathM1, $mathM2, $mathPath);
 
         return [
             'total_score' => $rw['scaled_score'] + $math['scaled_score'],

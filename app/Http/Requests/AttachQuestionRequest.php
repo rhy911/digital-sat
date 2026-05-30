@@ -8,7 +8,8 @@ class AttachQuestionRequest extends FormRequest
 {
     public function authorize(): bool
     {
-        return true;
+        $module = \App\Models\Module::findOrFail($this->input('module_id'));
+        return $this->user()?->can('update', $module) ?? false;
     }
 
     public function rules(): array
