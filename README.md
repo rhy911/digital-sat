@@ -1,3 +1,22 @@
+# Digital SAT Online Testing System
+
+## Getting Started / Local Setup
+
+Follow these steps to run the project locally:
+
+1. **Database**: Turn on your **MySQL database** (ensure connection config in `.env` is correct).
+2. **Web Server**: Turn on **Laravel Herd** (or your preferred local web server environment).
+3. **Frontend Asset Bundler**: Open a terminal and run the dev server:
+   ```bash
+   npm run dev
+   ```
+4. **Queue Worker**: Background jobs like scoring use Laravel queues. Run the queue worker:
+   ```bash
+   php artisan queue:work
+   ```
+
+---
+
 # [Technical Presentation] Hệ sinh thái Khảo thí & Luyện thi Digital SAT: Deep-Dive Outline
 
 ## Slide 1: Giới thiệu & Tầm nhìn Dự án
