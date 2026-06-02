@@ -12,37 +12,20 @@ use App\Http\Controllers\TestDashboardController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
-Route::get('/', function () {
-    if (Illuminate\Support\Facades\Auth::check()) {
-        if (request()->hasCookie(Illuminate\Support\Facades\Auth::getRecallerName())) {
-            return view('auth.remembered', ['user' => Illuminate\Support\Facades\Auth::user()]);
-        }
-        return redirect()->route('home');
-    }
-    return view('index');
-});
+use App\Http\Controllers\PageController;
+
+Route::get('/', [PageController::class, 'landing']);
 
 Route::middleware('guest')->group(function () {
-    Route::get('/signin', function () {
-        return view('auth.signin');
-    })->name('login');
-
+    Route::get('/signin', [PageController::class, 'showSignin'])->name('login');
     Route::post('/signin', LoginWebController::class)->name('signin');
 });
 
-Route::get('/signup', function () {
-    return view('auth.signup');
-})->name('signup');
+Route::get('/signup', [PageController::class, 'showSignup'])->name('signup');
+Route::post('/signup', RegisterWebController::class);
 
-Route::post('/signup', RegisterWebController::class)->name('signup');
-
-Route::get('/forgot', function () {
-    return view('auth.forgot');
-})->name('forgot');
-
-Route::get('/email-verify', function () {
-    return view('auth.email-verify');
-})->name('verify.email.notice');
+Route::get('/forgot', [PageController::class, 'showForgot'])->name('forgot');
+Route::get('/email-verify', [PageController::class, 'showEmailVerifyNotice'])->name('verify.email.notice');
 
 // Email verification route - public access (hash is the security)
 Route::get('/email/verify/{id}/{hash}', VerifyEmailWebController::class)->name('verification.verify');
@@ -52,42 +35,31 @@ Route::middleware('auth')->group(function () {
 });
 
 Route::middleware(['auth', 'verified'])->group(function () {
-
     Route::get('/home', HomeController::class)->name('home');
     Route::get('/my-practice/{user_test_id}', [\App\Http\Controllers\PracticeController::class, 'show'])->name('my-practice');
     Route::get('/my-practice/{user_test_id}/score', [\App\Http\Controllers\PracticeController::class, 'scoreDetails'])->name('my-practice.score');
 
     Route::post('/test/start/{test_id}', [\App\Http\Controllers\TestTakingController::class, 'startTest'])->name('test.start');
+    Route::post('/test/autosave-module', [\App\Http\Controllers\TestTakingController::class, 'autosaveModule'])
+        ->middleware('throttle:60,1')
+        ->name('test.autosave-module');
     Route::post('/test/submit-module', [\App\Http\Controllers\TestTakingController::class, 'submitModule'])->name('test.submit-module');
 
     Route::post('/logout', LogoutController::class)->name('logout');
 });
 
 Route::middleware('guest')->group(function () {
-    Route::post('/forgot', ForgotPasswordController::class)->name('forgot');
+    Route::post('/forgot', ForgotPasswordController::class);
 
-    Route::get('/reset-password/{token}', function (Request $request, $token) {
-        return view('auth.reset-password', ['token' => $token, 'email' => $request->email]);
-    })->name('password.reset');
-
+    Route::get('/reset-password/{token}', [PageController::class, 'showResetPassword'])->name('password.reset');
     Route::post('/reset-password', ResetPasswordController::class)->name('password.update');
 });
 
 Route::middleware(['auth', 'verified'])->group(function () {
-    Route::get('/test-preview', function () {
-        return view('tests.preview');
-})->name('test.preview');
-
-Route::get('choose-test', function () {
-    $tests = \App\Models\Test::where('status', 'active')
-        ->where('title', '!=', 'Test Preview')
-        ->limit(100)
-        ->get();
-    return view('tests.choose', compact('tests'));
-})->name('choose-test');
-
-Route::get('/take-test/{module_id?}', [\App\Http\Controllers\TestTakingController::class, 'showModule'])->name('take-test');
-Route::get('/submit-status/{userTestId}', [\App\Http\Controllers\TestTakingController::class, 'checkScoringStatus'])->name('submit-status');
+    Route::get('/test-preview', [\App\Http\Controllers\PracticeController::class, 'testPreview'])->name('test.preview');
+    Route::get('choose-test', [\App\Http\Controllers\PracticeController::class, 'chooseTest'])->name('choose-test');
+    Route::get('/take-test/{ulid?}', [\App\Http\Controllers\TestTakingController::class, 'showModule'])->name('take-test');
+    Route::get('/submit-status/{userTestId}', [\App\Http\Controllers\TestTakingController::class, 'checkScoringStatus'])->name('submit-status');
 });
 
 // Test Dashboard Routes

@@ -162,7 +162,7 @@ class ScoreModuleJob implements ShouldQueue
                     $result = [
                         'status' => 'success',
                         'test_completed' => true,
-                        'redirect_url' => route('home'),
+                        'redirect_url' => route('my-practice.score', $userTest->id),
                         'message' => 'Test completed and scored.',
                     ];
                     Cache::put("scoring_result_{$userTest->id}", $result, 300);

@@ -7,6 +7,49 @@ import {
   showCustomAlert
 } from './ui.js';
 
+let autosaveInitialized = false;
+let autosaveTimer = null;
+let lastAutosavePayload = '';
+
+export function initSecurity() {
+  // Block DevTools shortcuts
+  document.addEventListener('keydown', function(e) {
+    if (e.key === 'F12' || 
+        (e.ctrlKey && e.shiftKey && (e.key === 'I' || e.key === 'J')) || 
+        (e.ctrlKey && e.key === 'U')) {
+      e.preventDefault();
+      return false;
+    }
+  });
+
+  // Block right-click
+  document.addEventListener('contextmenu', e => e.preventDefault());
+
+  // Warn on tab close / F5
+  window.addEventListener('beforeunload', function(e) {
+    if (window.isNavigatingLegitimately) return;
+    // If the user hasn't finished the test, show the warning
+    if (document.getElementById('timerDisplay')) {
+      e.preventDefault();
+      e.returnValue = ''; // Standard behavior
+    }
+  });
+
+  // Block back button
+  history.pushState(null, null, location.href);
+  window.addEventListener('popstate', function() {
+    history.pushState(null, null, location.href);
+    showCustomAlert('You cannot use the Back button during a test.');
+  });
+}
+
+// Ensure initSecurity is called when app starts
+document.addEventListener('DOMContentLoaded', () => {
+  if(document.getElementById('timerDisplay')) {
+    initSecurity();
+  }
+});
+
 export function isReviewSectionVisible() {
   const reviewSection = document.getElementById("review-section");
   return reviewSection && !reviewSection.classList.contains("hidden");
@@ -155,7 +198,7 @@ export function nextQuestion() {
   }
 }
 
-async function submitModule() {
+export function collectAnswers() {
   const answers = {};
 
   state.questionElements.forEach(questionEl => {
@@ -171,8 +214,80 @@ async function submitModule() {
     }
   });
 
-  const confirmNext = await showCustomConfirm("You are about to proceed to the next module/section.\n\nAre you ready to continue?", "warning", "Proceed to Next Section");
-  if (!confirmNext) return;
+  return answers;
+}
+
+export function initializeAutosave() {
+  if (autosaveInitialized) return;
+  autosaveInitialized = true;
+
+  document.addEventListener('change', (event) => {
+    if (event.target.matches('.question input[type="radio"]')) {
+      scheduleAutosave();
+    }
+  });
+
+  document.addEventListener('input', (event) => {
+    if (event.target.matches('.question .spr-input')) {
+      scheduleAutosave();
+    }
+  });
+}
+
+function scheduleAutosave() {
+  if (window.isPreview || !window.userTestId || !window.currentModuleId) return;
+
+  clearTimeout(autosaveTimer);
+  autosaveTimer = setTimeout(() => {
+    autosaveAnswers();
+  }, 700);
+}
+
+async function autosaveAnswers() {
+  if (window.isPreview || !window.userTestId || !window.currentModuleId) return;
+
+  const answers = collectAnswers();
+  const payload = JSON.stringify({
+    user_test_id: window.userTestId,
+    module_id: window.currentModuleId,
+    answers: answers
+  });
+
+  // Local state backup
+  localStorage.setItem(`sat_state_${window.userTestId}_${window.currentModuleId}`, JSON.stringify(answers));
+
+  if (payload === lastAutosavePayload) return;
+
+  try {
+    const response = await fetch('/test/autosave-module', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json',
+        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+      },
+      body: payload,
+      keepalive: true
+    });
+
+    if (!response.ok) {
+      throw new Error(`Autosave failed with status ${response.status}`);
+    }
+
+    lastAutosavePayload = payload;
+  } catch (error) {
+    console.warn("Autosave failed:", error);
+  }
+}
+
+export async function submitModule(options = {}) {
+  const answers = collectAnswers();
+  const skipConfirm = options.skipConfirm || false;
+
+  if (!skipConfirm) {
+    const confirmNext = await showCustomConfirm("You are about to proceed to the next module/section.\n\nAre you ready to continue?", "warning", "Proceed to Next Section");
+    if (!confirmNext) return;
+  }
 
   if (window.isPreview) {
     if (window.nextModuleId) {
@@ -181,17 +296,20 @@ async function submitModule() {
       hideLoadingScreen();
       await showCustomAlert("Test Preview completed! Redirecting home...", "success", "Test Completed");
       showLoadingScreen("Completing test preview...");
+      window.isNavigatingLegitimately = true;
       window.location.href = '/home';
     }
     return;
   }
 
+  clearTimeout(autosaveTimer);
   showLoadingScreen("Saving responses & scoring current module...");
   try {
     const response = await fetch('/test/submit-module', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
+        'Accept': 'application/json',
         'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
       },
       body: JSON.stringify({
@@ -205,17 +323,29 @@ async function submitModule() {
 
     if (data.status === 'scoring') {
         data = await new Promise((resolve) => {
+            let pollAttempts = 0;
+            const maxPollAttempts = 40;
             const poll = setInterval(async () => {
                 try {
+                    pollAttempts++;
                     const statusRes = await fetch(`/submit-status/${window.userTestId}`);
                     const statusData = await statusRes.json();
                     if (statusData.status !== 'scoring') {
                         clearInterval(poll);
                         resolve(statusData);
+                    } else if (pollAttempts >= maxPollAttempts) {
+                        clearInterval(poll);
+                        resolve({
+                          error: "Scoring timeout",
+                          message: "Scoring is taking longer than expected. Please try again in a minute."
+                        });
                     }
                 } catch (e) {
                     clearInterval(poll);
-                    resolve({ error: "Polling error" });
+                    resolve({
+                      error: "Polling error",
+                      message: "Unable to check scoring status. Please try again."
+                    });
                 }
             }, 1500);
         });
@@ -225,6 +355,7 @@ async function submitModule() {
       hideLoadingScreen();
       await showCustomAlert("Test completed! Redirecting to results...", "success", "Test Completed");
       showLoadingScreen("Loading results...");
+      window.isNavigatingLegitimately = true;
       window.location.href = data.redirect_url;
     } else if (data.fallback_module_id) {
       hideLoadingScreen();
@@ -280,6 +411,7 @@ export async function navigateModule(url) {
                        document.msFullscreenElement;
 
   if (!isFullscreen) {
+    window.isNavigatingLegitimately = true;
     window.location.href = url;
     return;
   }
@@ -405,9 +537,10 @@ export async function navigateModule(url) {
     initializeSprInputValidation();
     initializeDesmosCalculator();
     initializeSimpleFullscreen();
+    initializeAutosave();
 
     // Start new timer
-    const duration = window.durationMinutes || 32;
+    const duration = window.durationMinutes ?? 32;
     startTimer(duration);
 
     // Show initial question
@@ -418,7 +551,7 @@ export async function navigateModule(url) {
 
   } catch (err) {
     console.error("Dynamic transition failed, falling back to standard redirect:", err);
+    window.isNavigatingLegitimately = true;
     window.location.href = url;
   }
 }
-

@@ -139,7 +139,7 @@
                             Take a break
                         </button>
                         <button class="block w-full text-left px-4 py-3 text-sm text-red-600 hover:bg-red-50"
-                            @click="open = false; window.showCustomConfirm('Are you sure you want to exit the exam? Your progress will be saved.', 'warning', 'Exit Exam').then(confirmed => { if(confirmed) window.location.href = '/home'; })">
+                            @click="open = false; window.showCustomConfirm('Are you sure you want to exit the exam? Your progress will be saved.', 'warning', 'Exit Exam').then(confirmed => { if(confirmed) { window.isNavigatingLegitimately = true; window.location.href = '/home'; } })">
                             Exit the exam
                         </button>
                     </div>

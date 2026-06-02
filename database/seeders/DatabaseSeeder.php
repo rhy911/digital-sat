@@ -14,8 +14,13 @@ class DatabaseSeeder extends Seeder
     {
         $this->call([
             UserSeeder::class,
-            DigitalSatMockSeeder::class,
-            UserTestSeeder::class,
         ]);
+
+        if (!app()->environment('production')) {
+            $this->call([
+                DigitalSatMockSeeder::class,
+                UserTestSeeder::class,
+            ]);
+        }
     }
 }

@@ -23,13 +23,32 @@ class RegisterWebController extends Controller
                 'role' => 'nullable|string|in:student,teacher',
             ]);
 
+            if ($request->input('role') === 'teacher') {
+                $message = 'Teacher signup is temporarily unavailable. Please sign in with an existing teacher account or contact an administrator.';
+
+                if ($request->wantsJson()) {
+                    return response()->json([
+                        'message' => $message,
+                        'errors' => [
+                            'role' => [$message],
+                        ],
+                    ], 422);
+                }
+
+                return redirect()->back()
+                    ->withInput($request->except('password', 'password_confirmation'))
+                    ->withErrors(['role' => $message]);
+            }
+
             $user = User::create([
                 'username' => $request->username,
                 'name' => $request->username,
                 'email' => $request->email,
                 'password' => Hash::make($request->password),
-                'role' => $request->input('role', 'student'),
             ]);
+            
+            $user->role = $request->input('role', 'student');
+            $user->save();
 
             Log::info('User created via Web', ['id' => $user->id, 'email' => $user->email]);
 

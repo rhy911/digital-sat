@@ -18,6 +18,7 @@ class DigitalSatMockSeeder extends Seeder
     public function run(): void
     {
         $test = Test::create([
+            'ulid' => \Illuminate\Support\Str::ulid()->toString(),
             'title' => 'Test Preview',
             'description' => 'Comprehensive mock test with realistic passages and adaptive routing.',
             'test_type' => 'full_length',
@@ -31,13 +32,13 @@ class DigitalSatMockSeeder extends Seeder
         $mathSection = Section::create(['test_id' => $test->id, 'name' => 'Math', 'type' => 'math', 'order' => 2]);
 
         // --- MODULES ---
-        $rwM1 = Module::create(['section_id' => $rwSection->id, 'module_number' => 1, 'difficulty_level' => 'standard', 'duration_minutes' => 32, 'total_questions' => 27, 'order' => 1]);
-        $rwM2Easy = Module::create(['section_id' => $rwSection->id, 'module_number' => 2, 'difficulty_level' => 'easy', 'duration_minutes' => 32, 'total_questions' => 27, 'order' => 2]);
-        $rwM2Hard = Module::create(['section_id' => $rwSection->id, 'module_number' => 2, 'difficulty_level' => 'hard', 'duration_minutes' => 32, 'total_questions' => 27, 'order' => 3]);
+        $rwM1 = Module::create(['ulid' => \Illuminate\Support\Str::ulid()->toString(), 'section_id' => $rwSection->id, 'module_number' => 1, 'difficulty_level' => 'standard', 'duration_minutes' => 0, 'total_questions' => 27, 'order' => 1]);
+        $rwM2Easy = Module::create(['ulid' => \Illuminate\Support\Str::ulid()->toString(), 'section_id' => $rwSection->id, 'module_number' => 2, 'difficulty_level' => 'easy', 'duration_minutes' => 0, 'total_questions' => 27, 'order' => 2]);
+        $rwM2Hard = Module::create(['ulid' => \Illuminate\Support\Str::ulid()->toString(), 'section_id' => $rwSection->id, 'module_number' => 2, 'difficulty_level' => 'hard', 'duration_minutes' => 0, 'total_questions' => 27, 'order' => 3]);
 
-        $mathM1 = Module::create(['section_id' => $mathSection->id, 'module_number' => 1, 'difficulty_level' => 'standard', 'duration_minutes' => 35, 'total_questions' => 22, 'order' => 1]);
-        $mathM2Easy = Module::create(['section_id' => $mathSection->id, 'module_number' => 2, 'difficulty_level' => 'easy', 'duration_minutes' => 35, 'total_questions' => 22, 'order' => 2]);
-        $mathM2Hard = Module::create(['section_id' => $mathSection->id, 'module_number' => 2, 'difficulty_level' => 'hard', 'duration_minutes' => 35, 'total_questions' => 22, 'order' => 3]);
+        $mathM1 = Module::create(['ulid' => \Illuminate\Support\Str::ulid()->toString(), 'section_id' => $mathSection->id, 'module_number' => 1, 'difficulty_level' => 'standard', 'duration_minutes' => 0, 'total_questions' => 22, 'order' => 1]);
+        $mathM2Easy = Module::create(['ulid' => \Illuminate\Support\Str::ulid()->toString(), 'section_id' => $mathSection->id, 'module_number' => 2, 'difficulty_level' => 'easy', 'duration_minutes' => 0, 'total_questions' => 22, 'order' => 2]);
+        $mathM2Hard = Module::create(['ulid' => \Illuminate\Support\Str::ulid()->toString(), 'section_id' => $mathSection->id, 'module_number' => 2, 'difficulty_level' => 'hard', 'duration_minutes' => 0, 'total_questions' => 22, 'order' => 3]);
 
         // --- R&W QUESTIONS (MODULE 1) ---
         $rw_data = [

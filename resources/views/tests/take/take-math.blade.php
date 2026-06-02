@@ -35,6 +35,7 @@
     ];
 
     $questions ??= collect();
+    $savedAnswers ??= collect();
     $hasSPR = $questions->contains('question_type', 'student_produced_response');
 @endphp
 
@@ -90,6 +91,9 @@
         {{-- Right Panel: Centered if no left panel --}}
         <div class="resizable-panel right-panel">
             @foreach ($questions as $q)
+                @php
+                    $savedAnswer = $savedAnswers->get($q->id);
+                @endphp
                 <div class="question show-strike @if (!$loop->first) hidden @endif"
                     id="question{{ $loop->iteration }}" data-question-id="{{ $q->id }}"
                     data-section-type="{{ $q->section_type }}" data-question-type="{{ $q->question_type }}">
@@ -122,7 +126,7 @@
                                 <div class="answer-input-container">
                                     <label class="block mb-2 font-bold">Enter your answer:</label>
                                     <input type="text" class="w-full px-4 py-2 border border-slate-300 rounded focus:outline-hidden focus:ring-2 focus:ring-indigo-500 spr-input" name="q{{ $loop->iteration }}"
-                                        placeholder="______" maxlength="6">
+                                        placeholder="______" maxlength="6" value="{{ $savedAnswer ?? '' }}">
                                     @if ($q->spr_hint)
                                         <div class="mt-1 italic text-slate-500 text-sm">{{ $q->spr_hint }}
                                         </div>
@@ -139,7 +143,8 @@
                                                 <input type="radio"
                                                     id="q{{ $loop->parent->iteration }}{{ $choice->label }}"
                                                     name="q{{ $loop->parent->iteration }}"
-                                                    value="{{ $choice->label }}">
+                                                    value="{{ $choice->label }}"
+                                                    @checked($savedAnswer !== null && (string) $savedAnswer === (string) $choice->label)>
                                                 <label
                                                     for="q{{ $loop->parent->iteration }}{{ $choice->label }}">@markdown($choice->content)</label>
                                             </div>

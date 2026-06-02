@@ -82,4 +82,18 @@ class PracticeController extends Controller
             'stats' => $stats,
         ]);
     }
+
+    public function testPreview()
+    {
+        return view('tests.preview');
+    }
+
+    public function chooseTest()
+    {
+        $tests = \App\Models\Test::where('status', 'active')
+            ->where('title', '!=', 'Test Preview')
+            ->limit(100)
+            ->get();
+        return view('tests.choose', compact('tests'));
+    }
 }

@@ -12,7 +12,7 @@ class UserSeeder extends Seeder
      */
     public function run(): void
     {
-        \App\Models\User::create([
+        \App\Models\User::forceCreate([
             'name' => 'Admin User',
             'username' => 'admin',
             'email' => 'admin@gmail.com',

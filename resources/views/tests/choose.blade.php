@@ -115,7 +115,7 @@
     </h3>
 
     <x-ui.custom-select id="testSelect" name="testSelect" placeholder="Choose a test" :options="$tests
-        ->map(fn($t) => ['value' => $t->sections->first()?->modules->first()?->id ?? '', 'label' => $t->title])
+        ->map(fn($t) => ['value' => $t->sections->first()?->modules->first()?->ulid ?? '', 'label' => $t->title])
         ->toArray()" />
 
     @push('scripts')

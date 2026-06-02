@@ -18,10 +18,13 @@ class UserTest extends Model
         'math_m2_path',
         'rw_theta',
         'math_theta',
+        'current_module_id',
+        'current_module_started_at',
     ];
 
     protected $casts = [
         'completed_at' => 'datetime',
+        'current_module_started_at' => 'datetime',
     ];
 
     public function user()
@@ -37,5 +40,10 @@ class UserTest extends Model
     public function userAnswers()
     {
         return $this->hasMany(UserTestAnswer::class);
+    }
+
+    public function currentModule()
+    {
+        return $this->belongsTo(Module::class, 'current_module_id');
     }
 }

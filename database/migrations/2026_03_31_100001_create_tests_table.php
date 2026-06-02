@@ -14,6 +14,7 @@ return new class extends Migration
     {
         Schema::create('tests', function (Blueprint $table) {
             $table->id();
+            $table->ulid('ulid')->unique();
 
             $table->string('title', 255)
                 ->comment('VD: Digital SAT Practice Test 1');

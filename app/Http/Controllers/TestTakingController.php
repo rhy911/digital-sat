@@ -10,9 +10,11 @@ use App\Models\UserTest;
 use App\Models\UserTestAnswer;
 use App\Services\SatScoringService;
 use App\Http\Requests\SubmitModuleRequest;
+use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\ValidationException;
 
 class TestTakingController extends Controller
 {
@@ -47,20 +49,21 @@ class TestTakingController extends Controller
         ]);
     }
 
-    public function showModule($module_id = null)
+    public function showModule($ulid = null)
     {
         $module = null;
-        if ($module_id) {
+        if ($ulid) {
             $module = \App\Models\Module::visibleTo(auth()->user())
                 ->whereHas('section.test', function($q) {
                     $q->whereIn('status', ['active', 'draft']);
                 })
+                ->where('ulid', $ulid)
                 ->with([
                 'section.test.sections.modules.questions.passage',
                 'section.test.sections.modules.questions.answerChoices' => fn($q) => $q->orderBy('order'),
                 'questions.passage',
                 'questions.answerChoices' => fn($q) => $q->orderBy('order'),
-            ])->findOrFail($module_id);
+            ])->firstOrFail();
 
             if (!$module) {
                 abort(404, 'Module not found.');
@@ -106,6 +109,8 @@ class TestTakingController extends Controller
         $currentQuestion = 1;
         $totalQuestions = $questions->count();
 
+        $isPreview = ($test->title === 'Test Preview');
+
         $testData = (object) [
             'id' => $test->id,
             'page_title' => "Section {$section->order}, Module {$module->module_number}: {$section->name}",
@@ -114,7 +119,7 @@ class TestTakingController extends Controller
             'module_number' => $module->module_number,
             'module_id' => $module->id,
             'username' => \Illuminate\Support\Facades\Auth::user()?->username ?? 'Guest',
-            'is_preview' => ($test->title === 'Test Preview'),
+            'is_preview' => $isPreview,
             'duration_minutes' => $module->duration_minutes ?? ($section->type === 'math' ? 35 : 32),
         ];
 
@@ -136,6 +141,7 @@ class TestTakingController extends Controller
 
         // Get user test record
         $userTest = null;
+        $savedAnswers = collect();
         if (Auth::check()) {
             $userTest = \App\Models\UserTest::firstOrCreate(
                 [
@@ -146,6 +152,16 @@ class TestTakingController extends Controller
                     'status' => 'in_progress',
                 ]
             );
+
+            if ($userTest->current_module_id !== $module->id) {
+                $userTest->current_module_id = $module->id;
+                $userTest->current_module_started_at = now();
+                $userTest->save();
+            }
+
+            $savedAnswers = UserTestAnswer::where('user_test_id', $userTest->id)
+                ->whereIn('question_id', $questions->pluck('id'))
+                ->pluck('selected_answer', 'question_id');
         }
 
         return view($viewName, [
@@ -160,6 +176,7 @@ class TestTakingController extends Controller
             'nextModuleId' => $nextModule ? $nextModule->id : null,
             'nextModuleName' => $nextModule ? ($nextModule->module_number == 2 ? 'Module 2' : 'Section ' . ($nextModule->section?->order ?? '')) : null,
             'userTestId' => $userTest ? $userTest->id : null,
+            'savedAnswers' => $savedAnswers,
         ]);
     }
 
@@ -177,32 +194,20 @@ class TestTakingController extends Controller
             $validated = $request->validated();
 
             return DB::transaction(function () use ($validated) {
-                $userTest = UserTest::where('id', $validated['user_test_id'])
-                    ->where('user_id', Auth::id())
-                    ->where('status', 'in_progress')
-                    ->firstOrFail();
-                $module = Module::with(['section', 'questions'])->findOrFail($validated['module_id']);
+                [$userTest, $module] = $this->resolveSubmissionContext($validated);
                 $section = $module->section;
+                
+                if ($userTest->current_module_started_at) {
+                    $duration = $module->duration_minutes ?? ($section->type === 'math' ? 35 : 32);
+                    $maxAllowedTime = $userTest->current_module_started_at->copy()->addMinutes($duration + 5);
+                    
+                    if (now()->greaterThan($maxAllowedTime)) {
+                        throw new AuthorizationException('Module submission time has expired.');
+                    }
+                }
 
                 // 1. Save answers
-                $submittedAnswers = $validated['answers'];
-                $questionIds = array_keys($submittedAnswers);
-                $questions = \App\Models\Question::with(['answerChoices', 'sprCorrectAnswers'])
-                    ->whereIn('id', $questionIds)
-                    ->get()
-                    ->keyBy('id');
-
-                foreach ($submittedAnswers as $questionId => $answer) {
-                    $question = $questions->get($questionId);
-                    if (!$question) continue;
-                    
-                    $isCorrect = $this->checkAnswer($question, $answer);
-
-                    UserTestAnswer::updateOrCreate(
-                        ['user_test_id' => $userTest->id, 'question_id' => $questionId],
-                        ['selected_answer' => $answer, 'is_correct' => $isCorrect]
-                    );
-                }
+                $this->saveModuleAnswers($userTest, $validated['answers']);
 
                 // 2. Logic for Routing or Finalizing - Moved to Background Job
                 \App\Jobs\ScoreModuleJob::dispatch($userTest->id, $module->id, $section->id);
@@ -213,6 +218,13 @@ class TestTakingController extends Controller
                 ]);
             });
 
+        } catch (AuthorizationException $e) {
+            return response()->json([
+                'error' => 'Unauthorized submission.',
+                'message' => $e->getMessage(),
+            ], 403);
+        } catch (ValidationException $e) {
+            throw $e;
         } catch (\Exception $e) {
             \Illuminate\Support\Facades\Log::error("EXCEPTION in submitModule", ['exception' => $e]);
             return response()->json([
@@ -222,13 +234,42 @@ class TestTakingController extends Controller
         }
     }
 
+    public function autosaveModule(Request $request)
+    {
+        $validated = $request->validate([
+            'user_test_id' => 'required|exists:user_tests,id',
+            'module_id' => 'required|exists:modules,id',
+            'answers' => 'present|array|max:100',
+            'answers.*' => 'nullable|string|max:100',
+        ]);
+
+        try {
+            $savedCount = DB::transaction(function () use ($validated) {
+                [$userTest, $module] = $this->resolveSubmissionContext($validated);
+
+                return $this->saveModuleAnswers($userTest, $validated['answers']);
+            });
+
+            return response()->json([
+                'status' => 'success',
+                'saved_count' => $savedCount,
+                'message' => 'Answers autosaved.',
+            ]);
+        } catch (AuthorizationException $e) {
+            return response()->json([
+                'error' => 'Unauthorized autosave.',
+                'message' => $e->getMessage(),
+            ], 403);
+        }
+    }
+
     public function checkScoringStatus($userTestId)
     {
         $userTest = \App\Models\UserTest::where('user_id', Auth::id())->findOrFail($userTestId);
         $cacheKey = "scoring_result_{$userTest->id}";
 
         if (\Illuminate\Support\Facades\Cache::has($cacheKey)) {
-            $result = \Illuminate\Support\Facades\Cache::pull($cacheKey);
+            $result = \Illuminate\Support\Facades\Cache::get($cacheKey);
             return response()->json($result);
         }
 
@@ -248,5 +289,100 @@ class TestTakingController extends Controller
             $correctAnswers = $question->sprCorrectAnswers->pluck('answer')->map(fn($a) => trim($a))->toArray();
             return in_array(trim($userAnswer), $correctAnswers);
         }
+    }
+
+    private function resolveSubmissionContext(array $validated): array
+    {
+        $userTest = UserTest::where('id', $validated['user_test_id'])
+            ->where('user_id', Auth::id())
+            ->where('status', 'in_progress')
+            ->first();
+
+        if (!$userTest) {
+            throw new AuthorizationException('This test attempt is no longer available.');
+        }
+
+        $module = Module::with(['section.test', 'questions'])->findOrFail($validated['module_id']);
+        $section = $module->section;
+
+        if (!$section || (int) $section->test_id !== (int) $userTest->test_id) {
+            throw new AuthorizationException('This module does not belong to the active test attempt.');
+        }
+
+        $questionIds = collect(array_keys($validated['answers']))
+            ->map(fn($id) => (string) $id);
+
+        if ($questionIds->contains(fn($id) => !ctype_digit($id))) {
+            throw ValidationException::withMessages([
+                'answers' => 'Submitted answers contain invalid question ids.',
+            ]);
+        }
+
+        $questionIds = $questionIds->map(fn($id) => (int) $id)->unique()->values();
+        if ($questionIds->isNotEmpty()) {
+            $validQuestionIds = $module->questions()
+                ->whereIn('questions.id', $questionIds->all())
+                ->pluck('questions.id')
+                ->map(fn($id) => (int) $id);
+
+            if ($validQuestionIds->count() !== $questionIds->count()) {
+                throw ValidationException::withMessages([
+                    'answers' => 'Submitted answers include questions outside the current module.',
+                ]);
+            }
+        }
+
+        return [$userTest, $module];
+    }
+
+    private function saveModuleAnswers(UserTest $userTest, array $submittedAnswers): int
+    {
+        $questionIds = collect(array_keys($submittedAnswers))
+            ->map(fn($id) => (int) $id)
+            ->values();
+
+        if ($questionIds->isEmpty()) {
+            return 0;
+        }
+
+        $questions = Question::with(['answerChoices', 'sprCorrectAnswers'])
+            ->whereIn('id', $questionIds->all())
+            ->get()
+            ->keyBy('id');
+
+        $savedCount = 0;
+        $upsertData = [];
+        
+        foreach ($submittedAnswers as $questionId => $answer) {
+            $question = $questions->get((int) $questionId);
+            if (!$question) {
+                continue;
+            }
+
+            $normalizedAnswer = $answer === null ? null : trim((string) $answer);
+            $isCorrect = $normalizedAnswer !== null && $normalizedAnswer !== ''
+                ? $this->checkAnswer($question, $normalizedAnswer)
+                : false;
+
+            $upsertData[] = [
+                'user_test_id' => $userTest->id,
+                'question_id' => (int) $questionId,
+                'selected_answer' => $normalizedAnswer,
+                'is_correct' => $isCorrect,
+                'created_at' => now(),
+                'updated_at' => now(),
+            ];
+            $savedCount++;
+        }
+
+        if (!empty($upsertData)) {
+            \App\Models\UserTestAnswer::upsert(
+                $upsertData,
+                ['user_test_id', 'question_id'],
+                ['selected_answer', 'is_correct', 'updated_at']
+            );
+        }
+
+        return $savedCount;
     }
 }

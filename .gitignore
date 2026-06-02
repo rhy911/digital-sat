@@ -22,3 +22,10 @@
 Homestead.json
 Homestead.yaml
 Thumbs.db
+
+# AI & Dev Temp Files
+GEMINI.md
+prompts/
+.agents/
+repomix-output.xml
+.understand-anything/

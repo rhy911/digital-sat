@@ -1,5 +1,5 @@
 @php
-    $defaultRole = request()->query('role', 'student');
+    $defaultRole = 'student';
 @endphp
 
 <x-layouts.auth title="Create Account">
@@ -34,6 +34,7 @@
                 const roleCards = document.querySelectorAll('.role-option-card');
                 roleCards.forEach(card => {
                     card.addEventListener('click', () => {
+                        if (card.classList.contains('disabled')) return;
                         roleCards.forEach(c => c.classList.remove('selected'));
                         card.classList.add('selected');
                         const radio = card.querySelector('input[type="radio"]');
@@ -90,12 +91,12 @@
                         <span class="role-title">Student</span>
                         <span class="role-desc">Practice tests & track your progress</span>
                     </div>
-                    <div class="role-option-card {{ $defaultRole === 'teacher' ? 'selected' : '' }}"
-                        id="roleCardTeacher">
-                        <input type="radio" name="role" id="roleTeacher" value="teacher" {{ $defaultRole === 'teacher' ? 'checked' : '' }}>
+                    <div class="role-option-card disabled" id="roleCardTeacher" aria-disabled="true"
+                        title="Teacher signup is temporarily unavailable.">
+                        <input type="radio" name="role" id="roleTeacher" value="teacher" disabled>
                         <span class="role-icon">🎓</span>
                         <span class="role-title">Teacher</span>
-                        <span class="role-desc">Manage tests & track students</span>
+                        <span class="role-desc">Teacher signup is temporarily unavailable</span>
                     </div>
                 </div>
             </div>
@@ -155,6 +156,6 @@
             <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
             <polyline points="22 4 12 14.01 9 11.01"></polyline>
         </svg>
-        <span>Your progress is automatically saved.</span>
+        <span>Your answers auto-save during practice tests.</span>
     </div>
 </x-layouts.auth>

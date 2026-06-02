@@ -16,6 +16,7 @@ return new class extends Migration
     {
         Schema::create('modules', function (Blueprint $table) {
             $table->id();
+            $table->ulid('ulid')->unique();
 
             $table->foreignId('section_id')
                 ->constrained()

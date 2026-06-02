@@ -1,5 +1,5 @@
 import { state } from './state.js';
-import { showReviewSection } from './navigation.js';
+import { submitModule } from './navigation.js';
 import { showCustomAlert } from './ui.js';
 
 /**
@@ -8,6 +8,15 @@ import { showCustomAlert } from './ui.js';
 export function startTimer(durationMinutes) {
   if (state.timerInterval) clearInterval(state.timerInterval);
 
+  // Infinite/Untimed logic (Preview Mode only for now)
+  if (durationMinutes === 0 && window.isPreview) {
+    state.isUntimed = true;
+    state.timeLeft = 0;
+    updateTimerDisplay(); // Will render 00:00
+    return; // Bypass setInterval and auto-submit
+  }
+
+  state.isUntimed = false;
   state.timeLeft = durationMinutes * 60;
   updateTimerDisplay();
 
@@ -37,8 +46,8 @@ function updateTimerDisplay() {
 
   timerDisplay.textContent = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
   
-  // Visual warning if less than 5 minutes
-  if (state.timeLeft < 300) {
+  // Visual warning if less than 5 minutes and not untimed
+  if (state.timeLeft < 300 && !state.isUntimed) {
     timerDisplay.classList.add('timer-warning');
   } else {
     timerDisplay.classList.remove('timer-warning');
@@ -49,6 +58,6 @@ function updateTimerDisplay() {
  * Action when time runs out
  */
 async function handleTimeUp() {
-  await showCustomAlert("Time is up! Moving to review section.", "warning", "Time Up");
-  showReviewSection();
+  await showCustomAlert("Time is up! Submitting your answers now.", "warning", "Time Up");
+  await submitModule({ skipConfirm: true });
 }

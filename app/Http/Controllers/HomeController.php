@@ -18,9 +18,16 @@ class HomeController extends Controller
             ->orderBy('completed_at', 'desc')
             ->get();
 
+        $inProgressTests = $user->userTests()
+            ->with('test')
+            ->where('status', 'in_progress')
+            ->orderBy('updated_at', 'desc')
+            ->get();
+
         return view('home', [
             'user' => $user,
             'completedTests' => $completedTests,
+            'inProgressTests' => $inProgressTests,
         ]);
     }
 }

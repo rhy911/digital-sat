@@ -11,6 +11,7 @@ import {
 import {
   showQuestion,
   showReviewSection,
+  initializeAutosave,
   nextQuestion,
   prevQuestion
 } from './test/navigation.js';
@@ -92,9 +93,10 @@ document.addEventListener("DOMContentLoaded", () => {
   initializeSprInputValidation();
   initializeDesmosCalculator();
   initializeSimpleFullscreen();
+  initializeAutosave();
 
   // Initialize Timer
-  const duration = window.durationMinutes || 32;
+  const duration = window.durationMinutes ?? 32;
   startTimer(duration);
 
   // Show initial question

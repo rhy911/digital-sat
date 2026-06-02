@@ -15,6 +15,7 @@
     ];
 
     $questions ??= collect();
+    $savedAnswers ??= collect();
 @endphp
 
 <x-layouts.test :pageTitle="$testData->page_title" :sectionTitle="$testData->section_title" :sectionNumber="$sectionNumber" :moduleNumber="$moduleNumber" :sectionName="$sectionName"
@@ -45,6 +46,9 @@
         </div>
         <div class="resizable-panel right-panel">
             @foreach ($questions as $q)
+                @php
+                    $savedAnswer = $savedAnswers->get($q->id);
+                @endphp
                 <div class="question show-strike @if (!$loop->first) hidden @endif"
                     id="question{{ $loop->iteration }}" data-question-id="{{ $q->id }}"
                     data-section-type="{{ $q->section_type }}" data-question-type="{{ $q->question_type }}">
@@ -79,7 +83,8 @@
                                         <div class="answer-option grow">
                                             <input type="radio"
                                                 id="q{{ $loop->parent->iteration }}{{ $choice->label }}"
-                                                name="q{{ $loop->parent->iteration }}" value="{{ $choice->label }}">
+                                                name="q{{ $loop->parent->iteration }}" value="{{ $choice->label }}"
+                                                @checked($savedAnswer !== null && (string) $savedAnswer === (string) $choice->label)>
                                             <label
                                                 for="q{{ $loop->parent->iteration }}{{ $choice->label }}">@markdown($choice->content)</label>
                                         </div>

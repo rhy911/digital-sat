@@ -31,10 +31,15 @@
                 <x-home.practice-option-link :href="route('choose-test')" :image="asset('images/test.png')"
                     alt="Full-Length Practice" title="Full-Length Practice" />
             </div>
-            <div class="flex gap-4 hidden" id="practice-past">
+            <div class="flex gap-4 hidden flex-col md:flex-row" id="practice-past">
+                @foreach ($inProgressTests as $userTest)
+                    <x-home.in-progress-practice-card :user-test="$userTest" compact />
+                @endforeach
+
                 @forelse ($completedTests as $userTest)
                     <x-home.completed-practice-card :user-test="$userTest" compact />
                 @empty
+                    @if($inProgressTests->isEmpty())
                     <x-home.empty-state-box title="Ready to Practice?">
                         <p class="text-lg">Go to <strong>Active</strong> and select <strong>Full-Length Practice</strong>.
                         </p>
@@ -42,6 +47,7 @@
                             and
                             feedback.</p>
                     </x-home.empty-state-box>
+                    @endif
                 @endforelse
             </div>
         </section>
