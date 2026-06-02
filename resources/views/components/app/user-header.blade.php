@@ -9,7 +9,7 @@
     <div class="md:container md:mx-auto px-4">
         <div class="flex justify-between items-center">
             <div class="bluebook-logo text-[2rem] font-bold flex items-center gap-[10px] {{ $logoClass }}">
-                <span>Bluebook™</span>
+                <span><span class="font-semibold italic">Digi</span><span class="ml-0.5 font-black not-italic">SAT</span></span>
             </div>
             <div class="user-dropdown relative">
                 <div class="user text-[1.125rem] font-bold flex items-center cursor-pointer py-2 px-4 rounded-lg gap-2 {{ $userClass }}" id="userDropdown">
@@ -48,4 +48,3 @@
         </div>
     </div>
 </header>
-

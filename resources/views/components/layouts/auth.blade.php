@@ -15,7 +15,7 @@
 <body>
     <header>
         <div class="text-3xl text-white font-bold tracking-widest">
-            <span>PrepSat™</span>
+            <span><span class="font-semibold italic">Digi</span><span class="ml-0.5 font-black not-italic">SAT</span></span>
         </div>
     </header>
     <main>
