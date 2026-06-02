@@ -8,8 +8,8 @@ import { showCustomAlert } from './ui.js';
 export function startTimer(durationMinutes) {
   if (state.timerInterval) clearInterval(state.timerInterval);
 
-  // Infinite/Untimed logic (Preview Mode only for now)
-  if (durationMinutes === 0 && window.isPreview) {
+  // Infinite/Untimed logic
+  if (durationMinutes === 0) {
     state.isUntimed = true;
     state.timeLeft = 0;
     updateTimerDisplay(); // Will render 00:00

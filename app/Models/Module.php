@@ -61,6 +61,12 @@ class Module extends Model
 
     protected static function booted()
     {
+        static::creating(function ($module) {
+            if (empty($module->ulid)) {
+                $module->ulid = (string) \Illuminate\Support\Str::ulid();
+            }
+        });
+
         static::created(function ($module) {
             if ($module->section_id) {
                 \Illuminate\Support\Facades\DB::table('section_modules')->insertOrIgnore([

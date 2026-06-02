@@ -120,15 +120,18 @@ class TestTakingController extends Controller
             'module_id' => $module->id,
             'username' => \Illuminate\Support\Facades\Auth::user()?->username ?? 'Guest',
             'is_preview' => $isPreview,
-            'duration_minutes' => $module->duration_minutes ?? ($section->type === 'math' ? 35 : 32),
+            'duration_minutes' => $isPreview ? 0 : ($module->duration_minutes ?? ($section->type === 'math' ? 35 : 32)),
         ];
 
         // Determine next module for navigation (simple logic for now)
         $nextModule = null;
         if ($module->module_number == 1) {
             // Find Module 2 in same section (prefer hard for mock/preview if available)
-            $nextModule = $section->modules->where('module_number', 2)->firstWhere('difficulty_level', 'hard');
-        } else {
+            $nextModule = $section->modules->where('module_number', 2)->firstWhere('difficulty_level', 'hard')
+                ?? $section->modules->where('module_number', 2)->first();
+        }
+
+        if (!$nextModule) {
             // Move to next section's first module
             $nextSection = $test->sections->where('order', '>', $section->order)->sortBy('order')->first();
             if ($nextSection) {
@@ -173,7 +176,7 @@ class TestTakingController extends Controller
             'moduleNumber' => $module->module_number,
             'sectionName' => $section->name,
             'sectionType' => $section->type,
-            'nextModuleId' => $nextModule ? $nextModule->id : null,
+            'nextModuleId' => $nextModule ? $nextModule->ulid : null,
             'nextModuleName' => $nextModule ? ($nextModule->module_number == 2 ? 'Module 2' : 'Section ' . ($nextModule->section?->order ?? '')) : null,
             'userTestId' => $userTest ? $userTest->id : null,
             'savedAnswers' => $savedAnswers,
@@ -198,11 +201,14 @@ class TestTakingController extends Controller
                 $section = $module->section;
                 
                 if ($userTest->current_module_started_at) {
-                    $duration = $module->duration_minutes ?? ($section->type === 'math' ? 35 : 32);
-                    $maxAllowedTime = $userTest->current_module_started_at->copy()->addMinutes($duration + 5);
-                    
-                    if (now()->greaterThan($maxAllowedTime)) {
-                        throw new AuthorizationException('Module submission time has expired.');
+                    $test = $module->section->test;
+                    $duration = ($test && $test->title === 'Test Preview') ? 0 : ($module->duration_minutes ?? ($section->type === 'math' ? 35 : 32));
+                    if ($duration > 0) {
+                        $maxAllowedTime = $userTest->current_module_started_at->copy()->addMinutes($duration + 5);
+                        
+                        if (now()->greaterThan($maxAllowedTime)) {
+                            throw new AuthorizationException('Module submission time has expired.');
+                        }
                     }
                 }
 

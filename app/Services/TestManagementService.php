@@ -114,6 +114,7 @@ class TestManagementService
             $originalTest = Test::with('sections.modules')->findOrFail($id);
             
             $clonedTest = $originalTest->replicate();
+            $clonedTest->ulid = (string) Str::ulid();
             $clonedTest->title = $originalTest->title . ' (Clone)';
             $clonedTest->status = 'draft';
             $clonedTest->created_by = $userId;
@@ -129,6 +130,7 @@ class TestManagementService
 
                 foreach ($section->modules as $module) {
                     $clonedModule = $module->replicate();
+                    $clonedModule->ulid = (string) Str::ulid();
                     $clonedModule->key = $module->key . '_CLONE_' . strtoupper(Str::random(4));
                     $clonedModule->created_by = $userId;
                     $clonedModule->is_public = false;
@@ -153,6 +155,7 @@ class TestManagementService
             $originalModule = Module::findOrFail($id);
             
             $clonedModule = $originalModule->replicate();
+            $clonedModule->ulid = (string) Str::ulid();
             $clonedModule->key = $originalModule->key . '_CLONE_' . strtoupper(Str::random(4));
             $clonedModule->created_by = $userId;
             $clonedModule->is_public = false;

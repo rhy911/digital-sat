@@ -24,6 +24,15 @@ class Test extends Model
         'is_public' => 'boolean',
     ];
 
+    protected static function booted()
+    {
+        static::creating(function ($test) {
+            if (empty($test->ulid)) {
+                $test->ulid = (string) \Illuminate\Support\Str::ulid();
+            }
+        });
+    }
+
     public function creator()
     {
         return $this->belongsTo(User::class, 'created_by');

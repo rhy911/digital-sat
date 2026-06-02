@@ -8,37 +8,37 @@ use App\Models\Module;
 use App\Models\Passage;
 use App\Models\Question;
 use App\Models\AnswerChoice;
-use App\Models\ScoreConversion;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Schema;
 
 class DigitalSatMockSeeder extends Seeder
 {
     public function run(): void
     {
+        // Clean up existing Test Preview record and its questions
+        $existing = Test::where('title', 'Test Preview')->first();
+        if ($existing) {
+            (new \App\Services\TestManagementService())->deleteTest($existing->id, true);
+        }
+
         $test = Test::create([
             'ulid' => \Illuminate\Support\Str::ulid()->toString(),
             'title' => 'Test Preview',
-            'description' => 'Comprehensive mock test with realistic passages and adaptive routing.',
+            'description' => 'Short practice test containing one Reading & Writing section and one Math section.',
             'test_type' => 'full_length',
-            'total_duration_minutes' => 134,
-            'break_duration_minutes' => 10,
+            'total_duration_minutes' => 0,
+            'break_duration_minutes' => 0,
             'status' => 'active',
+            'is_public' => true,
         ]);
 
         // --- SECTIONS ---
-        $rwSection = Section::create(['test_id' => $test->id, 'name' => 'Reading and Writing', 'type' => 'reading_writing', 'order' => 1]);
-        $mathSection = Section::create(['test_id' => $test->id, 'name' => 'Math', 'type' => 'math', 'order' => 2]);
+        $rwSection = Section::create(['test_id' => $test->id, 'name' => 'Reading and Writing', 'type' => 'reading_writing', 'order' => 1, 'is_public' => true]);
+        $mathSection = Section::create(['test_id' => $test->id, 'name' => 'Math', 'type' => 'math', 'order' => 2, 'is_public' => true]);
 
         // --- MODULES ---
-        $rwM1 = Module::create(['ulid' => \Illuminate\Support\Str::ulid()->toString(), 'section_id' => $rwSection->id, 'module_number' => 1, 'difficulty_level' => 'standard', 'duration_minutes' => 0, 'total_questions' => 27, 'order' => 1]);
-        $rwM2Easy = Module::create(['ulid' => \Illuminate\Support\Str::ulid()->toString(), 'section_id' => $rwSection->id, 'module_number' => 2, 'difficulty_level' => 'easy', 'duration_minutes' => 0, 'total_questions' => 27, 'order' => 2]);
-        $rwM2Hard = Module::create(['ulid' => \Illuminate\Support\Str::ulid()->toString(), 'section_id' => $rwSection->id, 'module_number' => 2, 'difficulty_level' => 'hard', 'duration_minutes' => 0, 'total_questions' => 27, 'order' => 3]);
-
-        $mathM1 = Module::create(['ulid' => \Illuminate\Support\Str::ulid()->toString(), 'section_id' => $mathSection->id, 'module_number' => 1, 'difficulty_level' => 'standard', 'duration_minutes' => 0, 'total_questions' => 22, 'order' => 1]);
-        $mathM2Easy = Module::create(['ulid' => \Illuminate\Support\Str::ulid()->toString(), 'section_id' => $mathSection->id, 'module_number' => 2, 'difficulty_level' => 'easy', 'duration_minutes' => 0, 'total_questions' => 22, 'order' => 2]);
-        $mathM2Hard = Module::create(['ulid' => \Illuminate\Support\Str::ulid()->toString(), 'section_id' => $mathSection->id, 'module_number' => 2, 'difficulty_level' => 'hard', 'duration_minutes' => 0, 'total_questions' => 22, 'order' => 3]);
+        $rwM1 = Module::create(['ulid' => \Illuminate\Support\Str::ulid()->toString(), 'section_id' => $rwSection->id, 'module_number' => 1, 'difficulty_level' => 'standard', 'duration_minutes' => 0, 'total_questions' => 6, 'order' => 1, 'is_public' => true]);
+        $mathM1 = Module::create(['ulid' => \Illuminate\Support\Str::ulid()->toString(), 'section_id' => $mathSection->id, 'module_number' => 1, 'difficulty_level' => 'standard', 'duration_minutes' => 0, 'total_questions' => 6, 'order' => 1, 'is_public' => true]);
 
         // --- R&W QUESTIONS (MODULE 1) ---
         $rw_data = [
@@ -47,14 +47,14 @@ class DigitalSatMockSeeder extends Seeder
                 'Vocabulary', 
                 'The spacecraft OSIRIS-REx briefly made contact with the asteroid 101955 Bennu in 2020. NASA scientist Daniella DellaGiustina reports that despite facing the unexpected obstacle of a surface mostly covered in boulders, OSIRIS-REx successfully ______ a sample of the surface, gathering pieces of it to bring back to Earth.',
                 'Which choice completes the text with the most logical and precise word or phrase?',
-                ['attached', 'collected', 'followed', 'replaced'], 2
+                ['attached', 'collected', 'followed', 'replaced'], 1
             ],
             [
                 'Information and Ideas', 
                 'Central Ideas', 
                 "Research conducted by planetary scientist Katarina Miljkovic suggests that the Moon's surface may not accurately ______ early impact events. When the Moon was still forming, its surface was softer, and asteroid or meteoroid impacts would have left less of an impression; thus, evidence of early impacts may no longer be present.",
                 'Which choice completes the text with the most logical and precise word or phrase?',
-                ['reflect', 'receive', 'evaluate', 'mimic'], 1
+                ['reflect', 'receive', 'evaluate', 'mimic'], 0
             ],
             [
                 'Craft and Structure', 
@@ -68,7 +68,7 @@ class DigitalSatMockSeeder extends Seeder
                 'Boundaries', 
                 'The team of archaeologists discovered a cache of ancient pottery shards during their excavation of the site; these fragments provided crucial evidence regarding the trade routes utilized by the civilization during its peak.',
                 'Which choice completes the text so that it conforms to the conventions of Standard English?',
-                ['site; these', 'site, these', 'site. These', 'site; These'], 0 // Using the semicolon version
+                ['site; these', 'site, these', 'site. These', 'site; These'], 0
             ],
             [
                 'Expression of Ideas', 
@@ -104,8 +104,6 @@ class DigitalSatMockSeeder extends Seeder
                 ['D', $data[4][3], $data[5] === 3],
             ]);
             $rwM1->questions()->attach($q->id, ['position' => $i + 1]);
-            $rwM2Easy->questions()->attach($q->id, ['position' => $i + 1]);
-            $rwM2Hard->questions()->attach($q->id, ['position' => $i + 1]);
         }
 
         // --- MATH QUESTIONS (MODULE 1) ---
@@ -133,12 +131,9 @@ class DigitalSatMockSeeder extends Seeder
                 DB::table('spr_correct_answers')->insert(['question_id' => $q->id, 'answer' => $data[3], 'answer_type' => 'exact', 'created_at' => now()]);
             }
             $mathM1->questions()->attach($q->id, ['position' => $i + 1]);
-            $mathM2Easy->questions()->attach($q->id, ['position' => $i + 1]);
-            $mathM2Hard->questions()->attach($q->id, ['position' => $i + 1]);
         }
 
-        $this->createScoreConversions($test->id);
-        $this->command->info('Realistic mock data seeded successfully!');
+        $this->command->info('Test Preview mock data seeded successfully!');
     }
 
     private function createChoices($qId, $choices) {
@@ -150,17 +145,6 @@ class DigitalSatMockSeeder extends Seeder
                 'is_correct' => $c[2],
                 'order' => $index + 1,
             ]);
-        }
-    }
-
-    private function createScoreConversions($testId) {
-        for ($i = 0; $i <= 54; $i++) {
-            ScoreConversion::create(['test_id' => $testId, 'section_type' => 'reading_writing', 'm2_difficulty' => 'hard', 'raw_score' => $i, 'scaled_score' => 200 + round(($i / 54) * 600)]);
-            ScoreConversion::create(['test_id' => $testId, 'section_type' => 'reading_writing', 'm2_difficulty' => 'easy', 'raw_score' => $i, 'scaled_score' => 200 + round(($i / 54) * 400)]);
-        }
-        for ($i = 0; $i <= 44; $i++) {
-            ScoreConversion::create(['test_id' => $testId, 'section_type' => 'math', 'm2_difficulty' => 'hard', 'raw_score' => $i, 'scaled_score' => 200 + round(($i / 44) * 600)]);
-            ScoreConversion::create(['test_id' => $testId, 'section_type' => 'math', 'm2_difficulty' => 'easy', 'raw_score' => $i, 'scaled_score' => 200 + round(($i / 44) * 450)]);
         }
     }
 }

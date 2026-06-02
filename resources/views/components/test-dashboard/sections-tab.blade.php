@@ -18,7 +18,7 @@
 
     <div class="px-4 space-y-8">
         @php
-            $hasSections = $tests->flatMap->sections->count() > 0;
+            $hasSections = $tests->getCollection()->flatMap->sections->count() > 0;
         @endphp
 
         <!-- Empty State -->

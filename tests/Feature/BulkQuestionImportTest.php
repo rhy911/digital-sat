@@ -27,7 +27,7 @@ class BulkQuestionImportTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
-        $this->user = User::factory()->create();
+        $this->user = User::factory()->create(['role' => 'admin']);
 
         $this->test = Test::create([
             'title' => 'Test SAT Import',
