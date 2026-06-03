@@ -55,7 +55,7 @@
     ══════════════════════════════════════════════ --}}
     <div class="sd-breadcrumb">
         <div class="sd-hero-inner" style="display:flex;align-items:center;">
-            <a href="{{ route('my-practice', $userTest->id) }}">My Tests</a>
+            <a href="{{ route('my-practice', $userTest) }}">My Tests</a>
             <span class="sd-breadcrumb-sep">›</span>
             <span class="sd-breadcrumb-current">
                 {{ $userTest->test->title }}
@@ -121,31 +121,45 @@
                 $statusKey = $isOmitted ? 'omitted' : ($answer->is_correct ? 'correct' : 'wrong');
                 $sectionType = $answer->question->section_type === 'math' ? 'math' : 'rw';
                 $sectionName = $sectionType === 'math' ? 'Math' : 'Reading & Writing';
+                $moduleNumber = $answer->module?->module_number;
+                $questionNumber = $questionPositions->get("{$answer->module_id}:{$answer->question_id}", $displayIdx);
                 $correctAnswer =
                     $answer->question->sprCorrectAnswers->pluck('answer')->implode(', ') ?:
                     $answer->question->answerChoices->where('is_correct', true)->first()?->label ?? 'N/A';
 
                 $row = [
-                    'idx' => $displayIdx,
+                    'idx' => $questionNumber,
                     'answer' => $answer,
                     'statusKey' => $statusKey,
                     'sectionType' => $sectionType,
                     'sectionName' => $sectionName,
+                    'moduleNumber' => $moduleNumber,
                     'correctAnswer' => $correctAnswer,
                     'questionData' => [
-                        'stem' => \Illuminate\Support\Str::markdown($answer->question->stem ?? '', ['html_input' => 'strip', 'allow_unsafe_links' => false]),
-                        'explanation' => \Illuminate\Support\Str::markdown($answer->question->explanation?->explanation ?? 'No explanation available.', ['html_input' => 'strip', 'allow_unsafe_links' => false]),
+                        'stem' => \Illuminate\Support\Str::markdown($answer->question->stem ?? '', [
+                            'html_input' => 'strip',
+                            'allow_unsafe_links' => false,
+                        ]),
+                        'explanation' => \Illuminate\Support\Str::markdown(
+                            $answer->question->explanation?->explanation ?? 'No explanation available.',
+                            ['html_input' => 'strip', 'allow_unsafe_links' => false],
+                        ),
                         'correct_answer' => $correctAnswer,
                         'your_answer' => $answer->selected_answer ?? 'Omitted',
                         'status' => $statusKey,
                         'question_type' => $answer->question->question_type,
-                        'choices' => $answer->question->answerChoices->map(function($c) {
-                            return [
-                                'label' => $c->label,
-                                'content' => \Illuminate\Support\Str::markdown($c->content ?? '', ['html_input' => 'strip', 'allow_unsafe_links' => false]),
-                                'is_correct' => (bool)$c->is_correct
-                            ];
-                        })->toArray(),
+                        'choices' => $answer->question->answerChoices
+                            ->map(function ($c) {
+                                return [
+                                    'label' => $c->label,
+                                    'content' => \Illuminate\Support\Str::markdown($c->content ?? '', [
+                                        'html_input' => 'strip',
+                                        'allow_unsafe_links' => false,
+                                    ]),
+                                    'is_correct' => (bool) $c->is_correct,
+                                ];
+                            })
+                            ->toArray(),
                     ],
                 ];
 
@@ -171,7 +185,7 @@
         @endphp
 
         {{-- ── KNOWLEDGE & SKILLS HEADING ── --}}
-        <h2 class="!font-bold">Knowledge &amp; Skills</h2>
+        <h2 class="text-3xl font-bold">Knowledge &amp; Skills</h2>
         <p class="sd-section-sub">View your performance across the 8 content domains measured on the SAT.</p>
 
         {{-- ── DOMAIN GROUPS — rendered once, filtered by JS ── --}}
@@ -218,7 +232,7 @@
         @endif
 
         {{-- ── QUESTION REVIEW ── --}}
-        <h2 class="!font-bold">Question Review</h2>
+        <h2 class="text-3xl font-bold">Question Review</h2>
         <p class="sd-section-sub">Detailed results for every question from this practice test.</p>
 
         {{-- Stats — values updated by JS on tab switch --}}
@@ -273,8 +287,10 @@
                 <div class="sd-modal-section-label">Question</div>
                 <div class="sd-modal-question-box" id="modalQuestionStem"></div>
 
-                <div class="sd-modal-section-label js-mc-label" style="display:none;margin-top:1.25rem;">Answer Choices</div>
-                <div class="sd-modal-choices-list js-mc-list" id="modalChoicesList" style="display:none;margin-bottom:1.5rem;"></div>
+                <div class="sd-modal-section-label js-mc-label" style="display:none;margin-top:1.25rem;">Answer
+                    Choices</div>
+                <div class="sd-modal-choices-list js-mc-list" id="modalChoicesList"
+                    style="display:none;margin-bottom:1.5rem;"></div>
 
                 <div class="sd-modal-answer-row">
                     <div class="sd-modal-answer-box your-answer" id="modalYourAnswerBox">

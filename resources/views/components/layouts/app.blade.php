@@ -49,6 +49,18 @@
     {{ $scripts ?? '' }}
     <script>
         document.addEventListener('DOMContentLoaded', function() {
+            if (typeof window.initDropdownToggle === 'function') {
+                const { menuEl } = window.initDropdownToggle({
+                    triggerId: 'userDropdown',
+                    menuId: 'dropdownMenu',
+                    openClass: 'show',
+                });
+                const logoutForm = menuEl?.querySelector?.('form');
+                if (typeof window.initAjaxLogout === 'function') {
+                    window.initAjaxLogout({ formEl: logoutForm, redirectTo: '/', tokenStorageKey: 'api_token' });
+                }
+            }
+
             const loadingScreen = document.getElementById('loadingScreen');
             const loadingStatusText = document.getElementById('loadingStatusText');
 

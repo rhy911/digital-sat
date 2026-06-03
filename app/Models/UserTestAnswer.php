@@ -8,6 +8,7 @@ class UserTestAnswer extends Model
 {
     protected $fillable = [
         'user_test_id',
+        'module_id',
         'question_id',
         'selected_answer',
         'is_correct',
@@ -21,5 +22,10 @@ class UserTestAnswer extends Model
     public function question()
     {
         return $this->belongsTo(Question::class);
+    }
+
+    public function module()
+    {
+        return $this->belongsTo(Module::class);
     }
 }

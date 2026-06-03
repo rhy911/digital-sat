@@ -14,6 +14,7 @@ use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Validation\ValidationException;
 
 class TestTakingController extends Controller
@@ -45,6 +46,7 @@ class TestTakingController extends Controller
 
         return response()->json([
             'user_test_id' => $userTest->id,
+            'user_test_ulid' => $userTest->ulid,
             'message' => 'Test started',
         ]);
     }
@@ -179,6 +181,7 @@ class TestTakingController extends Controller
             'nextModuleId' => $nextModule ? $nextModule->ulid : null,
             'nextModuleName' => $nextModule ? ($nextModule->module_number == 2 ? 'Module 2' : 'Section ' . ($nextModuleSection?->order ?? '')) : null,
             'userTestId' => $userTest ? $userTest->id : null,
+            'userTestUlid' => $userTest ? $userTest->ulid : null,
             'userTest' => $userTest,
             'savedAnswers' => $savedAnswers,
         ]);
@@ -296,7 +299,7 @@ class TestTakingController extends Controller
                 }
 
                 // 1. Save answers
-                $this->saveModuleAnswers($userTest, $validated['answers']);
+                $this->saveModuleAnswers($userTest, $module, $validated['answers']);
 
                 // 2. Logic for Routing or Finalizing - Run synchronously
                 \App\Jobs\ScoreModuleJob::dispatchSync($userTest->id, $module->id, $section->id);
@@ -350,7 +353,7 @@ class TestTakingController extends Controller
                     $userTest->save();
                 }
 
-                return $this->saveModuleAnswers($userTest, $validated['answers']);
+                return $this->saveModuleAnswers($userTest, $module, $validated['answers']);
             });
 
             return response()->json([
@@ -366,9 +369,9 @@ class TestTakingController extends Controller
         }
     }
 
-    public function checkScoringStatus($userTestId)
+    public function checkScoringStatus(UserTest $userTest)
     {
-        $userTest = \App\Models\UserTest::where('user_id', Auth::id())->findOrFail($userTestId);
+        $this->authorize('view', $userTest);
         $cacheKey = "scoring_result_{$userTest->id}";
 
         if (\Illuminate\Support\Facades\Cache::has($cacheKey)) {
@@ -438,7 +441,7 @@ class TestTakingController extends Controller
         return [$userTest, $module];
     }
 
-    private function saveModuleAnswers(UserTest $userTest, array $submittedAnswers): int
+    private function saveModuleAnswers(UserTest $userTest, Module $module, array $submittedAnswers): int
     {
         $questionIds = collect(array_keys($submittedAnswers))
             ->map(fn($id) => (int) $id)
@@ -463,11 +466,14 @@ class TestTakingController extends Controller
             }
 
             $normalizedAnswer = $answer === null ? null : trim((string) $answer);
+            if ($normalizedAnswer === '') {
+                $normalizedAnswer = null;
+            }
             $isCorrect = $normalizedAnswer !== null && $normalizedAnswer !== ''
                 ? $this->checkAnswer($question, $normalizedAnswer)
                 : false;
 
-            $upsertData[] = [
+            $row = [
                 'user_test_id' => $userTest->id,
                 'question_id' => (int) $questionId,
                 'selected_answer' => $normalizedAnswer,
@@ -475,13 +481,23 @@ class TestTakingController extends Controller
                 'created_at' => now(),
                 'updated_at' => now(),
             ];
+
+            if (Schema::hasColumn('user_test_answers', 'module_id')) {
+                $row['module_id'] = $module->id;
+            }
+
+            $upsertData[] = $row;
             $savedCount++;
         }
 
         if (!empty($upsertData)) {
+            $uniqueBy = Schema::hasColumn('user_test_answers', 'module_id')
+                ? ['user_test_id', 'module_id', 'question_id']
+                : ['user_test_id', 'question_id'];
+
             \App\Models\UserTestAnswer::upsert(
                 $upsertData,
-                ['user_test_id', 'question_id'],
+                $uniqueBy,
                 ['selected_answer', 'is_correct', 'updated_at']
             );
         }
@@ -518,6 +534,7 @@ class TestTakingController extends Controller
             'nextModuleId' => $type === 'math' ? null : 'preview-math',
             'nextModuleName' => $type === 'math' ? null : 'Math Module 1',
             'userTestId' => null,
+            'userTestUlid' => null,
             'userTest' => null,
             'savedAnswers' => collect(),
         ]);

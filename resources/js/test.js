@@ -25,6 +25,7 @@ import {
   initializeSimpleFullscreen
 } from './test/features.js';
 import { startTimer } from './test/timer.js';
+import { initializeBreakControls } from './test/break.js';
 
 // Expose to global scope for inline onclick handlers and backwards compatibility
 window.toggleTimer = toggleTimer;
@@ -93,6 +94,7 @@ document.addEventListener("DOMContentLoaded", () => {
   initializeSprInputValidation();
   initializeDesmosCalculator();
   initializeSimpleFullscreen();
+  initializeBreakControls();
   initializeAutosave();
 
   // Initialize Timer

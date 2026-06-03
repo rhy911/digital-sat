@@ -17,6 +17,10 @@ export function initDropdownToggle({
     const menuEl = document.getElementById(menuId);
 
     if (!triggerEl || !menuEl) return { triggerEl: null, menuEl: null };
+    if (triggerEl.dataset.dropdownInitialized === 'true') {
+        return { triggerEl, menuEl, destroy() {} };
+    }
+    triggerEl.dataset.dropdownInitialized = 'true';
 
     const onTriggerClick = (e) => {
         e.stopPropagation();
@@ -80,6 +84,8 @@ export function initAjaxLogout({
     tokenStorageKey = 'api_token',
 } = {}) {
     if (!formEl) return;
+    if (formEl.dataset.ajaxLogoutInitialized === 'true') return;
+    formEl.dataset.ajaxLogoutInitialized = 'true';
 
     formEl.addEventListener('submit', async (e) => {
         e.preventDefault();
@@ -323,6 +329,16 @@ export function initScoreDetailsPage() {
     // ── Sticky tabs bar ─────────────────────────────────────────
     const sentinel = document.getElementById('sd-tabs-sentinel');
     const tabsBar  = document.getElementById('sd-tabs-bar');
+    const pageHeader = document.querySelector('body > header');
+
+    const syncStickyHeaderOffset = () => {
+        const headerHeight = pageHeader ? Math.ceil(pageHeader.getBoundingClientRect().height) : 0;
+        document.documentElement.style.setProperty('--sd-sticky-header-height', `${headerHeight}px`);
+    };
+
+    syncStickyHeaderOffset();
+    window.addEventListener('resize', syncStickyHeaderOffset);
+
     if (sentinel && tabsBar) {
         new IntersectionObserver(
             ([entry]) => tabsBar.classList.toggle('is-sticky', !entry.isIntersecting),
@@ -338,24 +354,93 @@ export function initScoreDetailsPage() {
     // ── State ───────────────────────────────────────────────────
     let activeSection      = 'all';
     let activeStatusFilter = 'all';
+    let currentPage        = 1;
+    const pageSize         = 30;
 
-    function applyFilters() {
+    const getQuestionRows = () => Array.from(
+        document.querySelectorAll('#table-main tbody tr[data-section][data-status]')
+    );
+
+    const getMatchingRows = () => getQuestionRows().filter(row => {
+        const secOk    = activeSection === 'all' || row.dataset.section === activeSection;
+        const statusOk = activeStatusFilter === 'all' || row.dataset.status === activeStatusFilter;
+        return secOk && statusOk;
+    });
+
+    function renderTablePagination(matchingRows) {
+        const pagination = document.querySelector('[data-table-pagination="table-main"]');
+        if (!pagination) return;
+
+        const infoEl = pagination.querySelector('[data-page-info]');
+        const pageNumbersEl = pagination.querySelector('[data-page-numbers]');
+        const prevBtn = pagination.querySelector('[data-page-action="prev"]');
+        const nextBtn = pagination.querySelector('[data-page-action="next"]');
+        const totalRows = matchingRows.length;
+        const totalPages = Math.max(1, Math.ceil(totalRows / pageSize));
+        const start = totalRows === 0 ? 0 : ((currentPage - 1) * pageSize) + 1;
+        const end = Math.min(currentPage * pageSize, totalRows);
+
+        if (infoEl) {
+            infoEl.textContent = totalRows === 0
+                ? 'No questions to show'
+                : `Showing ${start}-${end} of ${totalRows}`;
+        }
+
+        if (prevBtn) prevBtn.disabled = currentPage <= 1;
+        if (nextBtn) nextBtn.disabled = currentPage >= totalPages;
+
+        if (!pageNumbersEl) return;
+        pageNumbersEl.innerHTML = '';
+
+        const visiblePages = new Set([1, totalPages, currentPage - 1, currentPage, currentPage + 1]);
+        let previousPage = 0;
+
+        Array.from(visiblePages)
+            .filter(page => page >= 1 && page <= totalPages)
+            .sort((a, b) => a - b)
+            .forEach(page => {
+                if (previousPage && page - previousPage > 1) {
+                    const gap = document.createElement('span');
+                    gap.className = 'sd-page-gap';
+                    gap.textContent = '...';
+                    pageNumbersEl.appendChild(gap);
+                }
+
+                const btn = document.createElement('button');
+                btn.type = 'button';
+                btn.className = 'sd-page-number';
+                btn.dataset.page = String(page);
+                btn.textContent = String(page);
+                btn.classList.toggle('active', page === currentPage);
+                pageNumbersEl.appendChild(btn);
+                previousPage = page;
+            });
+    }
+
+    function applyFilters({ resetPage = false } = {}) {
+        if (resetPage) currentPage = 1;
+
         // Show/hide domain groups
         document.querySelectorAll('.sd-domain-group').forEach(g => {
             g.style.display = (activeSection === 'all' || g.dataset.section === activeSection) ? '' : 'none';
         });
 
-        // Filter table rows by both section AND status
-        document.querySelectorAll('#table-main tbody tr').forEach(row => {
-            const secOk    = activeSection === 'all' || row.dataset.section === activeSection;
-            const statusOk = activeStatusFilter === 'all' || row.dataset.status === activeStatusFilter;
-            row.style.display = (secOk && statusOk) ? '' : 'none';
+        const rows = getQuestionRows();
+        const matchingRows = getMatchingRows();
+        const totalPages = Math.max(1, Math.ceil(matchingRows.length / pageSize));
+        currentPage = Math.min(currentPage, totalPages);
+        const startIndex = (currentPage - 1) * pageSize;
+        const visibleRows = new Set(matchingRows.slice(startIndex, startIndex + pageSize));
+
+        rows.forEach(row => {
+            row.style.display = visibleRows.has(row) ? '' : 'none';
         });
 
-        // Show section column only on All tab
-        document.querySelectorAll('.section-col').forEach(el => {
-            el.style.display = activeSection === 'all' ? '' : 'none';
+        document.querySelectorAll('.sd-no-results-row').forEach(row => {
+            row.hidden = matchingRows.length > 0;
         });
+
+        renderTablePagination(matchingRows);
 
         // Update stat counters
         const s = statsData[activeSection] ?? statsData['all'] ?? {};
@@ -375,7 +460,7 @@ export function initScoreDetailsPage() {
             document.querySelectorAll('.sd-view-btn[data-filter]').forEach(b => {
                 b.classList.toggle('active', b.dataset.filter === 'all');
             });
-            applyFilters();
+            applyFilters({ resetPage: true });
         });
     });
 
@@ -386,6 +471,25 @@ export function initScoreDetailsPage() {
             toolbar.querySelectorAll('.sd-view-btn[data-filter]').forEach(b => b.classList.remove('active'));
             this.classList.add('active');
             activeStatusFilter = this.getAttribute('data-filter');
+            applyFilters({ resetPage: true });
+        });
+    });
+
+    document.querySelectorAll('[data-table-pagination]').forEach(pagination => {
+        pagination.addEventListener('click', e => {
+            const button = e.target.closest('button');
+            if (!button) return;
+
+            if (button.dataset.pageAction === 'prev') {
+                currentPage = Math.max(1, currentPage - 1);
+            } else if (button.dataset.pageAction === 'next') {
+                currentPage += 1;
+            } else if (button.dataset.page) {
+                currentPage = Number.parseInt(button.dataset.page, 10) || 1;
+            } else {
+                return;
+            }
+
             applyFilters();
         });
     });
@@ -476,8 +580,7 @@ export function initScoreDetailsPage() {
     document.addEventListener('keydown', e => {
         if (e.key === 'Escape') closeModal();
     });
+
+    applyFilters({ resetPage: true });
 }
 window.initScoreDetailsPage = initScoreDetailsPage;
-
-
-

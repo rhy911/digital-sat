@@ -14,9 +14,9 @@
 
 <body>
     <header>
-        <div class="text-3xl text-white font-bold tracking-widest">
+        <a href="/" class="text-3xl text-white font-bold tracking-widest no-underline">
             <span><span class="font-semibold italic">Digi</span><span class="ml-0.5 font-black not-italic">SAT</span></span>
-        </div>
+        </a>
     </header>
     <main>
         <div class="auth-container mx-auto bg-white gap-10 flex items-center flex-col  max-w-132 p-10">

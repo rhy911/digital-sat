@@ -203,8 +203,8 @@
 /* ---------- Sticky Tabs Bar ---------- */
 .sd-tabs-bar {
     position: sticky;
-    top: 0;
-    z-index: 200;
+    top: var(--sd-sticky-header-height, 0px);
+    z-index: 9;
     background: #fff;
     border-bottom: 2px solid #e2e8f0;
     transition:
@@ -449,6 +449,7 @@ table.sd-table th {
     white-space: nowrap;
     cursor: pointer;
     user-select: none;
+    vertical-align: middle;
 }
 table.sd-table th:hover {
     color: #fff;
@@ -471,18 +472,24 @@ table.sd-table tbody tr:hover {
 table.sd-table td {
     padding: 0.85rem 1rem;
     vertical-align: middle;
+    text-align: center;
 }
 .sd-q-num {
+    display: inline-block;
     font-weight: 800;
     color: #0a2d6e;
     font-size: 0.9rem;
 }
 .sd-section-pill {
-    display: inline-block;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.35rem;
     padding: 0.2rem 0.6rem;
     border-radius: 999px;
     font-size: 0.72rem;
     font-weight: 700;
+    line-height: 1.2;
 }
 .sd-section-pill.rw {
     background: #dbeafe;
@@ -491,6 +498,14 @@ table.sd-table td {
 .sd-section-pill.math {
     background: #ede9fe;
     color: #5b21b6;
+}
+.sd-module-label {
+    border-left: 1px solid currentColor;
+    font-size: 0.66rem;
+    line-height: 1;
+    opacity: 0.75;
+    padding-left: 0.35rem;
+    white-space: nowrap;
 }
 .sd-status-badge {
     display: inline-flex;
@@ -533,12 +548,76 @@ table.sd-table td {
     border-color: #0077c8;
 }
 .sd-domain-tag {
+    display: inline-block;
     font-size: 0.78rem;
     color: #475569;
     max-width: 180px;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
+}
+.sd-pagination {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    margin-top: 1rem;
+    color: #475569;
+    font-size: 0.85rem;
+    font-weight: 600;
+}
+.sd-pagination[hidden] {
+    display: none;
+}
+.sd-pagination-controls,
+.sd-page-numbers {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+}
+.sd-page-btn,
+.sd-page-number {
+    min-width: 36px;
+    height: 34px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid #c7dff7;
+    border-radius: 8px;
+    background: #fff;
+    color: #0077c8;
+    cursor: pointer;
+    font-size: 0.8rem;
+    font-weight: 700;
+    transition:
+        background 0.15s,
+        border-color 0.15s,
+        color 0.15s;
+}
+.sd-page-btn {
+    min-width: 84px;
+    padding: 0 0.75rem;
+}
+.sd-page-btn:hover,
+.sd-page-number:hover {
+    background: #f0f7ff;
+    border-color: #0077c8;
+}
+.sd-page-number.active {
+    background: #0077c8;
+    border-color: #0077c8;
+    color: #fff;
+}
+.sd-page-gap {
+    color: #94a3b8;
+    font-weight: 800;
+    padding: 0 0.15rem;
+}
+.sd-page-btn:disabled {
+    background: #f8fafc;
+    border-color: #e2e8f0;
+    color: #94a3b8;
+    cursor: not-allowed;
 }
 
 /* ---------- Review Modal ---------- */
@@ -802,6 +881,17 @@ table.sd-table td {
     }
     .sd-modal-answer-row {
         grid-template-columns: 1fr;
+    }
+    .sd-pagination {
+        align-items: stretch;
+        flex-direction: column;
+    }
+    .sd-pagination-controls {
+        justify-content: space-between;
+    }
+    .sd-page-numbers {
+        justify-content: center;
+        flex-wrap: wrap;
     }
 }
 @media (max-width: 480px) {

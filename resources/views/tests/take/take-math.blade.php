@@ -169,8 +169,10 @@
         window.nextModuleId = @json($nextModuleId ?? null);
         window.nextModuleName = @json($nextModuleName ?? null);
         window.userTestId = @json($userTestId ?? null);
+        window.userTestUlid = @json($userTestUlid ?? null);
         window.currentModuleId = @json($testData->module_id ?? null);
         window.isPreview = @json($testData->is_preview ?? false);
+        window.canTakeBreak = @json(!($testData->is_preview ?? false) && !empty($userTestId));
         window.durationMinutes = @json($testData->duration_minutes ?? 35);
         window.initialElapsedSeconds = @json($userTest ? $userTest->current_module_elapsed_seconds : 0);
     </script>

@@ -198,13 +198,14 @@ export function collectAnswers() {
   state.questionElements.forEach(questionEl => {
     const qId = questionEl.dataset.questionId;
     const qType = questionEl.dataset.questionType;
+    if (!qId) return;
 
     if (qType === 'multiple_choice') {
       const selected = questionEl.querySelector('input[type="radio"]:checked');
-      if (selected) answers[qId] = selected.value;
+      answers[qId] = selected ? selected.value : null;
     } else if (qType === 'student_produced_response') {
       const input = questionEl.querySelector('.spr-input');
-      if (input) answers[qId] = input.value;
+      answers[qId] = input && input.value.trim() !== '' ? input.value.trim() : null;
     }
   });
 
@@ -229,7 +230,7 @@ export function initializeAutosave() {
 
   // Periodically autosave elapsed time every 15 seconds
   setInterval(() => {
-    if (!window.isPreview && window.userTestId && window.currentModuleId) {
+    if (!state.isSubmitting && !window.isPreview && window.userTestId && window.currentModuleId) {
       autosaveAnswers();
     }
   }, 15000);
@@ -286,12 +287,23 @@ async function autosaveAnswers() {
 }
 
 export async function submitModule(options = {}) {
+  if (state.isSubmitting) return;
+
   const answers = collectAnswers();
   const skipConfirm = options.skipConfirm || false;
+  state.isSubmitting = true;
 
   if (!skipConfirm) {
     const confirmNext = await showCustomConfirm("You are about to proceed to the next module/section.\n\nAre you ready to continue?", "warning", "Proceed to Next Section");
-    if (!confirmNext) return;
+    if (!confirmNext) {
+      state.isSubmitting = false;
+      return;
+    }
+  }
+
+  if (state.timerInterval) {
+    clearInterval(state.timerInterval);
+    state.timerInterval = null;
   }
 
   if (window.isPreview) {
@@ -333,7 +345,7 @@ export async function submitModule(options = {}) {
             const poll = setInterval(async () => {
                 try {
                     pollAttempts++;
-                    const statusRes = await fetch(`/submit-status/${window.userTestId}`);
+                    const statusRes = await fetch(`/submit-status/${window.userTestUlid || window.userTestId}`);
                     const statusData = await statusRes.json();
                     if (statusData.status !== 'scoring') {
                         clearInterval(poll);
@@ -358,14 +370,36 @@ export async function submitModule(options = {}) {
 
     if (data.test_completed) {
       hideLoadingScreen();
-      await showCustomAlert("Test completed! Redirecting to results...", "success", "Test Completed");
-      showLoadingScreen("Loading results...");
-      window.isNavigatingLegitimately = true;
-      window.location.href = data.redirect_url;
+      let secondsLeft = 5;
+      let completionTimer;
+      let hasNavigated = false;
+      const homeUrl = data.redirect_url || '/home';
+      const doNavigateHome = () => {
+        if (hasNavigated) return;
+        hasNavigated = true;
+        if (completionTimer) clearInterval(completionTimer);
+        window.isNavigatingLegitimately = true;
+        window.location.href = homeUrl;
+      };
+
+      showCustomAlert(
+        `Test completed. You will be redirected home in <strong id="completion-countdown">5</strong> seconds.`,
+        "success",
+        "Test Completed",
+        true,
+        "Back to Home"
+      ).then(doNavigateHome);
+
+      completionTimer = setInterval(() => {
+        secondsLeft--;
+        const counterEl = document.getElementById('completion-countdown');
+        if (counterEl) counterEl.textContent = secondsLeft;
+        if (secondsLeft <= 0) doNavigateHome();
+      }, 1000);
     } else if (data.fallback_module_id) {
       hideLoadingScreen();
-      let secondsLeft = 10;
-      const message = `The ${data.path} module for this section is currently unavailable. \n\nYou will be automatically re-routed to an alternative module in <span id="fallback-countdown">10</span> seconds.`;
+      let secondsLeft = 5;
+      const message = `The ${data.path} module for this section is currently unavailable. \n\nYou will be automatically re-routed to an alternative module in <span id="fallback-countdown">5</span> seconds.`;
       
       let timer;
       let hasNavigated = false;
@@ -401,11 +435,13 @@ export async function submitModule(options = {}) {
       console.error("Submission failed", data);
       const msg = data.error || data.message || "Error submitting test. Please try again.";
       await showCustomAlert(msg, "error", "Submission Error");
+      state.isSubmitting = false;
     }
   } catch (error) {
     hideLoadingScreen();
     console.error("Error submitting module:", error);
     await showCustomAlert("Network error: " + error.message, "error", "Network Error");
+    state.isSubmitting = false;
   }
 }
 
@@ -525,6 +561,7 @@ export async function navigateModule(url) {
       initializeSimpleFullscreen
     } = await import('./features.js');
     const { generateQuestionButtons } = await import('./ui.js');
+    const { initializeBreakControls } = await import('./break.js');
 
     // Reset state variables
     state.currentQuestionIndex = 0;
@@ -555,10 +592,12 @@ export async function navigateModule(url) {
     initializeSprInputValidation();
     initializeDesmosCalculator();
     initializeSimpleFullscreen();
+    initializeBreakControls();
     initializeAutosave();
 
     // Start new timer
     const duration = window.durationMinutes ?? 32;
+    state.isSubmitting = false;
     startTimer(duration);
 
     // Show initial question

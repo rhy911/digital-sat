@@ -4,17 +4,16 @@ namespace App\Http\Controllers;
 
 use App\Models\UserTest;
 use App\Models\Test;
-use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
 
 class PracticeController extends Controller
 {
-    public function show($userTestId)
+    public function show(UserTest $userTest)
     {
         $user = Auth::user();
-        $userTest = UserTest::with(['test', 'user'])
-            ->where('user_id', $user->id)
-            ->findOrFail($userTestId);
+        $this->authorize('view', $userTest);
+        $userTest->load(['test', 'user']);
 
         $allCompletedTests = UserTest::with('test')
             ->where('user_id', $user->id)
@@ -29,12 +28,22 @@ class PracticeController extends Controller
         ]);
     }
 
-    public function scoreDetails($userTestId)
+    public function scoreDetails(UserTest $userTest)
     {
         $user = Auth::user();
-        $userTest = UserTest::with(['test', 'user', 'userAnswers.question.explanation', 'userAnswers.question.answerChoices', 'userAnswers.question.sprCorrectAnswers'])
-            ->where('user_id', $user->id)
-            ->findOrFail($userTestId);
+        $this->authorize('view', $userTest);
+        $userTest->load(['test', 'user', 'userAnswers.module', 'userAnswers.question.explanation', 'userAnswers.question.answerChoices', 'userAnswers.question.sprCorrectAnswers']);
+        $moduleIds = $userTest->userAnswers->pluck('module_id')->filter()->unique()->values();
+        $questionIds = $userTest->userAnswers->pluck('question_id')->filter()->unique()->values();
+        $questionPositions = collect();
+
+        if ($moduleIds->isNotEmpty() && $questionIds->isNotEmpty()) {
+            $questionPositions = DB::table('module_questions')
+                ->whereIn('module_id', $moduleIds)
+                ->whereIn('question_id', $questionIds)
+                ->get(['module_id', 'question_id', 'position'])
+                ->mapWithKeys(fn ($row) => ["{$row->module_id}:{$row->question_id}" => $row->position]);
+        }
 
         // Group stats
         $stats = [
@@ -81,6 +90,7 @@ class PracticeController extends Controller
             'user' => $user,
             'userTest' => $userTest,
             'stats' => $stats,
+            'questionPositions' => $questionPositions,
         ]);
     }
 

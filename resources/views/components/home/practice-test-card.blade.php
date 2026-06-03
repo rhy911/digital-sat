@@ -8,7 +8,9 @@
 
     <!-- Sub-header -->
     <div class="practice-card-subheader">
-        <span class="text-white text-[14px] font-semibold tracking-wider uppercase">{{ $test->test->title }}</span>
+        <span class="text-white text-sm font-semibold tracking-wider">
+            {{ \Illuminate\Support\Str::limit($test->test->title ?? '', 16, '...') }}
+        </span>
         <span class="text-white text-sm">{{ $test->completed_at ? $test->completed_at->format('M d, Y') : 'N/A' }}</span>
     </div>
 
@@ -21,7 +23,7 @@
 
     <!-- Section scores -->
     <div class="practice-card-sections">
-        <div class="practice-card-section-row mb-14">
+        <div class="practice-card-section-row mb-4">
             <div>
                 <p class="practice-card-section-name">Reading and Writing</p>
                 <p class="practice-card-section-range">200–800</p>
@@ -40,7 +42,8 @@
 
     <!-- Actions -->
     <div class="practice-card-actions">
-        <a href="{{ route('my-practice.score', ['user_test_id' => $test->id]) }}" class="practice-card-btn-primary block text-center no-underline">Score Details</a>
+        <a href="{{ route('my-practice.score', $test) }}"
+            class="practice-card-btn-primary block text-center no-underline">Score Details</a>
         <div class="practice-card-footer-link">
             <span>☰ Practice Specific Questions</span>
         </div>

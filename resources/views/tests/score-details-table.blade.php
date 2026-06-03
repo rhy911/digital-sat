@@ -45,7 +45,6 @@
             <thead>
                 <tr>
                     <th>#</th>
-                    {{-- Section column: always rendered; JS toggles visibility via .section-col --}}
                     <th class="section-col">Section</th>
                     <th class="correct-col" style="display:none;">Your Answer</th>
                     <th class="correct-col" style="display:none;">Correct Answer</th>
@@ -60,7 +59,12 @@
                     <tr data-status="{{ $row['statusKey'] }}" data-section="{{ $row['sectionType'] }}">
                         <td><span class="sd-q-num">{{ $row['idx'] }}</span></td>
                         <td class="section-col">
-                            <span class="sd-section-pill {{ $row['sectionType'] }}">{{ $row['sectionName'] }}</span>
+                            <span class="sd-section-pill {{ $row['sectionType'] }}">
+                                {{ $row['sectionName'] }}
+                                @if (!empty($row['moduleNumber']))
+                                    <span class="sd-module-label">M{{ $row['moduleNumber'] }}</span>
+                                @endif
+                            </span>
                         </td>
                         <td class="correct-col" style="display:none;">
                             @if($row['statusKey'] === 'correct')
@@ -119,11 +123,25 @@
                     </tr>
                 @empty
                     <tr>
-                        <td colspan="6" style="text-align:center;padding:2rem;color:#94a3b8;font-style:italic;">No
+                        <td colspan="7" style="text-align:center;padding:2rem;color:#94a3b8;font-style:italic;">No
                             questions found.</td>
                     </tr>
                 @endforelse
+                @if (count($answers) > 0)
+                    <tr class="sd-no-results-row" hidden>
+                        <td colspan="7" style="text-align:center;padding:2rem;color:#94a3b8;font-style:italic;">No
+                            questions match this filter.</td>
+                    </tr>
+                @endif
             </tbody>
         </table>
+    </div>
+    <div class="sd-pagination" data-table-pagination="{{ $tableId }}">
+        <div class="sd-pagination-info" data-page-info></div>
+        <div class="sd-pagination-controls">
+            <button class="sd-page-btn" type="button" data-page-action="prev">Previous</button>
+            <div class="sd-page-numbers" data-page-numbers></div>
+            <button class="sd-page-btn" type="button" data-page-action="next">Next</button>
+        </div>
     </div>
 </div>

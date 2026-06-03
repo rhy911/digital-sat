@@ -7,6 +7,7 @@ use App\Models\Question;
 use App\Models\Section;
 use App\Models\Test;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\ValidationException;
 use Illuminate\Support\Str;
 
 class TestManagementService
@@ -16,81 +17,159 @@ class TestManagementService
      */
     public function generateFullSatStructure(string $title, string $testType, ?int $userId = null): Test
     {
-        return DB::transaction(function () use ($title, $testType, $userId) {
+        return $this->createConfiguredTestFromBlueprint([
+            'title' => $title,
+            'test_type' => $testType,
+            'status' => 'draft',
+            'break_duration_minutes' => $testType === 'module_only' ? 0 : 10,
+            'populate_from_pool' => false,
+            'modules' => $this->defaultBlueprintModules($testType),
+        ], null, $userId);
+    }
+
+    public function createConfiguredTestFromBlueprint(array $blueprint, $user = null, ?int $userId = null): Test
+    {
+        $modules = collect($blueprint['modules'] ?? [])->values();
+
+        if ($modules->isEmpty()) {
+            throw ValidationException::withMessages([
+                'modules' => 'At least one module row is required.',
+            ]);
+        }
+
+        return DB::transaction(function () use ($blueprint, $modules, $user, $userId) {
             $test = Test::create([
-                'title' => $title,
-                'test_type' => $testType,
-                'break_duration_minutes' => ($testType === 'module_only' ? 0 : 10),
-                'status' => 'draft',
+                'title' => $blueprint['title'],
+                'test_type' => $blueprint['test_type'] ?? 'custom_test',
+                'break_duration_minutes' => (int) ($blueprint['break_duration_minutes'] ?? 0),
+                'status' => $blueprint['status'] ?? 'draft',
                 'created_by' => $userId,
                 'is_public' => false,
             ]);
 
-            $isShort = ($testType === 'short_test');
-            $isModuleOnly = ($testType === 'module_only');
+            $sections = [];
+            $usedQuestionIds = collect();
 
-            $rwDuration = $isShort ? 20 : 32;
-            $rwQuestions = $isShort ? 15 : 27;
-            $mathDuration = $isShort ? 20 : 35;
-            $mathQuestions = $isShort ? 12 : 22;
+            foreach ($modules as $index => $moduleData) {
+                $sectionType = $moduleData['section_type'];
+                if (! isset($sections[$sectionType])) {
+                    $sections[$sectionType] = Section::create([
+                        'test_id' => $test->id,
+                        'type' => $sectionType,
+                        'name' => $sectionType === Section::TYPE_RW ? 'Reading and Writing' : 'Math',
+                        'order' => $sectionType === Section::TYPE_RW ? 1 : 2,
+                        'created_by' => $userId,
+                        'is_public' => false,
+                    ]);
+                }
 
-            if ($isModuleOnly) {
-                $section = Section::create([
-                    'test_id' => $test->id,
-                    'type' => Section::TYPE_RW,
-                    'name' => 'Focused Module',
-                    'order' => 1,
-                    'created_by' => $userId,
-                    'is_public' => false,
-                ]);
-                $this->createStandardModuleForSection($section, 1, Module::DIFFICULTY_STANDARD, 32, 27, $userId);
-            } else {
-                // Create R&W Section
-                $rwSection = Section::create([
-                    'test_id' => $test->id,
-                    'type' => Section::TYPE_RW,
-                    'name' => 'Reading and Writing',
-                    'order' => 1,
-                    'created_by' => $userId,
-                    'is_public' => false,
-                ]);
+                $section = $sections[$sectionType];
+                $module = $this->createStandardModuleForSection(
+                    $section,
+                    (int) $moduleData['module_number'],
+                    $moduleData['difficulty_level'],
+                    (int) $moduleData['duration_minutes'],
+                    (int) $moduleData['total_questions'],
+                    $userId,
+                    $index + 1
+                );
 
-                // Create R&W Modules
-                $this->createStandardModuleForSection($rwSection, 1, Module::DIFFICULTY_STANDARD, $rwDuration, $rwQuestions, $userId);
-                $this->createStandardModuleForSection($rwSection, 2, Module::DIFFICULTY_EASY, $rwDuration, $rwQuestions, $userId);
-                $this->createStandardModuleForSection($rwSection, 2, Module::DIFFICULTY_HARD, $rwDuration, $rwQuestions, $userId);
+                if (! empty($blueprint['populate_from_pool'])) {
+                    $questions = $this->selectQuestionsForModule(
+                        $sectionType,
+                        (int) $moduleData['total_questions'],
+                        $usedQuestionIds->all(),
+                        $user
+                    );
 
-                // Create Math Section
-                $mathSection = Section::create([
-                    'test_id' => $test->id,
-                    'type' => Section::TYPE_MATH,
-                    'name' => 'Math',
-                    'order' => 2,
-                    'created_by' => $userId,
-                    'is_public' => false,
-                ]);
+                    if ($questions->count() < (int) $moduleData['total_questions']) {
+                        throw ValidationException::withMessages([
+                            "modules.{$index}.total_questions" => sprintf(
+                                'Not enough complete %s questions in the pool. Needed %d, found %d.',
+                                $sectionType === Section::TYPE_RW ? 'Reading & Writing' : 'Math',
+                                (int) $moduleData['total_questions'],
+                                $questions->count()
+                            ),
+                        ]);
+                    }
 
-                // Create Math Modules
-                $this->createStandardModuleForSection($mathSection, 1, Module::DIFFICULTY_STANDARD, $mathDuration, $mathQuestions, $userId);
-                $this->createStandardModuleForSection($mathSection, 2, Module::DIFFICULTY_EASY, $mathDuration, $mathQuestions, $userId);
-                $this->createStandardModuleForSection($mathSection, 2, Module::DIFFICULTY_HARD, $mathDuration, $mathQuestions, $userId);
+                    foreach ($questions->values() as $position => $question) {
+                        $module->questions()->attach($question->id, ['position' => $position + 1]);
+                        $usedQuestionIds->push($question->id);
+                    }
+                }
             }
-            
+
             $test->refreshTotalDuration();
 
-            return $test->load('sections.modules');
+            return $test->load('sections.modules.questions');
         });
+    }
+
+    private function defaultBlueprintModules(string $testType): array
+    {
+        if ($testType === 'module_only') {
+            return [[
+                'section_type' => Section::TYPE_RW,
+                'module_number' => 1,
+                'difficulty_level' => Module::DIFFICULTY_STANDARD,
+                'duration_minutes' => Module::RW_DURATION,
+                'total_questions' => Module::RW_QUESTIONS,
+            ]];
+        }
+
+        if ($testType === 'short_test') {
+            return [
+                [
+                    'section_type' => Section::TYPE_RW,
+                    'module_number' => 1,
+                    'difficulty_level' => Module::DIFFICULTY_STANDARD,
+                    'duration_minutes' => 20,
+                    'total_questions' => 15,
+                ],
+                [
+                    'section_type' => Section::TYPE_MATH,
+                    'module_number' => 1,
+                    'difficulty_level' => Module::DIFFICULTY_STANDARD,
+                    'duration_minutes' => 20,
+                    'total_questions' => 12,
+                ],
+            ];
+        }
+
+        return [
+            ['section_type' => Section::TYPE_RW, 'module_number' => 1, 'difficulty_level' => Module::DIFFICULTY_STANDARD, 'duration_minutes' => Module::RW_DURATION, 'total_questions' => Module::RW_QUESTIONS],
+            ['section_type' => Section::TYPE_RW, 'module_number' => 2, 'difficulty_level' => Module::DIFFICULTY_EASY, 'duration_minutes' => Module::RW_DURATION, 'total_questions' => Module::RW_QUESTIONS],
+            ['section_type' => Section::TYPE_RW, 'module_number' => 2, 'difficulty_level' => Module::DIFFICULTY_HARD, 'duration_minutes' => Module::RW_DURATION, 'total_questions' => Module::RW_QUESTIONS],
+            ['section_type' => Section::TYPE_MATH, 'module_number' => 1, 'difficulty_level' => Module::DIFFICULTY_STANDARD, 'duration_minutes' => Module::MATH_DURATION, 'total_questions' => Module::MATH_QUESTIONS],
+            ['section_type' => Section::TYPE_MATH, 'module_number' => 2, 'difficulty_level' => Module::DIFFICULTY_EASY, 'duration_minutes' => Module::MATH_DURATION, 'total_questions' => Module::MATH_QUESTIONS],
+            ['section_type' => Section::TYPE_MATH, 'module_number' => 2, 'difficulty_level' => Module::DIFFICULTY_HARD, 'duration_minutes' => Module::MATH_DURATION, 'total_questions' => Module::MATH_QUESTIONS],
+        ];
+    }
+
+    private function selectQuestionsForModule(string $sectionType, int $limit, array $excludedIds, $user)
+    {
+        return Question::visibleTo($user)
+            ->where('section_type', $sectionType)
+            ->where('is_complete', true)
+            ->when(! empty($excludedIds), fn ($query) => $query->whereNotIn('id', $excludedIds))
+            ->orderBy('is_pretest')
+            ->orderBy('difficulty')
+            ->orderBy('id')
+            ->limit($limit)
+            ->get();
     }
 
     /**
      * Create standard module helper.
      */
-    private function createStandardModuleForSection(Section $section, int $moduleNumber, string $difficultyLevel, int $duration, int $totalQuestions, ?int $userId = null): Module
+    private function createStandardModuleForSection(Section $section, int $moduleNumber, string $difficultyLevel, int $duration, int $totalQuestions, ?int $userId = null, ?int $order = null): Module
     {
         $uniqueKey = strtoupper(substr($section->type, 0, 2)) . '_M' . $moduleNumber . '_' . strtoupper($difficultyLevel) . '_' . strtoupper(Str::random(6));
-        $order = ($moduleNumber === 1) ? 1 : (($difficultyLevel === Module::DIFFICULTY_EASY) ? 2 : 3);
+        $order ??= ($moduleNumber === 1) ? 1 : (($difficultyLevel === Module::DIFFICULTY_EASY) ? 2 : 3);
         
         $module = Module::create([
+            'section_id' => $section->id,
             'module_number' => $moduleNumber,
             'difficulty_level' => $difficultyLevel,
             'duration_minutes' => $duration,
@@ -101,7 +180,7 @@ class TestManagementService
             'is_public' => false,
         ]);
         
-        $module->sections()->attach($section->id);
+        $module->sections()->syncWithoutDetaching([$section->id]);
         return $module;
     }
 

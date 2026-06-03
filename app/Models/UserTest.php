@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\Model;
 class UserTest extends Model
 {
     protected $fillable = [
+        'ulid',
         'user_id',
         'test_id',
         'score_reading_writing',
@@ -29,6 +30,20 @@ class UserTest extends Model
         'current_module_id' => 'integer',
         'current_module_elapsed_seconds' => 'integer',
     ];
+
+    protected static function booted()
+    {
+        static::creating(function ($userTest) {
+            if (empty($userTest->ulid)) {
+                $userTest->ulid = (string) \Illuminate\Support\Str::ulid();
+            }
+        });
+    }
+
+    public function getRouteKeyName(): string
+    {
+        return 'ulid';
+    }
 
     public function user()
     {

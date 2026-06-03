@@ -22,5 +22,8 @@ export const state = {
 
   // Timer state
   timeLeft: 0, // in seconds
-  timerInterval: null
+  timerInterval: null,
+  isUntimed: false,
+  isPaused: false,
+  isSubmitting: false
 };

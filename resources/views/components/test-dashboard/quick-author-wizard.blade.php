@@ -89,72 +89,69 @@
             </button>
         </div>
 
-        <!-- Custom Flow Steps (Hidden initially) -->
-        <div id="wizard-custom-flow" class="hidden border-t border-slate-800/60 pt-8 space-y-6">
-            <!-- Step 1: Parent Test -->
-            <div class="space-y-2" id="wizard-step-test">
-                <div class="flex items-center gap-2 mb-1 px-1">
-                    <span
-                        class="w-5 h-5 rounded-full bg-slate-800 text-slate-400 text-[10px] font-black flex items-center justify-center border border-slate-700">1</span>
-                    <label class="text-[10px] font-extrabold text-slate-400 tracking-widest uppercase">Select Parent
-                        Test</label>
-                </div>
-                <select
-                    class="w-full px-4 py-3 rounded-xl border border-slate-800 bg-slate-900/60 text-white focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 outline-none text-sm transition-all shadow-inner appearance-none bg-no-repeat bg-[right_1rem_center] bg-[length:1em_1em]"
-                    style="background-image: url('data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 fill=%22none%22 viewBox=%220 0 24 24%22 stroke=%22%2364748b%22 stroke-width=%222%22%3E%3Cpath stroke-linecap=%22round%22 stroke-linejoin=%22round%22 d=%22M19 9l-7 7-7-7%22 /%3E%3C/svg%3E')"
-                    id="wizard-select-test">
-                    <option value="">Choose a test...</option>
-                    <!-- Populated via JS -->
-                </select>
-            </div>
-
-            <!-- Step 2: Subject & Target -->
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 hidden" id="wizard-step-target">
-                <div class="space-y-2">
-                    <div class="flex items-center gap-2 mb-1 px-1">
-                        <span
-                            class="w-5 h-5 rounded-full bg-slate-800 text-slate-400 text-[10px] font-black flex items-center justify-center border border-slate-700">2</span>
-                        <label
-                            class="text-[10px] font-extrabold text-slate-400 tracking-widest uppercase">Domain</label>
-                    </div>
-                    <select
-                        class="w-full px-4 py-3 rounded-xl border border-slate-800 bg-slate-900/60 text-white focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 outline-none text-sm transition-all shadow-inner appearance-none bg-no-repeat bg-[right_1rem_center] bg-[length:1em_1em]"
-                        style="background-image: url('data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 fill=%22none%22 viewBox=%220 0 24 24%22 stroke=%22%2364748b%22 stroke-width=%222%22%3E%3Cpath stroke-linecap=%22round%22 stroke-linejoin=%22round%22 d=%22M19 9l-7 7-7-7%22 /%3E%3C/svg%3E')"
-                        id="wizard-select-domain">
-                        <option value="reading_writing">Reading & Writing</option>
-                        <option value="math">Math</option>
-                    </select>
+        <!-- Configurable Flow -->
+        <div id="wizard-config-flow" class="hidden border-t border-slate-800/60 pt-8 space-y-6">
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div class="md:col-span-2 space-y-2">
+                    <label class="text-[10px] font-extrabold text-slate-400 tracking-widest uppercase">Test Title</label>
+                    <input type="text" id="wizard-config-title"
+                        class="w-full px-4 py-3 rounded-xl border border-slate-800 bg-slate-900/60 text-white focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 outline-none text-sm transition-all shadow-inner"
+                        placeholder="New Practice Test">
                 </div>
                 <div class="space-y-2">
-                    <div class="flex items-center gap-2 mb-1 px-1">
-                        <span
-                            class="w-5 h-5 rounded-full bg-slate-800 text-slate-400 text-[10px] font-black flex items-center justify-center border border-slate-700">3</span>
-                        <label
-                            class="text-[10px] font-extrabold text-slate-400 tracking-widest uppercase">Position</label>
+                    <label class="text-[10px] font-extrabold text-slate-400 tracking-widest uppercase">Workflow</label>
+                    <div id="wizard-config-label"
+                        class="px-4 py-3 rounded-xl border border-slate-800 bg-slate-900/60 text-slate-300 text-sm font-bold">
+                        Full SAT
                     </div>
-                    <select
-                        class="w-full px-4 py-3 rounded-xl border border-slate-800 bg-slate-900/60 text-white focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 outline-none text-sm transition-all shadow-inner appearance-none bg-no-repeat bg-[right_1rem_center] bg-[length:1em_1em]"
-                        style="background-image: url('data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 fill=%22none%22 viewBox=%220 0 24 24%22 stroke=%22%2364748b%22 stroke-width=%222%22%3E%3Cpath stroke-linecap=%22round%22 stroke-linejoin=%22round%22 d=%22M19 9l-7 7-7-7%22 /%3E%3C/svg%3E')"
-                        id="wizard-select-module">
-                        <option value="1_standard">Module 1 (Standard)</option>
-                        <option value="2_easy">Module 2 (Easy)</option>
-                        <option value="2_hard">Module 2 (Hard)</option>
-                    </select>
                 </div>
             </div>
 
-            <!-- Navigation Actions -->
-            <div class="flex justify-between items-center pt-6 border-t border-slate-800/60 mt-4">
+            <div id="wizard-short-counts" class="hidden grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div class="space-y-2">
+                    <label class="text-[10px] font-extrabold text-slate-400 tracking-widest uppercase">R&W Modules</label>
+                    <input type="number" min="0" max="10" value="1" id="wizard-short-rw-count"
+                        class="w-full px-4 py-3 rounded-xl border border-slate-800 bg-slate-900/60 text-white focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/10 outline-none text-sm transition-all shadow-inner">
+                </div>
+                <div class="space-y-2">
+                    <label class="text-[10px] font-extrabold text-slate-400 tracking-widest uppercase">Math Modules</label>
+                    <input type="number" min="0" max="10" value="1" id="wizard-short-math-count"
+                        class="w-full px-4 py-3 rounded-xl border border-slate-800 bg-slate-900/60 text-white focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/10 outline-none text-sm transition-all shadow-inner">
+                </div>
+            </div>
+
+            <div class="overflow-x-auto rounded-xl border border-slate-800">
+                <table class="w-full text-sm text-left">
+                    <thead class="bg-slate-950/80 text-slate-500 text-[10px] uppercase tracking-widest">
+                        <tr>
+                            <th class="px-3 py-3">Section</th>
+                            <th class="px-3 py-3">Module</th>
+                            <th class="px-3 py-3">Difficulty</th>
+                            <th class="px-3 py-3">Duration</th>
+                            <th class="px-3 py-3">Questions</th>
+                            <th class="px-3 py-3 text-right">Action</th>
+                        </tr>
+                    </thead>
+                    <tbody id="wizard-module-rows" class="divide-y divide-slate-800 bg-slate-900/40"></tbody>
+                </table>
+            </div>
+
+            <div class="flex flex-wrap justify-between items-center gap-3 pt-2">
                 <button type="button"
-                    class="px-5 py-3 bg-slate-800/60 border border-slate-700/50 text-slate-400 font-extrabold text-[10px] uppercase tracking-widest rounded-xl hover:bg-slate-700 hover:text-white transition-all flex items-center gap-2.5 cursor-pointer shadow-lg active:scale-95"
-                    id="wizard-btn-back">
-                    <i class="bi bi-arrow-left"></i> Back
+                    class="px-4 py-2.5 bg-slate-800/60 border border-slate-700/50 text-slate-300 font-extrabold text-[10px] uppercase tracking-widest rounded-xl hover:bg-slate-700 hover:text-white transition-all flex items-center gap-2 cursor-pointer"
+                    id="wizard-btn-add-row">
+                    <i class="bi bi-plus-lg"></i> Add Module
                 </button>
-                <div class="hidden" id="wizard-step-launch">
+                <div class="flex gap-3">
+                    <button type="button"
+                        class="px-5 py-3 bg-slate-800/60 border border-slate-700/50 text-slate-400 font-extrabold text-[10px] uppercase tracking-widest rounded-xl hover:bg-slate-700 hover:text-white transition-all flex items-center gap-2.5 cursor-pointer shadow-lg active:scale-95"
+                        id="wizard-btn-back">
+                        <i class="bi bi-arrow-left"></i> Back
+                    </button>
                     <button type="button"
                         class="px-7 py-3 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-extrabold text-[10px] uppercase tracking-widest rounded-xl shadow-xl shadow-emerald-600/20 hover:shadow-emerald-600/35 transform hover:-translate-y-0.5 active:translate-y-0 active:scale-95 transition-all flex items-center gap-2.5 cursor-pointer"
-                        id="wizard-btn-launch">
-                        Launch Builder <i class="bi bi-arrow-right"></i>
+                        id="wizard-btn-create-configured">
+                        Create Test <i class="bi bi-check2-circle"></i>
                     </button>
                 </div>
             </div>

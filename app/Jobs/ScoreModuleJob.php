@@ -15,6 +15,7 @@ use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Schema;
 
 class ScoreModuleJob implements ShouldQueue
 {
@@ -52,12 +53,7 @@ class ScoreModuleJob implements ShouldQueue
             // 2. Logic for Routing or Finalizing
             if ($module->module_number == 1) {
                 // End of Module 1: Calculate Theta for routing
-                $m1Responses = UserTestAnswer::where('user_test_id', $userTest->id)
-                    ->whereIn('question_id', $module->questions->pluck('id'))
-                    ->with(['question' => function($q) {
-                        $q->select('id', 'irt_a', 'irt_b', 'irt_c', 'is_pretest');
-                    }])
-                    ->get();
+                $m1Responses = $this->responsesForModule($userTest, $module);
 
                 $thetaM1 = $scoringService->estimateTheta($m1Responses);
                 $path = $scoringService->routeModule2($thetaM1);
@@ -162,7 +158,8 @@ class ScoreModuleJob implements ShouldQueue
                     $result = [
                         'status' => 'success',
                         'test_completed' => true,
-                        'redirect_url' => route('my-practice.score', $userTest->id),
+                        'redirect_url' => route('home'),
+                        'results_url' => route('my-practice.score', $userTest),
                         'message' => 'Test completed and scored.',
                     ];
                     Cache::put("scoring_result_{$userTest->id}", $result, 300);
@@ -229,20 +226,40 @@ class ScoreModuleJob implements ShouldQueue
             return ['scaled_score' => 200, 'theta' => -3.5];
         }
 
-        $m1Responses = UserTestAnswer::where('user_test_id', $userTest->id)
-            ->whereIn('question_id', $m1->questions->pluck('id'))
-            ->with(['question' => function($q) {
-                $q->select('id', 'irt_a', 'irt_b', 'irt_c', 'is_pretest');
-            }])
-            ->get();
-            
-        $m2Responses = UserTestAnswer::where('user_test_id', $userTest->id)
-            ->whereIn('question_id', $m2->questions->pluck('id'))
+        $m1Responses = $this->responsesForModule($userTest, $m1);
+
+        $m2Responses = $this->responsesForModule($userTest, $m2);
+
+        return $scoringService->scoreSection($m1Responses, $m2Responses, $m2Path);
+    }
+
+    private function responsesForModule(UserTest $userTest, Module $module)
+    {
+        if (! Schema::hasColumn('user_test_answers', 'module_id')) {
+            return $this->legacyResponsesForModule($userTest, $module);
+        }
+
+        $responses = UserTestAnswer::where('user_test_id', $userTest->id)
+            ->where('module_id', $module->id)
             ->with(['question' => function($q) {
                 $q->select('id', 'irt_a', 'irt_b', 'irt_c', 'is_pretest');
             }])
             ->get();
 
-        return $scoringService->scoreSection($m1Responses, $m2Responses, $m2Path);
+        if ($responses->isNotEmpty()) {
+            return $responses;
+        }
+
+        return $this->legacyResponsesForModule($userTest, $module);
+    }
+
+    private function legacyResponsesForModule(UserTest $userTest, Module $module)
+    {
+        return UserTestAnswer::where('user_test_id', $userTest->id)
+            ->whereIn('question_id', $module->questions->pluck('id'))
+            ->with(['question' => function($q) {
+                $q->select('id', 'irt_a', 'irt_b', 'irt_c', 'is_pretest');
+            }])
+            ->get();
     }
 }

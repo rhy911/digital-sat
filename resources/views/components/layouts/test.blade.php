@@ -134,8 +134,8 @@
                     class="absolute right-0 mt-2 w-48 bg-white border border-gray-200 rounded-md shadow-lg z-50"
                     x-show="open" x-cloak style="display: none;">
                     <div>
-                        <button class="block w-full text-left px-4 py-3 text-sm text-gray-700 hover:bg-gray-100"
-                            @click="open = false; window.showCustomAlert('Taking a break... (Functionality to be implemented)', 'info', 'Take a Break')">
+                        <button id="takeBreakBtn" class="hidden block w-full text-left px-4 py-3 text-sm text-gray-700 hover:bg-gray-100"
+                            @click="open = false">
                             Take a break
                         </button>
                         <button class="block w-full text-left px-4 py-3 text-sm text-red-600 hover:bg-red-50"

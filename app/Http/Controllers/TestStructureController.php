@@ -7,6 +7,7 @@ use App\Models\Module;
 use App\Models\Section;
 use App\Services\TestManagementService;
 use Illuminate\Http\Request;
+use Illuminate\Validation\ValidationException;
 
 class TestStructureController extends Controller
 {
@@ -39,6 +40,41 @@ class TestStructureController extends Controller
             return response()->json([
                 'status' => 'error',
                 'message' => 'Failed to generate structure. Please try again or contact support.'
+            ], 500);
+        }
+    }
+
+    public function generateConfiguredStructure(Request $request)
+    {
+        $validated = $request->validate([
+            'title' => 'required|string|max:255',
+            'test_type' => 'required|string|in:full_length,short_test,module_only,section_only,custom_test',
+            'status' => 'sometimes|string|in:draft,active,archived',
+            'break_duration_minutes' => 'sometimes|integer|min:0|max:120',
+            'populate_from_pool' => 'sometimes|boolean',
+            'modules' => 'required|array|min:1|max:20',
+            'modules.*.section_type' => 'required|string|in:reading_writing,math',
+            'modules.*.module_number' => 'required|integer|min:1|max:10',
+            'modules.*.difficulty_level' => 'required|string|in:standard,easy,hard',
+            'modules.*.duration_minutes' => 'required|integer|min:1|max:240',
+            'modules.*.total_questions' => 'required|integer|min:1|max:100',
+        ]);
+
+        try {
+            $test = $this->testManagement->createConfiguredTestFromBlueprint($validated, auth()->user(), auth()->id());
+
+            return response()->json([
+                'status' => 'success',
+                'message' => 'Configured SAT test created successfully.',
+                'data' => $test,
+            ], 201);
+        } catch (ValidationException $e) {
+            throw $e;
+        } catch (\Exception $e) {
+            \Illuminate\Support\Facades\Log::error('Failed to generate configured structure', ['exception' => $e]);
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Failed to generate configured structure. Please try again or contact support.'
             ], 500);
         }
     }

@@ -36,8 +36,8 @@ Route::middleware('auth')->group(function () {
 
 Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/home', HomeController::class)->name('home');
-    Route::get('/my-practice/{user_test_id}', [\App\Http\Controllers\PracticeController::class, 'show'])->name('my-practice');
-    Route::get('/my-practice/{user_test_id}/score', [\App\Http\Controllers\PracticeController::class, 'scoreDetails'])->name('my-practice.score');
+    Route::get('/my-practice/{userTest:ulid}', [\App\Http\Controllers\PracticeController::class, 'show'])->name('my-practice');
+    Route::get('/my-practice/{userTest:ulid}/score', [\App\Http\Controllers\PracticeController::class, 'scoreDetails'])->name('my-practice.score');
 
     Route::post('/test/start/{test_id}', [\App\Http\Controllers\TestTakingController::class, 'startTest'])->name('test.start');
     Route::post('/test/autosave-module', [\App\Http\Controllers\TestTakingController::class, 'autosaveModule'])
@@ -59,7 +59,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/test-preview', [\App\Http\Controllers\PracticeController::class, 'testPreview'])->name('test.preview');
     Route::get('choose-test', [\App\Http\Controllers\PracticeController::class, 'chooseTest'])->name('choose-test');
     Route::get('/take-test/{ulid?}', [\App\Http\Controllers\TestTakingController::class, 'showModule'])->name('take-test');
-    Route::get('/submit-status/{userTestId}', [\App\Http\Controllers\TestTakingController::class, 'checkScoringStatus'])->name('submit-status');
+    Route::get('/submit-status/{userTest:ulid}', [\App\Http\Controllers\TestTakingController::class, 'checkScoringStatus'])->name('submit-status');
 });
 
 // Test Dashboard Routes
@@ -72,6 +72,7 @@ Route::middleware(['auth', 'verified', 'role:admin,teacher'])->prefix('test-dash
     // API endpoints for creating and updating data
     Route::post('/tests', [\App\Http\Controllers\TestController::class, 'storeTest'])->name('tests.store');
     Route::post('/tests/generate-full', [\App\Http\Controllers\TestStructureController::class, 'generateFullSatStructure'])->name('tests.generate-full');
+    Route::post('/tests/generate-configured', [\App\Http\Controllers\TestStructureController::class, 'generateConfiguredStructure'])->name('tests.generate-configured');
     Route::post('/tests/{id}/clone', [\App\Http\Controllers\TestStructureController::class, 'cloneTest'])->name('tests.clone');
     Route::put('/tests/{id}', [\App\Http\Controllers\TestController::class, 'updateTest'])->name('tests.update');
     Route::post('/sections', [\App\Http\Controllers\SectionController::class, 'storeSection'])->name('sections.store');

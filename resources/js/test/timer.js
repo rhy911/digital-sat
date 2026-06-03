@@ -6,7 +6,8 @@ import { showCustomAlert } from './ui.js';
  * Initialize and start the countdown timer
  */
 export function startTimer(durationMinutes) {
-  if (state.timerInterval) clearInterval(state.timerInterval);
+  stopTimer();
+  state.isPaused = false;
 
   // Infinite/Untimed logic or time limit hit
   if (durationMinutes <= 0) {
@@ -29,10 +30,12 @@ export function startTimer(durationMinutes) {
   updateTimerDisplay();
 
   state.timerInterval = setInterval(() => {
+    if (state.isPaused || state.isSubmitting) return;
+
     state.timeLeft--;
 
     if (state.timeLeft <= 0) {
-      clearInterval(state.timerInterval);
+      stopTimer();
       state.timeLeft = 0;
       updateTimerDisplay();
       handleTimeUp();
@@ -40,6 +43,23 @@ export function startTimer(durationMinutes) {
       updateTimerDisplay();
     }
   }, 1000);
+}
+
+export function stopTimer() {
+  if (state.timerInterval) {
+    clearInterval(state.timerInterval);
+  }
+  state.timerInterval = null;
+}
+
+export function pauseTimer() {
+  if (state.isUntimed || state.isSubmitting) return;
+  state.isPaused = true;
+}
+
+export function resumeTimer() {
+  if (state.isSubmitting) return;
+  state.isPaused = false;
 }
 
 /**
@@ -66,6 +86,7 @@ function updateTimerDisplay() {
  * Action when time runs out
  */
 async function handleTimeUp() {
+  if (state.isSubmitting) return;
   await showCustomAlert("Time is up! Submitting your answers now.", "warning", "Time Up");
   await submitModule({ skipConfirm: true });
 }

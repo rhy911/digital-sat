@@ -17,7 +17,7 @@
         <!-- Sidebar Navigation -->
         <aside
             class="w-72 bg-slate-950/80 border-r border-slate-800/80 flex flex-col shrink-0 text-slate-300 relative z-20">
-            <div class="p-8 border-b border-slate-850 flex items-center gap-3">
+            <a href="/" class="p-8 border-b border-slate-850 flex items-center gap-3 no-underline">
                 <div class="sidebar-logo-box w-10 h-10 rounded-xl flex items-center justify-center text-white">
                     <i class="bi bi-mortarboard-fill text-xl"></i>
                 </div>
@@ -27,7 +27,7 @@
                         class="text-[10px] text-indigo-400 font-extrabold tracking-widest uppercase mt-1 block">Content
                         Suite</span>
                 </div>
-            </div>
+            </a>
 
             <div class="p-6">
                 <button class="btn-new-content w-full px-5 py-4 rounded-xl flex items-center justify-center gap-3"
