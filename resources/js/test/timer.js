@@ -8,16 +8,24 @@ import { showCustomAlert } from './ui.js';
 export function startTimer(durationMinutes) {
   if (state.timerInterval) clearInterval(state.timerInterval);
 
-  // Infinite/Untimed logic
-  if (durationMinutes === 0) {
-    state.isUntimed = true;
-    state.timeLeft = 0;
-    updateTimerDisplay(); // Will render 00:00
-    return; // Bypass setInterval and auto-submit
+  // Infinite/Untimed logic or time limit hit
+  if (durationMinutes <= 0) {
+    if (window.isPreview) {
+      state.isUntimed = true;
+      state.timeLeft = 0;
+      updateTimerDisplay(); // Will render 00:00
+      return; // Bypass setInterval and auto-submit
+    } else {
+      state.isUntimed = false;
+      state.timeLeft = 0;
+      updateTimerDisplay();
+      handleTimeUp();
+      return;
+    }
   }
 
   state.isUntimed = false;
-  state.timeLeft = durationMinutes * 60;
+  state.timeLeft = Math.round(durationMinutes * 60);
   updateTimerDisplay();
 
   state.timerInterval = setInterval(() => {

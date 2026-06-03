@@ -13,12 +13,14 @@ class HomeController extends Controller
     {
         $user = $request->user();
         $completedTests = $user->userTests()
+            ->whereHas('test', fn($q) => $q->where('title', '!=', 'Test Preview'))
             ->with('test')
             ->where('status', 'completed')
             ->orderBy('completed_at', 'desc')
             ->get();
 
         $inProgressTests = $user->userTests()
+            ->whereHas('test', fn($q) => $q->where('title', '!=', 'Test Preview'))
             ->with('test')
             ->where('status', 'in_progress')
             ->orderBy('updated_at', 'desc')

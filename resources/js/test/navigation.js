@@ -65,17 +65,11 @@ export function updateNavigationButtons() {
 export function showQuestion(index) {
   const reviewSection = document.getElementById("review-section");
   const resizableContainer = document.querySelector(".resizable-container");
-  const wasReviewVisible = isReviewSectionVisible();
 
   if (reviewSection) reviewSection.classList.add("hidden");
   if (resizableContainer) resizableContainer.classList.remove("hidden");
 
-  if (wasReviewVisible) {
-    state.currentQuestionIndex = state.totalQuestions - 1;
-    index = state.currentQuestionIndex;
-  } else {
-    state.currentQuestionIndex = index;
-  }
+  state.currentQuestionIndex = index;
 
   state.questionElements.forEach((el, i) => el.classList.toggle("hidden", i !== index));
   state.passageElements.forEach((el, i) => el.classList.toggle("hidden", i !== index));
@@ -232,6 +226,13 @@ export function initializeAutosave() {
       scheduleAutosave();
     }
   });
+
+  // Periodically autosave elapsed time every 15 seconds
+  setInterval(() => {
+    if (!window.isPreview && window.userTestId && window.currentModuleId) {
+      autosaveAnswers();
+    }
+  }, 15000);
 }
 
 function scheduleAutosave() {
@@ -246,11 +247,15 @@ function scheduleAutosave() {
 async function autosaveAnswers() {
   if (window.isPreview || !window.userTestId || !window.currentModuleId) return;
 
+  const elapsed = (window.initialElapsedSeconds || 0) + Math.round((window.durationMinutes || 0) * 60 - state.timeLeft);
+  const elapsed_seconds = Math.max(0, elapsed);
+
   const answers = collectAnswers();
   const payload = JSON.stringify({
     user_test_id: window.userTestId,
     module_id: window.currentModuleId,
-    answers: answers
+    answers: answers,
+    elapsed_seconds: elapsed_seconds
   });
 
   // Local state backup
@@ -363,10 +368,21 @@ export async function submitModule(options = {}) {
       const message = `The ${data.path} module for this section is currently unavailable. \n\nYou will be automatically re-routed to an alternative module in <span id="fallback-countdown">10</span> seconds.`;
       
       let timer;
-      
-      showCustomAlert(message, "warning", "Module Unavailable", false).then(() => {
+      let hasNavigated = false;
+
+      const doNavigate = () => {
+        if (hasNavigated) return;
+        hasNavigated = true;
         if (timer) clearInterval(timer);
+
+        const confirmBtn = document.getElementById('customAlertConfirmBtn');
+        if (confirmBtn) confirmBtn.click();
+
         navigateModule(`/take-test/${data.fallback_module_id}`);
+      };
+      
+      showCustomAlert(message, "warning", "Module Unavailable", true, "Re-route Now").then(() => {
+        doNavigate();
       });
       
       timer = setInterval(() => {
@@ -375,8 +391,7 @@ export async function submitModule(options = {}) {
         if (counterEl) counterEl.textContent = secondsLeft;
         
         if (secondsLeft <= 0) {
-          clearInterval(timer);
-          navigateModule(`/take-test/${data.fallback_module_id}`);
+          doNavigate();
         }
       }, 1000);
     } else if (data.next_module_id) {
@@ -409,6 +424,12 @@ export async function navigateModule(url) {
                        document.webkitFullscreenElement || 
                        document.mozFullScreenElement || 
                        document.msFullscreenElement;
+
+  // Clear any existing alert modals safely
+  const confirmBtn = document.getElementById('customAlertConfirmBtn');
+  if (confirmBtn) {
+    confirmBtn.click();
+  }
 
   if (!isFullscreen) {
     window.isNavigatingLegitimately = true;
@@ -449,16 +470,13 @@ export async function navigateModule(url) {
     }
 
     // 4. Update Header buttons surgically (highlight / calculator)
-    const currentButtonsContainer = document.querySelector('header .flex.justify-end');
-    const newButtonsContainer = newDoc.querySelector('header .flex.justify-end');
+    const currentButtonsContainer = document.getElementById('testToolBar');
+    const newButtonsContainer = newDoc.getElementById('testToolBar');
     if (currentButtonsContainer && newButtonsContainer) {
-      const currentCalc = currentButtonsContainer.querySelector('#calculatorBtn');
-      const currentHighlight = currentButtonsContainer.querySelector('#highlightNotesBtn');
       const newCalc = newButtonsContainer.querySelector('#calculatorBtn');
       const newHighlight = newButtonsContainer.querySelector('#highlightNotesBtn');
       
-      if (currentCalc) currentCalc.remove();
-      if (currentHighlight) currentHighlight.remove();
+      currentButtonsContainer.querySelectorAll('#calculatorBtn, #highlightNotesBtn').forEach(button => button.remove());
       
       if (newCalc) {
         currentButtonsContainer.insertBefore(newCalc.cloneNode(true), currentButtonsContainer.firstChild);

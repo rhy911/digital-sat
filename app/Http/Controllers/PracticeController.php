@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\UserTest;
+use App\Models\Test;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
@@ -90,10 +91,16 @@ class PracticeController extends Controller
 
     public function chooseTest()
     {
-        $tests = \App\Models\Test::where('status', 'active')
+        $user = Auth::user();
+        $tests = Test::visibleTo($user)
+            ->with([
+                'sections.modules' => fn ($query) => $query->visibleTo($user),
+            ])
+            ->where('status', 'active')
             ->where('title', '!=', 'Test Preview')
             ->limit(100)
             ->get();
+
         return view('tests.choose', compact('tests'));
     }
 }

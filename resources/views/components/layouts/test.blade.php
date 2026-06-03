@@ -98,7 +98,7 @@
                 <div class="hide-button mt-2" id="timerToggle" onclick="toggleTimer()">Hide</div>
             </div>
         </div>
-        <div class="flex justify-end">
+        <div id="testToolBar" class="flex justify-end">
             @if (($sectionType ?? '') !== 'math')
                 <div class="icon-container" id="highlightNotesBtn">
                     <div class="flex icon">

@@ -172,5 +172,6 @@
         window.currentModuleId = @json($testData->module_id ?? null);
         window.isPreview = @json($testData->is_preview ?? false);
         window.durationMinutes = @json($testData->duration_minutes ?? 35);
+        window.initialElapsedSeconds = @json($userTest ? $userTest->current_module_elapsed_seconds : 0);
     </script>
 </x-layouts.test>

@@ -99,14 +99,42 @@
         document.addEventListener("DOMContentLoaded", function() {
             const nextBtn = document.querySelector('footer .buttons a.btn[role="button"]');
             const loadingScreen = document.getElementById('loadingScreen');
+            const loadingStatusText = document.getElementById('loadingStatusText');
+
+            function navigateAfterLoaderPaint(href) {
+                if (loadingStatusText) {
+                    loadingStatusText.textContent = 'Preparing your test...';
+                }
+                loadingScreen.classList.remove('hidden');
+                loadingScreen.setAttribute('aria-hidden', 'false');
+                document.body.style.cursor = 'wait';
+
+                requestAnimationFrame(() => {
+                    requestAnimationFrame(() => {
+                        window.location.href = href;
+                    });
+                });
+            }
+
             if (nextBtn && loadingScreen) {
                 nextBtn.addEventListener('click', function(e) {
                     const href = nextBtn.getAttribute('href');
                     if (href && href !== '#' && !href.startsWith('javascript:')) {
-                        loadingScreen.classList.remove('hidden');
+                        e.preventDefault();
+                        nextBtn.setAttribute('aria-disabled', 'true');
+                        navigateAfterLoaderPaint(href);
                     }
                 });
             }
+
+            window.addEventListener('pageshow', function() {
+                loadingScreen.classList.add('hidden');
+                loadingScreen.setAttribute('aria-hidden', 'true');
+                document.body.style.cursor = '';
+                if (nextBtn) {
+                    nextBtn.removeAttribute('aria-disabled');
+                }
+            });
         });
     </script>
     @livewireScripts

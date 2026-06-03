@@ -109,15 +109,15 @@ class ScoreModuleJob implements ShouldQueue
 
                     $result = [
                         'status' => 'success',
-                        'next_module_id' => $fallbackModule->id,
-                        'fallback_module_id' => $fallbackModule->id,
+                        'next_module_id' => $fallbackModule->ulid,
+                        'fallback_module_id' => $fallbackModule->ulid,
                         'path' => $path,
                         'message' => "Routed module unavailable. Falling back.",
                     ];
                 } else {
                     $result = [
                         'status' => 'success',
-                        'next_module_id' => $nextModule->id,
+                        'next_module_id' => $nextModule->ulid,
                         'path' => $path,
                         'message' => "Module 1 submitted. Routed to {$path} Module 2.",
                     ];
@@ -150,7 +150,7 @@ class ScoreModuleJob implements ShouldQueue
 
                     $result = [
                         'status' => 'success',
-                        'next_module_id' => $nextModule->id,
+                        'next_module_id' => $nextModule->ulid,
                         'message' => 'Section completed. Moving to next section.',
                     ];
                     Cache::put("scoring_result_{$userTest->id}", $result, 300);
@@ -168,7 +168,7 @@ class ScoreModuleJob implements ShouldQueue
                     Cache::put("scoring_result_{$userTest->id}", $result, 300);
                 }
             }
-        } catch (\Exception $e) {
+        } catch (\Throwable $e) {
             Log::error("EXCEPTION in ScoreModuleJob", ['exception' => $e]);
             $result = [
                 'status' => 'error',
@@ -181,6 +181,19 @@ class ScoreModuleJob implements ShouldQueue
 
     private function finalizeTest(UserTest $userTest, SatScoringService $scoringService)
     {
+        if ($userTest->user?->role === 'admin') {
+            $userTest->update([
+                'score_reading_writing' => null,
+                'score_math' => null,
+                'rw_theta' => null,
+                'math_theta' => null,
+                'total_score' => null,
+                'status' => 'completed',
+                'completed_at' => now(),
+            ]);
+            return;
+        }
+
         $test = Test::with('sections.modules.questions')->find($userTest->test_id);
         
         $rwSection = $test->sections->where('type', 'reading_writing')->first();

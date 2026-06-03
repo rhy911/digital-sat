@@ -20,11 +20,14 @@ class UserTest extends Model
         'math_theta',
         'current_module_id',
         'current_module_started_at',
+        'current_module_elapsed_seconds',
     ];
 
     protected $casts = [
         'completed_at' => 'datetime',
         'current_module_started_at' => 'datetime',
+        'current_module_id' => 'integer',
+        'current_module_elapsed_seconds' => 'integer',
     ];
 
     public function user()

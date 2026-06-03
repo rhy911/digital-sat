@@ -186,7 +186,7 @@ function getOrCreateAlertModal() {
   return modal;
 }
 
-export function showCustomAlert(message, type = 'info', title = 'Notification', showConfirmBtn = true) {
+export function showCustomAlert(message, type = 'info', title = 'Notification', showConfirmBtn = true, confirmBtnText = 'OK') {
   return new Promise((resolve) => {
     const modal = getOrCreateAlertModal();
     const titleEl = modal.querySelector('#customAlertTitle');
@@ -207,7 +207,7 @@ export function showCustomAlert(message, type = 'info', title = 'Notification', 
     } else {
       confirmBtn.classList.remove('hidden');
     }
-    confirmBtn.textContent = 'OK';
+    confirmBtn.textContent = confirmBtnText;
 
     // Set icons and colors based on type
     iconEl.className = 'custom-alert-icon ' + type;

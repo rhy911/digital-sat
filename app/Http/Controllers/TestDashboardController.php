@@ -18,7 +18,11 @@ class TestDashboardController extends Controller
     public function index()
     {
         try {
-            $tests = Test::visibleTo(auth()->user())->with(['creator', 'sections.creator', 'sections.modules.creator'])->latest()->paginate(30);
+            $tests = Test::visibleTo(auth()->user())
+                ->where('title', '!=', 'Test Preview')
+                ->with(['creator', 'sections.creator', 'sections.modules.creator'])
+                ->latest()
+                ->paginate(30);
         } catch (\Exception $e) {
             $tests = collect();
         }
@@ -46,7 +50,11 @@ class TestDashboardController extends Controller
         }
 
         try {
-            $allModules = Module::visibleTo(auth()->user())->with(['creator', 'sections.test'])->latest()->paginate(30);
+            $allModules = Module::visibleTo(auth()->user())
+                ->whereHas('sections.test', fn($q) => $q->where('title', '!=', 'Test Preview'))
+                ->with(['creator', 'sections.test'])
+                ->latest()
+                ->paginate(30);
         } catch (\Exception $e) {
             $allModules = collect();
         }
@@ -61,9 +69,17 @@ class TestDashboardController extends Controller
      */
     public function snapshot()
     {
-        $tests = Test::visibleTo(auth()->user())->with(['creator', 'sections.creator', 'sections.modules.creator'])->latest()->paginate(30);
+        $tests = Test::visibleTo(auth()->user())
+            ->where('title', '!=', 'Test Preview')
+            ->with(['creator', 'sections.creator', 'sections.modules.creator'])
+            ->latest()
+            ->paginate(30);
         $passages = Passage::latest()->paginate(30);
-        $allModules = Module::visibleTo(auth()->user())->with(['creator', 'sections.test'])->latest()->paginate(30);
+        $allModules = Module::visibleTo(auth()->user())
+            ->whereHas('sections.test', fn($q) => $q->where('title', '!=', 'Test Preview'))
+            ->with(['creator', 'sections.test'])
+            ->latest()
+            ->paginate(30);
 
         return response()->json([
             'tests' => $tests,
