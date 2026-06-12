@@ -27,6 +27,40 @@ class TestTakingController extends Controller
     }
 
     /**
+     * Get attempt status/options for a test
+     */
+    public function attemptOptions($testId)
+    {
+        $user = Auth::user();
+        $test = Test::where('id', $testId)->where('status', 'active')->firstOrFail();
+
+        $latestInProgress = UserTest::where('user_id', $user->id)
+            ->where('test_id', $test->id)
+            ->where('status', 'in_progress')
+            ->latest('updated_at')
+            ->first();
+
+        $latestCompleted = UserTest::where('user_id', $user->id)
+            ->where('test_id', $test->id)
+            ->where('status', 'completed')
+            ->latest('completed_at')
+            ->first();
+
+        $firstSection = $test->sections()->orderBy('order')->first();
+        $firstModule = $firstSection ? $firstSection->modules()->orderBy('order')->first() : null;
+        $firstModuleUlid = $firstModule ? $firstModule->ulid : null;
+
+        return response()->json([
+            'has_in_progress' => !empty($latestInProgress),
+            'latest_in_progress_ulid' => $latestInProgress?->ulid,
+            'latest_in_progress_current_module_ulid' => $latestInProgress?->currentModule?->ulid ?? $firstModuleUlid,
+            'first_module_ulid' => $firstModuleUlid,
+            'can_continue' => !empty($latestInProgress),
+            'can_start_fresh' => true,
+        ]);
+    }
+
+    /**
      * Initialize or resume a test
      */
     public function startTest(Request $request, $testId)
@@ -34,19 +68,44 @@ class TestTakingController extends Controller
         $user = Auth::user();
         $test = Test::where('id', $testId)->where('status', 'active')->firstOrFail();
 
-        $userTest = UserTest::updateOrCreate(
-            [
+        $mode = $request->input('mode', 'fresh');
+
+        if ($mode === 'fresh') {
+            UserTest::where('user_id', $user->id)
+                ->where('test_id', $test->id)
+                ->where('status', 'in_progress')
+                ->delete();
+
+            $userTest = UserTest::create([
                 'user_id' => $user->id,
                 'test_id' => $test->id,
-            ],
-            [
                 'status' => 'in_progress',
-            ]
-        );
+            ]);
+        } else {
+            $userTest = UserTest::where('user_id', $user->id)
+                ->where('test_id', $test->id)
+                ->where('status', 'in_progress')
+                ->latest('updated_at')
+                ->first();
+
+            if (!$userTest) {
+                $userTest = UserTest::create([
+                    'user_id' => $user->id,
+                    'test_id' => $test->id,
+                    'status' => 'in_progress',
+                ]);
+            }
+        }
+
+        $firstSection = $test->sections()->orderBy('order')->first();
+        $firstModule = $firstSection ? $firstSection->modules()->orderBy('order')->first() : null;
+        $firstModuleUlid = $firstModule ? $firstModule->ulid : null;
 
         return response()->json([
             'user_test_id' => $userTest->id,
             'user_test_ulid' => $userTest->ulid,
+            'first_module_ulid' => $firstModuleUlid,
+            'redirect_url' => route('take-test', ['ulid' => $firstModuleUlid]) . '?attempt=' . $userTest->ulid,
             'message' => 'Test started',
         ]);
     }
@@ -125,15 +184,36 @@ class TestTakingController extends Controller
         $userTest = null;
         $savedAnswers = collect();
         if (Auth::check()) {
-            $userTest = \App\Models\UserTest::firstOrCreate(
-                [
-                    'user_id' => Auth::id(),
-                    'test_id' => $test->id,
-                ],
-                [
-                    'status' => 'in_progress',
-                ]
-            );
+            $attemptUlid = request()->query('attempt');
+
+            if ($attemptUlid) {
+                $userTest = \App\Models\UserTest::where('ulid', $attemptUlid)->first();
+                if (!$userTest) {
+                    abort(404, 'Attempt not found.');
+                }
+                if ((int) $userTest->user_id !== (int) Auth::id()) {
+                    abort(403, 'Unauthorized.');
+                }
+                if ((int) $userTest->test_id !== (int) $test->id) {
+                    abort(400, 'Attempt does not belong to this test.');
+                }
+            } else {
+                // Legacy fallback: find latest in_progress attempt
+                $userTest = \App\Models\UserTest::where('user_id', Auth::id())
+                    ->where('test_id', $test->id)
+                    ->where('status', 'in_progress')
+                    ->latest('updated_at')
+                    ->first();
+
+                if (!$userTest) {
+                    // Create new attempt
+                    $userTest = \App\Models\UserTest::create([
+                        'user_id' => Auth::id(),
+                        'test_id' => $test->id,
+                        'status' => 'in_progress',
+                    ]);
+                }
+            }
 
             if ((int) $userTest->current_module_id !== (int) $module->id) {
                 $userTest->current_module_id = $module->id;

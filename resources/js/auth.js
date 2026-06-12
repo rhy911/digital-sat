@@ -13,6 +13,7 @@ export class AuthForm {
         
         this.config = Object.assign({
             onSuccess: null,
+            onError: null,
             prepareData: (formData) => formData,
             validate: () => true,
         }, config);
@@ -113,6 +114,9 @@ export class AuthForm {
                     this.showSuccess(data.message);
                 }
             } else {
+                if (this.config.onError) {
+                    this.config.onError(data, response.status);
+                }
                 this.handleError(data, response.status);
             }
         } catch (error) {

@@ -113,4 +113,16 @@ class PracticeController extends Controller
 
         return view('tests.choose', compact('tests'));
     }
+    public function destroy(UserTest $userTest)
+    {
+        $this->authorize('delete', $userTest);
+
+        $userTest->delete();
+
+        if (request()->wantsJson()) {
+            return response()->json(['message' => 'Attempt deleted successfully.']);
+        }
+
+        return redirect()->route('home')->with('success', 'Practice attempt deleted.');
+    }
 }

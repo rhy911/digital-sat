@@ -456,6 +456,12 @@ export function prevQuestion() {
 }
 
 export async function navigateModule(url) {
+  // Append attempt query param if exists and not already present
+  if (window.userTestUlid && !url.includes('attempt=')) {
+    const separator = url.includes('?') ? '&' : '?';
+    url = `${url}${separator}attempt=${window.userTestUlid}`;
+  }
+
   const isFullscreen = document.fullscreenElement || 
                        document.webkitFullscreenElement || 
                        document.mozFullScreenElement || 

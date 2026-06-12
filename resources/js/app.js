@@ -584,3 +584,27 @@ export function initScoreDetailsPage() {
     applyFilters({ resetPage: true });
 }
 window.initScoreDetailsPage = initScoreDetailsPage;
+
+export function initLandingPage() {
+    const observerOptions = {
+        root: null,
+        threshold: 0.1,
+        rootMargin: '0px'
+    };
+
+    const observer = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+            if (entry.isIntersecting) {
+                entry.target.classList.add('opacity-100', 'translate-y-0');
+                entry.target.classList.remove('opacity-0', 'translate-y-8');
+                observer.unobserve(entry.target);
+            }
+        });
+    }, observerOptions);
+
+    document.querySelectorAll('section, footer').forEach(el => {
+        el.classList.add('transition-all', 'duration-700', 'ease-out', 'opacity-0', 'translate-y-8');
+        observer.observe(el);
+    });
+}
+window.initLandingPage = initLandingPage;

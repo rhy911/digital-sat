@@ -15,4 +15,13 @@ class UserTestPolicy
 
         return (int) $userTest->user_id === (int) $user->id;
     }
+
+    public function delete(User $user, UserTest $userTest): bool
+    {
+        if ($user->role === 'admin') {
+            return true;
+        }
+
+        return (int) $userTest->user_id === (int) $user->id && $userTest->status === 'in_progress';
+    }
 }

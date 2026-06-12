@@ -34,12 +34,43 @@
     @push('scripts')
         <script>
             document.addEventListener('DOMContentLoaded', () => {
+                const resendBtn = document.getElementById('resendBtn');
+                let countdownInterval;
+
+                function startCountdown(seconds) {
+                    resendBtn.disabled = true;
+                    resendBtn.classList.remove('active');
+                    clearInterval(countdownInterval);
+                    
+                    resendBtn.textContent = `Vui lòng đợi ${seconds}s`;
+                    
+                    countdownInterval = setInterval(() => {
+                        seconds--;
+                        if (seconds <= 0) {
+                            clearInterval(countdownInterval);
+                            resendBtn.disabled = false;
+                            resendBtn.classList.add('active');
+                            resendBtn.textContent = 'Resend Verification Email';
+                        } else {
+                            resendBtn.textContent = `Vui lòng đợi ${seconds}s`;
+                        }
+                    }, 1000);
+                }
+
                 new AuthForm('resendForm', {
                     onSuccess: (data) => {
                         const successMsg = document.getElementById('successMessage');
                         if (successMsg) {
                             successMsg.textContent = data.message || 'Verification email sent! Check your inbox.';
                             successMsg.style.display = 'block';
+                        }
+                        if (data.cooldown) {
+                            setTimeout(() => startCountdown(data.cooldown), 10);
+                        }
+                    },
+                    onError: (data, status) => {
+                        if (data.cooldown) {
+                            setTimeout(() => startCountdown(data.cooldown), 10);
                         }
                     }
                 });

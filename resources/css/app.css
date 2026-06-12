@@ -12,6 +12,14 @@
 
 @theme {
     --font-sans: "Roboto", ui-sans-serif, system-ui, sans-serif;
+    --font-geist: "Geist Sans", sans-serif;
+    --color-brand: #324dc7;
+    --animate-float: float 3s ease-in-out infinite;
+
+    @keyframes float {
+        0%, 100% { transform: translateY(0); }
+        50% { transform: translateY(-10px); }
+    }
 }
 
 * {
@@ -32,6 +40,14 @@ body {
 u {
     text-decoration: underline;
     text-underline-offset: 3px;
+}
+
+.bento-card {
+    transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.bento-card:hover {
+    transform: translateY(-4px);
 }
 
 /* ==================== SECURE LOADING SCREEN ==================== */

@@ -15,6 +15,9 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\PageController;
 
 Route::get('/', [PageController::class, 'landing']);
+Route::get('/landing-new', function () {
+    return view('landing');
+});
 
 Route::middleware('guest')->group(function () {
     Route::get('/signin', [PageController::class, 'showSignin'])->name('login');
@@ -38,7 +41,9 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/home', HomeController::class)->name('home');
     Route::get('/my-practice/{userTest:ulid}', [\App\Http\Controllers\PracticeController::class, 'show'])->name('my-practice');
     Route::get('/my-practice/{userTest:ulid}/score', [\App\Http\Controllers\PracticeController::class, 'scoreDetails'])->name('my-practice.score');
+    Route::delete('/my-practice/{userTest:ulid}', [\App\Http\Controllers\PracticeController::class, 'destroy'])->name('my-practice.destroy');
 
+    Route::get('/test/{test_id}/attempt-options', [\App\Http\Controllers\TestTakingController::class, 'attemptOptions'])->name('test.attempt-options');
     Route::post('/test/start/{test_id}', [\App\Http\Controllers\TestTakingController::class, 'startTest'])->name('test.start');
     Route::post('/test/autosave-module', [\App\Http\Controllers\TestTakingController::class, 'autosaveModule'])
         ->middleware('throttle:60,1')
