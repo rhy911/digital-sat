@@ -65,7 +65,7 @@ class AuthRoleTest extends TestCase
             $response->json('message')
         );
         $this->assertStringContainsString(
-            'href="' . route('login', ['role' => 'teacher']) . '"',
+            'href="' . route('signin.form', ['role' => 'teacher']) . '"',
             $response->json('message')
         );
         $this->assertGuest();
@@ -106,7 +106,7 @@ class AuthRoleTest extends TestCase
             $response->json('message')
         );
         $this->assertStringContainsString(
-            'href="' . route('login', ['role' => 'student']) . '"',
+            'href="' . route('signin.form', ['role' => 'student']) . '"',
             $response->json('message')
         );
         $this->assertGuest();

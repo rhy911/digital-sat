@@ -178,7 +178,7 @@ class TestTakingController extends Controller
         [$nextModule, $nextModuleSection] = $this->resolveNextModule($module, $section, $test, $user);
 
         // Determine which view to use based on section type
-        $viewName = $section->type === 'math' ? 'tests.take.take-math' : 'tests.take.take-reading';
+        $viewName = $section->type === 'math' ? 'tests.take.math' : 'tests.take.reading';
 
         // Get user test record
         $userTest = null;
@@ -600,7 +600,7 @@ class TestTakingController extends Controller
         ];
 
         $questions = $this->getStaticPreviewQuestions($type);
-        $viewName = $type === 'math' ? 'tests.take.take-math' : 'tests.take.take-reading';
+        $viewName = $type === 'math' ? 'tests.take.math' : 'tests.take.reading';
 
         return view($viewName, [
             'testData' => $testData,

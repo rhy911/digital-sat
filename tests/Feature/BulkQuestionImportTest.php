@@ -109,7 +109,7 @@ class BulkQuestionImportTest extends TestCase
         );
 
         $response = $this->actingAs($this->user)
-            ->postJson(route('test-dashboard.questions.bulk-zip'), [
+            ->postJson(route('home-dashboard.questions.bulk-zip'), [
                 'zip_file' => $uploadedFile,
                 'module_id' => $this->module->id,
                 'start_position' => 1,

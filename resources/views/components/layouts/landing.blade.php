@@ -1,35 +1,33 @@
 <!DOCTYPE html>
 <html lang="en" class="scroll-smooth">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{{ $title ?? 'PrepFlow | The Definitive Digital SAT Experience' }}</title>
-    <!-- Geist Font -->
+    <title>{{ $title ?? 'DigiSAT' }}</title>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/geist@1.3.0/dist/fonts/geist.css">
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 </head>
-<body class="font-geist bg-slate-50 text-slate-900 selection:bg-blue-100 selection:text-brand">
 
-    <!-- Navigation -->
-    <nav class="fixed top-0 w-full z-50 bg-white/80 backdrop-blur-md border-b border-slate-200">
-        <div class="max-w-7xl mx-auto px-6 h-20 flex items-center justify-between">
-            <div class="flex items-center">
-                <div class="flex flex-col leading-none">
-                    <span class="font-bold text-2xl tracking-wider"><span
-                            class="text-slate-900 italic">Digi</span>SAT</span>
-                </div>
+<body class="font-geist bg-slate-50 text-slate-900 selection:bg-slate-950 selection:text-white">
+    <nav class="fixed top-0 z-50 w-full border-b border-slate-200 bg-white/90 backdrop-blur-md">
+        <div class="mx-auto flex h-20 max-w-7xl items-center justify-between px-5 sm:px-6">
+            <x-brand.wordmark href="/" size="md" tone="dark" />
+
+            <div class="hidden items-center gap-10 text-sm font-medium text-slate-600 md:flex">
+                <a href="#fidelity" data-scroll-target="#fidelity"
+                    class="rounded-md transition-colors hover:text-brand focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-brand">Immersion</a>
+                <a href="#teachers" data-scroll-target="#teachers"
+                    class="rounded-md transition-colors hover:text-brand focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-brand">Educator Tools</a>
+                <a href="#scoring" data-scroll-target="#scoring"
+                    class="rounded-md transition-colors hover:text-brand focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-brand">IRT Science</a>
             </div>
 
-            <div class="hidden md:flex items-center gap-10 text-sm font-medium text-slate-600">
-                <a href="#fidelity" class="hover:text-brand transition-colors">Immersion</a>
-                <a href="#teachers" class="hover:text-brand transition-colors">Educator Tools</a>
-                <a href="#scoring" class="hover:text-brand transition-colors">IRT Science</a>
-            </div>
-
-            <div class="flex items-center gap-4">
-                <a href="/login" class="text-sm font-medium hover:text-brand transition-colors">Sign in</a>
-                <a href="/register"
-                    class="bg-brand text-white px-5 py-2.5 rounded-full text-sm font-semibold hover:opacity-90 transition-all shadow-lg shadow-blue-500/20 active:scale-95">
+            <div class="flex items-center gap-3 sm:gap-4">
+                <a href="/signin"
+                    class="rounded-md text-sm font-semibold transition-colors hover:text-brand focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-brand">Sign in</a>
+                <a href="/signup"
+                    class="hidden min-h-11 items-center rounded-xl bg-brand px-4 py-2.5 text-sm font-bold text-white transition hover:bg-blue-800 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-brand active:scale-[0.98] sm:inline-flex">
                     Start Free Session
                 </a>
             </div>
@@ -40,56 +38,73 @@
         {{ $slot }}
     </main>
 
-    <footer class="py-24 px-6 border-t border-slate-200 bg-white">
-        <div class="max-w-7xl mx-auto grid md:grid-cols-12 gap-16">
+    <footer class="border-t border-slate-200 bg-white px-5 py-20 sm:px-6">
+        <div class="mx-auto grid max-w-7xl gap-14 md:grid-cols-12">
             <div class="md:col-span-5">
-                <div class="flex items-center gap-2 mb-8">
-                    <div class="w-8 h-8 bg-brand rounded-lg flex items-center justify-center">
-                        <span class="text-white font-bold italic">D</span>
-                    </div>
-                    <span class="font-bold text-xl tracking-tight">DigiSAT</span>
+                <div class="mb-8 flex items-center gap-2 text-slate-900">
+                    <x-brand.wordmark size="sm" tone="dark" />
                 </div>
-                <p class="text-slate-500 leading-relaxed max-w-sm mb-10">
+                <p class="max-w-sm leading-relaxed text-slate-600">
                     The definitive testing platform and management suite for Digital SAT preparation.
                 </p>
             </div>
 
-            <div class="md:col-span-7 grid grid-cols-2 sm:grid-cols-3 gap-12">
+            <div class="grid grid-cols-2 gap-12 sm:grid-cols-3 md:col-span-7">
                 <div>
-                    <h4 class="text-xs font-bold text-slate-900 uppercase tracking-widest mb-8">System</h4>
-                    <ul class="space-y-4 text-sm text-slate-500">
-                        <li><a href="#" class="hover:text-brand transition-colors">Immersion</a></li>
-                        <li><a href="#" class="hover:text-brand transition-colors">Adaptive Routing</a></li>
-                        <li><a href="#" class="hover:text-brand transition-colors">IRT Model</a></li>
+                    <h4 class="mb-6 text-sm font-bold text-slate-900">System</h4>
+                    <ul class="space-y-4 text-sm text-slate-600">
+                        <li><a href="#fidelity" class="transition-colors hover:text-brand">Immersion</a></li>
+                        <li><a href="#features" class="transition-colors hover:text-brand">Adaptive Routing</a></li>
+                        <li><a href="#scoring" class="transition-colors hover:text-brand">IRT Model</a></li>
                     </ul>
                 </div>
                 <div>
-                    <h4 class="text-xs font-bold text-slate-900 uppercase tracking-widest mb-8">Portals</h4>
-                    <ul class="space-y-4 text-sm text-slate-500">
-                        <li><a href="#" class="hover:text-brand transition-colors">Student Portal</a></li>
-                        <li><a href="#" class="hover:text-brand transition-colors">Educator CMS</a></li>
-                        <li><a href="#" class="hover:text-brand transition-colors">Classroom Admin</a></li>
+                    <h4 class="mb-6 text-sm font-bold text-slate-900">Portals</h4>
+                    <ul class="space-y-4 text-sm text-slate-600">
+                        <li><a href="/signup" class="transition-colors hover:text-brand">Student Portal</a></li>
+                        <li><a href="/signin" class="transition-colors hover:text-brand">Educator CMS</a></li>
+                        <li><a href="/signin" class="transition-colors hover:text-brand">Classroom Admin</a></li>
                     </ul>
                 </div>
                 <div class="col-span-2 sm:col-span-1">
-                    <h4 class="text-xs font-bold text-slate-900 uppercase tracking-widest mb-8">Resources</h4>
-                    <ul class="space-y-4 text-sm text-slate-500">
-                        <li><a href="#" class="hover:text-brand transition-colors">Item Bank</a></li>
-                        <li><a href="#" class="hover:text-brand transition-colors">Analytics</a></li>
-                        <li><a href="#" class="hover:text-brand transition-colors">Security</a></li>
+                    <h4 class="mb-6 text-sm font-bold text-slate-900">Resources</h4>
+                    <ul class="space-y-4 text-sm text-slate-600">
+                        <li><a href="#teachers" class="transition-colors hover:text-brand">Item Bank</a></li>
+                        <li><a href="#scoring" class="transition-colors hover:text-brand">Analytics</a></li>
+                        <li><a href="#features" class="transition-colors hover:text-brand">Security</a></li>
                     </ul>
                 </div>
             </div>
         </div>
 
         <div
-            class="max-w-7xl mx-auto mt-24 pt-8 border-t border-slate-100 flex flex-col md:flex-row justify-between items-center gap-6">
-            <p class="text-xs text-slate-400">© {{ date('Y') }} PrepFlow. Built with Laravel & Tailwind v4.</p>
-            <p class="text-[10px] text-slate-300 max-w-md md:text-right italic leading-relaxed">SAT® is a trademark
-                registered by the College Board, which is not affiliated with, and does not endorse, this product.</p>
+            class="mx-auto mt-20 flex max-w-7xl flex-col items-start justify-between gap-6 border-t border-slate-100 pt-8 md:flex-row md:items-center">
+            <p class="text-xs text-slate-500">&copy; {{ date('Y') }} DigiSAT.</p>
+            <p class="max-w-md text-xs leading-relaxed text-slate-500 md:text-right">
+                SAT&reg; is a trademark registered by the College Board, which is not affiliated with, and does not
+                endorse, this product.
+            </p>
         </div>
     </footer>
 
     @stack('scripts')
+    <script>
+        document.addEventListener('click', (event) => {
+            const trigger = event.target.closest('[data-scroll-target]');
+            if (!trigger) return;
+
+            const target = document.querySelector(trigger.dataset.scrollTarget);
+            if (!target) return;
+
+            event.preventDefault();
+            const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+            target.scrollIntoView({
+                behavior: prefersReducedMotion ? 'auto' : 'smooth',
+                block: 'start',
+            });
+        });
+    </script>
 </body>
+
 </html>

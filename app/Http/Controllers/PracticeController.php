@@ -86,7 +86,7 @@ class PracticeController extends Controller
             }
         }
 
-        return view('tests.score-details', [
+        return view('tests.score-details.index', [
             'user' => $user,
             'userTest' => $userTest,
             'stats' => $stats,
@@ -96,7 +96,9 @@ class PracticeController extends Controller
 
     public function testPreview()
     {
-        return view('tests.preview');
+        return view('tests.preview', [
+            'user' => Auth::user(),
+        ]);
     }
 
     public function chooseTest()
@@ -105,13 +107,14 @@ class PracticeController extends Controller
         $tests = Test::visibleTo($user)
             ->with([
                 'sections.modules' => fn ($query) => $query->visibleTo($user),
+                'userTests' => fn ($query) => $query->where('user_id', $user->id)->with(['test', 'currentModule.section'])->orderBy('updated_at', 'desc'),
             ])
             ->where('status', 'active')
             ->where('title', '!=', 'Test Preview')
             ->limit(100)
             ->get();
 
-        return view('tests.choose', compact('tests'));
+        return view('tests.choose', compact('tests', 'user'));
     }
     public function destroy(UserTest $userTest)
     {

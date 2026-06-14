@@ -26,7 +26,7 @@ class StudentPracticeVisibilityTest extends TestCase
         $privateTest = $this->createPracticeTest('Admin Private Active Test', false);
         $publicTest = $this->createPracticeTest('Admin Public Active Test', true);
 
-        $response = $this->actingAs($student)->get(route('choose-test'));
+        $response = $this->actingAs($student)->get(route('home.practice'));
 
         $response->assertOk();
         $response->assertDontSee($privateTest->title);

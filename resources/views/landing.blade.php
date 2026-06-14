@@ -1,211 +1,210 @@
 <x-layouts.landing>
-    <!-- Hero Section -->
-    <section class="relative px-6 pt-24 pb-32 overflow-hidden">
-        <div class="max-w-7xl mx-auto grid lg:grid-cols-2 gap-16 items-center">
-            <div class="max-w-xl">
-                <h1 class="text-5xl md:text-7xl font-bold tracking-tight leading-[0.95] mb-8">
-                    The most <span class="text-brand">Indistinguishable</span> Digital SAT Experience.
-                </h1>
-                <p class="text-lg text-slate-600 leading-relaxed mb-10 max-w-[45ch]">
-                    Practice in an environment that looks and feels exactly like the real Digital SAT. From adaptive
-                    M2 routing to advanced IRT scoring, we provide the definitive standard for prep.
+    <section class="landing-hero px-5 sm:px-6">
+        <div class="mx-auto grid max-w-7xl items-center gap-12 lg:grid-cols-[0.92fr_1.08fr]">
+            <div class="max-w-2xl">
+                <p class="mb-5 inline-flex items-center gap-2 rounded-full border border-blue-200 bg-blue-50 px-4 py-2 text-sm font-semibold text-blue-900">
+                    <span class="h-2 w-2 rounded-full bg-brand"></span>
+                    High-fidelity Digital SAT practice
                 </p>
-                <div class="flex flex-col sm:flex-row gap-4">
-                    <a href="/register"
-                        class="bg-brand text-white px-8 py-4 rounded-full font-bold text-center hover:shadow-xl hover:shadow-blue-500/20 transition-all">
-                        Take a Practice Test
+                <h1 class="max-w-2xl text-4xl font-bold leading-[1.04] tracking-tight text-slate-950 sm:text-6xl lg:text-7xl">
+                    Test day should feel familiar.
+                </h1>
+                <p class="mt-7 max-w-xl text-lg leading-8 text-slate-700">
+                    DigiSAT gives students a Bluebook-like testing environment and gives educators the tools to assign,
+                    monitor, and score practice with confidence.
+                </p>
+                <div class="mt-9 flex flex-col gap-3 sm:flex-row">
+                    <a href="/signup"
+                        class="inline-flex min-h-12 items-center justify-center rounded-xl bg-brand px-7 py-3.5 text-base font-bold text-white transition hover:bg-blue-800 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-brand active:scale-[0.98]">
+                        Start a practice test
                     </a>
                     <a href="#features"
-                        class="px-8 py-4 rounded-full border border-slate-200 font-bold text-center hover:bg-white transition-all">
-                        Explore Features
+                        class="inline-flex min-h-12 items-center justify-center rounded-xl border border-slate-300 bg-white px-7 py-3.5 text-base font-bold text-slate-900 transition hover:border-slate-400 hover:bg-slate-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-brand active:scale-[0.98]">
+                        See platform tools
                     </a>
                 </div>
             </div>
 
-            <div class="relative">
-                <div
-                    class="aspect-[4/3] rounded-3xl bg-slate-200 overflow-hidden shadow-2xl relative border border-slate-200">
-                    <img src="https://picsum.photos/seed/institutional-sat/1200/900" alt="High-Fidelity Interface"
-                        class="object-cover w-full h-full" width="1200" height="900" loading="lazy">
-                    <!-- Floating Badge -->
-                    <div
-                        class="absolute top-8 right-8 bg-white/95 backdrop-blur p-5 rounded-2xl shadow-xl animate-float border border-white/50">
-                        <div class="flex items-center gap-3">
-                            <div
-                                class="w-12 h-12 bg-brand rounded-full flex items-center justify-center text-white shadow-lg shadow-blue-200">
-                                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                        d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                                </svg>
-                            </div>
-                            <div>
-                                <p class="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Scoring
-                                    Status</p>
-                                <p class="text-sm font-bold">IRT Engine Calibrated</p>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                <!-- Background blobs -->
-                <div class="absolute -z-10 -bottom-10 -left-10 w-72 h-72 bg-brand/10 blur-3xl rounded-full"></div>
-            </div>
-        </div>
-    </section>
-
-    <!-- Features Bento Grid -->
-    <section id="features" class="py-32 px-6 bg-white">
-        <div class="max-w-7xl mx-auto">
-            <div class="mb-20">
-                <h2 class="text-4xl md:text-5xl font-bold tracking-tight mb-6">Reality Meets Intelligence.</h2>
-                <p class="text-slate-600 text-lg max-w-2xl">Built for student mastery and educator efficiency.</p>
-            </div>
-
-            <div class="grid md:grid-cols-12 gap-8">
-                <!-- Feature 1: High-Fidelity Testing -->
-                <div id="fidelity"
-                    class="md:col-span-8 bg-brand rounded-[2.5rem] p-14 text-white overflow-hidden relative group bento-card">
-                    <div class="max-w-md relative z-10">
-                        <div
-                            class="w-14 h-14 bg-white/10 backdrop-blur rounded-2xl flex items-center justify-center mb-10 border border-white/20">
-                            <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                    d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z">
-                                </path>
-                            </svg>
-                        </div>
-                        <h3 class="text-4xl font-bold mb-6 leading-tight">Total Testing Immersion</h3>
-                        <p class="text-blue-100 text-lg leading-relaxed mb-10">
-                            Zero friction on test day. Our platform replicates every tool, transition, and technical
-                            detail of the actual exam interface, ensuring students are perfectly calibrated for the
-                            real experience.
-                        </p>
-                        <div class="flex flex-wrap gap-3">
-                            <span
-                                class="px-4 py-2 bg-white/10 rounded-full text-[10px] font-bold uppercase tracking-widest border border-white/20">Desmos
-                                Integrated</span>
-                            <span
-                                class="px-4 py-2 bg-white/10 rounded-full text-[10px] font-bold uppercase tracking-widest border border-white/20">Annotation
-                                Tools</span>
-                            <span
-                                class="px-4 py-2 bg-white/10 rounded-full text-[10px] font-bold uppercase tracking-widest border border-white/20">Review
-                                Grid</span>
-                        </div>
-                    </div>
-                    <div
-                        class="absolute right-0 bottom-0 w-2/3 translate-y-20 translate-x-20 opacity-10 group-hover:opacity-20 group-hover:scale-105 transition-all">
-                        <img src="https://picsum.photos/seed/ui-fidelity/1000/1000" alt="Interface Immersion"
-                            class="rounded-3xl rotate-6 shadow-2xl" width="1000" height="1000" loading="lazy">
-                    </div>
-                </div>
-
-                <!-- Feature 2: For Teachers -->
-                <div id="teachers"
-                    class="md:col-span-4 bg-slate-50 border border-slate-200 rounded-[2.5rem] p-12 flex flex-col justify-between bento-card shadow-sm hover:shadow-xl hover:border-brand/30 transition-all">
+            <div class="landing-device" aria-label="Digital SAT practice interface preview">
+                <div class="landing-device__topbar">
                     <div>
-                        <div
-                            class="w-14 h-14 bg-brand text-white rounded-2xl flex items-center justify-center mb-10 shadow-lg shadow-blue-200">
-                            <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                    d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.246 18 16.5 18c-1.746 0-3.332.477-4.5 1.253">
-                                </path>
-                            </svg>
-                        </div>
-                        <h3 class="text-2xl font-bold mb-4">Command Center for Educators</h3>
-                        <p class="text-slate-500 leading-relaxed mb-6">
-                            Create and distribute custom SAT tests for your classroom. Set public challenges or
-                            private mock exams with full control over student performance tracking.
+                        <span class="block text-xs font-bold text-slate-500">Reading and Writing</span>
+                        <span class="text-sm font-semibold text-slate-950">Module 1, Question 14</span>
+                    </div>
+                    <div class="landing-timer">31:48</div>
+                </div>
+                <div class="landing-device__body">
+                    <aside class="landing-passage" aria-hidden="true">
+                        <span class="landing-tool-pill">Notes</span>
+                        <h2>Migration Patterns in Urban Transit</h2>
+                        <p>
+                            Researchers compared weekday rail usage against revised zoning data and found that commute
+                            density shifted most sharply near mixed-use corridors.
                         </p>
-                        <ul class="space-y-2 text-[11px] font-bold text-slate-400 uppercase tracking-widest">
-                            <li class="flex items-center gap-2"><span class="w-1 h-1 bg-brand rounded-full"></span>
-                                Bulk Question Import</li>
-                            <li class="flex items-center gap-2"><span class="w-1 h-1 bg-brand rounded-full"></span>
-                                Private Testing Links</li>
-                            <li class="flex items-center gap-2"><span class="w-1 h-1 bg-brand rounded-full"></span>
-                                Real-time Monitoring</li>
-                        </ul>
+                        <div class="landing-highlight">commute density shifted most sharply</div>
+                    </aside>
+                    <div class="landing-question" aria-hidden="true">
+                        <div class="landing-question__meta">
+                            <span>14</span>
+                            <span>Mark for Review</span>
+                        </div>
+                        <p class="landing-question__stem">
+                            Which choice best describes the function of the highlighted sentence?
+                        </p>
+                        <div class="landing-choice is-selected">It introduces the finding the passage explains.</div>
+                        <div class="landing-choice">It challenges the study's central assumption.</div>
+                        <div class="landing-choice">It defines a term used later in the passage.</div>
+                        <div class="landing-choice">It compares two unrelated transit models.</div>
                     </div>
                 </div>
-
-                <!-- Feature 3: True-to-Life UI -->
-                <div class="md:col-span-4 bg-slate-900 rounded-[2.5rem] p-10 text-white bento-card">
-                    <div class="mb-16">
-                        <h3 class="text-2xl font-bold mb-4">True-to-Life UI</h3>
-                        <p class="text-slate-400 text-sm leading-relaxed">
-                            Zero friction on test day. Our interface is indistinguishable from the official
-                            experience, ensuring students are comfortable with every tool and transition.
-                        </p>
-                    </div>
-                    <div class="p-6 bg-slate-800 rounded-2xl border border-slate-700">
-                        <div class="flex items-center gap-2 mb-4">
-                            <div class="w-2 h-2 rounded-full bg-green-500"></div>
-                            <span class="text-[10px] font-mono text-slate-500 tracking-tighter">UI FIDELITY:
-                                100%</span>
-                        </div>
-                        <div class="space-y-2">
-                            <div class="h-2 w-full bg-slate-700 rounded"></div>
-                            <div class="h-2 w-3/4 bg-slate-700 rounded"></div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Feature 4: Science-Backed IRT -->
-                <div id="scoring"
-                    class="md:col-span-8 bg-blue-50 border border-blue-100 rounded-[2.5rem] p-14 flex flex-col md:flex-row gap-14 items-center bento-card">
-                    <div class="flex-1">
-                        <div
-                            class="inline-flex px-3 py-1 bg-brand/10 rounded-full text-[10px] font-bold text-brand uppercase tracking-widest mb-6">
-                            Science of Scoring</div>
-                        <h3 class="text-3xl font-bold mb-6">Advanced IRT Science.</h3>
-                        <p class="text-slate-600 leading-relaxed mb-8">
-                            We utilize 3PL Item Response Theory (IRT) and Theta-based MLE algorithms to ensure every
-                            score estimate is as accurate as the official exam.
-                        </p>
-                        <div class="p-4 bg-white rounded-2xl border border-blue-100">
-                            <div class="flex justify-between items-center text-[10px] font-mono mb-2">
-                                <span class="text-slate-400">THETA ESTIMATION</span>
-                                <span class="text-brand">MLE Newton-Raphson</span>
-                            </div>
-                            <div class="h-1 w-full bg-slate-100 rounded-full overflow-hidden">
-                                <div class="h-full bg-brand w-2/3"></div>
-                            </div>
-                        </div>
-                    </div>
-                    <div
-                        class="flex-1 w-full aspect-[4/3] bg-white rounded-3xl shadow-xl shadow-blue-900/5 border border-blue-200/50 overflow-hidden relative">
-                        <img src="https://picsum.photos/seed/adaptive-flow/800/600" alt="Adaptive Science"
-                            class="object-cover w-full h-full opacity-80" width="800" height="600" loading="lazy">
-                    </div>
+                <div class="landing-device__footer">
+                    <span>Calculator</span>
+                    <span>Annotation</span>
+                    <span>Question Review</span>
+                    <button type="button">Next</button>
                 </div>
             </div>
         </div>
     </section>
 
-    <!-- Final CTA -->
-    <section class="py-32 px-6">
-        <div
-            class="max-w-6xl mx-auto bg-slate-950 rounded-[3.5rem] p-12 md:p-28 text-center text-white relative overflow-hidden shadow-2xl">
-            <div class="relative z-10">
-                <h2 class="text-4xl md:text-7xl font-bold mb-8 tracking-tight">The definitive testing platform for
-                    your <span class="text-brand italic">entire</span> classroom.</h2>
-                <p class="text-xl text-slate-400 mb-14 max-w-2xl mx-auto leading-relaxed">
-                    Accurate scoring, high-fidelity immersion, and powerful management tools. Ready for your first
-                    session?
+    <section class="border-y border-slate-200 bg-white px-5 py-10 sm:px-6">
+        <div class="mx-auto grid max-w-7xl gap-5 sm:grid-cols-2 lg:grid-cols-4">
+            <div class="landing-stat">
+                <strong>Bluebook-like</strong>
+                <span>Testing flow, tools, review screen, and timing behavior.</span>
+            </div>
+            <div class="landing-stat">
+                <strong>Adaptive</strong>
+                <span>Module routing supports easier and harder second modules.</span>
+            </div>
+            <div class="landing-stat">
+                <strong>IRT scoring</strong>
+                <span>3PL parameters and theta estimation for realistic score bands.</span>
+            </div>
+            <div class="landing-stat">
+                <strong>Teacher-ready</strong>
+                <span>Item banks, assigned tests, progress views, and import tools.</span>
+            </div>
+        </div>
+    </section>
+
+    <section id="features" class="bg-slate-50 px-5 py-24 sm:px-6 lg:py-28">
+        <div class="mx-auto max-w-7xl">
+            <div class="max-w-3xl">
+                <h2 class="text-4xl font-bold tracking-tight text-slate-950 sm:text-5xl">
+                    Built around real practice, not extra noise.
+                </h2>
+                <p class="mt-5 text-lg leading-8 text-slate-700">
+                    The landing page now mirrors the product promise: faithful student testing, practical educator
+                    control, and defensible scoring.
                 </p>
-                <div class="flex flex-col sm:flex-row justify-center gap-6">
-                    <a href="/register"
-                        class="bg-brand text-white px-12 py-6 rounded-full font-bold text-lg hover:scale-105 transition-all shadow-2xl shadow-blue-500/30 active:scale-95">
-                        Launch Free Test
-                    </a>
-                    <a href="/signin"
-                        class="px-12 py-6 rounded-full border border-slate-800 font-bold text-lg hover:bg-white/5 transition-all">
-                        Institutional Login
-                    </a>
-                </div>
             </div>
-            <!-- Background decoration -->
-            <div class="absolute inset-0 bg-[radial-gradient(circle_at_bottom_left,#324dc720,transparent_50%)]">
+
+            <div class="mt-12 grid gap-5 lg:grid-cols-12">
+                <article id="fidelity" class="landing-feature landing-feature--primary lg:col-span-7">
+                    <div>
+                        <span class="landing-feature__label">Student experience</span>
+                        <h3>Every tool sits where students expect it.</h3>
+                        <p>
+                            The test surface keeps timing, review, annotations, Desmos access, and passage/question
+                            layout close to the official exam so practice transfers cleanly to test day.
+                        </p>
+                    </div>
+                    <div class="landing-mini-browser" aria-hidden="true">
+                        <div class="landing-mini-browser__bar">
+                            <span></span><span></span><span></span>
+                        </div>
+                        <div class="grid gap-3 sm:grid-cols-2">
+                            <div class="rounded-lg border border-blue-200 bg-white p-4">
+                                <div class="mb-3 h-2 w-24 rounded bg-blue-200"></div>
+                                <div class="space-y-2">
+                                    <div class="h-2 rounded bg-slate-200"></div>
+                                    <div class="h-2 w-5/6 rounded bg-slate-200"></div>
+                                    <div class="h-2 w-3/4 rounded bg-slate-200"></div>
+                                </div>
+                            </div>
+                            <div class="space-y-2">
+                                <div class="rounded-lg border-2 border-brand bg-blue-50 p-3 text-sm font-semibold text-blue-950">A</div>
+                                <div class="rounded-lg border border-slate-200 bg-white p-3 text-sm font-semibold text-slate-600">B</div>
+                                <div class="rounded-lg border border-slate-200 bg-white p-3 text-sm font-semibold text-slate-600">C</div>
+                            </div>
+                        </div>
+                    </div>
+                </article>
+
+                <article id="teachers" class="landing-feature lg:col-span-5">
+                    <span class="landing-feature__label">Educator workflow</span>
+                    <h3>Assign, import, monitor, and adjust.</h3>
+                    <p>
+                        Teachers can build tests from item banks, import questions in bulk, send private links, and
+                        keep classroom progress visible without turning the product into a game layer.
+                    </p>
+                    <ul class="landing-checklist">
+                        <li>Bulk question import with validation</li>
+                        <li>Private and public test assignments</li>
+                        <li>Progress tracking for active practice</li>
+                    </ul>
+                </article>
+
+                <article id="scoring" class="landing-feature lg:col-span-5">
+                    <span class="landing-feature__label">Scoring model</span>
+                    <h3>IRT signals stay visible.</h3>
+                    <p>
+                        Scoring views can explain ability estimates, domain performance, and score bands so teachers
+                        know what changed and students know what to practice next.
+                    </p>
+                    <div class="landing-score-card" aria-hidden="true">
+                        <div class="flex items-center justify-between">
+                            <span>Theta estimate</span>
+                            <strong>0.64</strong>
+                        </div>
+                        <div class="landing-score-bar"><span style="width: 68%"></span></div>
+                        <div class="grid grid-cols-3 gap-2 text-center">
+                            <span>RW 610</span>
+                            <span>Math 670</span>
+                            <span>Total 1280</span>
+                        </div>
+                    </div>
+                </article>
+
+                <article class="landing-feature landing-feature--dark lg:col-span-7">
+                    <span class="landing-feature__label">Reliability</span>
+                    <h3>Practice stays calm under exam pressure.</h3>
+                    <p>
+                        The interface favors predictable navigation, legible states, keyboard focus, and restrained
+                        motion. Students can concentrate on the question instead of decoding the product.
+                    </p>
+                    <div class="mt-8 grid gap-3 sm:grid-cols-3">
+                        <div>Stable layouts</div>
+                        <div>Clear focus states</div>
+                        <div>Reduced motion</div>
+                    </div>
+                </article>
             </div>
-            <div class="absolute inset-0 bg-[radial-gradient(circle_at_top_right,#324dc710,transparent_50%)]"></div>
+        </div>
+    </section>
+
+    <section class="bg-white px-5 py-24 sm:px-6">
+        <div class="mx-auto grid max-w-7xl items-center gap-10 rounded-2xl border border-slate-200 bg-slate-950 p-8 text-white sm:p-10 lg:grid-cols-[1fr_auto] lg:p-14">
+            <div>
+                <h2 class="max-w-3xl text-4xl font-bold tracking-tight sm:text-5xl">
+                    Give students a practice room that behaves like the real one.
+                </h2>
+                <p class="mt-5 max-w-2xl text-lg leading-8 text-slate-300">
+                    Start with a practice test, then use teacher tools and score details when your classroom needs
+                    deeper control.
+                </p>
+            </div>
+            <div class="flex flex-col gap-3 sm:flex-row lg:flex-col">
+                <a href="/signup"
+                    class="inline-flex min-h-12 items-center justify-center rounded-xl bg-white px-7 py-3.5 text-base font-bold text-slate-950 transition hover:bg-slate-100 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-white active:scale-[0.98]">
+                    Launch free test
+                </a>
+                <a href="/signin"
+                    class="inline-flex min-h-12 items-center justify-center rounded-xl border border-slate-700 px-7 py-3.5 text-base font-bold text-white transition hover:border-slate-500 hover:bg-slate-900 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-white active:scale-[0.98]">
+                    Sign in
+                </a>
+            </div>
         </div>
     </section>
 

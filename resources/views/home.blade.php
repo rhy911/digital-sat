@@ -28,7 +28,7 @@
             <div class=" flex gap-4" id="practice-active">
                 <x-home.practice-option-link :href="route('test.preview')" :image="asset('images/test_preview.png')"
                     alt="Test Preview" title="Test Preview" />
-                <x-home.practice-option-link :href="route('choose-test')" :image="asset('images/test.png')"
+                <x-home.practice-option-link :href="route('home.practice')" :image="asset('images/test.png')"
                     alt="Full-Length Practice" title="Full-Length Practice" />
             </div>
             <div class="flex gap-4 hidden flex-col md:flex-row" id="practice-past">

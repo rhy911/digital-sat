@@ -28,12 +28,12 @@
         </script>
     @endpush
     <!-- Back -->
-    <x-auth.back-link href="/" />
+    <x-auth.back-link />
 
     <!-- Title -->
     <div class="flex flex-col justify-center items-center gap-1">
-        <h1 class="text-3xl font-bold text-center m-0 text-black">{{ $titleText }}</h1>
-        <p class="text-base text-gray-600 text-center">{{ $subtitleText }}</p>
+        <h1 class="text-2xl sm:text-3xl font-bold text-center m-0 text-black">{{ $titleText }}</h1>
+        <p class="text-sm sm:text-base text-gray-600 text-center">{{ $subtitleText }}</p>
     </div>
 
     <!-- Form -->
@@ -41,29 +41,29 @@
         @csrf
         <input type="hidden" name="role" value="{{ in_array($role, ['student', 'teacher', 'admin']) ? $role : 'student' }}">
 
-        <div class="mb-3">
+        <div class="auth-form-group">
             <label for="email" class="form-label">Email Address</label>
             <input type="email" class="form-control" id="email" name="email" autocomplete="email">
         </div>
 
-        <div class="mb-2">
+        <div class="auth-form-group">
             <x-auth.password-field label="Password" input-id="password" name="password" autocomplete="current-password"
                 toggle-id="passwordToggle" target-id="password" />
         </div>
 
-        <div class="links mb-6 flex justify-between items-center w-full">
-            <label class="flex items-center gap-2 cursor-pointer text-sm font-semibold text-slate-500 select-none">
+        <div class="auth-form-links flex justify-between items-center w-full">
+            <label class="flex items-center gap-2 cursor-pointer text-sm font-semibold text-slate-600 select-none">
                 <input type="checkbox" name="remember" id="remember"
                     class="w-4 h-4 rounded border-slate-300 accent-[#4361EE] cursor-pointer">
                 <span>Remember me</span>
             </label>
-            <a href="{{ route('forgot') }}">Forgot password?</a>
+            <a href="{{ route('forgot') }}" class="text-sm font-semibold text-[#324dc7]">Forgot password?</a>
         </div>
 
         <x-auth.alerts />
 
         <button type="submit" class="submit-btn" id="submitBtn" data-processing-text="Processing..."
-            disabled>Submit</button>
+            disabled>Sign In</button>
     </form>
 
     <!-- Help -->

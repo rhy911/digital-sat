@@ -14,18 +14,26 @@
 
 <body>
     <header>
-        <a href="/" class="text-3xl text-white font-bold tracking-widest no-underline">
-            <span><span class="font-semibold italic">Digi</span><span class="ml-0.5 font-black not-italic">SAT</span></span>
-        </a>
+        <x-brand.wordmark href="/" size="lg" tone="inverse" />
     </header>
     <main>
-        <div class="auth-container mx-auto bg-white gap-10 flex items-center flex-col  max-w-132 p-10">
-            {{ $slot }}
+        <div class="flex-1 flex items-center justify-center w-full my-4">
+            <div class="auth-container bg-white">
+                {{ $slot }}
+            </div>
         </div>
-    </main>
-    <footer>
 
-    </footer>
+        <footer class="auth-footer">
+            <div class="flex justify-center gap-6">
+                <a href="#">Privacy Policy</a>
+                <a href="#">Terms of Service</a>
+                <a href="#">Help Center</a>
+            </div>
+            <p class="text-center opacity-70 mt-3 text-[10px]">
+                &copy; {{ date('Y') }} DigiSAT. All rights reserved.
+            </p>
+        </footer>
+    </main>
     @livewireScripts
     @stack('scripts')
 </body>

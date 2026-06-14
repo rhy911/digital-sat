@@ -13,7 +13,12 @@ class AttemptDeletionTest extends TestCase
     public function test_user_can_delete_own_in_progress_attempt()
     {
         $user = \App\Models\User::factory()->create(['role' => 'student']);
-        $test = \App\Models\Test::factory()->create();
+        $test = \App\Models\Test::create([
+            'title' => 'Sample Test',
+            'test_type' => 'full_length',
+            'break_duration_minutes' => 10,
+            'status' => 'active',
+        ]);
         
         $userTest = \App\Models\UserTest::create([
             'user_id' => $user->id,
@@ -30,7 +35,12 @@ class AttemptDeletionTest extends TestCase
     public function test_user_cannot_delete_completed_attempt()
     {
         $user = \App\Models\User::factory()->create(['role' => 'student']);
-        $test = \App\Models\Test::factory()->create();
+        $test = \App\Models\Test::create([
+            'title' => 'Sample Test',
+            'test_type' => 'full_length',
+            'break_duration_minutes' => 10,
+            'status' => 'active',
+        ]);
         
         $userTest = \App\Models\UserTest::create([
             'user_id' => $user->id,
@@ -48,7 +58,12 @@ class AttemptDeletionTest extends TestCase
     {
         $user = \App\Models\User::factory()->create(['role' => 'student']);
         $otherUser = \App\Models\User::factory()->create(['role' => 'student']);
-        $test = \App\Models\Test::factory()->create();
+        $test = \App\Models\Test::create([
+            'title' => 'Sample Test',
+            'test_type' => 'full_length',
+            'break_duration_minutes' => 10,
+            'status' => 'active',
+        ]);
         
         $userTest = \App\Models\UserTest::create([
             'user_id' => $otherUser->id,

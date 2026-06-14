@@ -11,6 +11,16 @@ class HomeController extends Controller
      */
     public function __invoke(Request $request)
     {
+        return view('home', $this->homeData($request));
+    }
+
+    public function progress(Request $request)
+    {
+        return view('home-progress', $this->homeData($request));
+    }
+
+    private function homeData(Request $request): array
+    {
         $user = $request->user();
         $completedTests = $user->userTests()
             ->whereHas('test', fn($q) => $q->where('title', '!=', 'Test Preview'))
@@ -26,10 +36,10 @@ class HomeController extends Controller
             ->orderBy('updated_at', 'desc')
             ->get();
 
-        return view('home', [
+        return [
             'user' => $user,
             'completedTests' => $completedTests,
             'inProgressTests' => $inProgressTests,
-        ]);
+        ];
     }
 }

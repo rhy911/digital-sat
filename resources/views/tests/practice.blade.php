@@ -1,12 +1,6 @@
-<x-layouts.app 
-    :user="$user" 
-    title="My Practice - Digital SAT"
-    header-class="!bg-[#0077c8]"
-    logo-class="!text-white"
-    user-class="!text-white"
->
+<x-layouts.app-progress :user="$user" title="My Practice - Digital SAT">
     @push('styles')
-        @vite(['resources/css/practice.css'])
+        @vite(['resources/css/home-progress.css', 'resources/css/practice.css'])
     @endpush
     <div class="welcome bg-[#0077c8] mb-6">
         <div class="md:container md:mx-auto px-4 pb-6">
@@ -16,7 +10,7 @@
     </div>
     
     <div class="md:container md:mx-auto px-4 pb-20">
-        <a href="{{ route('home') }}" class="inline-flex w-fit items-center text-[#324dc7] text-decoration-none me-3 gap-1 mb-10">
+        <a href="{{ route('home.progress') }}" class="inline-flex w-fit items-center text-[#324dc7] text-decoration-none me-3 gap-1 mb-10">
             <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
                 stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                 <line x1="19" y1="12" x2="5" y2="12"></line>
@@ -42,4 +36,4 @@
             });
         </script>
     </x-slot>
-</x-layouts.app>
+</x-layouts.app-progress>

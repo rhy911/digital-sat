@@ -5,7 +5,7 @@
     </div>
 
     <div class="flex flex-col gap-2 w-11/12">
-        <a href="/signin?role=student" class="primary-btn no-underline text-center" role="button">
+        <a href="{{ route('signin.form', ['role' => 'student']) }}" class="primary-btn no-underline text-center" role="button">
             <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none"
                 stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
                 class="feather feather-book-open">
@@ -17,13 +17,13 @@
 
         <hr class="text-divider" data-content="OR">
 
-        <a href="/signin?role=teacher" class="secondary-btn no-underline text-center block" role="button">
+        <a href="{{ route('signin.form', ['role' => 'teacher']) }}" class="secondary-btn no-underline text-center block" role="button">
             Continue as Teacher / Educator
         </a>
     </div>
 
     <div class="links text-center flex flex-col gap-3">
-        <a href="/signin?role=admin">Administrator?</a>
+        <a href="{{ route('signin.form', ['role' => 'admin']) }}">Administrator?</a>
         <a href="/signup">Don't have an account?</a>
     </div>
 

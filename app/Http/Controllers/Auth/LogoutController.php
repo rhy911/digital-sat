@@ -17,6 +17,10 @@ class LogoutController extends Controller
 
         Auth::guard('web')->logout();
 
-        return response()->json(['message' => 'Đã đăng xuất thành công.']);
+        if ($request->wantsJson() || $request->ajax()) {
+            return response()->json(['message' => 'Đã đăng xuất thành công.']);
+        }
+
+        return redirect()->route('login');
     }
 }

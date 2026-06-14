@@ -61,8 +61,8 @@
 
         <!-- Title & Subtitle -->
         <div class="flex flex-col justify-center items-center gap-1.5">
-            <h1 class="text-3xl font-bold text-center m-0 text-black">Email Verified!</h1>
-            <p class="text-base text-gray-600 text-center">Your account has been successfully verified. Welcome to
+            <h1 class="text-2xl sm:text-3xl font-bold text-center m-0 text-black">Email Verified!</h1>
+            <p class="text-sm sm:text-base text-gray-600 text-center">Your account has been successfully verified. Welcome to
                 DigiSAT.</p>
         </div>
 

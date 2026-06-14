@@ -9,6 +9,7 @@ export default defineConfig({
                 'resources/css/app.css',
                 'resources/css/auth.css',
                 'resources/css/home.css',
+                'resources/css/home-progress.css',
                 'resources/css/practice.css',
                 'resources/css/score-details.css',
                 'resources/css/test-dashboard-admin.css',

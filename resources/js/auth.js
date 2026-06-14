@@ -184,7 +184,7 @@ window.initPasswordToggles = function () {
 
         function syncToggleVisibility() {
             const hasValue = inputEl.value.trim() !== '';
-            toggleEl.style.display = hasValue ? 'flex' : 'none';
+            toggleEl.classList.toggle('visible', hasValue);
             
             if (!hasValue) {
                 inputEl.type = 'password';
@@ -217,4 +217,16 @@ window.initPasswordToggles = function () {
 // Auto-init password toggles on DOMContentLoaded
 document.addEventListener('DOMContentLoaded', () => {
     window.initPasswordToggles();
+});
+
+document.addEventListener('click', (event) => {
+    const backButton = event.target.closest('[data-auth-back-fallback]');
+    if (!backButton || event.defaultPrevented) return;
+
+    if (window.history.length > 1) {
+        window.history.back();
+        return;
+    }
+
+    window.location.href = backButton.dataset.authBackFallback || '/signin';
 });

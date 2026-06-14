@@ -586,6 +586,17 @@ export function initScoreDetailsPage() {
 window.initScoreDetailsPage = initScoreDetailsPage;
 
 export function initLandingPage() {
+    const revealEls = document.querySelectorAll('main section, footer');
+
+    revealEls.forEach(el => {
+        el.classList.add('landing-reveal');
+    });
+
+    if (!('IntersectionObserver' in window)) {
+        revealEls.forEach(el => el.classList.add('is-visible'));
+        return;
+    }
+
     const observerOptions = {
         root: null,
         threshold: 0.1,
@@ -595,15 +606,13 @@ export function initLandingPage() {
     const observer = new IntersectionObserver((entries) => {
         entries.forEach(entry => {
             if (entry.isIntersecting) {
-                entry.target.classList.add('opacity-100', 'translate-y-0');
-                entry.target.classList.remove('opacity-0', 'translate-y-8');
+                entry.target.classList.add('is-visible');
                 observer.unobserve(entry.target);
             }
         });
     }, observerOptions);
 
-    document.querySelectorAll('section, footer').forEach(el => {
-        el.classList.add('transition-all', 'duration-700', 'ease-out', 'opacity-0', 'translate-y-8');
+    revealEls.forEach(el => {
         observer.observe(el);
     });
 }

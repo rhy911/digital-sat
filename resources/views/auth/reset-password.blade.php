@@ -27,22 +27,22 @@
     @endpush
 
     <!-- Back -->
-    <x-auth.back-link href="/" />
+    <x-auth.back-link />
 
     <!-- Title -->
     <div class="flex flex-col justify-center items-center gap-1">
-        <h1 class="text-3xl font-bold text-center m-0 text-black">Reset Your Password</h1>
-        <p class="text-base text-gray-600 text-center">Create a secure new password for your account.</p>
+        <h1 class="text-2xl sm:text-3xl font-bold text-center m-0 text-black">Reset Your Password</h1>
+        <p class="text-sm sm:text-base text-gray-600 text-center">Create a secure new password for your account.</p>
     </div>
 
     <!-- Form -->
-    <form id="resetForm" action="{{ route('password.update') }}" method="POST" novalidate>
+    <form id="resetForm" action="{{ route('password.update') }}" method="POST" novalidate class="w-11/12">
         @csrf
         <!-- Hidden fields for token and email from the URL -->
         <input type="hidden" name="token" value="{{ $token }}">
         <input type="hidden" name="email" value="{{ $email }}">
 
-        <div class="mb-3">
+        <div class="auth-form-group">
             <x-auth.password-field 
                 input-id="password" 
                 name="password" 
@@ -54,7 +54,7 @@
             />
         </div>
 
-        <div class="mb-6">
+        <div class="auth-form-group">
             <x-auth.password-field 
                 input-id="password_confirmation" 
                 name="password_confirmation" 
@@ -74,6 +74,6 @@
 
     <!-- Help -->
     <div class="links text-center">
-        <a href="/signin">Back to sign in</a>
+        <a href="/signin" class="text-sm font-semibold">Back to sign in</a>
     </div>
 </x-layouts.auth>

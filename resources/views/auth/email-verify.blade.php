@@ -8,27 +8,27 @@
     @endpush
     <!-- Title -->
     <div class="flex flex-col justify-center items-center gap-1">
-        <h1 class="text-3xl font-bold text-center m-0 text-black">Verify Your Email</h1>
-        <p class="text-base text-gray-600 text-center">We sent a verification link to your email address. Please check your inbox.</p>
+        <h1 class="text-2xl sm:text-3xl font-bold text-center m-0 text-black">Verify Your Email</h1>
+        <p class="text-sm sm:text-base text-gray-600 text-center">We sent a verification link to your email address. Please check your inbox.</p>
     </div>
 
     @auth
-        <p style="text-align: center; font-size: 16px;">
-            <strong>{{ auth()->user()->email }}</strong>
+        <p class="text-center font-bold text-base text-[#1e293b]">
+            {{ auth()->user()->email }}
         </p>
     @endauth
 
     <x-auth.alerts :show-success="true" />
 
-    <form id="resendForm" action="{{ route('verification.send') }}" method="POST" novalidate>
+    <form id="resendForm" action="{{ route('verification.send') }}" method="POST" novalidate class="w-full">
         @csrf
-        <button type="submit" id="resendBtn" class="submit-btn w-full mt-4" data-processing-text="Sending...">Resend
+        <button type="submit" id="resendBtn" class="submit-btn w-full mt-2" data-processing-text="Sending...">Resend
             Verification Email</button>
     </form>
 
     <form id="logoutForm" method="POST" action="{{ route('logout') }}" class="links text-center w-full">
         @csrf
-        <button type="submit" style="background: none; border: none; padding: 0; font: inherit; cursor: pointer; color: #324dc7; font-weight: 500; text-decoration: none;" onmouseover="this.style.textDecoration='underline'" onmouseout="this.style.textDecoration='none'">Logout</button>
+        <button type="submit" class="text-sm font-semibold text-[#324dc7] bg-transparent border-none p-0 cursor-pointer hover:underline">Logout</button>
     </form>
 
     @push('scripts')

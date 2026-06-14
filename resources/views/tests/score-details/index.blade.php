@@ -1,7 +1,6 @@
-<x-layouts.app :user="$user" title="Score Details — {{ $userTest->test->title }}" header-class="!bg-[#0a2d6e]"
-    logo-class="!text-white" user-class="!text-white">
+<x-layouts.app-progress :user="$user" title="Score Details - {{ $userTest->test->title }}">
     <x-slot name="head">
-        @vite(['resources/css/score-details.css'])
+        @vite(['resources/css/home-progress.css', 'resources/css/score-details.css'])
         <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css">
         <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js"></script>
         <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/auto-render.min.js"></script>
@@ -203,7 +202,7 @@
                             $secPct = $rwTotal > 0 ? round(($data['total'] / $rwTotal) * 100) : 0;
                         @endphp
                         @include(
-                            'tests.score-details-domain',
+                            'tests.score-details.partials.domain',
                             compact('domain', 'data', 'filled', 'barClass', 'badgeClass', 'perfLabel', 'secPct'))
                     @endforeach
                 </div>
@@ -224,7 +223,7 @@
                             $secPct = $mTotal > 0 ? round(($data['total'] / $mTotal) * 100) : 0;
                         @endphp
                         @include(
-                            'tests.score-details-domain',
+                            'tests.score-details.partials.domain',
                             compact('domain', 'data', 'filled', 'barClass', 'badgeClass', 'perfLabel', 'secPct'))
                     @endforeach
                 </div>
@@ -261,7 +260,7 @@
         </script>
 
         {{-- Single table — rows tagged with data-section, filtered by JS --}}
-        @include('tests.score-details-table', ['answers' => $allAnswers, 'tableId' => 'table-main'])
+        @include('tests.score-details.partials.table', ['answers' => $allAnswers, 'tableId' => 'table-main'])
 
     </div>{{-- /sd-container --}}
 
@@ -321,4 +320,4 @@
             });
         </script>
     </x-slot>
-</x-layouts.app>
+</x-layouts.app-progress>

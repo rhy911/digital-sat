@@ -1,25 +1,25 @@
 @props(['tests'])
 
-<div x-show="activeTab === 'tests'" id="tests" role="tabpanel" style="display: none;">
+<div x-show="activeTab === 'tests'" id="tests" role="tabpanel" class="tab-pane active" style="display: none;">
     <!-- Header Section -->
-    <div class="mb-6 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-6 px-4">
+    <div class="mb-6 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-6 px-4 animate-on-load">
         <div>
-            <h3 class="text-xl font-extrabold text-white tracking-tight">Practice Tests</h3>
+            <h3 class="text-3xl font-black text-white tracking-tighter dashboard-title-gradient">Practice Tests</h3>
             <p class="text-base text-slate-400 font-medium">Manage your SAT tests and their configurations.</p>
         </div>
         <div class="flex gap-3">
             <button
-                class="px-5 py-3 bg-linear-to-r from-indigo-600 to-violet-600 hover:from-indigo-500 hover:to-violet-500 text-white font-extrabold text-xs uppercase tracking-wider rounded-xl shadow-lg shadow-indigo-600/20 hover:shadow-indigo-600/35 flex items-center gap-2.5 cursor-pointer"
+                class="px-6 py-3.5 bg-white text-slate-950 hover:bg-slate-100 font-extrabold text-xs uppercase tracking-widest rounded-xl shadow-2xl transition-all duration-200 active:scale-95 flex items-center gap-2.5 cursor-pointer"
                 x-on:click="$dispatch('open-offcanvas', 'createTestOffcanvas')">
                 <i class="bi bi-plus-lg text-xs"></i> Create Test
             </button>
         </div>
     </div>
 
-    <div class="px-4 space-y-8">
+    <div class="px-4 space-y-8 animate-on-load">
         <!-- Empty State -->
         <div id="testsEmptyState"
-            class="max-w-4xl mx-auto rounded-2xl border border-slate-800/60 bg-slate-900/20 shadow-2xl overflow-hidden {{ $tests->isEmpty() ? '' : 'hidden' }} glass-panel">
+            class="max-w-4xl mx-auto rounded-2xl border border-white/5 bg-slate-900/20 shadow-2xl overflow-hidden {{ $tests->isEmpty() ? '' : 'hidden' }} glass-panel">
             <div class="p-16 text-center">
                 <div
                     class="mx-auto w-24 h-24 bg-indigo-500/10 border border-indigo-500/20 rounded-full flex items-center justify-center mb-6">

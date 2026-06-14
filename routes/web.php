@@ -21,13 +21,19 @@ Route::get('/landing-new', function () {
 
 Route::middleware('guest')->group(function () {
     Route::get('/signin', [PageController::class, 'showSignin'])->name('login');
+    Route::get('/signin/form', [PageController::class, 'showSigninForm'])->name('signin.form');
     Route::post('/signin', LoginWebController::class)->name('signin');
+
+    Route::get('/signup', [PageController::class, 'showSignup'])->name('signup');
+    Route::post('/signup', RegisterWebController::class);
+
+    Route::get('/forgot', [PageController::class, 'showForgot'])->name('forgot');
+    Route::post('/forgot', ForgotPasswordController::class);
+
+    Route::get('/reset-password/{token}', [PageController::class, 'showResetPassword'])->name('password.reset');
+    Route::post('/reset-password', ResetPasswordController::class)->name('password.update');
 });
 
-Route::get('/signup', [PageController::class, 'showSignup'])->name('signup');
-Route::post('/signup', RegisterWebController::class);
-
-Route::get('/forgot', [PageController::class, 'showForgot'])->name('forgot');
 Route::get('/email-verify', [PageController::class, 'showEmailVerifyNotice'])->name('verify.email.notice');
 
 // Email verification route - public access (hash is the security)
@@ -39,6 +45,7 @@ Route::middleware('auth')->group(function () {
 
 Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/home', HomeController::class)->name('home');
+    Route::get('/home-progress', [HomeController::class, 'progress'])->name('home.progress');
     Route::get('/my-practice/{userTest:ulid}', [\App\Http\Controllers\PracticeController::class, 'show'])->name('my-practice');
     Route::get('/my-practice/{userTest:ulid}/score', [\App\Http\Controllers\PracticeController::class, 'scoreDetails'])->name('my-practice.score');
     Route::delete('/my-practice/{userTest:ulid}', [\App\Http\Controllers\PracticeController::class, 'destroy'])->name('my-practice.destroy');
@@ -53,22 +60,15 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::post('/logout', LogoutController::class)->name('logout');
 });
 
-Route::middleware('guest')->group(function () {
-    Route::post('/forgot', ForgotPasswordController::class);
-
-    Route::get('/reset-password/{token}', [PageController::class, 'showResetPassword'])->name('password.reset');
-    Route::post('/reset-password', ResetPasswordController::class)->name('password.update');
-});
-
 Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/test-preview', [\App\Http\Controllers\PracticeController::class, 'testPreview'])->name('test.preview');
-    Route::get('choose-test', [\App\Http\Controllers\PracticeController::class, 'chooseTest'])->name('choose-test');
+    Route::get('/home-practice', [\App\Http\Controllers\PracticeController::class, 'chooseTest'])->name('home.practice');
     Route::get('/take-test/{ulid?}', [\App\Http\Controllers\TestTakingController::class, 'showModule'])->name('take-test');
     Route::get('/submit-status/{userTest:ulid}', [\App\Http\Controllers\TestTakingController::class, 'checkScoringStatus'])->name('submit-status');
 });
 
 // Test Dashboard Routes
-Route::middleware(['auth', 'verified', 'role:admin,teacher'])->prefix('test-dashboard')->name('test-dashboard.')->group(function () {
+Route::middleware(['auth', 'verified', 'role:admin,teacher'])->prefix('home-dashboard')->name('home-dashboard.')->group(function () {
     Route::get('/', [\App\Http\Controllers\TestDashboardController::class, 'index'])->name('index');
     Route::get('/snapshot', [\App\Http\Controllers\TestDashboardController::class, 'snapshot'])->name('snapshot');
     Route::get('/questions/list', [\App\Http\Controllers\QuestionController::class, 'questionsList'])->name('questions.list');

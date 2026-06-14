@@ -101,7 +101,7 @@ class OwnershipAccessControlTest extends TestCase
     {
         $this->actingAs($this->teacher1);
 
-        $response = $this->postJson(route('test-dashboard.tests.store'), [
+        $response = $this->postJson(route('home-dashboard.tests.store'), [
             'title' => 'Newly Created Test',
             'test_type' => 'full_length',
             'break_duration_minutes' => 10,
@@ -134,7 +134,7 @@ class OwnershipAccessControlTest extends TestCase
 
         $this->actingAs($this->teacher1);
 
-        $response = $this->putJson(route('test-dashboard.tests.update', ['id' => $test->id]), [
+        $response = $this->putJson(route('home-dashboard.tests.update', ['id' => $test->id]), [
             'title' => 'Attempted Edit By Teacher 1',
         ]);
 
@@ -158,7 +158,7 @@ class OwnershipAccessControlTest extends TestCase
 
         $this->actingAs($this->teacher1);
 
-        $response = $this->putJson(route('test-dashboard.tests.update', ['id' => $test->id]), [
+        $response = $this->putJson(route('home-dashboard.tests.update', ['id' => $test->id]), [
             'title' => 'Updated Title',
             'is_public' => true,
         ]);
@@ -184,7 +184,7 @@ class OwnershipAccessControlTest extends TestCase
 
         $this->actingAs($this->teacher1);
 
-        $response = $this->deleteJson(route('test-dashboard.tests.delete', ['id' => $test->id]));
+        $response = $this->deleteJson(route('home-dashboard.tests.delete', ['id' => $test->id]));
 
         $response->assertStatus(403);
         $this->assertDatabaseHas('tests', ['id' => $test->id]);
@@ -206,7 +206,7 @@ class OwnershipAccessControlTest extends TestCase
 
         $this->actingAs($this->admin);
 
-        $response = $this->deleteJson(route('test-dashboard.tests.delete', ['id' => $test->id]));
+        $response = $this->deleteJson(route('home-dashboard.tests.delete', ['id' => $test->id]));
 
         $response->assertStatus(200);
         $this->assertDatabaseMissing('tests', ['id' => $test->id]);

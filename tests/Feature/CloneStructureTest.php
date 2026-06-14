@@ -38,7 +38,7 @@ class CloneStructureTest extends TestCase
         $this->assertEquals(1, Module::count());
         $this->assertEquals(1, Question::count());
 
-        $response = $this->actingAs($user)->postJson(route('test-dashboard.tests.clone', $test->id));
+        $response = $this->actingAs($user)->postJson(route('home-dashboard.tests.clone', $test->id));
         $response->assertStatus(201);
         
         $this->assertEquals(2, Test::count());

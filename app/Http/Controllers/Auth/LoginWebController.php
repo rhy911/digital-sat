@@ -45,7 +45,7 @@ class LoginWebController extends Controller
                     
                     $actualLabel = $roleLabels[$user->role] ?? ucfirst($user->role);
                     $article = ($user->role === 'admin') ? 'an' : 'a';
-                    $targetUrl = route('login', ['role' => $user->role]);
+                    $targetUrl = route('signin.form', ['role' => $user->role]);
 
                     $message = "This account is registered as {$article} " . strtolower($actualLabel) . ". " .
                                "<a href=\"{$targetUrl}\">Sign in as {$article} {$actualLabel} instead</a>.";

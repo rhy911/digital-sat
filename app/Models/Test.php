@@ -57,6 +57,11 @@ class Test extends Model
         return $this->hasMany(Section::class)->orderBy('order');
     }
 
+    public function userTests()
+    {
+        return $this->hasMany(UserTest::class);
+    }
+
     /**
      * Recalculate and save the total duration based on modules' durations.
      */

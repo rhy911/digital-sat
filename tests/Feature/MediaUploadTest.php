@@ -30,7 +30,7 @@ class MediaUploadTest extends TestCase
         $file = UploadedFile::fake()->image('test_image.png', 100, 100);
 
         $response = $this->actingAs($this->user)
-            ->postJson(route('test-dashboard.media.upload'), [
+            ->postJson(route('home-dashboard.media.upload'), [
                 'image' => $file,
             ]);
 
@@ -63,7 +63,7 @@ class MediaUploadTest extends TestCase
         $file = UploadedFile::fake()->create('document.pdf', 500, 'application/pdf');
 
         $response = $this->actingAs($this->user)
-            ->postJson(route('test-dashboard.media.upload'), [
+            ->postJson(route('home-dashboard.media.upload'), [
                 'image' => $file,
             ]);
 

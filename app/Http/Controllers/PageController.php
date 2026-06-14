@@ -15,10 +15,15 @@ class PageController extends Controller
             }
             return redirect()->route('home');
         }
-        return view('index');
+        return view('landing');
     }
 
     public function showSignin()
+    {
+        return view('auth.role-select');
+    }
+
+    public function showSigninForm()
     {
         return view('auth.signin');
     }

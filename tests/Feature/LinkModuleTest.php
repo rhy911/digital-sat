@@ -50,7 +50,7 @@ class LinkModuleTest extends TestCase
         ]);
 
         $response = $this->actingAs($this->user)
-            ->postJson(route('test-dashboard.sections.link-module'), [
+            ->postJson(route('home-dashboard.sections.link-module'), [
                 'module_id' => $module->id,
                 'section_id' => $section->id,
             ]);
@@ -86,7 +86,7 @@ class LinkModuleTest extends TestCase
         ]);
 
         $response = $this->actingAs($this->user)
-            ->postJson(route('test-dashboard.sections.link-module'), [
+            ->postJson(route('home-dashboard.sections.link-module'), [
                 'module_id' => $module->id,
                 'test_id' => $test->id,
                 'section_type' => 'math',
@@ -141,7 +141,7 @@ class LinkModuleTest extends TestCase
 
         // Attempt via API
         $response = $this->actingAs($this->user)
-            ->postJson(route('test-dashboard.sections.link-module'), [
+            ->postJson(route('home-dashboard.sections.link-module'), [
                 'module_id' => $module->id,
                 'section_id' => $section->id,
             ]);

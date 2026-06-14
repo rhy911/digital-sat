@@ -61,7 +61,7 @@ class TestDashboardController extends Controller
 
         $questionsPerPage = self::QUESTIONS_TABLE_PER_PAGE;
 
-        return view('test-dashboard', compact('tests', 'passages', 'questions', 'questionsTotal', 'questionsPerPage', 'allModules'));
+        return view('home-dashboard', compact('tests', 'passages', 'questions', 'questionsTotal', 'questionsPerPage', 'allModules'));
     }
 
     /**

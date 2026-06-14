@@ -2,31 +2,25 @@
     @push('styles')
         <link rel="preconnect" href="https://fonts.googleapis.com">
         <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-        <link href="https://fonts.googleapis.com/css2?family=Noto+Serif:ital,wght@0,100..900;1,100..900&display=swap"
-            rel="stylesheet">
+        <link href="https://fonts.googleapis.com/css2?family=Geist:wght@100..900&display=swap" rel="stylesheet">
+        <link href="https://api.fontshare.com/v2/css?f[]=satoshi@900,700,500,300,400&display=swap" rel="stylesheet">
         <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
         @vite(['resources/css/test-dashboard-admin.css'])
     @endpush
 
     @push('body_class', 'dark-theme-dashboard')
 
-    <div class="fixed inset-0 z-40 flex h-screen w-screen overflow-hidden bg-[#0b0f19]"
+    <div class="fixed inset-0 z-40 flex h-screen w-screen overflow-hidden bg-[#020617] font-['Geist']"
         x-data="{ activeTab: sessionStorage.getItem('testDashboardActiveTab') ? sessionStorage.getItem('testDashboardActiveTab').replace('#', '') : 'tests' }">
+        <div class="grain-overlay pointer-events-none fixed inset-0 z-50 opacity-[0.03]"></div>
         <div id="alert-container" class="fixed top-6 right-6 z-50"></div>
 
         <!-- Sidebar Navigation -->
         <aside
             class="w-72 bg-slate-950/80 border-r border-slate-800/80 flex flex-col shrink-0 text-slate-300 relative z-20">
-            <a href="/" class="p-8 border-b border-slate-850 flex items-center gap-3 no-underline">
-                <div class="sidebar-logo-box w-10 h-10 rounded-xl flex items-center justify-center text-white">
-                    <i class="bi bi-mortarboard-fill text-xl"></i>
-                </div>
-                <div>
-                    <h1 class="text-lg font-extrabold text-white tracking-tight leading-none">Digital SAT</h1>
-                    <span
-                        class="text-[10px] text-indigo-400 font-extrabold tracking-widest uppercase mt-1 block">Content
-                        Suite</span>
-                </div>
+            <a href="/" class="p-8 border-b border-slate-850 flex flex-col gap-1 no-underline">
+                <x-brand.wordmark size="lg" tone="inverse" />
+                <span class="text-[10px] text-indigo-400 font-extrabold tracking-widest uppercase block">Content Suite</span>
             </a>
 
             <div class="p-6">
@@ -122,39 +116,39 @@
 
             <div class="flex-1 overflow-y-auto p-8 md:p-4">
                 <div class="tab-content h-full" id="dashboardTabContent">
-                    <x-test-dashboard.tests-tab :tests="$tests" />
-                    <x-test-dashboard.sections-tab :tests="$tests" />
-                    <x-test-dashboard.modules-tab :tests="$tests" :all-modules="$allModules" />
-                    <x-test-dashboard.questions-tab :tests="$tests" :questions="$questions"
+                    <x-home-dashboard.tests-tab :tests="$tests" />
+                    <x-home-dashboard.sections-tab :tests="$tests" />
+                    <x-home-dashboard.modules-tab :tests="$tests" :all-modules="$allModules" />
+                    <x-home-dashboard.questions-tab :tests="$tests" :questions="$questions"
                         :questions-total="$questionsTotal" />
-                    <x-test-dashboard.builder-tab :tests="$tests" />
+                    <x-home-dashboard.builder-tab :tests="$tests" />
                 </div>
             </div>
         </main>
     </div>
 
-    <x-test-dashboard.modals />
-    <x-test-dashboard.quick-author-wizard />
+    <x-home-dashboard.modals />
+    <x-home-dashboard.quick-author-wizard />
 
     @push('scripts')
         <script>
             window.__currentUserRole = "{{ auth()->user()->role }}";
             window.__currentUserId = {{ auth()->id() }};
             window.TestDashboardConfig = {
-                SNAPSHOT_URL: "{{ route('test-dashboard.snapshot') }}",
-                QUESTIONS_LIST_URL: "{{ route('test-dashboard.questions.list') }}",
-                QUESTIONS_SEARCH_URL: "{{ route('test-dashboard.questions.search') }}",
-                CSV_BULK_URL: "{{ route('test-dashboard.questions.bulk-csv-store') }}",
-                BULK_PREVIEW_URL: "{{ route('test-dashboard.questions.bulk-preview') }}",
-                CSV_BULK_PREVIEW_URL: "{{ route('test-dashboard.questions.bulk-csv-preview') }}",
-                BULK_STORE_URL: "{{ route('test-dashboard.questions.bulk-store') }}",
-                MEDIA_UPLOAD_URL: "{{ route('test-dashboard.media.upload') }}",
-                TESTS_STORE_URL: "{{ route('test-dashboard.tests.store') }}",
-                SECTIONS_STORE_URL: "{{ route('test-dashboard.sections.store') }}",
-                SECTIONS_LINK_MODULE_URL: "{{ route('test-dashboard.sections.link-module') }}",
-                MODULES_STORE_URL: "{{ route('test-dashboard.modules.store') }}",
-                QUESTIONS_ATTACH_URL: "{{ route('test-dashboard.questions.attach') }}",
-                BASE_URL: "/test-dashboard",
+                SNAPSHOT_URL: "{{ route('home-dashboard.snapshot') }}",
+                QUESTIONS_LIST_URL: "{{ route('home-dashboard.questions.list') }}",
+                QUESTIONS_SEARCH_URL: "{{ route('home-dashboard.questions.search') }}",
+                CSV_BULK_URL: "{{ route('home-dashboard.questions.bulk-csv-store') }}",
+                BULK_PREVIEW_URL: "{{ route('home-dashboard.questions.bulk-preview') }}",
+                CSV_BULK_PREVIEW_URL: "{{ route('home-dashboard.questions.bulk-csv-preview') }}",
+                BULK_STORE_URL: "{{ route('home-dashboard.questions.bulk-store') }}",
+                MEDIA_UPLOAD_URL: "{{ route('home-dashboard.media.upload') }}",
+                TESTS_STORE_URL: "{{ route('home-dashboard.tests.store') }}",
+                SECTIONS_STORE_URL: "{{ route('home-dashboard.sections.store') }}",
+                SECTIONS_LINK_MODULE_URL: "{{ route('home-dashboard.sections.link-module') }}",
+                MODULES_STORE_URL: "{{ route('home-dashboard.modules.store') }}",
+                QUESTIONS_ATTACH_URL: "{{ route('home-dashboard.questions.attach') }}",
+                BASE_URL: "/home-dashboard",
                 QUESTIONS_PER_PAGE: 30
             };
         </script>
@@ -165,6 +159,29 @@
                 if (logoutForm && typeof window.initAjaxLogout === 'function') {
                     window.initAjaxLogout({ formEl: logoutForm, redirectTo: '/' });
                 }
+
+                // Staggered entry animation for dashboard content
+                const animateEntries = () => {
+                    document.querySelectorAll('.tab-pane.active .animate-on-load').forEach((el, i) => {
+                        el.style.animationDelay = `${i * 0.05}s`;
+                        el.classList.add('animate-in');
+                    });
+                };
+
+                // Simple observer to re-trigger on tab change
+                const tabObserver = new MutationObserver((mutations) => {
+                    mutations.forEach((mutation) => {
+                        if (mutation.attributeName === 'class' && mutation.target.classList.contains('active')) {
+                            animateEntries();
+                        }
+                    });
+                });
+
+                document.querySelectorAll('.tab-pane').forEach(pane => {
+                    tabObserver.observe(pane, { attributes: true });
+                });
+
+                animateEntries();
             });
         </script>
     @endpush

@@ -16,7 +16,7 @@ class TestStructureGeneratorTest extends TestCase
         $this->withoutMiddleware();
         $user = User::factory()->create(['role' => 'admin']);
 
-        $response = $this->actingAs($user)->postJson(route('test-dashboard.tests.generate-full'), [
+        $response = $this->actingAs($user)->postJson(route('home-dashboard.tests.generate-full'), [
             'title' => 'Mock SAT Auto Generation Test',
         ]);
 
@@ -53,7 +53,7 @@ class TestStructureGeneratorTest extends TestCase
         $this->withoutMiddleware();
         $user = User::factory()->create(['role' => 'admin']);
 
-        $response = $this->actingAs($user)->postJson(route('test-dashboard.tests.generate-full'), [
+        $response = $this->actingAs($user)->postJson(route('home-dashboard.tests.generate-full'), [
             'title' => 'Mock Short SAT Test',
             'test_type' => 'short_test',
         ]);
@@ -90,7 +90,7 @@ class TestStructureGeneratorTest extends TestCase
         $this->withoutMiddleware();
         $user = User::factory()->create(['role' => 'admin']);
 
-        $response = $this->actingAs($user)->postJson(route('test-dashboard.tests.generate-configured'), [
+        $response = $this->actingAs($user)->postJson(route('home-dashboard.tests.generate-configured'), [
             'title' => 'Inline Short Test',
             'test_type' => 'short_test',
             'modules' => [
@@ -146,7 +146,7 @@ class TestStructureGeneratorTest extends TestCase
             ]);
         }
 
-        $response = $this->actingAs($user)->postJson(route('test-dashboard.tests.generate-configured'), [
+        $response = $this->actingAs($user)->postJson(route('home-dashboard.tests.generate-configured'), [
             'title' => 'Pool Custom Test',
             'test_type' => 'custom_test',
             'populate_from_pool' => true,
@@ -182,7 +182,7 @@ class TestStructureGeneratorTest extends TestCase
             'created_by' => $user->id,
         ]);
 
-        $response = $this->actingAs($user)->postJson(route('test-dashboard.tests.generate-configured'), [
+        $response = $this->actingAs($user)->postJson(route('home-dashboard.tests.generate-configured'), [
             'title' => 'Too Large Pool Test',
             'test_type' => 'custom_test',
             'populate_from_pool' => true,
