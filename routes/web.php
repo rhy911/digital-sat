@@ -1,31 +1,35 @@
 <?php
 
 use App\Http\Controllers\Auth\ForgotPasswordController;
-use App\Http\Controllers\Auth\LoginWebController;
+use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\Auth\LogoutController;
-use App\Http\Controllers\Auth\RegisterWebController;
+use App\Http\Controllers\Auth\RegisterController;
 use App\Http\Controllers\Auth\ResendVerificationController;
 use App\Http\Controllers\Auth\ResetPasswordController;
-use App\Http\Controllers\Auth\VerifyEmailWebController;
-use App\Http\Controllers\HomeController;
-use App\Http\Controllers\TestDashboardController;
-use Illuminate\Http\Request;
+use App\Http\Controllers\Auth\VerifyEmailController;
+use App\Http\Controllers\Auth\PageController;
+use App\Http\Controllers\Public\LandingController;
+use App\Http\Controllers\Engine\AttemptController;
+use App\Http\Controllers\Engine\SessionController;
+use App\Http\Controllers\Engine\AnswerController;
+use App\Http\Controllers\Engine\SubmissionController;
 use Illuminate\Support\Facades\Route;
 
-use App\Http\Controllers\PageController;
-
-Route::get('/', [PageController::class, 'landing']);
+// Public routes
+Route::get('/', LandingController::class)->name('landing');
 Route::get('/landing-new', function () {
-    return view('landing');
+    return view('public.landing');
 });
+Route::redirect('/home', '/student/progress');
 
+// Guest auth routes
 Route::middleware('guest')->group(function () {
-    Route::get('/signin', [PageController::class, 'showSignin'])->name('login');
+    Route::get('/signin', [PageController::class, 'showSignin'])->name('signin');
     Route::get('/signin/form', [PageController::class, 'showSigninForm'])->name('signin.form');
-    Route::post('/signin', LoginWebController::class)->name('signin');
+    Route::post('/signin', LoginController::class);
 
     Route::get('/signup', [PageController::class, 'showSignup'])->name('signup');
-    Route::post('/signup', RegisterWebController::class);
+    Route::post('/signup', RegisterController::class);
 
     Route::get('/forgot', [PageController::class, 'showForgot'])->name('forgot');
     Route::post('/forgot', ForgotPasswordController::class);
@@ -34,73 +38,82 @@ Route::middleware('guest')->group(function () {
     Route::post('/reset-password', ResetPasswordController::class)->name('password.update');
 });
 
+// Verification notice
 Route::get('/email-verify', [PageController::class, 'showEmailVerifyNotice'])->name('verify.email.notice');
 
-// Email verification route - public access (hash is the security)
-Route::get('/email/verify/{id}/{hash}', VerifyEmailWebController::class)->name('verification.verify');
+// Email verification action
+Route::get('/email/verify/{id}/{hash}', VerifyEmailController::class)->name('verification.verify');
 
 Route::middleware('auth')->group(function () {
     Route::post('/email/verification-notification', ResendVerificationController::class)->name('verification.send');
-});
-
-Route::middleware(['auth', 'verified'])->group(function () {
-    Route::get('/home', HomeController::class)->name('home');
-    Route::get('/home-progress', [HomeController::class, 'progress'])->name('home.progress');
-    Route::get('/my-practice/{userTest:ulid}', [\App\Http\Controllers\PracticeController::class, 'show'])->name('my-practice');
-    Route::get('/my-practice/{userTest:ulid}/score', [\App\Http\Controllers\PracticeController::class, 'scoreDetails'])->name('my-practice.score');
-    Route::delete('/my-practice/{userTest:ulid}', [\App\Http\Controllers\PracticeController::class, 'destroy'])->name('my-practice.destroy');
-
-    Route::get('/test/{test_id}/attempt-options', [\App\Http\Controllers\TestTakingController::class, 'attemptOptions'])->name('test.attempt-options');
-    Route::post('/test/start/{test_id}', [\App\Http\Controllers\TestTakingController::class, 'startTest'])->name('test.start');
-    Route::post('/test/autosave-module', [\App\Http\Controllers\TestTakingController::class, 'autosaveModule'])
-        ->middleware('throttle:60,1')
-        ->name('test.autosave-module');
-    Route::post('/test/submit-module', [\App\Http\Controllers\TestTakingController::class, 'submitModule'])->name('test.submit-module');
-
     Route::post('/logout', LogoutController::class)->name('logout');
 });
 
-Route::middleware(['auth', 'verified'])->group(function () {
-    Route::get('/test-preview', [\App\Http\Controllers\PracticeController::class, 'testPreview'])->name('test.preview');
-    Route::get('/home-practice', [\App\Http\Controllers\PracticeController::class, 'chooseTest'])->name('home.practice');
-    Route::get('/take-test/{ulid?}', [\App\Http\Controllers\TestTakingController::class, 'showModule'])->name('take-test');
-    Route::get('/submit-status/{userTest:ulid}', [\App\Http\Controllers\TestTakingController::class, 'checkScoringStatus'])->name('submit-status');
+// Verified Student routes
+Route::middleware(['auth', 'verified'])->prefix('student')->group(function () {
+    Route::get('/dashboard', \App\Http\Controllers\Student\DashboardController::class)->name('home.legacy');
+    Route::get('/progress', \App\Http\Controllers\Student\AnalyticsController::class)->name('home');
+    Route::get('/progress-detail', \App\Http\Controllers\Student\AnalyticsController::class)->name('home.progress');
+    
+    Route::get('/practice', [\App\Http\Controllers\Student\PracticeController::class, 'index'])->name('home.practice');
+    Route::get('/practice/preview', [\App\Http\Controllers\Student\PracticeController::class, 'preview'])->name('test.preview');
+    Route::get('/practice/{userTest:ulid}', [\App\Http\Controllers\Student\PracticeController::class, 'show'])->name('my-practice');
+    Route::delete('/practice/{userTest:ulid}', [\App\Http\Controllers\Student\PracticeController::class, 'destroy'])->name('my-practice.destroy');
+    Route::get('/scores/{userTest:ulid}', [\App\Http\Controllers\Student\ScoreController::class, 'show'])->name('my-practice.score');
 });
 
-// Test Dashboard Routes
-Route::middleware(['auth', 'verified', 'role:admin,teacher'])->prefix('home-dashboard')->name('home-dashboard.')->group(function () {
-    Route::get('/', [\App\Http\Controllers\TestDashboardController::class, 'index'])->name('index');
-    Route::get('/snapshot', [\App\Http\Controllers\TestDashboardController::class, 'snapshot'])->name('snapshot');
-    Route::get('/questions/list', [\App\Http\Controllers\QuestionController::class, 'questionsList'])->name('questions.list');
-    Route::get('/questions/search', [\App\Http\Controllers\QuestionController::class, 'questionsSearch'])->name('questions.search');
+// Verified Engine routes
+Route::middleware(['auth', 'verified'])->prefix('engine')->group(function () {
+    Route::get('/session/{ulid?}', [SessionController::class, 'show'])->name('engine.session');
+    Route::get('/submit-status/{userTest:ulid}', [SubmissionController::class, 'checkStatus'])->name('engine.submit-status');
+    
+    Route::get('/test/{test_id}/attempt-options', [AttemptController::class, 'attemptOptions'])->name('engine.test.attempt-options');
+    Route::post('/test/start/{test_id}', [AttemptController::class, 'startTest'])->name('engine.test.start');
+    Route::post('/test/autosave-module', [AnswerController::class, 'autosave'])
+        ->middleware('throttle:60,1')
+        ->name('engine.test.autosave-module');
+    Route::post('/test/submit-module', [SubmissionController::class, 'submit'])->name('engine.test.submit-module');
+});
 
-    // API endpoints for creating and updating data
-    Route::post('/tests', [\App\Http\Controllers\TestController::class, 'storeTest'])->name('tests.store');
-    Route::post('/tests/generate-full', [\App\Http\Controllers\TestStructureController::class, 'generateFullSatStructure'])->name('tests.generate-full');
-    Route::post('/tests/generate-configured', [\App\Http\Controllers\TestStructureController::class, 'generateConfiguredStructure'])->name('tests.generate-configured');
-    Route::post('/tests/{id}/clone', [\App\Http\Controllers\TestStructureController::class, 'cloneTest'])->name('tests.clone');
-    Route::put('/tests/{id}', [\App\Http\Controllers\TestController::class, 'updateTest'])->name('tests.update');
-    Route::post('/sections', [\App\Http\Controllers\SectionController::class, 'storeSection'])->name('sections.store');
-    Route::put('/sections/{id}', [\App\Http\Controllers\SectionController::class, 'updateSection'])->name('sections.update');
-    Route::post('/sections/link-module', [\App\Http\Controllers\SectionController::class, 'linkModuleToSection'])->name('sections.link-module');
-    Route::post('/modules', [\App\Http\Controllers\ModuleController::class, 'storeModule'])->name('modules.store');
-    Route::put('/modules/{id}', [\App\Http\Controllers\ModuleController::class, 'updateModule'])->name('modules.update');
-    Route::post('/modules/{id}/clone', [\App\Http\Controllers\TestStructureController::class, 'cloneModule'])->name('modules.clone');
-    Route::get('/questions/{id}', [\App\Http\Controllers\QuestionController::class, 'showQuestion'])->name('questions.show');
-    Route::put('/questions/{id}', [\App\Http\Controllers\QuestionController::class, 'updateQuestion'])->name('questions.update');
-    Route::post('/questions/bulk', [\App\Http\Controllers\QuestionController::class, 'bulkStoreQuestions'])->name('questions.bulk-store');
-    Route::post('/questions/bulk-preview', [\App\Http\Controllers\QuestionController::class, 'bulkPreviewQuestions'])->name('questions.bulk-preview');
-    Route::post('/questions/bulk-csv', [\App\Http\Controllers\QuestionController::class, 'bulkStoreQuestionsFromCsv'])->name('questions.bulk-csv-store');
-    Route::post('/questions/bulk-csv-preview', [\App\Http\Controllers\QuestionController::class, 'bulkPreviewQuestionsFromCsv'])->name('questions.bulk-csv-preview');
-    Route::post('/questions/bulk-zip', [\App\Http\Controllers\QuestionController::class, 'bulkStoreQuestionsFromZip'])->name('questions.bulk-zip');
-    Route::post('/questions/attach', [\App\Http\Controllers\QuestionController::class, 'attachQuestionToModule'])->name('questions.attach');
+// Verified Admin/Teacher routes
+Route::middleware(['auth', 'verified', 'role:admin,teacher'])->prefix('admin')->name('home-dashboard.')->group(function () {
+    Route::get('/teacher/test-builder', [\App\Http\Controllers\Admin\TestBuilderController::class, 'index'])->name('index');
+    Route::get('/teacher/test-builder/snapshot', [\App\Http\Controllers\Admin\TestBuilderController::class, 'snapshot'])->name('snapshot');
+    
+    // Questions list and search
+    Route::get('/questions/list', [\App\Http\Controllers\Admin\QuestionController::class, 'index'])->name('questions.list');
+    Route::get('/questions/search', [\App\Http\Controllers\Admin\QuestionController::class, 'search'])->name('questions.search');
+    Route::get('/questions/{id}', [\App\Http\Controllers\Admin\QuestionController::class, 'show'])->name('questions.show');
+    Route::put('/questions/{id}', [\App\Http\Controllers\Admin\QuestionController::class, 'update'])->name('questions.update');
+    Route::delete('/questions/{id}', [\App\Http\Controllers\Admin\QuestionController::class, 'destroy'])->name('questions.delete');
+    
+    Route::post('/questions/bulk', [\App\Http\Controllers\Admin\QuestionController::class, 'bulkStore'])->name('questions.bulk-store');
+    Route::post('/questions/bulk-preview', [\App\Http\Controllers\Admin\QuestionController::class, 'bulkPreview'])->name('questions.bulk-preview');
+    Route::post('/questions/bulk-csv', [\App\Http\Controllers\Admin\QuestionController::class, 'bulkStoreCsv'])->name('questions.bulk-csv-store');
+    Route::post('/questions/bulk-csv-preview', [\App\Http\Controllers\Admin\QuestionController::class, 'bulkPreviewCsv'])->name('questions.bulk-csv-preview');
+    Route::post('/questions/bulk-zip', [\App\Http\Controllers\Admin\QuestionController::class, 'bulkStoreZip'])->name('questions.bulk-zip');
+    Route::post('/questions/attach', [\App\Http\Controllers\Admin\QuestionController::class, 'attach'])->name('questions.attach');
 
-    // Delete endpoints
-    Route::delete('/tests/{id}', [\App\Http\Controllers\TestController::class, 'deleteTest'])->name('tests.delete');
-    Route::delete('/sections/{id}', [\App\Http\Controllers\SectionController::class, 'deleteSection'])->name('sections.delete');
-    Route::delete('/modules/{id}', [\App\Http\Controllers\ModuleController::class, 'deleteModule'])->name('modules.delete');
-    Route::delete('/questions/{id}', [\App\Http\Controllers\QuestionController::class, 'deleteQuestion'])->name('questions.delete');
+    // Tests
+    Route::post('/tests', [\App\Http\Controllers\Admin\TestController::class, 'store'])->name('tests.store');
+    Route::put('/tests/{id}', [\App\Http\Controllers\Admin\TestController::class, 'update'])->name('tests.update');
+    Route::delete('/tests/{id}', [\App\Http\Controllers\Admin\TestController::class, 'destroy'])->name('tests.delete');
+    Route::post('/tests/generate-full', [\App\Http\Controllers\Admin\TestStructureController::class, 'generateFullSat'])->name('tests.generate-full');
+    Route::post('/tests/generate-configured', [\App\Http\Controllers\Admin\TestStructureController::class, 'generateConfigured'])->name('tests.generate-configured');
+    Route::post('/tests/{id}/clone', [\App\Http\Controllers\Admin\TestStructureController::class, 'cloneTest'])->name('tests.clone');
+
+    // Sections
+    Route::post('/sections', [\App\Http\Controllers\Admin\SectionController::class, 'store'])->name('sections.store');
+    Route::put('/sections/{id}', [\App\Http\Controllers\Admin\SectionController::class, 'update'])->name('sections.update');
+    Route::delete('/sections/{id}', [\App\Http\Controllers\Admin\SectionController::class, 'destroy'])->name('sections.delete');
+    Route::post('/sections/link-module', [\App\Http\Controllers\Admin\SectionController::class, 'linkModule'])->name('sections.link-module');
+
+    // Modules
+    Route::post('/modules', [\App\Http\Controllers\Admin\ModuleController::class, 'store'])->name('modules.store');
+    Route::put('/modules/{id}', [\App\Http\Controllers\Admin\ModuleController::class, 'update'])->name('modules.update');
+    Route::delete('/modules/{id}', [\App\Http\Controllers\Admin\ModuleController::class, 'destroy'])->name('modules.delete');
+    Route::post('/modules/{id}/clone', [\App\Http\Controllers\Admin\TestStructureController::class, 'cloneModule'])->name('modules.clone');
 
     // Media
-    Route::post('/media/upload', [\App\Http\Controllers\MediaController::class, 'upload'])->name('media.upload');
+    Route::post('/media/upload', [\App\Http\Controllers\Admin\MediaController::class, 'upload'])->name('media.upload');
 });

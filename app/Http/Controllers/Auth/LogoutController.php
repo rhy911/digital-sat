@@ -21,6 +21,6 @@ class LogoutController extends Controller
             return response()->json(['message' => 'Đã đăng xuất thành công.']);
         }
 
-        return redirect()->route('login');
+        return redirect()->route('signin');
     }
 }

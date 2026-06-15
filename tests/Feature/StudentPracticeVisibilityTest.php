@@ -47,11 +47,11 @@ class StudentPracticeVisibilityTest extends TestCase
         $publicModule = $publicTest->sections()->first()->modules()->first();
 
         $this->actingAs($student)
-            ->get(route('take-test', ['ulid' => $privateModule->ulid]))
+            ->get(route('engine.session', ['ulid' => $privateModule->ulid]))
             ->assertNotFound();
 
         $this->actingAs($student)
-            ->get(route('take-test', ['ulid' => $publicModule->ulid]))
+            ->get(route('engine.session', ['ulid' => $publicModule->ulid]))
             ->assertOk();
     }
 

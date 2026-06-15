@@ -65,7 +65,7 @@ class RetakeFlowTest extends TestCase
     public function test_attempt_options_when_no_attempt_exists(): void
     {
         $response = $this->actingAs($this->student)
-            ->get(route('test.attempt-options', $this->test->id));
+            ->get(route('engine.test.attempt-options', $this->test->id));
 
         $response->assertOk()
             ->assertJson([
@@ -85,7 +85,7 @@ class RetakeFlowTest extends TestCase
         ]);
 
         $response = $this->actingAs($this->student)
-            ->get(route('test.attempt-options', $this->test->id));
+            ->get(route('engine.test.attempt-options', $this->test->id));
 
         $response->assertOk()
             ->assertJson([
@@ -106,7 +106,7 @@ class RetakeFlowTest extends TestCase
         ]);
 
         $response = $this->actingAs($this->student)
-            ->get(route('test.attempt-options', $this->test->id));
+            ->get(route('engine.test.attempt-options', $this->test->id));
 
         $response->assertOk()
             ->assertJson([
@@ -128,7 +128,7 @@ class RetakeFlowTest extends TestCase
 
         // 2. Start fresh
         $response = $this->actingAs($this->student)
-            ->post(route('test.start', $this->test->id), ['mode' => 'fresh']);
+            ->post(route('engine.test.start', $this->test->id), ['mode' => 'fresh']);
 
         $response->assertOk();
         $data = $response->json();
@@ -151,7 +151,7 @@ class RetakeFlowTest extends TestCase
 
         // 2. Start fresh
         $response = $this->actingAs($this->student)
-            ->post(route('test.start', $this->test->id), ['mode' => 'fresh']);
+            ->post(route('engine.test.start', $this->test->id), ['mode' => 'fresh']);
 
         $response->assertOk();
         $data = $response->json();
@@ -174,7 +174,7 @@ class RetakeFlowTest extends TestCase
         ]);
 
         $response = $this->actingAs($this->student)
-            ->get(route('take-test', ['ulid' => $this->module->ulid, 'attempt' => $userTest->ulid]));
+            ->get(route('engine.session', ['ulid' => $this->module->ulid, 'attempt' => $userTest->ulid]));
 
         $response->assertOk();
     }
@@ -193,7 +193,7 @@ class RetakeFlowTest extends TestCase
         ]);
 
         $response = $this->actingAs($this->student)
-            ->get(route('take-test', ['ulid' => $this->module->ulid, 'attempt' => $userTest->ulid]));
+            ->get(route('engine.session', ['ulid' => $this->module->ulid, 'attempt' => $userTest->ulid]));
 
         $response->assertStatus(403);
     }
@@ -214,7 +214,7 @@ class RetakeFlowTest extends TestCase
         ]);
 
         $response = $this->actingAs($this->student)
-            ->get(route('take-test', ['ulid' => $this->module->ulid, 'attempt' => $userTest->ulid]));
+            ->get(route('engine.session', ['ulid' => $this->module->ulid, 'attempt' => $userTest->ulid]));
 
         $response->assertStatus(400);
     }
@@ -234,7 +234,7 @@ class RetakeFlowTest extends TestCase
         $this->assertEquals(1, UserTest::count());
 
         $response = $this->actingAs($this->student)
-            ->get(route('take-test', ['ulid' => $this->module->ulid]));
+            ->get(route('engine.session', ['ulid' => $this->module->ulid]));
 
         $response->assertOk();
         $this->assertEquals(2, UserTest::count());

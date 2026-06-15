@@ -70,7 +70,7 @@ class ModuleAnswerPersistenceTest extends TestCase
             'current_module_started_at' => now(),
         ]);
 
-        $response = $this->actingAs($user)->postJson(route('test.submit-module'), [
+        $response = $this->actingAs($user)->postJson(route('engine.test.submit-module'), [
             'user_test_id' => $userTest->id,
             'module_id' => $module->id,
             'answers' => [

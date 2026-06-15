@@ -80,7 +80,7 @@ export function initRadioToggleSection({
 
 export function initAjaxLogout({
     formEl,
-    redirectTo = '/',
+    redirectTo = '/signin',
     tokenStorageKey = 'api_token',
 } = {}) {
     if (!formEl) return;
@@ -130,7 +130,7 @@ export function initHomeDashboardPage() {
     });
 
     const logoutForm = menuEl?.querySelector?.('form');
-    initAjaxLogout({ formEl: logoutForm, redirectTo: '/', tokenStorageKey: 'api_token' });
+    initAjaxLogout({ formEl: logoutForm, redirectTo: '/signin', tokenStorageKey: 'api_token' });
 
     // Teacher-assigned tests toggle
     initRadioToggleSection({
@@ -157,7 +157,7 @@ export function initPracticeDashboardPage() {
     });
 
     const logoutForm = menuEl?.querySelector?.('form');
-    initAjaxLogout({ formEl: logoutForm, redirectTo: '/', tokenStorageKey: 'api_token' });
+    initAjaxLogout({ formEl: logoutForm, redirectTo: '/signin', tokenStorageKey: 'api_token' });
 }
 
 export function smartRenderMath(element, options = {}) {

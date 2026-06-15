@@ -265,7 +265,7 @@ async function autosaveAnswers() {
   if (payload === lastAutosavePayload) return;
 
   try {
-    const response = await fetch('/test/autosave-module', {
+    const response = await fetch('/engine/test/autosave-module', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -308,13 +308,13 @@ export async function submitModule(options = {}) {
 
   if (window.isPreview) {
     if (window.nextModuleId) {
-      navigateModule(`/take-test/${window.nextModuleId}`);
+      navigateModule(`/engine/session/${window.nextModuleId}`);
     } else {
       hideLoadingScreen();
       await showCustomAlert("Test Preview completed! Redirecting home...", "success", "Test Completed");
       showLoadingScreen("Completing test preview...");
       window.isNavigatingLegitimately = true;
-      window.location.href = '/home';
+      window.location.href = window.homeUrl || '/student/progress';
     }
     return;
   }
@@ -322,7 +322,7 @@ export async function submitModule(options = {}) {
   clearTimeout(autosaveTimer);
   showLoadingScreen("Saving responses & scoring current module...");
   try {
-    const response = await fetch('/test/submit-module', {
+    const response = await fetch('/engine/test/submit-module', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -345,7 +345,7 @@ export async function submitModule(options = {}) {
             const poll = setInterval(async () => {
                 try {
                     pollAttempts++;
-                    const statusRes = await fetch(`/submit-status/${window.userTestUlid || window.userTestId}`);
+                    const statusRes = await fetch(`/engine/submit-status/${window.userTestUlid || window.userTestId}`);
                     const statusData = await statusRes.json();
                     if (statusData.status !== 'scoring') {
                         clearInterval(poll);
@@ -373,7 +373,7 @@ export async function submitModule(options = {}) {
       let secondsLeft = 5;
       let completionTimer;
       let hasNavigated = false;
-      const homeUrl = data.redirect_url || '/home';
+      const homeUrl = data.redirect_url || window.homeUrl || '/student/progress';
       const doNavigateHome = () => {
         if (hasNavigated) return;
         hasNavigated = true;
@@ -412,7 +412,7 @@ export async function submitModule(options = {}) {
         const confirmBtn = document.getElementById('customAlertConfirmBtn');
         if (confirmBtn) confirmBtn.click();
 
-        navigateModule(`/take-test/${data.fallback_module_id}`);
+        navigateModule(`/engine/session/${data.fallback_module_id}`);
       };
       
       showCustomAlert(message, "warning", "Module Unavailable", true, "Re-route Now").then(() => {
@@ -429,7 +429,7 @@ export async function submitModule(options = {}) {
         }
       }, 1000);
     } else if (data.next_module_id) {
-      navigateModule(`/take-test/${data.next_module_id}`);
+      navigateModule(`/engine/session/${data.next_module_id}`);
     } else {
       hideLoadingScreen();
       console.error("Submission failed", data);
