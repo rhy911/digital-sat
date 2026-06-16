@@ -29,6 +29,72 @@
         $nextFocus = $hasSectionScores ? $lowerSection : ($latestCompleted ? 'Score report review' : 'Test preview');
         $displayName = $user->username ?? 'student';
         $todayLabel = now()->format('l, M j');
+        $formatSkillLabel = fn ($value) => $value ? \Illuminate\Support\Str::headline(str_replace(['_', '-'], ' ', $value)) : 'Unclassified';
+        $sectionSummaries = collect([
+            'reading_and_writing' => [
+                'label' => 'Reading and Writing',
+                'short' => 'R&W',
+                'latest' => $rwScore,
+                'average' => $completedTests->whereNotNull('score_reading_writing')->isNotEmpty()
+                    ? round($completedTests->whereNotNull('score_reading_writing')->avg('score_reading_writing'))
+                    : null,
+            ],
+            'math' => [
+                'label' => 'Math',
+                'short' => 'Math',
+                'latest' => $mathScore,
+                'average' => $completedTests->whereNotNull('score_math')->isNotEmpty()
+                    ? round($completedTests->whereNotNull('score_math')->avg('score_math'))
+                    : null,
+            ],
+        ])->map(function ($section, $key) use ($latestCompleted, $formatSkillLabel) {
+            $answers = $latestCompleted?->userAnswers
+                ? $latestCompleted->userAnswers->filter(function ($answer) use ($key) {
+                    $question = $answer->question;
+                    if (!$question || $question->is_pretest) {
+                        return false;
+                    }
+
+                    return ($question->section_type === 'math' ? 'math' : 'reading_and_writing') === $key;
+                })
+                : collect();
+
+            $total = $answers->count();
+            $correct = $answers->where('is_correct', true)->count();
+            $accuracy = $total > 0 ? round(($correct / $total) * 100) : null;
+
+            $domains = $answers->groupBy(fn ($answer) => $answer->question->skill_domain ?: 'unclassified')
+                ->map(function ($domainAnswers, $domainKey) use ($formatSkillLabel) {
+                    $domainTotal = $domainAnswers->count();
+                    $domainCorrect = $domainAnswers->where('is_correct', true)->count();
+
+                    return [
+                        'label' => $formatSkillLabel($domainKey),
+                        'total' => $domainTotal,
+                        'correct' => $domainCorrect,
+                        'accuracy' => $domainTotal > 0 ? round(($domainCorrect / $domainTotal) * 100) : 0,
+                        'subdomains' => $domainAnswers->groupBy(fn ($answer) => $answer->question->skill_subdomain ?: 'unclassified')
+                            ->map(function ($subdomainAnswers, $subdomainKey) use ($formatSkillLabel) {
+                                $subdomainTotal = $subdomainAnswers->count();
+                                $subdomainCorrect = $subdomainAnswers->where('is_correct', true)->count();
+
+                                return [
+                                    'label' => $formatSkillLabel($subdomainKey),
+                                    'total' => $subdomainTotal,
+                                    'correct' => $subdomainCorrect,
+                                    'accuracy' => $subdomainTotal > 0 ? round(($subdomainCorrect / $subdomainTotal) * 100) : 0,
+                                ];
+                            })->sortBy('label')->values(),
+                    ];
+                })->sortBy('label')->values();
+
+            return array_merge($section, [
+                'total' => $total,
+                'correct' => $correct,
+                'accuracy' => $accuracy,
+                'domains' => $domains,
+            ]);
+        });
     @endphp
 
     <div class="ds-home">
@@ -55,7 +121,8 @@
                 @endif
 
                 @if($primaryInProgress && $resumeModuleUlid)
-                    <a href="{{ route('engine.session', ['ulid' => $resumeModuleUlid]) }}?attempt={{ $primaryInProgress->ulid }}" class="ds-button ds-button--secondary">
+                    <a href="{{ route('engine.session', ['ulid' => $resumeModuleUlid]) }}?attempt={{ $primaryInProgress->ulid }}"
+                        class="ds-button ds-button--secondary">
                         Resume practice
                     </a>
                 @else
@@ -67,17 +134,21 @@
         </section>
 
         <section class="ds-command-grid" aria-label="Personal practice command center">
-            <article class="ds-card ds-next-card {{ $hasSectionScores ? 'is-ready' : 'is-pending' }}" aria-labelledby="focus-title">
+            <article class="ds-card ds-next-card {{ $hasSectionScores ? 'is-ready' : 'is-pending' }}"
+                aria-labelledby="focus-title">
                 <span class="ds-card-label ds-card-label--accent">Today</span>
                 <h2 id="focus-title">{{ $nextFocus }}</h2>
                 @if($hasSectionScores)
-                    <p>{{ $lowerSection }} is {{ $sectionGap }} points lower on your latest test. Review missed questions there before your next full practice.</p>
+                    <p>{{ $lowerSection }} is {{ $sectionGap }} points lower on your latest test. Review missed questions
+                        there before your next full practice.</p>
                     <a href="{{ route('home.practice') }}" class="ds-button ds-button--secondary">Choose practice</a>
                 @elseif($latestCompleted)
                     <p>Your latest score is ready. Review missed questions before choosing the next practice block.</p>
-                    <a href="{{ route('my-practice.score', $latestCompleted) }}" class="ds-button ds-button--secondary">Open score report</a>
+                    <a href="{{ route('my-practice', $latestCompleted) }}" class="ds-button ds-button--secondary">Open score
+                        report</a>
                 @else
-                    <p>Take a quick look at the digital test interface first, then start your first full-length baseline.</p>
+                    <p>Take a quick look at the digital test interface first, then start your first full-length baseline.
+                    </p>
                     <div class="ds-card-actions">
                         <a href="{{ route('test.preview') }}" class="ds-button ds-button--secondary">Open test preview</a>
                         <a href="{{ route('home.practice') }}" class="ds-link">Start baseline test</a>
@@ -85,7 +156,8 @@
                 @endif
             </article>
 
-            <article class="ds-card ds-hero-score {{ $hasLatestScore ? '' : 'ds-hero-score--empty' }}" aria-labelledby="latest-score-title">
+            <article class="ds-card ds-hero-score {{ $hasLatestScore ? '' : 'ds-hero-score--empty' }}"
+                aria-labelledby="latest-score-title">
                 <div>
                     <span class="ds-card-label">Latest score report</span>
                     <h2 id="latest-score-title">{{ $latestScore ?? 'No baseline yet' }}</h2>
@@ -93,7 +165,8 @@
                         <p>
                             Completed {{ optional($latestCompleted->completed_at)->format('M j, Y') ?? 'recently' }}.
                             @if($scoreDelta !== null)
-                                {{ $scoreDelta >= 0 ? 'Up' : 'Down' }} {{ abs($scoreDelta) }} points from your previous completed test.
+                                {{ $scoreDelta >= 0 ? 'Up' : 'Down' }} {{ abs($scoreDelta) }} points from your previous
+                                completed test.
                             @else
                                 Complete another test to see score movement.
                             @endif
@@ -103,17 +176,19 @@
                     @endif
 
                     @if($scoreDelta !== null)
-                        <span class="ds-score-change {{ $scoreDelta >= 0 ? 'is-positive' : 'is-negative' }}" aria-label="Score changed {{ $scoreDelta >= 0 ? 'up' : 'down' }} {{ abs($scoreDelta) }} points">
+                        <span class="ds-score-change {{ $scoreDelta >= 0 ? 'is-positive' : 'is-negative' }}"
+                            aria-label="Score changed {{ $scoreDelta >= 0 ? 'up' : 'down' }} {{ abs($scoreDelta) }} points">
                             {{ $scoreDelta >= 0 ? '+' : '-' }}{{ abs($scoreDelta) }} since previous test
                         </span>
-                    @elseif(! $hasLatestScore)
+                    @elseif(!$hasLatestScore)
                         <span class="ds-score-change is-pending">Baseline needed</span>
                     @endif
                 </div>
 
                 @if($hasLatestScore)
                     <div class="ds-score-visual">
-                        <div class="ds-score-ring" role="img" aria-label="Latest SAT score {{ $latestScore }} out of 1600" style="--score-progress: {{ $scorePercent }}%">
+                        <div class="ds-score-ring" role="img" aria-label="Latest SAT score {{ $latestScore }} out of 1600"
+                            style="--score-progress: {{ $scorePercent }}%">
                             <span>{{ $latestScore }}</span>
                         </div>
                         <span class="ds-score-range">400-1600</span>
@@ -126,35 +201,62 @@
             </article>
 
             <article class="ds-card ds-section-card" aria-labelledby="section-split-title">
-                <h3 id="section-split-title" class="ds-card-title">Section split</h3>
-                <div class="ds-section-bars">
-                    <div class="ds-section-row">
-                        <div class="ds-section-score">
-                            <span>Reading and Writing</span>
-                            <strong>{{ $rwScore ?? '--' }}</strong>
-                        </div>
-                        <div class="ds-meter-container">
-                            <div class="ds-meter" @if($rwScore !== null) role="progressbar" aria-valuenow="{{ $rwScore }}" aria-valuemin="200" aria-valuemax="800" @endif aria-label="{{ $rwScore !== null ? 'Reading and Writing score meter' : 'Reading and Writing score unavailable' }}">
-                                <span style="width: {{ $rwScore ? max(0, min(100, round((($rwScore - 200) / 600) * 100))) : 0 }}%"></span>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="ds-section-row">
-                        <div class="ds-section-score">
-                            <span>Math</span>
-                            <strong>{{ $mathScore ?? '--' }}</strong>
-                        </div>
-                        <div class="ds-meter-container">
-                            <div class="ds-meter" @if($mathScore !== null) role="progressbar" aria-valuenow="{{ $mathScore }}" aria-valuemin="200" aria-valuemax="800" @endif aria-label="{{ $mathScore !== null ? 'Math score meter' : 'Math score unavailable' }}">
-                                <span style="width: {{ $mathScore ? max(0, min(100, round((($mathScore - 200) / 600) * 100))) : 0 }}%"></span>
-                            </div>
-                        </div>
-                    </div>
-                </div>
+                <h3 id="section-split-title" class="ds-card-title">Section performance</h3>
 
                 @if($hasSectionScores)
-                    <p class="ds-section-insight">{{ $lowerSection }} trails by {{ $sectionGap }} points. Use the next practice block to tighten that section first.</p>
+                    <div class="ds-section-overview" aria-label="Section averages and latest accuracy">
+                        @foreach($sectionSummaries as $section)
+                            @php
+                                $scaledPercent = $section['latest'] !== null
+                                    ? max(0, min(100, round((($section['latest'] - 200) / 600) * 100)))
+                                    : 0;
+                            @endphp
+                            <div class="ds-section-metric">
+                                <span>{{ $section['label'] }}</span>
+                                <strong>{{ $section['average'] ?? '--' }}</strong>
+                                <small>Avg score</small>
+                                <div class="ds-meter" role="progressbar" aria-valuenow="{{ $scaledPercent }}" aria-valuemin="0" aria-valuemax="100" aria-label="{{ $section['label'] }} latest scaled score percentage">
+                                    <span style="width: {{ $scaledPercent }}%"></span>
+                                </div>
+                                <em>{{ $section['accuracy'] ?? '--' }}% correct latest</em>
+                            </div>
+                        @endforeach
+                    </div>
+
+                    <div class="ds-domain-breakdown">
+                        @foreach($sectionSummaries as $section)
+                            <details class="ds-domain-section" @if($section['short'] === $lowerSection || $section['label'] === $lowerSection) open @endif>
+                                <summary>
+                                    <span>{{ $section['label'] }}</span>
+                                    <strong>{{ $section['accuracy'] ?? '--' }}%</strong>
+                                </summary>
+
+                                @forelse($section['domains'] as $domain)
+                                    <details class="ds-domain-row">
+                                        <summary>
+                                            <span>{{ $domain['label'] }}</span>
+                                            <strong>{{ $domain['accuracy'] }}%</strong>
+                                            <small>{{ $domain['correct'] }}/{{ $domain['total'] }}</small>
+                                        </summary>
+
+                                        <div class="ds-subdomain-list">
+                                            @foreach($domain['subdomains'] as $subdomain)
+                                                <div class="ds-subdomain-row">
+                                                    <span>{{ $subdomain['label'] }}</span>
+                                                    <strong>{{ $subdomain['accuracy'] }}%</strong>
+                                                    <small>{{ $subdomain['correct'] }}/{{ $subdomain['total'] }}</small>
+                                                </div>
+                                            @endforeach
+                                        </div>
+                                    </details>
+                                @empty
+                                    <p class="ds-card-note">No domain answers recorded for this section.</p>
+                                @endforelse
+                            </details>
+                        @endforeach
+                    </div>
+
+                    <p class="ds-section-insight">{{ $lowerSection }} trails by {{ $sectionGap }} points. Expand domains to choose the next drill focus.</p>
                 @else
                     <p class="ds-card-note">Section scores appear after your first completed score report.</p>
                 @endif
@@ -206,17 +308,45 @@
 
                         @unless($hasSingleHistory)
                             <div class="ds-trend-panel">
-                                <div class="ds-trend-bars" aria-label="Last {{ $history->count() }} completed test scores" style="--history-count: {{ $history->count() }}">
-                                    @foreach($history as $attempt)
-                                        @php
-                                            $height = max(12, min(100, round((($attempt->total_score - 400) / 1200) * 100)));
-                                        @endphp
-                                        <div class="ds-trend-bars__item" aria-label="Test score {{ $attempt->total_score }} on {{ optional($attempt->completed_at)->format('M j') ?? 'Done' }}">
-                                            <span style="height: {{ $height }}%"></span>
-                                            <strong>{{ $attempt->total_score }}</strong>
-                                            <small>{{ optional($attempt->completed_at)->format('M j') ?? 'Done' }}</small>
-                                        </div>
-                                    @endforeach
+                                @php
+                                    $trendCount = max(1, $history->count());
+                                    $trendPoints = $history->values()->map(function ($attempt, $index) use ($trendCount) {
+                                        $score = max(400, min(1600, (int) $attempt->total_score));
+                                        $x = $trendCount === 1 ? 50 : round(($index / ($trendCount - 1)) * 100, 2);
+                                        $y = round(100 - ((($score - 400) / 1200) * 100), 2);
+
+                                        return "{$x},{$y}";
+                                    })->implode(' ');
+                                @endphp
+                                <div class="ds-trend-chart"
+                                    aria-label="Last {{ $history->count() }} completed test scores from 400 to 1600"
+                                    style="--history-count: {{ $history->count() }}">
+                                    <div class="ds-trend-chart__plot" aria-hidden="true">
+                                        <span class="ds-trend-chart__axis is-top">1600</span>
+                                        <span class="ds-trend-chart__axis is-bottom">400</span>
+                                        <svg viewBox="0 0 100 100" preserveAspectRatio="none" focusable="false">
+                                            <polyline points="{{ $trendPoints }}" />
+                                        </svg>
+
+                                        @foreach($history as $attempt)
+                                            @php
+                                                $score = max(400, min(1600, (int) $attempt->total_score));
+                                                $x = $trendCount === 1 ? 50 : round(($loop->index / ($trendCount - 1)) * 100, 2);
+                                                $y = round(100 - ((($score - 400) / 1200) * 100), 2);
+                                            @endphp
+                                            <span class="ds-trend-chart__point" style="--x: {{ $x }}; --y: {{ $y }};"></span>
+                                        @endforeach
+                                    </div>
+
+                                    <div class="ds-trend-chart__labels">
+                                        @foreach($history as $attempt)
+                                            <div class="ds-trend-chart__label"
+                                                aria-label="Test score {{ $attempt->total_score }} on {{ optional($attempt->completed_at)->format('M j') ?? 'Done' }}">
+                                                <strong>{{ $attempt->total_score }}</strong>
+                                                <small>{{ optional($attempt->completed_at)->format('M j') ?? 'Done' }}</small>
+                                            </div>
+                                        @endforeach
+                                    </div>
                                 </div>
                             </div>
                         @endunless
@@ -225,7 +355,8 @@
                             <span>{{ $hasSingleHistory ? 'Baseline captured' : 'Latest movement' }}</span>
                             <strong>{{ $latestScore }}</strong>
                             @if($scoreDelta !== null)
-                                <p>{{ $scoreDelta >= 0 ? 'Up' : 'Down' }} {{ abs($scoreDelta) }} points from the previous completed test.</p>
+                                <p>{{ $scoreDelta >= 0 ? 'Up' : 'Down' }} {{ abs($scoreDelta) }} points from the previous
+                                    completed test.</p>
                             @else
                                 <p>Complete one more full-length practice to turn this into a real movement trend.</p>
                             @endif
@@ -269,7 +400,8 @@
                             <span>Updated {{ $attempt->updated_at->diffForHumans() }}</span>
                         </div>
                         @if($moduleUlid)
-                            <a href="{{ route('engine.session', ['ulid' => $moduleUlid]) }}?attempt={{ $attempt->ulid }}" class="ds-link">Resume</a>
+                            <a href="{{ route('engine.session', ['ulid' => $moduleUlid]) }}?attempt={{ $attempt->ulid }}"
+                                class="ds-link">Resume</a>
                         @else
                             <span class="ds-muted">Unavailable</span>
                         @endif

@@ -8,6 +8,125 @@ let builderBlockCount = 0;
 const builderEditors = {};
 const debouncers = {};
 
+export function hasUnsavedChanges() {
+    const blocks = document.querySelectorAll('.builder-block');
+    for (const block of blocks) {
+        if (!block.dataset.questionId) return true; // Draft is unsaved
+        if (!isBlockUnchanged(block)) return true; // Modified existing question is unsaved
+    }
+    return false;
+}
+
+window.builderHasUnsavedChanges = hasUnsavedChanges;
+
+window.confirmBuilderNavigation = function() {
+    if (hasUnsavedChanges()) {
+        return confirm('You have unsaved changes in the Question Builder. Discard and switch tabs?');
+    }
+    return true;
+};
+
+window.addEventListener('beforeunload', (event) => {
+    if (hasUnsavedChanges()) {
+        event.preventDefault();
+        event.returnValue = 'You have unsaved changes in the Question Builder. Are you sure you want to leave?';
+        return event.returnValue;
+    }
+});
+
+export function updateBuilderGridState() {
+    const grid = document.getElementById('builderMainGrid');
+    if (!grid) return;
+    
+    const blockCount = document.querySelectorAll('.builder-block').length;
+    const existingCount = (window.__builderExistingQuestions || []).length;
+    
+    if (blockCount === 0 && existingCount === 0) {
+        grid.classList.add('builder-grid-empty');
+    } else {
+        grid.classList.remove('builder-grid-empty');
+    }
+    
+    const container = document.getElementById('builderBlocksContainer');
+    if (container) {
+        const placeholder = container.querySelector('.builder-workspace-placeholder');
+        if (blockCount === 0 && existingCount > 0) {
+            if (!placeholder) {
+                const div = document.createElement('div');
+                div.className = "text-slate-500 text-center py-12 px-4 border border-dashed border-slate-800 rounded-2xl bg-slate-950/20 builder-workspace-placeholder";
+                div.innerHTML = `
+                    <i class="bi bi-arrow-left-circle text-3xl block mb-3 text-indigo-400/80 animate-pulse"></i>
+                    <p class="text-xs text-slate-400 font-medium leading-relaxed mb-0 font-satoshi">
+                        This module has <strong class="text-indigo-300">${existingCount}</strong> existing question(s).<br>
+                        Select a question from the <strong class="text-indigo-300">Workspace Index</strong> on the left to edit it,<br>
+                        or click <strong class="text-amber-400">Add Another Question</strong> below to create a new one.
+                    </p>
+                `;
+                container.appendChild(div);
+            }
+        } else if (blockCount > 0 && placeholder) {
+            placeholder.remove();
+        }
+    }
+    
+    // Update the counter badge
+    const badge = document.getElementById('builderActiveCountBadge');
+    if (badge) {
+        badge.textContent = blockCount === 1 ? '1 Question' : `${blockCount} Questions`;
+        if (blockCount === 0) {
+            badge.className = "bg-slate-800 border border-slate-700 text-slate-400 font-extrabold px-3 py-1 text-xs rounded-full uppercase tracking-wider";
+        } else {
+            badge.className = "bg-amber-500/10 border border-amber-500/20 text-amber-400 font-extrabold px-3 py-1 text-xs rounded-full uppercase tracking-wider";
+        }
+    }
+}
+
+export function setupBlockBindings(block) {
+    const mcqRadio = block.querySelector('.builder-format-mcq');
+    const sprRadio = block.querySelector('.builder-format-spr');
+    const mcqContainer = block.querySelector('.builder-mcq-container');
+    const sprContainer = block.querySelector('.builder-spr-container');
+
+    const updateFormatView = () => {
+        if (mcqRadio.checked) {
+            mcqContainer.classList.remove('hidden');
+            sprContainer.classList.add('hidden');
+            mcqRadio.setAttribute('aria-checked', 'true');
+            sprRadio.setAttribute('aria-checked', 'false');
+        } else {
+            mcqContainer.classList.add('hidden');
+            sprContainer.classList.remove('hidden');
+            mcqRadio.setAttribute('aria-checked', 'false');
+            sprRadio.setAttribute('aria-checked', 'true');
+        }
+        debouncedUpdateLivePreview(block);
+        updateSidebarNavigator();
+        updateBuilderGridState();
+    };
+
+    mcqRadio.addEventListener('change', updateFormatView);
+    sprRadio.addEventListener('change', updateFormatView);
+
+    // Bind other changes
+    block.querySelectorAll('input, select, textarea').forEach(el => {
+        if (el.classList.contains('builder-stem') || el.classList.contains('builder-passage')) return;
+        
+        const handleChange = () => {
+            debouncedUpdateLivePreview(block);
+            triggerBuilderAutoSave();
+            if (el.classList.contains('builder-difficulty') || el.classList.contains('builder-domain')) {
+                updateSidebarNavigator();
+            }
+        };
+        
+        el.addEventListener('input', handleChange);
+        el.addEventListener('change', handleChange);
+    });
+
+    // Run once initially
+    updateFormatView();
+}
+
 export function debouncedUpdateLivePreview(block) {
     const index = block.dataset.index;
     if (debouncers[index]) clearTimeout(debouncers[index]);
@@ -28,8 +147,7 @@ export function renderLivePreviewCard(block) {
     let previewCard = drawer.querySelector(`[data-preview-index="${index}"]`);
     if (!previewCard) {
         previewCard = document.createElement('div');
-        previewCard.className = "card mb-3 border-0 shadow-sm rounded-3 live-preview-card overflow-hidden";
-        previewCard.style.borderLeft = "4px solid #ffc107";
+        previewCard.className = "mb-4 border border-slate-800 bg-[#131b2e]/60 rounded-xl live-preview-card overflow-hidden transition-all duration-200";
         previewCard.dataset.previewIndex = index;
         drawer.appendChild(previewCard);
     }
@@ -54,7 +172,7 @@ export function renderLivePreviewCard(block) {
     let passageHtml = '';
     const type = document.getElementById('builderModuleId').selectedOptions[0]?.getAttribute('data-section-type');
     if (type === 'reading_writing' && passageValue.trim()) {
-        passageHtml = `<div class="passage-preview p-3 mb-3 bg-light rounded-3 small border-start border-3 border-secondary">${compileMarkdownToHtml(passageValue)}</div>`;
+        passageHtml = `<div class="passage-preview p-3.5 mb-3.5 bg-slate-900/60 rounded-lg text-xs leading-relaxed text-slate-300 border border-slate-800/80 font-satoshi">${compileMarkdownToHtml(passageValue)}</div>`;
     }
 
     let questionBodyHtml = '';
@@ -64,25 +182,29 @@ export function renderLivePreviewCard(block) {
         block.querySelectorAll('.builder-choice-content').forEach(input => {
             const label = input.getAttribute('data-label');
             const rawVal = input.value.trim();
-            const content = rawVal ? compileMarkdownToHtml(rawVal) : `<span class="text-muted italic">Option ${label} content...</span>`;
+            const content = rawVal ? compileMarkdownToHtml(rawVal) : `<span class="text-slate-500 italic">Option ${label} content...</span>`;
             const isCorrect = label === correctLabel;
 
+            const choiceBorderClass = isCorrect ? 'border-emerald-500/20' : 'border-slate-800';
+            const choiceBgClass = isCorrect ? 'bg-emerald-500/10' : 'bg-slate-900/20';
+            const choiceTextClass = isCorrect ? 'text-emerald-400' : 'text-slate-300';
+
             choicesHtml += `
-                <div class="flex items-center gap-2 mb-2 p-2 rounded border ${isCorrect ? 'border-success bg-success-subtle' : 'border-light'}" style="transition: all 0.2s;">
-                    <div class="rounded-circle flex items-center justify-center text-white bg-${isCorrect ? 'success' : 'secondary'} fw-bold" style="width: 24px; height: 24px; font-size: 12px; flex-shrink: 0;">
+                <div class="flex items-start gap-2.5 mb-2.5 p-3 rounded-lg border transition-colors duration-150 ${choiceBorderClass} ${choiceBgClass} ${choiceTextClass}">
+                    <div class="rounded-full flex items-center justify-center font-bold text-white shrink-0 ${isCorrect ? 'bg-emerald-600' : 'bg-slate-700'}" style="width: 20px; height: 20px; font-size: 10px;">
                         ${label}
                     </div>
-                    <div class="grow small">${content}</div>
+                    <div class="grow text-xs leading-relaxed font-satoshi">${content}</div>
                 </div>
             `;
         });
-        questionBodyHtml = `<div class="choices-preview mt-3">${choicesHtml}</div>`;
+        questionBodyHtml = `<div class="choices-preview mt-3.5">${choicesHtml}</div>`;
     } else {
         const sprVal = block.querySelector('.builder-spr-answers').value.trim() || '______';
         questionBodyHtml = `
-            <div class="answer-input-container p-3 bg-light rounded-3 mt-3 border border-warning border-opacity-25">
-                <label class="d-block mb-2 fw-bold text-dark small"><i class="bi bi-pencil-fill text-warning"></i> Student Produced Response:</label>
-                <div class="form-control live-preview-spr-input font-monospace text-center py-2 fs-5 border-warning border-opacity-50" style="max-width: 150px; letter-spacing: 2px;">
+            <div class="answer-input-container p-3.5 bg-slate-900/40 rounded-lg mt-3.5 border border-amber-500/20">
+                <label class="block mb-2 font-extrabold text-amber-400 text-[10px] uppercase tracking-wider"><i class="bi bi-pencil-fill"></i> Student Produced Response:</label>
+                <div class="w-full max-w-[140px] px-3 py-1.5 rounded-lg border border-amber-500/30 bg-slate-950 font-mono text-center text-base text-amber-300 tracking-wider">
                     ${sprVal}
                 </div>
             </div>
@@ -93,20 +215,20 @@ export function renderLivePreviewCard(block) {
     let explanationHtml = '';
     if (explanationValue) {
         explanationHtml = `
-            <div class="explanation-preview p-2 mt-2 bg-light rounded small text-muted border-top border-light">
-                <strong>Explanation:</strong> ${compileMarkdownToHtml(explanationValue)}
+            <div class="explanation-preview p-3.5 mt-3 bg-slate-900/40 rounded-lg text-xs text-slate-400 border border-slate-800/80 leading-relaxed font-satoshi">
+                <strong class="text-slate-300 font-extrabold uppercase text-[10px] tracking-wider block mb-1">Explanation:</strong> ${compileMarkdownToHtml(explanationValue)}
             </div>
         `;
     }
 
     previewCard.innerHTML = `
-        <div class="card-header bg-dark text-white py-2 px-3 flex justify-between items-center">
-            <span class="fw-bold small text-warning"><i class="bi bi-file-earmark-text"></i> Live Preview Q#${qNum}</span>
-            <span class="badge bg-secondary font-monospace" style="font-size: 10px;">${qType === 'multiple_choice' ? 'MCQ' : 'SPR'}</span>
+        <div class="bg-slate-950 px-4 py-2.5 border-b border-slate-800/80 flex justify-between items-center">
+            <span class="font-extrabold text-xs text-amber-400"><i class="bi bi-file-earmark-text"></i> Live Preview Q#${qNum}</span>
+            <span class="bg-slate-800 text-slate-350 font-mono text-[9px] px-2 py-0.5 rounded-md uppercase tracking-wider">${qType === 'multiple_choice' ? 'MCQ' : 'SPR'}</span>
         </div>
-        <div class="card-body p-3">
+        <div class="p-4 space-y-3.5">
             ${passageHtml}
-            <div class="stem-preview fw-semibold text-dark">${stemValue ? compileMarkdownToHtml(stemValue) : '<span class="text-muted italic">Enter question stem to view preview...</span>'}</div>
+            <div class="stem-preview font-semibold text-slate-200 text-sm leading-relaxed">${stemValue ? compileMarkdownToHtml(stemValue) : '<span class="text-slate-500 italic">Enter question stem to view preview...</span>'}</div>
             ${questionBodyHtml}
             ${explanationHtml}
         </div>
@@ -269,6 +391,7 @@ export function clearUnchangedQuestions() {
         triggerBuilderAutoSave();
         refreshQuestionBlockNumbers();
         updateSidebarNavigator();
+        updateBuilderGridState();
 
         const drawer = document.getElementById('builderLivePreviewDrawer');
         if (drawer && drawer.querySelectorAll('[data-preview-index]').length === 0) {
@@ -299,6 +422,7 @@ export function updateSidebarNavigator() {
                 No questions. Add a question to start.
             </div>
         `;
+        updateBuilderGridState();
         return;
     }
 
@@ -334,11 +458,14 @@ export function updateSidebarNavigator() {
                 ? `<span class="bg-slate-800 text-slate-400 font-mono text-[9px] px-1.5 py-0.5 rounded capitalize">${q.difficulty}</span>`
                 : '';
 
+            const badgeBg = isLoaded ? 'bg-indigo-500/20' : 'bg-slate-800';
+            const badgeText = isLoaded ? 'text-indigo-300' : 'text-slate-500';
+
             item.innerHTML = `
                 <div class="flex items-center justify-between gap-2">
                     <span class="font-extrabold text-xs ${isLoaded ? 'text-indigo-400' : 'text-slate-350'}">
                         Q#${q.question_number || (i + 1)} 
-                        <span class="font-extrabold px-1 py-0.5 text-[8px] rounded uppercase ${isLoaded ? 'bg-indigo-500/20 text-indigo-300' : 'bg-slate-800 text-slate-500'}">
+                        <span class="font-extrabold px-1 py-0.5 text-[8px] rounded uppercase ${badgeBg} ${badgeText}">
                             ${isLoaded ? 'Editing' : 'Stored'}
                         </span>
                     </span>
@@ -431,6 +558,7 @@ export function updateSidebarNavigator() {
             navigator.appendChild(item);
         });
     }
+    updateBuilderGridState();
 }
 
 export function addBuilderBlock() {
@@ -499,45 +627,8 @@ export function addBuilderBlock() {
     block.scrollIntoView({ behavior: 'smooth', block: 'start' });
     setTimeout(() => syncLivePreviewScroll(block), 100);
 
-    // Bind format toggles
-    const mcqRadio = block.querySelector('.builder-format-mcq');
-    const sprRadio = block.querySelector('.builder-format-spr');
-    const mcqContainer = block.querySelector('.builder-mcq-container');
-    const sprContainer = block.querySelector('.builder-spr-container');
-
-    const updateFormatView = () => {
-        if (mcqRadio.checked) {
-            mcqContainer.classList.remove('hidden');
-            sprContainer.classList.add('hidden');
-        } else {
-            mcqContainer.classList.add('hidden');
-            sprContainer.classList.remove('hidden');
-        }
-        debouncedUpdateLivePreview(block);
-        updateSidebarNavigator();
-    };
-
-    mcqRadio.addEventListener('change', updateFormatView);
-    sprRadio.addEventListener('change', updateFormatView);
-
-    // Bind other changes
-    block.querySelectorAll('input, select, textarea').forEach(el => {
-        if (el.classList.contains('builder-stem') || el.classList.contains('builder-passage')) return;
-        el.addEventListener('input', () => {
-            debouncedUpdateLivePreview(block);
-            triggerBuilderAutoSave();
-            if (el.classList.contains('builder-difficulty') || el.classList.contains('builder-domain')) {
-                updateSidebarNavigator();
-            }
-        });
-        el.addEventListener('change', () => {
-            debouncedUpdateLivePreview(block);
-            triggerBuilderAutoSave();
-            if (el.classList.contains('builder-difficulty') || el.classList.contains('builder-domain')) {
-                updateSidebarNavigator();
-            }
-        });
-    });
+    // Bind all format toggles and inputs via setupBlockBindings helper
+    setupBlockBindings(block);
 
     block.querySelector('.remove-block-btn').onclick = function () {
         const index = block.dataset.index;
@@ -562,11 +653,10 @@ export function addBuilderBlock() {
 
         refreshQuestionBlockNumbers();
         updateSidebarNavigator();
+        updateBuilderGridState();
     };
 
-    // Render initial preview
-    debouncedUpdateLivePreview(block);
-    updateSidebarNavigator();
+    updateBuilderGridState();
 }
 
 export function syncBuilderBlockDomain(block) {
@@ -645,6 +735,7 @@ export function clearBuilderWorkspace() {
     
     // Update navigator
     updateSidebarNavigator();
+    updateBuilderGridState();
 }
 
 export async function fetchModuleQuestions(moduleId) {
@@ -690,7 +781,7 @@ export async function fetchModuleQuestions(moduleId) {
     }
 }
 
-export async function loadExistingQuestionIntoWorkspace(qId) {
+export async function loadExistingQuestionIntoWorkspace(qId, autoScroll = true) {
     try {
         const response = await fetch(`${BASE_URL}/questions/${qId}`, {
             headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
@@ -795,23 +886,6 @@ export async function loadExistingQuestionIntoWorkspace(qId) {
         // Prepopulate MCQ Choices or SPR answers
         const mcqRadio = block.querySelector('.builder-format-mcq');
         const sprRadio = block.querySelector('.builder-format-spr');
-        const mcqContainer = block.querySelector('.builder-mcq-container');
-        const sprContainer = block.querySelector('.builder-spr-container');
-
-        const updateFormatView = () => {
-            if (mcqRadio.checked) {
-                mcqContainer.classList.remove('hidden');
-                sprContainer.classList.add('hidden');
-            } else {
-                mcqContainer.classList.add('hidden');
-                sprContainer.classList.remove('hidden');
-            }
-            debouncedUpdateLivePreview(block);
-            updateSidebarNavigator();
-        };
-
-        mcqRadio.addEventListener('change', updateFormatView);
-        sprRadio.addEventListener('change', updateFormatView);
 
         if (question.question_type === 'multiple_choice') {
             mcqRadio.checked = true;
@@ -834,26 +908,7 @@ export async function loadExistingQuestionIntoWorkspace(qId) {
             block.querySelector('.builder-spr-answers').value = answers || '';
         }
 
-        updateFormatView();
-
-        // Bind other changes
-        block.querySelectorAll('input, select, textarea').forEach(el => {
-            if (el.classList.contains('builder-stem') || el.classList.contains('builder-passage')) return;
-            el.addEventListener('input', () => {
-                debouncedUpdateLivePreview(block);
-                triggerBuilderAutoSave();
-                if (el.classList.contains('builder-difficulty') || el.classList.contains('builder-domain')) {
-                    updateSidebarNavigator();
-                }
-            });
-            el.addEventListener('change', () => {
-                debouncedUpdateLivePreview(block);
-                triggerBuilderAutoSave();
-                if (el.classList.contains('builder-difficulty') || el.classList.contains('builder-domain')) {
-                    updateSidebarNavigator();
-                }
-            });
-        });
+        setupBlockBindings(block);
 
         // Bind remove button (just removes the block from editor workspace, doesn't delete it from database!)
         block.querySelector('.remove-block-btn').onclick = function () {
@@ -870,7 +925,7 @@ export async function loadExistingQuestionIntoWorkspace(qId) {
             if (drawer && drawer.querySelectorAll('[data-preview-index]').length === 0) {
                 drawer.innerHTML = `
                     <div class="text-slate-500 text-center py-12 text-xs font-medium">
-                        <i class="bi bi-file-earmark-richtext text-3xl block mb-2 text-slate-650"></i>
+                        <i class="bi bi-file-earmark-richtext text-3xl block mb-2 text-slate-655"></i>
                         Live compilation of STEM and formulas will appear here in real-time
                     </div>
                 `;
@@ -878,12 +933,17 @@ export async function loadExistingQuestionIntoWorkspace(qId) {
 
             refreshQuestionBlockNumbers();
             updateSidebarNavigator();
+            updateBuilderGridState();
         };
+
+        updateBuilderGridState();
 
         // Scroll to block and update active navigator selection
         renderLivePreviewCard(block);
-        block.scrollIntoView({ behavior: 'smooth', block: 'start' });
-        syncLivePreviewScroll(block);
+        if (autoScroll) {
+            block.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            syncLivePreviewScroll(block);
+        }
         refreshQuestionBlockNumbers();
         updateSidebarNavigator();
 
@@ -1308,23 +1368,6 @@ export async function restoreBuilderDraft() {
             // Populate MCQ/SPR
             const mcqRadio = block.querySelector('.builder-format-mcq');
             const sprRadio = block.querySelector('.builder-format-spr');
-            const mcqContainer = block.querySelector('.builder-mcq-container');
-            const sprContainer = block.querySelector('.builder-spr-container');
-
-            const updateFormatView = () => {
-                if (mcqRadio.checked) {
-                    mcqContainer.classList.remove('hidden');
-                    sprContainer.classList.add('hidden');
-                } else {
-                    mcqContainer.classList.add('hidden');
-                    sprContainer.classList.remove('hidden');
-                }
-                debouncedUpdateLivePreview(block);
-                updateSidebarNavigator();
-            };
-
-            mcqRadio.addEventListener('change', updateFormatView);
-            sprRadio.addEventListener('change', updateFormatView);
 
             if (bData.question_type === 'multiple_choice') {
                 mcqRadio.checked = true;
@@ -1346,26 +1389,7 @@ export async function restoreBuilderDraft() {
                 block.querySelector('.builder-spr-answers').value = bData.spr_answers || '';
             }
 
-            updateFormatView();
-
-            // Bind listeners for autosave
-            block.querySelectorAll('input, select, textarea').forEach(el => {
-                if (el.classList.contains('builder-stem') || el.classList.contains('builder-passage')) return;
-                el.addEventListener('input', () => {
-                    debouncedUpdateLivePreview(block);
-                    triggerBuilderAutoSave();
-                    if (el.classList.contains('builder-difficulty') || el.classList.contains('builder-domain')) {
-                        updateSidebarNavigator();
-                    }
-                });
-                el.addEventListener('change', () => {
-                    debouncedUpdateLivePreview(block);
-                    triggerBuilderAutoSave();
-                    if (el.classList.contains('builder-difficulty') || el.classList.contains('builder-domain')) {
-                        updateSidebarNavigator();
-                    }
-                });
-            });
+            setupBlockBindings(block);
 
             // Bind remove button
             block.querySelector('.remove-block-btn').onclick = function () {
@@ -1381,7 +1405,7 @@ export async function restoreBuilderDraft() {
                 if (drawer && drawer.querySelectorAll('[data-preview-index]').length === 0) {
                     drawer.innerHTML = `
                         <div class="text-slate-500 text-center py-12 text-xs font-medium">
-                            <i class="bi bi-file-earmark-richtext text-3xl block mb-2 text-slate-650"></i>
+                            <i class="bi bi-file-earmark-richtext text-3xl block mb-2 text-slate-655"></i>
                             Live compilation of STEM and formulas will appear here in real-time
                         </div>
                     `;
@@ -1389,6 +1413,7 @@ export async function restoreBuilderDraft() {
 
                 refreshQuestionBlockNumbers();
                 updateSidebarNavigator();
+                updateBuilderGridState();
                 triggerBuilderAutoSave();
             };
 
@@ -1397,6 +1422,7 @@ export async function restoreBuilderDraft() {
 
         refreshQuestionBlockNumbers();
         updateSidebarNavigator();
+        updateBuilderGridState();
 
     } catch (e) {
         console.error("Failed to restore builder draft:", e);

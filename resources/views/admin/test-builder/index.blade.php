@@ -33,26 +33,26 @@
             <nav class="flex-1 overflow-y-auto px-4 space-y-1.5" id="dashboardTabs" role="tablist">
                 <button
                     class="sidebar-link w-full text-left px-4 py-3.5 rounded-xl text-sm flex items-center gap-3 cursor-pointer"
-                    :class="{ 'active': activeTab === 'tests' }" id="tests-tab" x-on:click="activeTab = 'tests'"
+                    :class="{ 'active': activeTab === 'tests' }" id="tests-tab" x-on:click="if (!window.confirmBuilderNavigation || window.confirmBuilderNavigation()) activeTab = 'tests'"
                     data-bs-target="#tests" type="button" role="tab">
                     <i class="bi bi-journal-text text-lg"></i> Practice Tests
                 </button>
                 <button
                     class="sidebar-link w-full text-left px-4 py-3.5 rounded-xl text-sm flex items-center gap-3 cursor-pointer"
                     :class="{ 'active': activeTab === 'sections' }" id="sections-tab"
-                    x-on:click="activeTab = 'sections'" data-bs-target="#sections" type="button" role="tab">
+                    x-on:click="if (!window.confirmBuilderNavigation || window.confirmBuilderNavigation()) activeTab = 'sections'" data-bs-target="#sections" type="button" role="tab">
                     <i class="bi bi-folder2-open text-lg"></i> Sections
                 </button>
                 <button
                     class="sidebar-link w-full text-left px-4 py-3.5 rounded-xl text-sm flex items-center gap-3 cursor-pointer"
-                    :class="{ 'active': activeTab === 'modules' }" id="modules-tab" x-on:click="activeTab = 'modules'"
+                    :class="{ 'active': activeTab === 'modules' }" id="modules-tab" x-on:click="if (!window.confirmBuilderNavigation || window.confirmBuilderNavigation()) activeTab = 'modules'"
                     data-bs-target="#modules" type="button" role="tab">
                     <i class="bi bi-box-seam text-lg"></i> Modules
                 </button>
                 <button
                     class="sidebar-link w-full text-left px-4 py-3.5 rounded-xl text-sm flex items-center gap-3 cursor-pointer"
                     :class="{ 'active': activeTab === 'questions' }" id="questions-tab"
-                    x-on:click="activeTab = 'questions'" data-bs-target="#questions" type="button" role="tab">
+                    x-on:click="if (!window.confirmBuilderNavigation || window.confirmBuilderNavigation()) activeTab = 'questions'" data-bs-target="#questions" type="button" role="tab">
                     <i class="bi bi-database text-lg"></i> Question Bank
                 </button>
                 <div class="py-2">

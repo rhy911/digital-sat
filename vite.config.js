@@ -14,7 +14,6 @@ export default defineConfig({
                 'resources/css/student/scores.css',
                 'resources/css/admin/test-builder.css',
                 'resources/css/engine/main.css',
-                'resources/sass/app.scss',
                 'resources/js/app.js',
                 'resources/js/auth.js',
                 'resources/js/test.js',

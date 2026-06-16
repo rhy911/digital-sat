@@ -1,10 +1,10 @@
 <template id="builderBlockTemplate">
-    <div class="rounded-2xl border border-slate-800/60 bg-slate-900/25 shadow-2xl overflow-hidden mb-6 builder-block border-l-4 border-amber-500 glass-panel" data-index="{INDEX}">
+    <div class="rounded-2xl border border-slate-800/60 bg-slate-900/25 shadow-2xl overflow-hidden mb-6 builder-block" data-index="{INDEX}">
         <div class="px-5 py-3 bg-slate-950/40 border-b border-slate-800/80 flex justify-between items-center">
             <span class="text-sm font-extrabold text-white flex items-center gap-2">
                 <i class="bi bi-question-circle text-amber-400"></i> Question #{DISPLAY_INDEX}
             </span>
-            <button type="button" class="px-2.5 py-1 text-xs border border-rose-900/50 bg-rose-500/10 hover:bg-rose-500/20 text-rose-450 hover:text-rose-400 font-bold rounded-lg remove-block-btn">
+            <button type="button" class="px-2.5 py-1 text-xs border border-rose-900/50 bg-rose-500/10 hover:bg-rose-500/20 text-rose-450 hover:text-rose-400 font-bold rounded-lg remove-block-btn" aria-label="Remove Question Block">
                 Remove
             </button>
         </div>
@@ -40,15 +40,15 @@
 
             <div>
                 <label class="block text-xs font-extrabold text-slate-400 tracking-wider uppercase mb-2">Question Format</label>
-                <div class="flex rounded-xl overflow-hidden border border-slate-800/80 p-1 bg-slate-950/40 gap-1" role="group" aria-label="Question format toggle">
+                <div class="flex rounded-xl overflow-hidden border border-slate-800/80 p-1 bg-slate-950/40 gap-1" role="radiogroup" aria-label="Question format">
                     <div class="flex-1">
-                        <input type="radio" class="sr-only peer builder-format-radio builder-format-mcq" name="format_{INDEX}" id="format_mcq_{INDEX}" autocomplete="off" checked value="multiple_choice">
+                        <input type="radio" class="sr-only peer builder-format-radio builder-format-mcq" name="format_{INDEX}" id="format_mcq_{INDEX}" autocomplete="off" checked value="multiple_choice" role="radio" aria-checked="true">
                         <label class="flex items-center justify-center gap-1.5 px-3 py-2 text-xs font-extrabold text-slate-400 rounded-lg cursor-pointer hover:bg-slate-900/40 peer-checked:bg-slate-800/60 peer-checked:text-amber-400 peer-checked:shadow-inner" for="format_mcq_{INDEX}">
                             <i class="bi bi-list-ol"></i> Multiple Choice (MCQ)
                         </label>
                     </div>
                     <div class="flex-1">
-                        <input type="radio" class="sr-only peer builder-format-radio builder-format-spr" name="format_{INDEX}" id="format_spr_{INDEX}" autocomplete="off" value="student_produced_response">
+                        <input type="radio" class="sr-only peer builder-format-radio builder-format-spr" name="format_{INDEX}" id="format_spr_{INDEX}" autocomplete="off" value="student_produced_response" role="radio" aria-checked="false">
                         <label class="flex items-center justify-center gap-1.5 px-3 py-2 text-xs font-extrabold text-slate-400 rounded-lg cursor-pointer hover:bg-slate-900/40 peer-checked:bg-slate-800/60 peer-checked:text-amber-400 peer-checked:shadow-inner" for="format_spr_{INDEX}">
                             <i class="bi bi-pencil-square"></i> Student Produced Response (SPR)
                         </label>

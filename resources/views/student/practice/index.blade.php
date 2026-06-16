@@ -15,12 +15,6 @@
             </div>
 
             <div class="ds-workspace-actions">
-                <a href="{{ route('home') }}" class="ds-button ds-button--secondary">
-                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" class="w-4 h-4 mr-2" aria-hidden="true" style="margin-right: 0.5rem; display: inline-block; width: 1rem; height: 1rem; vertical-align: text-bottom;">
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M10.5 19.5 3 12m0 0 7.5-7.5M3 12h18" />
-                    </svg>
-                    Back to progress
-                </a>
                 <a href="{{ route('test.preview') }}" class="ds-button ds-button--secondary">
                     Preview test format
                 </a>
@@ -148,6 +142,8 @@
                                 <button type="button" class="ds-button ds-button--primary ds-test-card__action" data-test-id="{{ $test->id }}">
                                     @if($inProgressAttempt)
                                         Resume practice
+                                    @elseif($latestCompletedAttempt)
+                                        Retake Test
                                     @else
                                         Start practice
                                     @endif

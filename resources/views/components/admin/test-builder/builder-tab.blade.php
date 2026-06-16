@@ -3,7 +3,7 @@
 <div x-show="activeTab === 'builder'" id="builder" role="tabpanel" style="display: none;">
     <!-- Easy Question Builder Card -->
     <div
-        class="rounded-2xl border border-slate-800/60 bg-slate-900/20 shadow-2xl overflow-hidden border-l-4 mb-6 glass-panel">
+        class="rounded-2xl border border-slate-800/60 bg-slate-900/20 shadow-2xl overflow-hidden mb-6">
         <div class="px-6 py-4 bg-slate-950/40 border-b border-slate-800/80 flex justify-between items-center">
             <h5 class="font-extrabold text-white flex items-center gap-3 mb-0 text-base">
                 <div
@@ -13,25 +13,36 @@
                 Easy Question Builder
             </h5>
             <span
-                class="bg-amber-500/10 border border-amber-500/20 text-amber-400 font-extrabold px-3 py-1 text-xs rounded-full uppercase tracking-wider">Step-by-Step
-                Mode</span>
+                id="builderActiveCountBadge"
+                class="bg-amber-500/10 border border-amber-500/20 text-amber-400 font-extrabold px-3 py-1 text-xs rounded-full uppercase tracking-wider">0 Questions</span>
         </div>
 
         <div class="p-6">
             <div
-                class="bg-indigo-500/5 border border-indigo-500/15 rounded-xl p-4 flex gap-4 items-start shadow-xl mb-6">
+                x-data="{ dismissed: localStorage.getItem('test_builder_instructions_dismissed') === 'true' }"
+                x-show="!dismissed"
+                class="bg-indigo-500/5 border border-indigo-500/15 rounded-xl p-4 flex gap-4 items-start shadow-xl mb-6 relative group"
+            >
                 <div
                     class="w-10 h-10 rounded-lg bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center shrink-0">
                     <i class="bi bi-info-circle-fill text-indigo-400 text-lg"></i>
                 </div>
-                <div>
+                <div class="pr-12">
                     <h6 class="text-xs font-extrabold text-indigo-400 uppercase tracking-wider mb-1">Quick Instruction
                     </h6>
-                    <p class="text-xs text-indigo-300 leading-relaxed mb-0 font-medium">
+                    <p class="text-xs text-indigo-300 leading-relaxed mb-0 font-medium font-satoshi">
                         Select a module first, then add as many questions as you want. Each question is a "Block". We
                         will automatically format your text.
                     </p>
                 </div>
+                <button
+                    type="button"
+                    @click="localStorage.setItem('test_builder_instructions_dismissed', 'true'); dismissed = true"
+                    class="absolute top-4 right-4 text-indigo-400 hover:text-indigo-300 text-xs font-extrabold flex items-center gap-1 cursor-pointer transition-colors duration-150 py-1 px-2.5 rounded-lg bg-indigo-500/5 hover:bg-indigo-500/10 border border-indigo-500/10"
+                    aria-label="Dismiss Instructions"
+                >
+                    <i class="bi bi-x-lg text-[10px]"></i> Got it
+                </button>
             </div>
 
             <div class="grid grid-cols-1 md:grid-cols-12 gap-5 mb-6">
@@ -83,9 +94,9 @@
                 </div>
             </div>
 
-            <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 builder-grid-empty" id="builderMainGrid">
                 <!-- Left Sidebar Navigator -->
-                <div class="lg:col-span-3">
+                <div class="lg:col-span-3 left-navigator">
                     <div class="sticky top-6">
                         <div class="rounded-2xl border border-slate-800/60 bg-slate-900/40 shadow-xl overflow-hidden">
                             <div class="px-4 py-3 bg-slate-950/40 border-b border-slate-800/80">
@@ -108,7 +119,7 @@
                 </div>
 
                 <!-- Middle Question Builder Workspace -->
-                <div class="lg:col-span-5 relative builder-workspace-scroller" id="builderWorkspaceScroller">
+                <div class="lg:col-span-5 relative builder-workspace-scroller workspace-panel" id="builderWorkspaceScroller">
                     <!-- Sticky Breadcrumb -->
                     <div class="sticky top-0 bg-[#0b0f19]/80 border-b border-slate-800 pb-3 mb-4 pt-1 z-3 hidden"
                         id="builderInteractiveBreadcrumb">
@@ -159,7 +170,7 @@
                 </div>
 
                 <!-- Right Live Preview Drawer -->
-                <div class="lg:col-span-4">
+                <div class="lg:col-span-4 live-preview-drawer">
                     <div class="sticky top-6">
                         <div
                             class="rounded-2xl border border-slate-800/60 bg-slate-900/40 shadow-xl overflow-hidden flex flex-col live-preview-drawer-container">

@@ -31,7 +31,7 @@ class QuestionController extends Controller
         $showShared = $request->boolean('show_shared', false);
 
         $query = Question::visibleTo(auth()->user());
-        if (auth()->user()->role === 'teacher' && !$showShared) {
+        if (auth()->user()->role === 'teacher' && !$showShared && !$moduleId) {
             $query->where('questions.created_by', auth()->id());
         }
         $query->select(['questions.id', 'questions.section_type', 'questions.stem', 'questions.is_pretest', 'questions.is_complete', 'questions.skill_domain', 'questions.difficulty', 'questions.created_by']);

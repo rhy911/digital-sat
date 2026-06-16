@@ -509,8 +509,13 @@ document.addEventListener('DOMContentLoaded', async function () {
     initModulesSearch();
 
     document.querySelectorAll('#dashboardTabs .sidebar-link, #dashboardTabs .sidebar-link-builder').forEach(btn => {
-        btn.addEventListener('click', () => {
+        btn.addEventListener('click', (e) => {
             const target = btn.getAttribute('data-bs-target');
+            if (target !== '#builder' && window.confirmBuilderNavigation && !window.confirmBuilderNavigation()) {
+                e.preventDefault();
+                e.stopImmediatePropagation();
+                return;
+            }
             if (target) {
                 // Immediately hide tables to prevent any visual snap or data jumping
                 const testsTable = document.getElementById('testsTabulatorTable');
@@ -639,6 +644,15 @@ document.addEventListener('DOMContentLoaded', async function () {
     refreshTestDashboardData(captureTomSelectPreservation(null))
         .then(() => {
             restoreBuilderDraft();
+            
+            // Check if builderModuleId has a value and load questions if empty
+            const modSelect = document.getElementById('builderModuleId');
+            if (modSelect && modSelect.tomselect) {
+                const modId = modSelect.tomselect.getValue();
+                if (modId && (!window.__builderExistingQuestions || window.__builderExistingQuestions.length === 0)) {
+                    fetchModuleQuestions(modId);
+                }
+            }
         })
         .catch(err => console.error('Initial dashboard load failed:', err));
 });
