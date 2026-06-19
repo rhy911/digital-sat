@@ -537,7 +537,7 @@ export function captureTomSelectPreservation(submittedForm) {
     const ids = [
         'sectionTest', 'moduleSection', 'questionModule', 'bulkQuestionModule',
         'questionPassage', 'answerQuestionId', 'explanationQuestionId',
-        'linkSection', 'linkTest', 'linkModule', 'builderModuleId', 'questionsTableModuleFilter'
+        'builderModuleId', 'questionsTableModuleFilter'
     ];
     const preserve = {};
     ids.forEach(function (id) {
@@ -593,24 +593,6 @@ export function rebuildModuleSectionTomSelect(tests, preserved, selectId) {
     }
 }
 
-export function rebuildLinkModuleTomSelect(allModules, preserved) {
-    const el = document.getElementById('linkModule');
-    if (!el) {
-        return;
-    }
-    destroyTomSelectIfAny(el);
-    el.innerHTML = '<option value="">Select module by key/ID...</option>';
-    allModules.forEach(function (mod) {
-        const opt = document.createElement('option');
-        opt.value = mod.id;
-        opt.textContent = '[' + (mod.key || 'ID: ' + mod.id) + '] - Mod ' + mod.module_number + ' (' + capitalizeFirstLetter(mod.difficulty_level) + ')';
-        el.appendChild(opt);
-    });
-    initTomSelectOn(el);
-    if (preserved && optionExistsInSelect(el, preserved)) {
-        el.tomselect.setValue(String(preserved), true);
-    }
-}
 
 export function rebuildQuestionModuleTomSelect(tests, preserved, selectId) {
     selectId = selectId || 'questionModule';
@@ -684,7 +666,10 @@ export function showTableLoader(containerId) {
     const container = document.getElementById(containerId);
     if (!container) return;
     
-    let overlay = container.querySelector('.table-loading-overlay');
+    // Target the inner table wrapper to only cover the table content and remain under the title row
+    const tableWrapper = container.querySelector('.overflow-x-auto') || container;
+    
+    let overlay = tableWrapper.querySelector('.table-loading-overlay');
     if (!overlay) {
         overlay = document.createElement('div');
         overlay.className = 'table-loading-overlay';
@@ -694,27 +679,11 @@ export function showTableLoader(containerId) {
                 <div class="table-loading-text">Loading Data</div>
             </div>
         `;
-        container.appendChild(overlay);
+        tableWrapper.appendChild(overlay);
     }
     
-    // Position overlay below header if header exists (custom search/filter headers)
-    const header = container.querySelector(':scope > div:first-child');
-    if (header && (header.classList.contains('px-6') || header.classList.contains('py-4') || header.querySelector('input') || header.querySelector('h5'))) {
-        overlay.style.top = `${header.offsetHeight}px`;
-    } else {
-        overlay.style.top = '0px';
-    }
-    
-    // Position overlay above pagination footer if pagination wrap exists
-    const footer = container.querySelector('#modulesPoolPagination, .tabulator-footer');
-    if (footer) {
-        overlay.style.bottom = `${footer.offsetHeight}px`;
-    } else {
-        overlay.style.bottom = '0px';
-    }
-    
-    // Ensure the container is relatively positioned to anchor absolute overlay
-    container.classList.add('relative');
+    // Ensure the tableWrapper is relatively positioned to anchor absolute overlay
+    tableWrapper.classList.add('relative');
     
     // Force a browser reflow to trigger CSS transition correctly
     overlay.getBoundingClientRect();
@@ -730,7 +699,8 @@ export function hideTableLoader(containerId) {
     const container = document.getElementById(containerId);
     if (!container) return;
     
-    const overlay = container.querySelector('.table-loading-overlay');
+    const tableWrapper = container.querySelector('.overflow-x-auto') || container;
+    const overlay = tableWrapper.querySelector('.table-loading-overlay');
     if (overlay) {
         overlay.classList.remove('show');
         // Remove from DOM after CSS transition completes to free layout memory

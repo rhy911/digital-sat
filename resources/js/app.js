@@ -1,10 +1,13 @@
 import './bootstrap';
 import Alpine from 'alpinejs';
+import { initTruncatedTooltips } from './ui/truncated-tooltip.js';
 
 if (!window.Alpine) {
     window.Alpine = Alpine;
     Alpine.start();
 }
+
+initTruncatedTooltips();
 
 
 

@@ -68,15 +68,15 @@
                         </td>
                         <td class="correct-col" style="display:none;">
                             @if($row['statusKey'] === 'correct')
-                                <span style="font-weight:700;color:#059669;">{{ $row['answer']->selected_answer ?? '—' }}</span>
+                                <span style="font-weight:600;color:#059669;">{{ $row['answer']->selected_answer ?? '—' }}</span>
                             @elseif($row['statusKey'] === 'wrong')
-                                <span style="font-weight:700;color:#dc2626;">{{ $row['answer']->selected_answer ?? '—' }}</span>
+                                <span style="font-weight:600;color:#dc2626;">{{ $row['answer']->selected_answer ?? '—' }}</span>
                             @else
-                                <span style="font-weight:700;color:#94a3b8;">Omitted</span>
+                                <span style="font-weight:600;color:#94a3b8;">Omitted</span>
                             @endif
                         </td>
                         <td class="correct-col" style="display:none;">
-                            <span style="font-weight:700;color:#059669;">{{ $row['correctAnswer'] }}</span>
+                            <span style="font-weight:600;color:#059669;">{{ $row['correctAnswer'] }}</span>
                         </td>
                         <td>
                             @if ($row['statusKey'] === 'correct')
@@ -107,7 +107,7 @@
                                     $domainLabels[$rawDomain] ?? ucwords(str_replace('_', ' ', $rawDomain));
                             @endphp
 
-                            <span class="sd-domain-tag">{{ $formattedDomain }}</span>
+                            <span class="sd-domain-tag" title="{{ $formattedDomain }}">{{ $formattedDomain }}</span>
                         </td>
                         <td>
                             <button class="sd-review-btn js-review-btn"

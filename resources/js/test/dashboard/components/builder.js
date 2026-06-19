@@ -1,7 +1,7 @@
 import { SKILL_DOMAINS, BULK_STORE_URL, BASE_URL, QUESTIONS_LIST_URL } from '../core/config.js';
 import { 
     getPremiumToolbar, compileMarkdownToHtml, getTomSelectValue, showAlert, showCustomConfirm,
-    stripTags, humanizeUnderscores
+    stripTags, humanizeUnderscores, escapeHtml
 } from '../utils/helpers.js';
 
 let builderBlockCount = 0;
@@ -21,7 +21,7 @@ window.builderHasUnsavedChanges = hasUnsavedChanges;
 
 window.confirmBuilderNavigation = function() {
     if (hasUnsavedChanges()) {
-        return confirm('You have unsaved changes in the Question Builder. Discard and switch tabs?');
+        return confirm('You have unsaved question cards. Leave Easy Builder?');
     }
     return true;
 };
@@ -53,13 +53,13 @@ export function updateBuilderGridState() {
         if (blockCount === 0 && existingCount > 0) {
             if (!placeholder) {
                 const div = document.createElement('div');
-                div.className = "text-slate-500 text-center py-12 px-4 border border-dashed border-slate-800 rounded-2xl bg-slate-950/20 builder-workspace-placeholder";
+                div.className = "text-slate-500 text-center py-12 px-4 border border-dashed border-slate-200 rounded-2xl bg-slate-50 builder-workspace-placeholder";
                 div.innerHTML = `
-                    <i class="bi bi-arrow-left-circle text-3xl block mb-3 text-indigo-400/80 animate-pulse"></i>
-                    <p class="text-xs text-slate-400 font-medium leading-relaxed mb-0 font-satoshi">
-                        This module has <strong class="text-indigo-300">${existingCount}</strong> existing question(s).<br>
-                        Select a question from the <strong class="text-indigo-300">Workspace Index</strong> on the left to edit it,<br>
-                        or click <strong class="text-amber-400">Add Another Question</strong> below to create a new one.
+                    <i class="bi bi-arrow-left-circle text-3xl block mb-3 text-indigo-600"></i>
+                    <p class="text-xs text-slate-500 font-medium leading-relaxed mb-0">
+                        This module has <strong class="text-indigo-600">${existingCount}</strong> existing question(s).<br>
+                        Select a question from the <strong class="text-indigo-650">Workspace Index</strong> on the left to edit it,<br>
+                        or click <strong class="text-indigo-600">Add Another Question</strong> below to create a new one.
                     </p>
                 `;
                 container.appendChild(div);
@@ -72,11 +72,11 @@ export function updateBuilderGridState() {
     // Update the counter badge
     const badge = document.getElementById('builderActiveCountBadge');
     if (badge) {
-        badge.textContent = blockCount === 1 ? '1 Question' : `${blockCount} Questions`;
+        badge.textContent = blockCount === 1 ? '1 question' : `${blockCount} questions`;
         if (blockCount === 0) {
-            badge.className = "bg-slate-800 border border-slate-700 text-slate-400 font-extrabold px-3 py-1 text-xs rounded-full uppercase tracking-wider";
+            badge.className = "bg-slate-100 border border-slate-200 text-slate-500 font-bold px-3 py-1 text-xs rounded-full";
         } else {
-            badge.className = "bg-amber-500/10 border border-amber-500/20 text-amber-400 font-extrabold px-3 py-1 text-xs rounded-full uppercase tracking-wider";
+            badge.className = "bg-indigo-50 border border-indigo-100 text-indigo-700 font-bold px-3 py-1 text-xs rounded-full";
         }
     }
 }
@@ -147,7 +147,7 @@ export function renderLivePreviewCard(block) {
     let previewCard = drawer.querySelector(`[data-preview-index="${index}"]`);
     if (!previewCard) {
         previewCard = document.createElement('div');
-        previewCard.className = "mb-4 border border-slate-800 bg-[#131b2e]/60 rounded-xl live-preview-card overflow-hidden transition-all duration-200";
+        previewCard.className = "mb-4 border border-slate-200 bg-slate-50/50 rounded-xl live-preview-card overflow-hidden transition-all duration-200 shadow-sm";
         previewCard.dataset.previewIndex = index;
         drawer.appendChild(previewCard);
     }
@@ -172,7 +172,7 @@ export function renderLivePreviewCard(block) {
     let passageHtml = '';
     const type = document.getElementById('builderModuleId').selectedOptions[0]?.getAttribute('data-section-type');
     if (type === 'reading_writing' && passageValue.trim()) {
-        passageHtml = `<div class="passage-preview p-3.5 mb-3.5 bg-slate-900/60 rounded-lg text-xs leading-relaxed text-slate-300 border border-slate-800/80 font-satoshi">${compileMarkdownToHtml(passageValue)}</div>`;
+        passageHtml = `<div class="passage-preview p-3.5 mb-3.5 bg-slate-50 rounded-lg text-xs leading-relaxed text-slate-700 border border-slate-200">${compileMarkdownToHtml(passageValue)}</div>`;
     }
 
     let questionBodyHtml = '';
@@ -185,16 +185,16 @@ export function renderLivePreviewCard(block) {
             const content = rawVal ? compileMarkdownToHtml(rawVal) : `<span class="text-slate-500 italic">Option ${label} content...</span>`;
             const isCorrect = label === correctLabel;
 
-            const choiceBorderClass = isCorrect ? 'border-emerald-500/20' : 'border-slate-800';
-            const choiceBgClass = isCorrect ? 'bg-emerald-500/10' : 'bg-slate-900/20';
-            const choiceTextClass = isCorrect ? 'text-emerald-400' : 'text-slate-300';
+            const choiceBorderClass = isCorrect ? 'border-emerald-250' : 'border-slate-200';
+            const choiceBgClass = isCorrect ? 'bg-emerald-50/55' : 'bg-white';
+            const choiceTextClass = isCorrect ? 'text-emerald-800 font-semibold' : 'text-slate-600';
 
             choicesHtml += `
                 <div class="flex items-start gap-2.5 mb-2.5 p-3 rounded-lg border transition-colors duration-150 ${choiceBorderClass} ${choiceBgClass} ${choiceTextClass}">
-                    <div class="rounded-full flex items-center justify-center font-bold text-white shrink-0 ${isCorrect ? 'bg-emerald-600' : 'bg-slate-700'}" style="width: 20px; height: 20px; font-size: 10px;">
+                    <div class="rounded-full flex items-center justify-center font-bold text-white shrink-0 ${isCorrect ? 'bg-emerald-600' : 'bg-slate-400'}" style="width: 20px; height: 20px; font-size: 10px;">
                         ${label}
                     </div>
-                    <div class="grow text-xs leading-relaxed font-satoshi">${content}</div>
+                    <div class="grow text-xs leading-relaxed">${content}</div>
                 </div>
             `;
         });
@@ -202,9 +202,9 @@ export function renderLivePreviewCard(block) {
     } else {
         const sprVal = block.querySelector('.builder-spr-answers').value.trim() || '______';
         questionBodyHtml = `
-            <div class="answer-input-container p-3.5 bg-slate-900/40 rounded-lg mt-3.5 border border-amber-500/20">
-                <label class="block mb-2 font-extrabold text-amber-400 text-[10px] uppercase tracking-wider"><i class="bi bi-pencil-fill"></i> Student Produced Response:</label>
-                <div class="w-full max-w-[140px] px-3 py-1.5 rounded-lg border border-amber-500/30 bg-slate-950 font-mono text-center text-base text-amber-300 tracking-wider">
+            <div class="answer-input-container p-3.5 bg-amber-50/30 rounded-lg mt-3.5 border border-amber-200">
+                <label class="block mb-2 font-bold text-amber-800 text-[10px] uppercase tracking-wider"><i class="bi bi-pencil-fill"></i> Student Produced Response:</label>
+                <div class="w-full max-w-[140px] px-3 py-1.5 rounded-lg border border-amber-200 bg-white font-mono text-center text-base text-amber-700 tracking-wider">
                     ${sprVal}
                 </div>
             </div>
@@ -215,20 +215,20 @@ export function renderLivePreviewCard(block) {
     let explanationHtml = '';
     if (explanationValue) {
         explanationHtml = `
-            <div class="explanation-preview p-3.5 mt-3 bg-slate-900/40 rounded-lg text-xs text-slate-400 border border-slate-800/80 leading-relaxed font-satoshi">
-                <strong class="text-slate-300 font-extrabold uppercase text-[10px] tracking-wider block mb-1">Explanation:</strong> ${compileMarkdownToHtml(explanationValue)}
+            <div class="explanation-preview p-3.5 mt-3 bg-slate-50 rounded-lg text-xs text-slate-600 border border-slate-200 leading-relaxed">
+                <strong class="text-slate-700 font-bold uppercase text-[10px] tracking-wider block mb-1">Explanation:</strong> ${compileMarkdownToHtml(explanationValue)}
             </div>
         `;
     }
 
     previewCard.innerHTML = `
-        <div class="bg-slate-950 px-4 py-2.5 border-b border-slate-800/80 flex justify-between items-center">
-            <span class="font-extrabold text-xs text-amber-400"><i class="bi bi-file-earmark-text"></i> Live Preview Q#${qNum}</span>
-            <span class="bg-slate-800 text-slate-350 font-mono text-[9px] px-2 py-0.5 rounded-md uppercase tracking-wider">${qType === 'multiple_choice' ? 'MCQ' : 'SPR'}</span>
+        <div class="bg-slate-50 px-4 py-2.5 border-b border-slate-200 flex justify-between items-center">
+            <span class="font-bold text-xs text-indigo-600"><i class="bi bi-file-earmark-text"></i> Live Preview Q#${qNum}</span>
+            <span class="bg-slate-200 text-slate-600 font-mono text-[9px] px-2 py-0.5 rounded-md uppercase tracking-wider">${qType === 'multiple_choice' ? 'MCQ' : 'SPR'}</span>
         </div>
         <div class="p-4 space-y-3.5">
             ${passageHtml}
-            <div class="stem-preview font-semibold text-slate-200 text-sm leading-relaxed">${stemValue ? compileMarkdownToHtml(stemValue) : '<span class="text-slate-500 italic">Enter question stem to view preview...</span>'}</div>
+            <div class="stem-preview font-semibold text-slate-800 text-sm leading-relaxed">${stemValue ? compileMarkdownToHtml(stemValue) : '<span class="text-slate-500 italic">Enter question stem to view preview...</span>'}</div>
             ${questionBodyHtml}
             ${explanationHtml}
         </div>
@@ -260,7 +260,7 @@ export function highlightSidebarItem(block) {
     if (!navigator) return;
     
     navigator.querySelectorAll('.list-group-item').forEach(el => {
-        el.classList.remove('border-amber-500/50', 'bg-amber-500/5');
+        el.classList.remove('border-indigo-500/50', 'bg-indigo-50');
     });
 
     const qId = block.dataset.questionId;
@@ -274,7 +274,7 @@ export function highlightSidebarItem(block) {
     }
     
     if (targetItem) {
-        targetItem.classList.add('border-amber-500/50', 'bg-amber-500/5');
+        targetItem.classList.add('border-indigo-500/50', 'bg-indigo-50');
         targetItem.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
     }
 }
@@ -308,12 +308,12 @@ export function refreshQuestionBlockNumbers() {
             qNum = existingQs.length + draftIndex + 1;
         }
 
-        const titleEl = block.querySelector('.text-sm.font-extrabold.text-white') || block.querySelector('.text-secondary');
+        const titleEl = block.querySelector('.text-sm.font-extrabold.text-white') || block.querySelector('.text-secondary') || block.querySelector('.text-sm.font-bold.text-slate-800');
         if (titleEl) {
             if (qId) {
-                titleEl.innerHTML = `<i class="bi bi-question-circle text-amber-400"></i> Question #${qNum} <span class="bg-indigo-500/20 text-indigo-300 font-extrabold px-1.5 py-0.5 text-[10px] rounded uppercase ml-2">Existing ID: ${qId}</span>`;
+                titleEl.innerHTML = `<i class="bi bi-question-circle text-indigo-600"></i> Question #${qNum} <span class="bg-indigo-50 border border-indigo-100 text-indigo-700 font-bold px-1.5 py-0.5 text-[10px] rounded uppercase ml-2">Existing ID: ${qId}</span>`;
             } else {
-                titleEl.innerHTML = `<i class="bi bi-question-circle text-amber-400"></i> Question #${qNum}`;
+                titleEl.innerHTML = `<i class="bi bi-question-circle text-indigo-600"></i> Question #${qNum}`;
             }
         }
 
@@ -396,15 +396,15 @@ export function clearUnchangedQuestions() {
         const drawer = document.getElementById('builderLivePreviewDrawer');
         if (drawer && drawer.querySelectorAll('[data-preview-index]').length === 0) {
             drawer.innerHTML = `
-                <div class="text-slate-500 text-center py-12 text-xs font-medium">
-                    <i class="bi bi-file-earmark-richtext text-3xl block mb-2 text-slate-650"></i>
+                <div class="text-slate-400 text-center py-12 text-xs font-medium">
+                    <i class="bi bi-file-earmark-richtext text-3xl block mb-2 text-slate-350"></i>
                     Live compilation of STEM and formulas will appear here in real-time
                 </div>
             `;
         }
         showAlert('success', `Cleared ${clearedCount} unchanged opened question(s).`);
     } else {
-        showAlert('info', 'No unchanged opened question blocks found.');
+        showAlert('info', 'No unchanged opened question cards found.');
     }
 }
 
@@ -417,8 +417,8 @@ export function updateSidebarNavigator() {
 
     if (existingQs.length === 0 && blocks.length === 0) {
         navigator.innerHTML = `
-            <div class="text-slate-500 text-center py-8 text-xs font-medium">
-                <i class="bi bi-layers text-2xl block mb-2 text-slate-600"></i>
+            <div class="text-slate-400 text-center py-8 text-xs font-medium">
+                <i class="bi bi-layers text-2xl block mb-2 text-slate-350"></i>
                 No questions. Add a question to start.
             </div>
         `;
@@ -431,7 +431,7 @@ export function updateSidebarNavigator() {
     // Create a container for existing questions
     if (existingQs.length > 0) {
         const existingHeader = document.createElement('div');
-        existingHeader.className = "text-[10px] font-extrabold text-slate-400 uppercase tracking-widest px-2 py-1 mb-1.5 flex justify-between items-center";
+        existingHeader.className = "text-[10px] font-bold text-slate-500 uppercase tracking-wider px-2 py-1 mb-1.5 flex justify-between items-center";
         existingHeader.innerHTML = `<span>Module Questions (${existingQs.length})</span>`;
         navigator.appendChild(existingHeader);
 
@@ -446,36 +446,36 @@ export function updateSidebarNavigator() {
             item.dataset.navQuestionId = qId;
             
             if (isLoaded) {
-                item.className = "list-group-item list-group-item-action border border-indigo-500/30 bg-indigo-500/5 rounded-xl p-2.5 flex flex-col gap-1 mb-2 hover:bg-indigo-500/10 transition-all duration-150 active-question-item";
+                item.className = "list-group-item list-group-item-action border border-indigo-200 bg-indigo-50/50 rounded-xl p-2.5 flex flex-col gap-1 mb-2 hover:bg-indigo-50 transition-all duration-150 active-question-item";
             } else {
-                item.className = "list-group-item list-group-item-action border border-slate-800/80 bg-slate-950/20 hover:bg-slate-850/30 rounded-xl p-2.5 flex flex-col gap-1 mb-2 transition-all duration-150";
+                item.className = "list-group-item list-group-item-action border border-slate-200 bg-white hover:bg-slate-50 rounded-xl p-2.5 flex flex-col gap-1 mb-2 transition-all duration-150";
             }
 
             const stemText = stripTags(q.stem || '');
             const snippet = stemText.length <= 60 ? stemText : stemText.slice(0, 60) + '…';
 
             const difficultyBadge = q.difficulty
-                ? `<span class="bg-slate-800 text-slate-400 font-mono text-[9px] px-1.5 py-0.5 rounded capitalize">${q.difficulty}</span>`
+                ? `<span class="bg-slate-100 text-slate-655 text-slate-600 font-mono text-[9px] px-1.5 py-0.5 rounded capitalize">${q.difficulty}</span>`
                 : '';
 
-            const badgeBg = isLoaded ? 'bg-indigo-500/20' : 'bg-slate-800';
-            const badgeText = isLoaded ? 'text-indigo-300' : 'text-slate-500';
+            const badgeBg = isLoaded ? 'bg-indigo-55 bg-indigo-50 border border-indigo-100' : 'bg-slate-100 border border-slate-200';
+            const badgeText = isLoaded ? 'text-indigo-700' : 'text-slate-600';
 
             item.innerHTML = `
                 <div class="flex items-center justify-between gap-2">
-                    <span class="font-extrabold text-xs ${isLoaded ? 'text-indigo-400' : 'text-slate-350'}">
+                    <span class="font-bold text-xs ${isLoaded ? 'text-indigo-600' : 'text-slate-700'}">
                         Q#${q.question_number || (i + 1)} 
-                        <span class="font-extrabold px-1 py-0.5 text-[8px] rounded uppercase ${badgeBg} ${badgeText}">
+                        <span class="font-bold px-1 py-0.5 text-[8px] rounded uppercase ${badgeBg} ${badgeText}">
                             ${isLoaded ? 'Editing' : 'Stored'}
                         </span>
                     </span>
-                    <span class="text-[9px] font-mono text-slate-500">ID: ${q.id}</span>
+                    <span class="text-[9px] font-mono text-slate-400">ID: ${q.id}</span>
                 </div>
-                <div class="text-[10px] ${isLoaded ? 'text-indigo-300/80' : 'text-slate-450'} truncate mt-0.5">
+                <div class="text-[10px] ${isLoaded ? 'text-indigo-800/80' : 'text-slate-500'} truncate mt-0.5" title="${escapeHtml(stemText || '(Empty stem)')}">
                     ${snippet || '(Empty stem)'}
                 </div>
                 <div class="flex items-center justify-between gap-1 mt-1">
-                    <span class="text-[9px] text-slate-500 truncate max-w-[120px]">${humanizeUnderscores(q.skill_domain || 'No Domain')}</span>
+                    <span class="text-[9px] text-slate-500 truncate max-w-[120px]" title="${escapeHtml(humanizeUnderscores(q.skill_domain || 'No Domain'))}">${humanizeUnderscores(q.skill_domain || 'No Domain')}</span>
                     ${difficultyBadge}
                 </div>
             `;
@@ -486,12 +486,12 @@ export function updateSidebarNavigator() {
                     loadedBlock.scrollIntoView({ behavior: 'smooth', block: 'start' });
                     syncLivePreviewScroll(loadedBlock);
                     // Highlight the item
-                    navigator.querySelectorAll('.list-group-item').forEach(el => el.classList.remove('border-amber-500/50', 'bg-amber-500/5'));
-                    item.classList.add('border-amber-500/50', 'bg-amber-500/5');
+                    navigator.querySelectorAll('.list-group-item').forEach(el => el.classList.remove('border-indigo-500/50', 'bg-indigo-50'));
+                    item.classList.add('border-indigo-500/50', 'bg-indigo-50');
                 } else {
                     item.innerHTML = `
                         <div class="text-slate-500 text-center py-2 text-xs font-medium">
-                            <div class="animate-spin inline-block w-4 h-4 border-2 border-amber-500 border-t-transparent rounded-full mr-2 align-middle"></div>
+                            <div class="animate-spin inline-block w-4 h-4 border-2 border-indigo-600 border-t-transparent rounded-full mr-2 align-middle"></div>
                             <span class="align-middle">Loading details...</span>
                         </div>
                     `;
@@ -507,7 +507,7 @@ export function updateSidebarNavigator() {
     const newBlocks = [...blocks].filter(b => !b.dataset.questionId);
     if (newBlocks.length > 0) {
         const draftHeader = document.createElement('div');
-        draftHeader.className = "text-[10px] font-extrabold text-slate-450 uppercase tracking-widest px-2 py-1 mt-3 mb-1.5";
+        draftHeader.className = "text-[10px] font-bold text-slate-500 uppercase tracking-wider px-2 py-1 mt-3 mb-1.5";
         draftHeader.textContent = `New Drafts (${newBlocks.length})`;
         navigator.appendChild(draftHeader);
 
@@ -528,22 +528,22 @@ export function updateSidebarNavigator() {
             const item = document.createElement('a');
             item.href = "javascript:void(0)";
             item.dataset.navIndex = index;
-            item.className = "list-group-item list-group-item-action border border-slate-800/80 bg-slate-950/20 hover:bg-slate-850/30 rounded-xl p-2.5 flex flex-col gap-1 mb-2 transition-all duration-150";
+            item.className = "list-group-item list-group-item-action border border-slate-200 bg-white hover:bg-slate-50 rounded-xl p-2.5 flex flex-col gap-1 mb-2 transition-all duration-150";
 
             item.innerHTML = `
                 <div class="flex items-center justify-between gap-2">
-                    <span class="font-extrabold text-xs text-amber-400">
+                    <span class="font-bold text-xs text-indigo-650 text-indigo-600">
                         Q#${existingQs.length + i + 1} 
-                        <span class="bg-amber-500/10 border border-amber-500/20 text-amber-400 font-extrabold px-1 py-0.5 text-[8px] rounded uppercase">Draft</span>
+                        <span class="bg-indigo-50 border border-indigo-100 text-indigo-700 font-bold px-1 py-0.5 text-[8px] rounded uppercase">Draft</span>
                     </span>
-                    <span class="badge bg-slate-800 text-slate-400 font-mono text-[8px] uppercase">${qType}</span>
+                    <span class="badge bg-slate-100 border border-slate-250 text-slate-600 font-mono text-[8px] uppercase">${qType}</span>
                 </div>
-                <div class="text-[10px] text-slate-450 truncate mt-0.5">
+                <div class="text-[10px] text-slate-500 truncate mt-0.5" title="${escapeHtml(stemText || '(Empty stem)')}">
                     ${snippet || '(Empty stem)'}
                 </div>
                 <div class="flex items-center justify-between gap-1 mt-1">
-                    <span class="text-[9px] text-slate-500 truncate max-w-[120px]">${domainLabel}</span>
-                    <span class="bg-slate-800 text-slate-400 font-mono text-[9px] px-1.5 py-0.5 rounded capitalize">${difficulty}</span>
+                    <span class="text-[9px] text-slate-500 truncate max-w-[120px]" title="${escapeHtml(domainLabel)}">${domainLabel}</span>
+                    <span class="bg-slate-100 border border-slate-250 text-slate-655 text-slate-600 font-mono text-[9px] px-1.5 py-0.5 rounded capitalize">${difficulty}</span>
                 </div>
             `;
 
@@ -551,8 +551,8 @@ export function updateSidebarNavigator() {
                 renderLivePreviewCard(block);
                 block.scrollIntoView({ behavior: 'smooth', block: 'start' });
                 syncLivePreviewScroll(block);
-                navigator.querySelectorAll('.list-group-item').forEach(el => el.classList.remove('border-amber-500/50', 'bg-amber-500/5'));
-                item.classList.add('border-amber-500/50', 'bg-amber-500/5');
+                navigator.querySelectorAll('.list-group-item').forEach(el => el.classList.remove('border-indigo-500/50', 'bg-indigo-50'));
+                item.classList.add('border-indigo-500/50', 'bg-indigo-50');
             };
 
             navigator.appendChild(item);
@@ -644,8 +644,8 @@ export function addBuilderBlock() {
         const drawer = document.getElementById('builderLivePreviewDrawer');
         if (drawer && drawer.querySelectorAll('[data-preview-index]').length === 0) {
             drawer.innerHTML = `
-                <div class="text-slate-500 text-center py-12 text-xs font-medium">
-                    <i class="bi bi-file-earmark-richtext text-3xl block mb-2 text-slate-650"></i>
+                <div class="text-slate-400 text-center py-12 text-xs font-medium">
+                    <i class="bi bi-file-earmark-richtext text-3xl block mb-2 text-slate-350"></i>
                     Live compilation of STEM and formulas will appear here in real-time
                 </div>
             `;
@@ -716,8 +716,8 @@ export function clearBuilderWorkspace() {
     const previewDrawer = document.getElementById('builderLivePreviewDrawer');
     if (previewDrawer) {
         previewDrawer.innerHTML = `
-            <div class="text-slate-500 text-center py-12 text-xs font-medium">
-                <i class="bi bi-file-earmark-richtext text-3xl block mb-2 text-slate-600"></i>
+            <div class="text-slate-400 text-center py-12 text-xs font-medium">
+                <i class="bi bi-file-earmark-richtext text-3xl block mb-2 text-slate-350"></i>
                 Live compilation of STEM and formulas will appear here in real-time
             </div>
         `;
@@ -743,7 +743,7 @@ export async function fetchModuleQuestions(moduleId) {
     if (navigator) {
         navigator.innerHTML = `
             <div class="text-slate-500 text-center py-8 text-xs font-medium">
-                <div class="animate-spin inline-block w-5 h-5 border-2 border-amber-500 border-t-transparent rounded-full mb-2"></div>
+                <div class="animate-spin inline-block w-5 h-5 border-2 border-indigo-600 border-t-transparent rounded-full mb-2"></div>
                 <div>Fetching existing questions...</div>
             </div>
         `;

@@ -207,29 +207,29 @@ function addModuleRow(row, focus = false) {
     tr.className = 'wizard-module-row';
     tr.innerHTML = `
         <td class="px-3 py-3">
-            <select class="wizard-section w-full bg-slate-950 border border-slate-800 rounded-lg px-2 py-2 text-white">
+            <select class="wizard-section w-full bg-white border border-slate-200 rounded-lg px-2 py-2 text-slate-800 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 outline-none">
                 <option value="reading_writing">R&W</option>
                 <option value="math">Math</option>
             </select>
         </td>
         <td class="px-3 py-3">
-            <input type="number" min="1" max="10" class="wizard-module-number w-20 bg-slate-950 border border-slate-800 rounded-lg px-2 py-2 text-white">
+            <input type="number" min="1" max="10" class="wizard-module-number w-20 bg-white border border-slate-200 rounded-lg px-2 py-2 text-slate-800 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 outline-none">
         </td>
         <td class="px-3 py-3">
-            <select class="wizard-difficulty w-full bg-slate-950 border border-slate-800 rounded-lg px-2 py-2 text-white">
+            <select class="wizard-difficulty w-full bg-white border border-slate-200 rounded-lg px-2 py-2 text-slate-800 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 outline-none">
                 <option value="standard">Standard</option>
                 <option value="easy">Easy</option>
                 <option value="hard">Hard</option>
             </select>
         </td>
         <td class="px-3 py-3">
-            <input type="number" min="1" max="240" class="wizard-duration w-24 bg-slate-950 border border-slate-800 rounded-lg px-2 py-2 text-white">
+            <input type="number" min="1" max="240" class="wizard-duration w-24 bg-white border border-slate-200 rounded-lg px-2 py-2 text-slate-800 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 outline-none">
         </td>
         <td class="px-3 py-3">
-            <input type="number" min="1" max="100" class="wizard-questions w-24 bg-slate-950 border border-slate-800 rounded-lg px-2 py-2 text-white">
+            <input type="number" min="1" max="100" class="wizard-questions w-24 bg-white border border-slate-200 rounded-lg px-2 py-2 text-slate-800 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 outline-none">
         </td>
         <td class="px-3 py-3 text-right">
-            <button type="button" class="wizard-remove-row px-3 py-2 rounded-lg bg-rose-500/10 text-rose-300 border border-rose-500/20 hover:bg-rose-500/20">
+            <button type="button" class="wizard-remove-row px-3 py-2 rounded-lg bg-rose-50 text-rose-700 border border-rose-100 hover:bg-rose-100" aria-label="Remove module row">
                 <i class="bi bi-trash"></i>
             </button>
         </td>

@@ -5,7 +5,7 @@
     <div class="practice-card-header-cohesive">
         <div class="header-left">
             <span class="badge-sat">SAT</span>
-            <h3 class="test-title">{{ \Illuminate\Support\Str::limit($test->test->title ?? '', 24, '...') }}</h3>
+            <h3 class="test-title" title="{{ $test->test->title ?? '' }}">{{ \Illuminate\Support\Str::limit($test->test->title ?? '', 24, '...') }}</h3>
         </div>
         <span class="test-date">{{ $test->completed_at ? $test->completed_at->format('M d, Y') : 'N/A' }}</span>
     </div>
@@ -30,7 +30,7 @@
                     </svg>
                 </div>
                 <div class="section-info-sm">
-                    <span class="section-name-sm">Reading & Writing</span>
+                    <span class="section-name-sm" title="Reading &amp; Writing">Reading & Writing</span>
                     <span class="section-score-sm">{{ $test->score_reading_writing ?? '---' }}</span>
                 </div>
             </div>
@@ -44,7 +44,7 @@
                     </svg>
                 </div>
                 <div class="section-info-sm">
-                    <span class="section-name-sm">Math</span>
+                    <span class="section-name-sm" title="Math">Math</span>
                     <span class="section-score-sm">{{ $test->score_math ?? '---' }}</span>
                 </div>
             </div>

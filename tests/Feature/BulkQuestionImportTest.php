@@ -147,4 +147,121 @@ class BulkQuestionImportTest extends TestCase
         $storedFilename = $matches[1];
         Storage::disk('public')->assertExists('media/' . $storedFilename);
     }
+
+    public function test_import_with_subdomain_and_other_fields(): void
+    {
+        Storage::fake('public');
+        Storage::fake('local');
+
+        // Create a temporary zip file
+        $zipPath = tempnam(sys_get_temp_dir(), 'test_zip_import') . '.zip';
+        $zip = new ZipArchive();
+        
+        if ($zip->open($zipPath, ZipArchive::CREATE | ZipArchive::OVERWRITE) !== true) {
+            $this->fail("Could not create test ZIP file.");
+        }
+
+        // Add a json file to the zip with questions
+        $questionsJson = json_encode([
+            'items' => [
+                [
+                    'stem' => 'A question testing subdomain import.',
+                    'question_type' => 'multiple_choice',
+                    'difficulty' => 'easy',
+                    'skill_domain' => 'information_and_ideas',
+                    'skill_subdomain' => 'determining_implicit_meanings',
+                    'passage' => 'Some passage context',
+                    'correct_choice' => 'A',
+                    'choices' => [
+                        'A' => 'Correct option',
+                        'B' => 'Incorrect option',
+                        'C' => 'Incorrect option',
+                        'D' => 'Incorrect option'
+                    ],
+                    'explanation' => 'Main explanation text.',
+                    'strategy_tip' => 'Solve carefully.',
+                    'common_mistakes' => "Don't rush.",
+                    'spr_hint' => 'Pick option A',
+                    'calculator_allowed' => false,
+                    'is_pretest' => true,
+                    'external_id' => 'EXT-12345'
+                ]
+            ]
+        ]);
+
+        $zip->addFromString('questions.json', $questionsJson);
+        $zip->close();
+
+        // Wrap the zip in an UploadedFile
+        $uploadedFile = new UploadedFile(
+            $zipPath,
+            'questions_import.zip',
+            'application/zip',
+            null,
+            true // test mode
+        );
+
+        $response = $this->actingAs($this->user)
+            ->postJson(route('home-dashboard.questions.bulk-zip'), [
+                'zip_file' => $uploadedFile,
+                'module_id' => $this->module->id,
+                'start_position' => 1,
+            ]);
+
+        // Clean up temp file
+        if (file_exists($zipPath)) {
+            unlink($zipPath);
+        }
+
+        $response->assertStatus(201);
+
+        // Assert question was created with all fields
+        $question = Question::where('stem', 'A question testing subdomain import.')->first();
+        $this->assertNotNull($question);
+        $this->assertEquals('determining_implicit_meanings', $question->skill_subdomain);
+        $this->assertEquals('EXT-12345', $question->external_id);
+        $this->assertEquals('Pick option A', $question->spr_hint);
+        $this->assertFalse($question->calculator_allowed);
+        $this->assertTrue($question->is_pretest);
+
+        // Assert explanation, strategy_tip, common_mistakes are created
+        $explanation = $question->explanation;
+        $this->assertNotNull($explanation);
+        $this->assertEquals('Main explanation text.', $explanation->explanation);
+        $this->assertEquals('Solve carefully.', $explanation->strategy_tip);
+        $this->assertEquals("Don't rush.", $explanation->common_mistakes);
+    }
+
+    public function test_import_sets_created_by_correctly(): void
+    {
+        $teacher = User::factory()->create(['role' => 'teacher']);
+
+        $response = $this->actingAs($teacher)
+            ->postJson(route('home-dashboard.questions.bulk-store'), [
+                'module_id' => $this->module->id,
+                'start_position' => 1,
+                'items' => [
+                    [
+                        'stem' => 'Teacher created question via bulk import.',
+                        'question_type' => 'multiple_choice',
+                        'difficulty' => 'easy',
+                        'skill_domain' => 'information_and_ideas',
+                        'passage' => 'Some passage context',
+                        'correct_choice' => 'A',
+                        'choices' => [
+                            'A' => 'Choice A',
+                            'B' => 'Choice B',
+                            'C' => 'Choice C',
+                            'D' => 'Choice D'
+                        ]
+                    ]
+                ]
+            ]);
+
+        $response->assertStatus(201);
+
+        $question = Question::where('stem', 'Teacher created question via bulk import.')->first();
+        $this->assertNotNull($question);
+        $this->assertEquals($teacher->id, $question->created_by);
+    }
 }

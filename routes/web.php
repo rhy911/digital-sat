@@ -106,7 +106,6 @@ Route::middleware(['auth', 'verified', 'role:admin,teacher'])->prefix('admin')->
     Route::post('/sections', [\App\Http\Controllers\Admin\SectionController::class, 'store'])->name('sections.store');
     Route::put('/sections/{id}', [\App\Http\Controllers\Admin\SectionController::class, 'update'])->name('sections.update');
     Route::delete('/sections/{id}', [\App\Http\Controllers\Admin\SectionController::class, 'destroy'])->name('sections.delete');
-    Route::post('/sections/link-module', [\App\Http\Controllers\Admin\SectionController::class, 'linkModule'])->name('sections.link-module');
 
     // Modules
     Route::post('/modules', [\App\Http\Controllers\Admin\ModuleController::class, 'store'])->name('modules.store');

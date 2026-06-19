@@ -404,6 +404,7 @@ class BulkQuestionImportService
                     'spr_hint' => $item['spr_hint'] ?? null,
                     'calculator_allowed' => (bool) ($item['calculator_allowed'] ?? true),
                     'external_id' => $item['external_id'] ?? null,
+                    'created_by' => auth()->id(),
                 ];
 
                 $question = Question::create($questionAttrs);
@@ -430,14 +431,16 @@ class BulkQuestionImportService
                     }
                 }
 
-                if (! empty($item['explanation'])) {
+                if (! empty($item['explanation']) || ! empty($item['strategy_tip']) || ! empty($item['common_mistakes'])) {
                     QuestionExplanation::create([
                         'question_id' => $question->id,
-                        'explanation' => $item['explanation'],
+                        'explanation' => $item['explanation'] ?? '',
                         'rationale_a' => $item['rationale_a'] ?? null,
                         'rationale_b' => $item['rationale_b'] ?? null,
                         'rationale_c' => $item['rationale_c'] ?? null,
                         'rationale_d' => $item['rationale_d'] ?? null,
+                        'strategy_tip' => $item['strategy_tip'] ?? null,
+                        'common_mistakes' => $item['common_mistakes'] ?? null,
                     ]);
                 }
 
@@ -502,6 +505,8 @@ class BulkQuestionImportService
             $item['rationale_b'] = $item['rationale_b'] ?? null;
             $item['rationale_c'] = $item['rationale_c'] ?? null;
             $item['rationale_d'] = $item['rationale_d'] ?? null;
+            $item['strategy_tip'] = $item['strategy_tip'] ?? null;
+            $item['common_mistakes'] = $item['common_mistakes'] ?? null;
         }
 
         return $validated;
@@ -583,7 +588,9 @@ class BulkQuestionImportService
             'items.*.question_type' => 'required|in:multiple_choice,student_produced_response',
             'items.*.difficulty' => 'nullable|in:easy,medium,hard',
             'items.*.skill_domain' => 'nullable|string',
+            'items.*.skill_subdomain' => 'nullable|string',
             'items.*.passage_id' => 'nullable|exists:passages,id',
+            'items.*.paired_passage_id' => 'nullable|exists:passages,id',
             'items.*.passage' => 'nullable|array',
             'items.*.choices' => 'nullable|array',
             'items.*.spr_correct_answers' => 'nullable|array',
@@ -592,6 +599,12 @@ class BulkQuestionImportService
             'items.*.rationale_b' => 'nullable|string',
             'items.*.rationale_c' => 'nullable|string',
             'items.*.rationale_d' => 'nullable|string',
+            'items.*.strategy_tip' => 'nullable|string',
+            'items.*.common_mistakes' => 'nullable|string',
+            'items.*.spr_hint' => 'nullable|string',
+            'items.*.calculator_allowed' => 'nullable|boolean',
+            'items.*.is_pretest' => 'nullable|boolean',
+            'items.*.external_id' => 'nullable|string',
         ];
     }
 

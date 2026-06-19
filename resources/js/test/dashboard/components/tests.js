@@ -1,107 +1,220 @@
-import { BASE_URL, TESTS_STORE_URL } from '../core/config.js';
+import { BASE_URL } from '../core/config.js';
 import { showAlert, escapeHtml, humanizeUnderscores, showTableLoader, hideTableLoader, formatDateToShort } from '../utils/helpers.js';
 
-let testsTabulator = null;
+let localAllTests = [];
+let currentFilteredTests = [];
+let currentTestsRenderId = 0;
 
-export function handleTestTitleEdit(cell) {
-    const data = cell.getRow().getData();
-    fetch(`${BASE_URL}/tests/${data.id}`, {
-        method: 'PUT',
-        headers: { 
-            'Content-Type': 'application/json', 
-            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content, 
-            'Accept': 'application/json' 
-        },
-        body: JSON.stringify({ title: data.title })
-    }).then(res => res.json()).then(res => {
-        if (!res.success) cell.restoreOldValue();
-    }).catch(() => cell.restoreOldValue());
+if (typeof window.__tdTestsPage === 'undefined') {
+    window.__tdTestsPage = 1;
+}
+if (typeof window.__tdTestsPerPage === 'undefined') {
+    window.__tdTestsPerPage = 30;
 }
 
-export function testStatusFormatter(cell) {
-    const val = cell.getValue();
-    let bgClass = 'bg-slate-800/80 text-slate-300 border-slate-700/60';
-    if (val === 'active') bgClass = 'bg-emerald-950/30 text-emerald-400 border-emerald-500/20';
-    if (val === 'draft') bgClass = 'bg-amber-950/30 text-amber-400 border-amber-500/20';
-    if (val === 'archived') bgClass = 'bg-slate-800/80 text-slate-300 border-slate-700/60';
-    return `<span class="inline-flex items-center px-2.5 py-1 rounded-lg text-[10px] font-extrabold uppercase tracking-wider border ${bgClass}">${escapeHtml(val)}</span>`;
-}
+function renderTestRowHtml(t) {
+    const isOwner = t.is_owner;
+    const creatorName = t.created_by_name || 'Admin';
+    const createdByHtml = `<span class="text-xs font-medium text-slate-600 truncate max-w-[110px] block" title="${escapeHtml(creatorName)}">${escapeHtml(creatorName)}</span>`;
 
-export function testCreatedByFormatter(cell) {
-    const data = cell.getRow().getData();
-    const name = data.created_by_name || 'Admin';
-    return `<span class="text-xs font-semibold text-slate-350 truncate max-w-[110px] block" title="${escapeHtml(name)}">${escapeHtml(name)}</span>`;
-}
+    // Title input/span
+    const titleHtml = isOwner
+        ? `<input type="text" class="test-title-input w-full bg-transparent border-0 hover:bg-slate-100 focus:bg-white focus:ring-2 focus:ring-indigo-500/20 focus:outline-none rounded-lg px-2 py-1 font-semibold text-slate-800 transition-all" value="${escapeHtml(t.title)}" data-id="${t.id}">`
+        : `<span class="px-2 py-1 font-semibold text-slate-800">${escapeHtml(t.title)}</span>`;
 
-export function testPublicFormatter(cell) {
-    const data = cell.getRow().getData();
-    if (data.is_owner) {
-        return `<div class="flex items-center justify-center h-full"><input type="checkbox" class="w-4 h-4 text-indigo-600 border-slate-800 bg-slate-400/60 rounded-xs cursor-pointer test-public-checkbox" ${data.is_public ? 'checked' : ''}></div>`;
-    } else {
-        return `<span class="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-extrabold bg-indigo-500/10 text-indigo-400 border border-indigo-500/20 uppercase tracking-wider"><i class="bi bi-globe mr-1"></i> Shared</span>`;
-    }
-}
+    // Public toggle checkbox
+    const publicHtml = isOwner
+        ? `<div class="flex items-center justify-center"><input type="checkbox" data-id="${t.id}" class="w-4 h-4 text-indigo-600 border-slate-300 bg-white rounded cursor-pointer test-public-checkbox" ${t.is_public ? 'checked' : ''} title="${t.is_public ? 'Public (Click to make Private)' : 'Private (Click to make Public)'}" aria-label="Toggle public visibility"></div>`
+        : `<div class="flex items-center justify-center"><input type="checkbox" checked disabled class="w-4 h-4 text-slate-400 border-slate-200 bg-slate-100 rounded cursor-not-allowed opacity-60" title="Shared (View only)" aria-label="Shared resource"></div>`;
 
-export function testActionsFormatter(cell) {
-    const id = cell.getValue();
-    const data = cell.getRow().getData();
-    if (!data.is_owner) {
-        return `<span class="text-xs font-semibold text-slate-500">Read-Only</span>`;
-    }
-    return `
-        <div class="flex items-center gap-3">   
-            <select class="px-3 py-1.5 text-xs font-bold rounded-xl border border-slate-800/80 shadow-sm focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition-all outline-none bg-slate-900/60 text-slate-200 status-select cursor-pointer hover:bg-slate-850 hover:text-white" data-test-id="${id}">
-                <option value="draft" ${data.status === 'draft' ? 'selected' : ''}>Draft</option>
-                <option value="active" ${data.status === 'active' ? 'selected' : ''}>Active</option>
-                <option value="archived" ${data.status === 'archived' ? 'selected' : ''}>Archived</option>
-            </select>
-            <div class="flex items-center gap-1">
-                <button type="button" class="w-9 h-9 flex items-center justify-center text-slate-400 hover:text-indigo-400 hover:bg-indigo-500/10 rounded-xl clone-test-btn transition-all border border-transparent hover:border-indigo-500/30" data-id="${id}" title="Clone Template (Hierarchy Only)"><i class="bi bi-copy text-base"></i></button>
-                <button type="button" class="w-9 h-9 flex items-center justify-center text-slate-400 hover:text-rose-400 hover:bg-rose-500/10 rounded-xl delete-test-btn transition-all border border-transparent hover:border-rose-500/30" data-id="${id}" title="Delete Test"><i class="bi bi-trash text-base"></i></button>
+    // Status select dropdown
+    let statusHtml = '';
+    if (isOwner) {
+        let selectClass = 'px-2 py-1 text-[11px] font-extrabold uppercase tracking-wider rounded-md border cursor-pointer transition-colors duration-150 status-select outline-none';
+        if (t.status === 'active') {
+            selectClass += ' bg-emerald-50 border-emerald-200 text-emerald-800 hover:bg-emerald-100/70';
+        } else if (t.status === 'draft') {
+            selectClass += ' bg-amber-50 border-amber-200 text-amber-700 hover:bg-amber-100/70';
+        } else {
+            selectClass += ' bg-slate-50 border-slate-200 text-slate-700 hover:bg-slate-100/70';
+        }
+        statusHtml = `
+            <div class="flex items-center justify-center w-full h-full">
+                <select class="${selectClass}" data-test-id="${t.id}" aria-label="Change status">
+                    <option value="draft" ${t.status === 'draft' ? 'selected' : ''}>Draft</option>
+                    <option value="active" ${t.status === 'active' ? 'selected' : ''}>Active</option>
+                    <option value="archived" ${t.status === 'archived' ? 'selected' : ''}>Archived</option>
+                </select>
             </div>
-        </div>
-    `;
+        `;
+    } else {
+        let chipClass = 'status-chip status-chip-readonly';
+        if (t.status === 'active') chipClass = 'status-chip status-chip-active';
+        if (t.status === 'draft') chipClass = 'status-chip status-chip-draft';
+        if (t.status === 'archived') chipClass = 'status-chip status-chip-archived';
+        statusHtml = `<div class="flex items-center justify-center w-full h-full"><span class="${chipClass}">${escapeHtml(humanizeUnderscores(t.status))}</span></div>`;
+    }
+
+    // Actions dropdown
+    const actionsHtml = isOwner
+        ? `<div class="actions-dropdown">
+            <button type="button" class="px-2.5 py-1.5 text-xs font-bold rounded-lg border border-slate-200 bg-white text-slate-700 cursor-pointer hover:bg-slate-50 flex items-center gap-1" data-dropdown-trigger="true" aria-expanded="false" aria-label="Toggle actions menu">
+                Actions <i class="bi bi-chevron-down text-[10px]"></i>
+            </button>
+            <div class="dropdown-menu hidden">
+                <button type="button" class="dropdown-item clone-test-btn" data-id="${t.id}"><i class="bi bi-copy mr-2"></i> Clone</button>
+                <button type="button" class="dropdown-item text-danger delete-test-btn" data-id="${t.id}"><i class="bi bi-trash mr-2"></i> Delete</button>
+            </div>
+          </div>`
+        : `<span class="status-chip status-chip-readonly">Read-Only</span>`;
+
+    const rowClass = isOwner ? '' : 'row-shared';
+
+    return `<tr class="${rowClass}">
+        <td class="font-semibold text-slate-400 text-center">${escapeHtml(t.id)}</td>
+        <td>${titleHtml}</td>
+        <td>${escapeHtml(t.type)}</td>
+        <td class="text-center font-semibold text-slate-500">${escapeHtml(t.created_at || 'N/A')}</td>
+        <td>${createdByHtml}</td>
+        <td class="text-center">${publicHtml}</td>
+        <td class="text-center">${statusHtml}</td>
+        <td class="font-bold text-slate-700 text-center">${escapeHtml(t.duration)}<span class="text-[10px] ml-0.5 opacity-50 uppercase tracking-tighter">min</span></td>
+        <td class="text-center">${actionsHtml}</td>
+    </tr>`;
 }
 
-let currentTestsData = null;
+function _renderTestsChunked(tbody, items, emptyHtml) {
+    currentTestsRenderId++;
+    const renderId = currentTestsRenderId;
+    
+    if (!items.length) {
+        tbody.innerHTML = emptyHtml;
+        return;
+    }
+    
+    tbody.innerHTML = '';
+    let index = 0;
+    const chunkSize = 20;
+    
+    function renderChunk() {
+        if (renderId !== currentTestsRenderId) return;
+        
+        const chunk = items.slice(index, index + chunkSize);
+        if (!chunk.length) return;
+        
+        tbody.insertAdjacentHTML('beforeend', chunk.map(renderTestRowHtml).join(''));
+        index += chunkSize;
+        
+        if (index < items.length) {
+            requestAnimationFrame(() => setTimeout(renderChunk, 0));
+        }
+    }
+    
+    renderChunk();
+}
+
+function renderTestsPage() {
+    const tbody = document.getElementById('testsTableBody');
+    if (!tbody) return;
+
+    const page = window.__tdTestsPage || 1;
+    const perPage = window.__tdTestsPerPage || 30;
+    
+    const start = (page - 1) * perPage;
+    const end = page * perPage;
+    const sliced = currentFilteredTests.slice(start, end);
+
+    const emptyHtml = '<tr>'
+        + '<td colspan="9" class="px-6 py-20 text-center">'
+        + '<div class="flex flex-col items-center justify-center">'
+        + '<div class="w-20 h-20 rounded-full bg-slate-50 border border-slate-200 flex items-center justify-center mb-6">'
+        + '<i class="bi bi-inbox text-4xl text-slate-400"></i>'
+        + '</div>'
+        + '<h4 class="text-lg font-bold text-slate-800">No tests found</h4>'
+        + '<p class="text-sm text-slate-500 mt-1 max-w-xs mx-auto">Create one practice test to get started.</p>'
+        + '</div>'
+        + '</td>'
+        + '</tr>';
+
+    _renderTestsChunked(tbody, sliced, emptyHtml);
+    renderTestsPagination(currentFilteredTests.length);
+}
+
+export function renderTestsPagination(total) {
+    const wrap = document.getElementById('testsPoolPagination');
+    if (!wrap) return;
+    
+    if (total === 0) {
+        wrap.innerHTML = '';
+        return;
+    }
+    
+    const cur = window.__tdTestsPage || 1;
+    const perPage = window.__tdTestsPerPage || 30;
+    const last = Math.ceil(total / perPage) || 1;
+    
+    let html = '<div class="flex flex-wrap justify-between items-center w-full gap-3 px-2">';
+    html += '<span class="text-xs font-semibold text-slate-600">Page ' + cur + ' of ' + last + ' <span class="mx-1 text-slate-300">•</span> ' + total + ' tests</span>';
+    html += '<div class="flex gap-2">';
+    html += '<button type="button" class="min-h-9 px-3 py-1.5 text-xs font-semibold rounded-lg border border-slate-200 bg-white text-slate-700 hover:bg-slate-50 hover:border-slate-300 transition-colors duration-150 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer" data-t-page="prev"' + (cur <= 1 ? ' disabled' : '') + '>Previous</button>';
+    html += '<button type="button" class="min-h-9 px-3 py-1.5 text-xs font-semibold rounded-lg border border-slate-200 bg-white text-slate-700 hover:bg-slate-50 hover:border-slate-300 transition-colors duration-150 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer" data-t-page="next"' + (cur >= last ? ' disabled' : '') + '>Next</button>';
+    html += '</div></div>';
+    wrap.innerHTML = html;
+    
+    if (wrap.dataset.bound !== '1') {
+        wrap.dataset.bound = '1';
+        wrap.addEventListener('click', function (e) {
+            const btn = e.target.closest('[data-t-page]');
+            if (!btn || btn.disabled) return;
+            
+            const dir = btn.getAttribute('data-t-page');
+            const curPage = window.__tdTestsPage || 1;
+            
+            showTableLoader('testsTableContainer');
+            
+            setTimeout(() => {
+                if (dir === 'prev') {
+                    window.__tdTestsPage = Math.max(1, curPage - 1);
+                } else if (dir === 'next') {
+                    window.__tdTestsPage = curPage + 1;
+                }
+                renderTestsPage();
+                hideTableLoader('testsTableContainer');
+            }, 400);
+        });
+    }
+}
+
+function applyTestsFilterAndSearch() {
+    const searchInput = document.getElementById('testsTableSearch');
+    const query = searchInput ? searchInput.value.toLowerCase().trim() : '';
+    const showShared = document.getElementById('testsShowSharedToggle')?.checked;
+
+    let filtered = localAllTests;
+    if (window.__currentUserRole === 'teacher' && !showShared) {
+        filtered = localAllTests.filter(t => t.is_owner);
+    }
+
+    if (query) {
+        filtered = filtered.filter(t => {
+            const title = (t.title || '').toLowerCase();
+            const type = (t.type || '').toLowerCase();
+            const id = String(t.id);
+            return title.includes(query) || type.includes(query) || id.includes(query);
+        });
+    }
+
+    currentFilteredTests = filtered;
+}
 
 export function renderTestsTable(tests) {
-    if (currentTestsData === tests && testsTabulator) {
-        setTimeout(() => {
-            if (testsTabulator) {
-                testsTabulator.redraw(true);
-                const el = document.getElementById('testsTabulatorTable');
-                if (el) {
-                    el.classList.remove('opacity-0');
-                    el.classList.add('opacity-100');
-                }
-            }
-        }, 50);
-        return;
-    }
-    currentTestsData = tests;
-    const tableContainer = document.getElementById('testsTableContainer');
-    const emptyState = document.getElementById('testsEmptyState');
-    const tableElem = document.getElementById('testsTabulatorTable');
-
-    if (!tableElem) return;
-
-    if (!tests.length) {
-        if (emptyState) emptyState.classList.remove('hidden');
-        if (tableContainer) tableContainer.classList.add('hidden');
-        return;
-    }
-
-    if (emptyState) emptyState.classList.add('hidden');
-    if (tableContainer) tableContainer.classList.remove('hidden');
-
-    const tableData = tests.map(function(t) {
+    localAllTests = tests.map(function(t) {
         return {
             id: t.id,
             title: t.title,
-            type: humanizeUnderscores(t.test_type),
+            type: humanizeUnderscores(t.test_type || t.type),
             status: t.status,
-            duration: t.total_duration_minutes,
+            duration: t.total_duration_minutes || t.duration || 0,
             created_by: t.created_by,
             created_by_name: t.created_by_name || (t.creator ? (t.creator.username || t.creator.email) : 'Admin'),
             created_at: formatDateToShort(t.created_at),
@@ -109,142 +222,128 @@ export function renderTestsTable(tests) {
             is_owner: t.is_owner !== undefined ? t.is_owner : (t.created_by === window.__currentUserId || window.__currentUserRole === 'admin')
         };
     });
+    
+    const tableContainer = document.getElementById('testsTableContainer');
+    const emptyState = document.getElementById('testsEmptyState');
+    if (!tableContainer) return;
 
-    let testsSearchTimeout = null;
+    applyTestsFilterAndSearch();
 
-    if (!testsTabulator) {
-        testsTabulator = new Tabulator("#testsTabulatorTable", {
-            data: tableData,
-            minHeight: 400,
-            layout: "fitColumns",
-            responsiveLayout: "collapse",
-            pagination: true,
-            paginationSize: 30,
-            paginationCounter: "rows",
-            placeholder: "No tests found",
-            rowFormatter: function(row) {
-                const data = row.getData();
-                if (!data.is_owner) {
-                    row.getElement().classList.add("row-shared");
-                }
-            },
-            columns: [
-                { title: "ID", field: "id", width: 70 },
-                { 
-                    title: "Title <i class='bi bi-pencil ms-1 text-muted' style='font-size:0.75rem'></i>", 
-                    field: "title", 
-                    editable: function(cell) {
-                        return cell.getRow().getData().is_owner;
-                    },
-                    editor: "input", 
-                    cellEdited: handleTestTitleEdit 
-                },
-                { title: "Type", field: "type" },
-                { title: "Created At", field: "created_at", width: 140 },
-                { title: "Created By", field: "is_owner", formatter: testCreatedByFormatter, headerSort: false, width: 140 },
-                { 
-                    title: "Public", 
-                    field: "is_public", 
-                    formatter: testPublicFormatter, 
-                    headerSort: false, 
-                    width: 95,
-                    cellClick: function(e, cell) {
-                        const target = e.target;
-                        if (target.classList.contains('test-public-checkbox')) {
-                            const data = cell.getRow().getData();
-                            const checked = target.checked;
-                            
-                            fetch(`${BASE_URL}/tests/${data.id}`, {
-                                method: 'PUT',
-                                headers: {
-                                    'Content-Type': 'application/json',
-                                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
-                                    'Accept': 'application/json'
-                                },
-                                body: JSON.stringify({ is_public: checked })
-                            }).then(res => res.json()).then(res => {
-                                if (res.status === 'success') {
-                                    showAlert('success', 'Test visibility updated!');
-                                    data.is_public = checked;
-                                    cell.getRow().update(data);
-                                } else {
-                                    showAlert('danger', res.message || 'Failed to update visibility');
-                                    target.checked = !checked;
-                                }
-                            }).catch(() => {
-                                showAlert('danger', 'Error updating test visibility');
-                                target.checked = !checked;
-                            });
-                        }
-                    }
-                },
-                { title: "Status", field: "status", formatter: testStatusFormatter, width: 100 },
-                { title: "Duration", field: "duration", formatter: (cell) => cell.getValue() + 'm', width: 90 },
-                { title: "Actions", field: "id", headerSort: false, formatter: testActionsFormatter, width: 280 }
-            ],
-            pageChanged: function(page) {
-                showTableLoader('testsTableContainer');
-                setTimeout(() => {
-                    hideTableLoader('testsTableContainer');
-                }, 400);
-            }
-        });
-        const updateFilters = () => {
-            const searchVal = document.getElementById('testsTableSearch')?.value || '';
-            const showShared = document.getElementById('testsShowSharedToggle')?.checked;
-            
-            testsTabulator.clearFilter();
-            
-            if (searchVal) {
-                testsTabulator.setFilter("title", "like", searchVal);
-            }
-            if (window.__currentUserRole === 'teacher' && !showShared) {
-                testsTabulator.setFilter("is_owner", "==", true);
-            }
-        };
+    if (!currentFilteredTests.length && !tests.length) {
+        if (emptyState) emptyState.classList.remove('hidden');
+        tableContainer.classList.add('hidden');
+        return;
+    }
 
-        document.getElementById('testsShowSharedToggle')?.addEventListener('change', function() {
-            showTableLoader('testsTableContainer');
-            updateFilters();
-            setTimeout(() => hideTableLoader('testsTableContainer'), 200);
-        });
+    if (emptyState) emptyState.classList.add('hidden');
+    tableContainer.classList.remove('hidden');
 
-        document.getElementById('testsTableSearch')?.addEventListener('input', function(e) {
-            const val = e.target.value;
+    window.__tdTestsPage = 1;
+    renderTestsPage();
+    initTestsEvents();
+}
+
+let eventsBound = false;
+function initTestsEvents() {
+    if (eventsBound) return;
+    eventsBound = true;
+
+    const searchInput = document.getElementById('testsTableSearch');
+    if (searchInput) {
+        let testsSearchTimeout = null;
+        searchInput.addEventListener('input', function(e) {
             showTableLoader('testsTableContainer');
             if (testsSearchTimeout) clearTimeout(testsSearchTimeout);
             testsSearchTimeout = setTimeout(() => {
-                updateFilters();
-                setTimeout(() => hideTableLoader('testsTableContainer'), 200);
+                applyTestsFilterAndSearch();
+                window.__tdTestsPage = 1;
+                renderTestsPage();
+                setTimeout(() => {
+                    hideTableLoader('testsTableContainer');
+                }, 200);
             }, 400);
         });
+    }
 
-        if (window.__currentUserRole === 'teacher' && !document.getElementById('testsShowSharedToggle')?.checked) {
-            testsTabulator.setFilter("is_owner", "==", true);
-        }
+    document.getElementById('testsShowSharedToggle')?.addEventListener('change', function() {
+        showTableLoader('testsTableContainer');
+        setTimeout(() => {
+            applyTestsFilterAndSearch();
+            window.__tdTestsPage = 1;
+            renderTestsPage();
+            hideTableLoader('testsTableContainer');
+        }, 300);
+    });
 
-        setTimeout(() => {
-            if (testsTabulator) {
-                testsTabulator.redraw(true);
-                const el = document.getElementById('testsTabulatorTable');
-                if (el) {
-                    el.classList.remove('opacity-0');
-                    el.classList.add('opacity-100');
+    const tbody = document.getElementById('testsTableBody');
+    if (tbody) {
+        // Toggle Public visibility
+        tbody.addEventListener('change', function(e) {
+            const checkbox = e.target.closest('.test-public-checkbox');
+            if (!checkbox) return;
+            
+            const testId = checkbox.dataset.id;
+            const checked = checkbox.checked;
+            
+            fetch(`${BASE_URL}/tests/${testId}`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+                    'Accept': 'application/json'
+                },
+                body: JSON.stringify({ is_public: checked })
+            }).then(res => res.json()).then(res => {
+                if (res.status === 'success') {
+                    showAlert('success', 'Test visibility updated!');
+                    const t = localAllTests.find(item => String(item.id) === String(testId));
+                    if (t) t.is_public = checked;
+                } else {
+                    showAlert('danger', res.message || 'Failed to update visibility');
+                    checkbox.checked = !checked;
                 }
+            }).catch(() => {
+                showAlert('danger', 'Error updating test visibility');
+                checkbox.checked = !checked;
+            });
+        });
+
+        // Edit Title on change/blur
+        tbody.addEventListener('change', function(e) {
+            const input = e.target.closest('.test-title-input');
+            if (!input) return;
+
+            const testId = input.dataset.id;
+            const newTitle = input.value.trim();
+            if (!newTitle) {
+                showAlert('danger', 'Title cannot be empty');
+                input.value = input.defaultValue || '';
+                return;
             }
-        }, 100);
-    } else {
-        testsTabulator.replaceData(tableData);
-        setTimeout(() => {
-            if (testsTabulator) {
-                testsTabulator.redraw(true);
-                const el = document.getElementById('testsTabulatorTable');
-                if (el) {
-                    el.classList.remove('opacity-0');
-                    el.classList.add('opacity-100');
+
+            fetch(`${BASE_URL}/tests/${testId}`, {
+                method: 'PUT',
+                headers: { 
+                    'Content-Type': 'application/json', 
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content, 
+                    'Accept': 'application/json' 
+                },
+                body: JSON.stringify({ title: newTitle })
+            }).then(res => res.json()).then(res => {
+                if (res.status === 'success') {
+                    showAlert('success', 'Test title updated successfully!');
+                    input.defaultValue = newTitle;
+                    const t = localAllTests.find(item => String(item.id) === String(testId));
+                    if (t) t.title = newTitle;
+                } else {
+                    showAlert('danger', res.message || 'Failed to update title');
+                    input.value = input.defaultValue || '';
                 }
-            }
-        }, 50);
+            }).catch(() => {
+                showAlert('danger', 'Error updating test title');
+                input.value = input.defaultValue || '';
+            });
+        });
     }
 }
 

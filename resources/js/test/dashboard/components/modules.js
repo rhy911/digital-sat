@@ -3,12 +3,12 @@ import { BASE_URL } from '../core/config.js';
 
 export function moduleDifficultyBadgeClass(level) {
     if (level === 'hard') {
-        return 'bg-rose-950/30 text-rose-400 border-rose-500/20';
+        return 'status-chip-archived text-rose-700 bg-rose-50 border-rose-100';
     }
     if (level === 'easy') {
-        return 'bg-emerald-950/30 text-emerald-400 border-emerald-500/20';
+        return 'status-chip-active text-emerald-700 bg-emerald-50 border-emerald-100';
     }
-    return 'bg-indigo-950/30 text-indigo-400 border-indigo-500/20';
+    return 'status-chip-shared text-indigo-700 bg-indigo-50 border-indigo-100';
 }
 
 let localAllModules = [];
@@ -19,15 +19,15 @@ function renderModuleRowHtml(mod) {
     let linkedHtml = '';
     const sections = mod.sections || [];
     if (sections.length === 0) {
-        linkedHtml = '<span class="inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-bold bg-amber-950/30 text-amber-400 border border-amber-500/20">'
+        linkedHtml = '<span class="status-chip status-chip-readonly">'
             + '<i class="bi bi-unlock mr-1.5"></i> Standalone'
             + '</span>';
     } else {
         linkedHtml = '<div class="flex flex-col gap-1.5">' + sections.map(function (sec) {
             const testTitle = (sec.test && sec.test.title) ? sec.test.title : 'Test';
             return '<div>'
-                + '<span class="inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-bold bg-emerald-950/30 text-emerald-400 border border-emerald-500/20">'
-                + '<i class="bi bi-tag mr-1.5"></i> ' + escapeHtml(testTitle) + ' &raquo; <span class="ml-1 opacity-80">' + escapeHtml(sec.name) + '</span>'
+                + '<span class="status-chip status-chip-shared">'
+                + '<i class="bi bi-tag mr-1.5"></i> ' + escapeHtml(testTitle) + ' &raquo; <span class="ml-1 opacity-90 text-slate-800 font-medium normal-case">' + escapeHtml(sec.name) + '</span>'
                 + '</span>'
                 + '</div>';
         }).join('') + '</div>';
@@ -36,40 +36,45 @@ function renderModuleRowHtml(mod) {
     const isOwner = mod.created_by === window.__currentUserId || window.__currentUserRole === 'admin';
     const creatorName = mod.created_by_name || (mod.creator ? (mod.creator.username || mod.creator.email) : 'Admin');
 
-    const createdByHtml = '<span class="text-xs font-semibold text-slate-350 truncate max-w-[110px] block" title="' + escapeHtml(creatorName) + '">' + escapeHtml(creatorName) + '</span>';
+    const createdByHtml = '<span class="text-xs font-semibold text-slate-600 truncate max-w-[110px] block" title="' + escapeHtml(creatorName) + '">' + escapeHtml(creatorName) + '</span>';
 
     const publicHtml = isOwner
-        ? '<div class="flex items-center"><input type="checkbox" data-id="' + escapeHtml(mod.id) + '" class="w-4 h-4 text-indigo-600 border-slate-800 bg-slate-400/60 rounded-xs cursor-pointer module-public-toggle" ' + (mod.is_public ? 'checked' : '') + '></div>'
-        : '<span class="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-extrabold bg-indigo-500/10 text-indigo-400 border border-indigo-500/20 uppercase tracking-wider"><i class="bi bi-globe mr-1"></i> Shared</span>';
+        ? '<div class="flex items-center justify-center"><input type="checkbox" data-id="' + escapeHtml(mod.id) + '" class="w-4 h-4 text-indigo-600 border-slate-300 bg-white rounded cursor-pointer module-public-toggle" ' + (mod.is_public ? 'checked' : '') + ' title="' + (mod.is_public ? 'Public (Click to make Private)' : 'Private (Click to make Public)') + '" aria-label="Toggle public visibility"></div>'
+        : '<div class="flex items-center justify-center"><input type="checkbox" checked disabled class="w-4 h-4 text-slate-400 border-slate-200 bg-slate-100 rounded cursor-not-allowed opacity-60" title="Shared (View only)" aria-label="Shared resource"></div>';
 
     const actionsHtml = isOwner
-        ? '<div class="flex justify-end gap-1">'
-          + '<button class="w-8 h-8 flex items-center justify-center text-slate-400 hover:text-indigo-400 hover:bg-indigo-500/10 rounded-xl clone-module-btn transition-all cursor-pointer" data-id="' + escapeHtml(mod.id) + '" title="Clone Module"><i class="bi bi-copy"></i></button>'
-          + '<button class="w-8 h-8 flex items-center justify-center text-slate-400 hover:text-rose-400 hover:bg-rose-500/10 rounded-xl delete-module-btn transition-all cursor-pointer" data-id="' + escapeHtml(mod.id) + '" title="Delete"><i class="bi bi-trash"></i></button>'
+        ? '<div class="actions-dropdown">'
+          + '<button type="button" class="px-2.5 py-1.5 text-xs font-bold rounded-lg border border-slate-200 bg-white text-slate-700 cursor-pointer hover:bg-slate-50 flex items-center gap-1" data-dropdown-trigger="true" aria-expanded="false" aria-label="Toggle actions menu">'
+          + 'Actions <i class="bi bi-chevron-down text-[10px]"></i>'
+          + '</button>'
+          + '<div class="dropdown-menu hidden">'
+          + '<button type="button" class="dropdown-item clone-module-btn" data-id="' + escapeHtml(mod.id) + '"><i class="bi bi-copy mr-2"></i> Clone</button>'
+          + '<button type="button" class="dropdown-item text-danger delete-module-btn" data-id="' + escapeHtml(mod.id) + '"><i class="bi bi-trash mr-2"></i> Delete</button>'
           + '</div>'
-        : '<div class="text-slate-500 text-[11px] font-semibold text-right pr-2">Read-Only</div>';
+          + '</div>'
+        : '<span class="status-chip status-chip-readonly">Read-Only</span>';
 
-    const rowClass = isOwner ? 'hover:bg-slate-800/20 border-b border-slate-800/30 transition-colors' : 'hover:bg-slate-800/20 border-b border-slate-800/30 transition-colors row-shared opacity-80 border-dashed';
+    const rowClass = isOwner ? '' : 'row-shared';
 
     return '<tr class="' + rowClass + '">'
-        + '<td class="px-6 py-4 font-semibold text-slate-500">' + escapeHtml(mod.id) + '</td>'
-        + '<td class="px-6 py-4">'
-        + '<code class="font-mono text-xs bg-slate-800/60 px-2 py-1 rounded-lg text-indigo-400 font-bold border border-slate-700/40">' + escapeHtml(mod.key || 'N/A') + '</code>'
+        + '<td class="font-semibold text-slate-400 text-center">' + escapeHtml(mod.id) + '</td>'
+        + '<td>' + linkedHtml + '</td>'
+        + '<td class="text-center">'
+        + '<span class="status-chip status-chip-readonly">Module ' + escapeHtml(mod.module_number) + '</span>'
         + '</td>'
-        + '<td class="px-6 py-4">' + linkedHtml + '</td>'
-        + '<td class="px-6 py-4">'
-        + '<span class="inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-bold bg-slate-800/60 text-slate-300 border border-slate-700/40">Module ' + escapeHtml(mod.module_number) + '</span>'
-        + '</td>'
-        + '<td class="px-6 py-4">'
-        + '<span class="inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-bold border ' + diffClass + '">'
+        + '<td class="text-center">'
+        + '<span class="status-chip border ' + diffClass + '">'
         + escapeHtml(capitalizeFirstLetter(mod.difficulty_level))
         + '</span>'
         + '</td>'
-        + '<td class="px-6 py-4">' + createdByHtml + '</td>'
-        + '<td class="px-6 py-4">' + publicHtml + '</td>'
-        + '<td class="px-6 py-4 font-bold text-slate-300">' + escapeHtml(mod.duration_minutes) + '<span class="text-[10px] ml-0.5 opacity-40 text-slate-400 uppercase tracking-tighter">min</span></td>'
-        + '<td class="px-6 py-4 font-extrabold text-white">' + escapeHtml(mod.total_questions) + '</td>'
-        + '<td class="px-6 py-4 text-right">' + actionsHtml + '</td>'
+        + '<td>' + createdByHtml + '</td>'
+        + '<td class="text-center">' + publicHtml + '</td>'
+        + '<td class="font-bold text-slate-700 text-center">' + escapeHtml(mod.duration_minutes) + '<span class="text-[10px] ml-0.5 opacity-50 uppercase tracking-tighter">min</span></td>'
+        + '<td class="text-center font-bold text-xs">'
+        + '<span class="text-slate-900 font-extrabold">' + (mod.questions_count !== undefined ? mod.questions_count : 0) + '</span>'
+        + '<span class="text-slate-400 font-normal"> / ' + escapeHtml(mod.total_questions) + '</span>'
+        + '</td>'
+        + '<td class="text-center">' + actionsHtml + '</td>'
         + '</tr>';
 }
 
@@ -128,13 +133,13 @@ function renderModulesPage() {
     const emptyHtml = '<tr>'
         + '<td colspan="8" class="px-6 py-20 text-center">'
         + '<div class="flex flex-col items-center justify-center">'
-        + '<div class="w-20 h-20 rounded-full bg-slate-900 flex items-center justify-center mb-6">'
-        + '<i class="bi bi-inbox text-4xl text-slate-500"></i>'
+        + '<div class="w-20 h-20 rounded-full bg-slate-50 border border-slate-200 flex items-center justify-center mb-6">'
+        + '<i class="bi bi-inbox text-4xl text-slate-400"></i>'
         + '</div>'
-        + '<h4 class="text-lg font-bold text-white">No modules found</h4>'
-        + '<p class="text-sm text-slate-400 mt-1 max-w-xs mx-auto">You haven\'t created any reusable modules yet. Create one to start building your tests.</p>'
-        + '<button class="mt-8 px-6 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-sm rounded-xl transition-all shadow-lg shadow-indigo-600/20" onclick="window.dispatchEvent(new CustomEvent(\'open-offcanvas\', { detail: \'createModuleOffcanvas\' }))">'
-        + 'Create Your First Module'
+        + '<h4 class="text-lg font-bold text-slate-800">No modules found</h4>'
+        + '<p class="text-sm text-slate-500 mt-1 max-w-xs mx-auto">Create one module, then link it to any section that should use it.</p>'
+        + '<button class="mt-8 px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold text-sm rounded-lg transition-colors shadow-sm" onclick="window.dispatchEvent(new CustomEvent(\'open-offcanvas\', { detail: \'createModuleOffcanvas\' }))">'
+        + 'Create module'
         + '</button>'
         + '</div>'
         + '</td>'
@@ -158,10 +163,10 @@ export function renderModulesPagination(total) {
     const last = Math.ceil(total / perPage) || 1;
     
     let html = '<div class="flex flex-wrap justify-between items-center w-full gap-3 px-2">';
-    html += '<span class="text-xs font-extrabold text-slate-500 uppercase tracking-wide">Page ' + cur + ' of ' + last + ' <span class="mx-1 text-slate-700">•</span> ' + total + ' modules</span>';
+    html += '<span class="text-xs font-semibold text-slate-600">Page ' + cur + ' of ' + last + ' <span class="mx-1 text-slate-300">•</span> ' + total + ' modules</span>';
     html += '<div class="flex gap-2">';
-    html += '<button type="button" class="px-3 py-1.5 text-xs font-extrabold uppercase tracking-wider rounded-xl border border-slate-800/80 bg-slate-900/60 text-slate-200 hover:bg-slate-800 hover:text-white transition-all duration-200 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer" data-m-page="prev"' + (cur <= 1 ? ' disabled' : '') + '>Previous</button>';
-    html += '<button type="button" class="px-3 py-1.5 text-xs font-extrabold uppercase tracking-wider rounded-xl border border-slate-800/80 bg-slate-900/60 text-slate-200 hover:bg-slate-800 hover:text-white transition-all duration-200 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer" data-m-page="next"' + (cur >= last ? ' disabled' : '') + '>Next</button>';
+    html += '<button type="button" class="min-h-9 px-3 py-1.5 text-xs font-semibold rounded-lg border border-slate-200 bg-white text-slate-700 hover:bg-slate-50 hover:border-slate-300 transition-colors duration-150 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer" data-m-page="prev"' + (cur <= 1 ? ' disabled' : '') + '>Previous</button>';
+    html += '<button type="button" class="min-h-9 px-3 py-1.5 text-xs font-semibold rounded-lg border border-slate-200 bg-white text-slate-700 hover:bg-slate-50 hover:border-slate-300 transition-colors duration-150 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer" data-m-page="next"' + (cur >= last ? ' disabled' : '') + '>Next</button>';
     html += '</div></div>';
     wrap.innerHTML = html;
     

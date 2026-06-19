@@ -54,6 +54,7 @@ class TestBuilderController extends Controller
             $allModules = Module::visibleTo(auth()->user())
                 ->whereHas('sections.test', fn($q) => $q->where('title', '!=', 'Test Preview'))
                 ->with(['creator', 'sections.test'])
+                ->withCount('questions')
                 ->latest()
                 ->paginate(30);
         } catch (\Exception $e) {
@@ -79,6 +80,7 @@ class TestBuilderController extends Controller
         $allModules = Module::visibleTo(auth()->user())
             ->whereHas('sections.test', fn($q) => $q->where('title', '!=', 'Test Preview'))
             ->with(['creator', 'sections.test'])
+            ->withCount('questions')
             ->latest()
             ->paginate(30);
 

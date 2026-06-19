@@ -73,7 +73,7 @@
     ══════════════════════════════════════════════ --}}
     <div class="sd-tabs-bar" id="sd-tabs-bar">
         <div class="sd-tabs-bar-inner">
-            <span class="sd-tabs-bar-title">{{ $userTest->test->title }}</span>
+            <span class="sd-tabs-bar-title" title="{{ $userTest->test->title }}">{{ $userTest->test->title }}</span>
             <div class="sd-tabs" id="skillTabs">
                 <button class="sd-tab active" data-target="all">All</button>
                 <button class="sd-tab" data-target="rw">Reading &amp; Writing</button>

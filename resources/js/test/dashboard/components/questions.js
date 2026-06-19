@@ -81,16 +81,16 @@ export function renderQuestionsTable(questions) {
         
         const html = chunk.map(function (q) {
             const secBadge = q.section_type === 'reading_writing'
-                ? '<span class="inline-flex items-center px-2.5 py-1 rounded-lg text-[10px] font-extrabold bg-indigo-500/10 text-indigo-400 border border-indigo-500/20 uppercase tracking-wide">R&amp;W</span>'
-                : '<span class="inline-flex items-center px-2.5 py-1 rounded-lg text-[10px] font-extrabold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 uppercase tracking-wide">Math</span>';
+                ? '<span class="status-chip status-chip-shared">R&amp;W</span>'
+                : '<span class="status-chip status-chip-active">Math</span>';
 
             const usageBadge = q.is_pretest
-                ? '<span class="inline-flex items-center px-2.5 py-1 rounded-lg text-[10px] font-extrabold bg-rose-500/10 text-rose-400 border border-rose-500/20 uppercase tracking-wide">Pretest</span>'
-                : '<span class="inline-flex items-center px-2.5 py-1 rounded-lg text-[10px] font-extrabold bg-slate-800/60 text-slate-400 border border-slate-700/60 uppercase tracking-wide">Active</span>';
+                ? '<span class="status-chip text-rose-700 bg-rose-50 border border-rose-100">Pretest</span>'
+                : '<span class="status-chip status-chip-readonly">Active</span>';
 
             const status = q.is_complete
                 ? ''
-                : ' <span class="inline-flex items-center px-2 py-0.5 rounded-md text-[9px] font-extrabold bg-rose-500/10 text-rose-400 border border-rose-500/20 uppercase tracking-wide" title="Missing Domain or Difficulty"><i class="bi bi-exclamation-triangle-fill mr-1 text-[9px]"></i> Incomplete</span>';
+                : ' <span class="inline-flex items-center px-2 py-0.5 rounded-md text-[9px] font-bold bg-rose-50 text-rose-700 border border-rose-100 uppercase tracking-wide" title="Missing Domain or Difficulty"><i class="bi bi-exclamation-triangle-fill mr-1 text-[9px]"></i> Incomplete</span>';
 
             const stem = stripTags(q.stem || '');
             const snippet = stem.length <= 300 ? stem : stem.slice(0, 300) + '…';
@@ -99,40 +99,45 @@ export function renderQuestionsTable(questions) {
             let diffBadge = '';
             const diffLower = (q.difficulty || '').toLowerCase();
             if (diffLower === 'easy') {
-                diffBadge = '<span class="inline-flex items-center px-2.5 py-1 rounded-lg text-[10px] font-extrabold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 uppercase tracking-wide">Easy</span>';
+                diffBadge = '<span class="status-chip text-emerald-700 bg-emerald-50 border border-emerald-100">Easy</span>';
             } else if (diffLower === 'medium') {
-                diffBadge = '<span class="inline-flex items-center px-2.5 py-1 rounded-lg text-[10px] font-extrabold bg-amber-500/10 text-amber-400 border border-amber-500/20 uppercase tracking-wide">Medium</span>';
+                diffBadge = '<span class="status-chip text-amber-700 bg-amber-50 border border-amber-100">Medium</span>';
             } else {
-                diffBadge = '<span class="inline-flex items-center px-2.5 py-1 rounded-lg text-[10px] font-extrabold bg-rose-500/10 text-rose-400 border border-rose-500/20 uppercase tracking-wide">' + escapeHtml(capitalizeFirstLetter(q.difficulty || '')) + '</span>';
+                diffBadge = '<span class="status-chip text-rose-700 bg-rose-50 border border-rose-100">' + escapeHtml(capitalizeFirstLetter(q.difficulty || '')) + '</span>';
             }
 
             const isOwner = q.created_by === window.__currentUserId || window.__currentUserRole === 'admin';
             let actionButtons = '';
             if (isOwner) {
-                actionButtons = '<button type="button" class="px-2.5 py-1 border border-indigo-500/20 text-indigo-400 bg-indigo-500/5 hover:bg-indigo-500/15 rounded-lg text-xs font-bold flex items-center gap-1 edit-question-btn cursor-pointer" data-id="' + escapeHtml(q.id) + '">'
-                    + '<i class="bi bi-pencil-square text-xs leading-none"></i> Edit'
+                actionButtons = '<div class="actions-dropdown">'
+                    + '<button type="button" class="px-2.5 py-1.5 text-xs font-bold rounded-lg border border-slate-200 bg-white text-slate-700 cursor-pointer hover:bg-slate-50 flex items-center gap-1" data-dropdown-trigger="true" aria-expanded="false" aria-label="Toggle actions menu">'
+                    + 'Actions <i class="bi bi-chevron-down text-[10px]"></i>'
                     + '</button>'
-                    + '<button type="button" class="w-7 h-7 flex items-center justify-center border border-rose-500/20 text-rose-400 bg-rose-500/5 hover:bg-rose-500/15 rounded-full delete-question-btn cursor-pointer" data-id="' + escapeHtml(q.id) + '" title="Delete">'
-                    + '<i class="bi bi-trash text-xs"></i>'
-                    + '</button>';
+                    + '<div class="dropdown-menu hidden">'
+                    + '<button type="button" class="dropdown-item edit-question-btn" data-id="' + escapeHtml(q.id) + '"><i class="bi bi-pencil mr-2"></i> Edit</button>'
+                    + '<button type="button" class="dropdown-item text-danger delete-question-btn" data-id="' + escapeHtml(q.id) + '"><i class="bi bi-trash mr-2"></i> Delete</button>'
+                    + '</div>'
+                    + '</div>';
             } else {
-                actionButtons = '<button type="button" class="px-2.5 py-1 border border-slate-700 text-slate-350 bg-slate-800/40 hover:bg-slate-800 rounded-lg text-xs font-bold flex items-center gap-1 edit-question-btn cursor-pointer" data-id="' + escapeHtml(q.id) + '">'
+                actionButtons = '<button type="button" class="px-2.5 py-1.5 border border-slate-200 text-slate-600 bg-white hover:bg-slate-50 rounded-lg text-xs font-bold flex items-center gap-1 edit-question-btn cursor-pointer" data-id="' + escapeHtml(q.id) + '" aria-label="View question details">'
                     + '<i class="bi bi-eye text-xs leading-none"></i> View'
                     + '</button>';
             }
 
-            return '<tr class="hover:bg-indigo-500/5 border-b border-slate-800/40">'
-                + '<td class="px-5 py-3.5 font-mono font-bold text-slate-500 text-center">' + escapeHtml(q.id) + '</td>'
+            const rowClass = isOwner ? '' : 'row-shared';
+
+            return '<tr class="' + rowClass + '">'
+                + '<td class="px-5 py-3.5 font-mono font-bold text-slate-400 text-center">' + escapeHtml(q.id) + '</td>'
                 + '<td class="px-5 py-3.5 text-center">'
                 + '<div class="flex items-center justify-center gap-2">'
-                + '<span class="font-bold text-slate-200">' + qNum + '</span>'
+                + '<span class="font-bold text-slate-700">' + qNum + '</span>'
                 + status
                 + '</div>'
                 + '</td>'
-                + '<td class="px-5 py-3.5 text-slate-400 text-center">' + secBadge + '</td>'
-                + '<td class="px-5 py-3.5 text-slate-400 font-medium stem-column" title="' + escapeHtml(stem) + '">' + escapeHtml(snippet) + '</td>'
+                + '<td class="px-5 py-3.5 text-center">' + secBadge + '</td>'
+                + '<td class="px-5 py-3.5 text-slate-500 font-medium stem-column" title="' + escapeHtml(stem) + '">' + escapeHtml(snippet) + '</td>'
                 + '<td class="px-5 py-3.5 text-center">' + usageBadge + '</td>'
-                + '<td class="px-5 py-3.5"><span class="text-slate-400 font-semibold text-[11px] block truncate" title="' + escapeHtml(humanizeUnderscores(q.skill_domain || '')) + '">' + escapeHtml(humanizeUnderscores(q.skill_domain || '')) + '</span></td>'
+                + '<td class="px-5 py-3.5"><span class="text-slate-600 font-semibold text-[11px] block truncate" title="' + escapeHtml(humanizeUnderscores(q.skill_domain || '')) + '">' + escapeHtml(humanizeUnderscores(q.skill_domain || '')) + '</span></td>'
                 + '<td class="px-5 py-3.5 text-center">' + diffBadge + '</td>'
                 + '<td class="px-5 py-3.5 text-center">'
                 + '<div class="flex justify-center gap-1.5">'
@@ -166,10 +171,10 @@ export function renderQuestionsPagination(meta, refreshCallback) {
     const last = meta.last_page || 1;
     const total = meta.total || 0;
     let html = '<div class="flex flex-wrap justify-between items-center w-full gap-3 px-2">';
-    html += '<span class="text-xs font-extrabold text-slate-500 uppercase tracking-wide">Page ' + cur + ' of ' + last + ' <span class="mx-1 text-slate-700">•</span> ' + total + ' questions</span>';
+    html += '<span class="text-xs font-bold text-slate-500">Page ' + cur + ' of ' + last + ' <span class="mx-1 text-slate-300">•</span> ' + total + ' questions</span>';
     html += '<div class="flex gap-2">';
-    html += '<button type="button" class="px-3 py-1.5 text-xs font-extrabold uppercase tracking-wider rounded-xl border border-slate-800/80 bg-slate-900/60 text-slate-200 hover:bg-slate-800 hover:text-white transition-all duration-200 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer" data-q-page="prev"' + (cur <= 1 ? ' disabled' : '') + '>Previous</button>';
-    html += '<button type="button" class="px-3 py-1.5 text-xs font-extrabold uppercase tracking-wider rounded-xl border border-slate-800/80 bg-slate-900/60 text-slate-200 hover:bg-slate-800 hover:text-white transition-all duration-200 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer" data-q-page="next"' + (cur >= last ? ' disabled' : '') + '>Next</button>';
+    html += '<button type="button" class="px-3 py-1.5 text-xs font-bold rounded-lg border border-slate-200 bg-white text-slate-700 hover:bg-slate-50 transition-all duration-150 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer" data-q-page="prev"' + (cur <= 1 ? ' disabled' : '') + '>Previous</button>';
+    html += '<button type="button" class="px-3 py-1.5 text-xs font-bold rounded-lg border border-slate-200 bg-white text-slate-700 hover:bg-slate-50 transition-all duration-150 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer" data-q-page="next"' + (cur >= last ? ' disabled' : '') + '>Next</button>';
     html += '</div></div>';
     wrap.innerHTML = html;
 

@@ -1,74 +1,188 @@
 import { BASE_URL } from '../core/config.js';
 import { humanizeUnderscores, showTableLoader, hideTableLoader, escapeHtml, showAlert, formatDateToShort } from '../utils/helpers.js';
 
-let sectionsTabulator = null;
+let localAllSections = [];
+let currentFilteredSections = [];
+let currentSectionsRenderId = 0;
 
-export function handleSectionNameEdit(cell) {
-    const data = cell.getRow().getData();
-    fetch(`${BASE_URL}/sections/${data.id}`, {
-        method: 'PUT',
-        headers: { 
-            'Content-Type': 'application/json', 
-            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content, 
-            'Accept': 'application/json' 
-        },
-        body: JSON.stringify({ name: data.name })
-    }).then(res => res.json()).then(res => {
-        if (!res.success) cell.restoreOldValue();
-    }).catch(() => cell.restoreOldValue());
+if (typeof window.__tdSectionsPage === 'undefined') {
+    window.__tdSectionsPage = 1;
+}
+if (typeof window.__tdSectionsPerPage === 'undefined') {
+    window.__tdSectionsPerPage = 30;
 }
 
-export function sectionCreatedByFormatter(cell) {
-    const data = cell.getRow().getData();
-    const name = data.created_by_name || 'Admin';
-    return `<span class="text-xs font-semibold text-slate-350 truncate max-w-[110px] block" title="${escapeHtml(name)}">${escapeHtml(name)}</span>`;
+function renderSectionRowHtml(s) {
+    const isOwner = s.is_owner;
+    const creatorName = s.created_by_name || 'Admin';
+    const createdByHtml = `<span class="text-xs font-semibold text-slate-600 truncate max-w-[110px] block" title="${escapeHtml(creatorName)}">${escapeHtml(creatorName)}</span>`;
+
+    // Section Name input/span
+    const nameHtml = isOwner
+        ? `<input type="text" class="section-name-input w-full bg-transparent border-0 hover:bg-slate-100 focus:bg-white focus:ring-2 focus:ring-indigo-500/20 focus:outline-none rounded-lg px-2 py-1 font-semibold text-slate-800 transition-all" value="${escapeHtml(s.name)}" data-id="${s.id}">`
+        : `<span class="px-2 py-1 font-semibold text-slate-800">${escapeHtml(s.name)}</span>`;
+
+    // Public toggle checkbox
+    const publicHtml = isOwner
+        ? `<div class="flex items-center justify-center"><input type="checkbox" data-id="${s.id}" class="w-4 h-4 text-indigo-600 border-slate-300 bg-white rounded cursor-pointer section-public-checkbox" ${s.is_public ? 'checked' : ''} title="${s.is_public ? 'Public (Click to make Private)' : 'Private (Click to make Public)'}" aria-label="Toggle public visibility"></div>`
+        : `<div class="flex items-center justify-center"><input type="checkbox" checked disabled class="w-4 h-4 text-slate-400 border-slate-200 bg-slate-100 rounded cursor-not-allowed opacity-60" title="Shared (View only)" aria-label="Shared resource"></div>`;
+
+    // Actions dropdown
+    const actionsHtml = isOwner
+        ? `<div class="actions-dropdown">
+            <button type="button" class="px-2.5 py-1.5 text-xs font-bold rounded-lg border border-slate-200 bg-white text-slate-700 cursor-pointer hover:bg-slate-50 flex items-center gap-1" data-dropdown-trigger="true" aria-expanded="false" aria-label="Toggle actions menu">
+                Actions <i class="bi bi-chevron-down text-[10px]"></i>
+            </button>
+            <div class="dropdown-menu hidden">
+                <button type="button" class="dropdown-item text-danger delete-section-btn" data-id="${s.id}"><i class="bi bi-trash mr-2"></i> Delete</button>
+            </div>
+          </div>`
+        : `<span class="status-chip status-chip-readonly">Read-Only</span>`;
+
+    const rowClass = isOwner ? '' : 'row-shared';
+
+    return `<tr class="${rowClass}">
+        <td class="font-semibold text-slate-400 text-center">${escapeHtml(s.id)}</td>
+        <td>${escapeHtml(s.test_title)}</td>
+        <td>${nameHtml}</td>
+        <td class="text-center font-semibold text-slate-500">${escapeHtml(s.created_at || 'N/A')}</td>
+        <td>${createdByHtml}</td>
+        <td class="text-center">${publicHtml}</td>
+        <td class="text-center font-semibold text-slate-750">${escapeHtml(s.order)}</td>
+        <td class="text-center">${actionsHtml}</td>
+    </tr>`;
 }
 
-export function sectionPublicFormatter(cell) {
-    const data = cell.getRow().getData();
-    if (data.is_owner) {
-        return `<div class="flex items-center justify-center h-full"><input type="checkbox" class="w-4 h-4 text-emerald-600 border-slate-800 bg-slate-400/60 rounded-xs cursor-pointer section-public-checkbox" ${data.is_public ? 'checked' : ''}></div>`;
-    } else {
-        return `<span class="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-extrabold bg-indigo-500/10 text-indigo-400 border border-indigo-500/20 uppercase tracking-wider"><i class="bi bi-globe mr-1"></i> Shared</span>`;
-    }
-}
-
-export function sectionActionsFormatter(cell) {
-    const id = cell.getValue();
-    const data = cell.getRow().getData();
-    if (!data.is_owner) {
-        return `<span class="text-xs font-semibold text-slate-500">Read-Only</span>`;
-    }
-    return `<button type="button" class="w-8 h-8 flex items-center justify-center text-slate-400 hover:text-rose-400 hover:bg-rose-500/10 rounded-xl delete-section-btn transition-all cursor-pointer" data-id="${id}"><i class="bi bi-trash"></i></button>`;
-}
-
-let currentSectionsData = null;
-
-export function renderSectionsTable(tests) {
-    if (currentSectionsData === tests && sectionsTabulator) {
-        setTimeout(() => {
-            if (sectionsTabulator) {
-                sectionsTabulator.redraw(true);
-                const el = document.getElementById('sectionsTabulatorTable');
-                if (el) {
-                    el.classList.remove('opacity-0');
-                    el.classList.add('opacity-100');
-                }
-            }
-        }, 50);
+function _renderSectionsChunked(tbody, items, emptyHtml) {
+    currentSectionsRenderId++;
+    const renderId = currentSectionsRenderId;
+    
+    if (!items.length) {
+        tbody.innerHTML = emptyHtml;
         return;
     }
-    currentSectionsData = tests;
-    const tableContainer = document.getElementById('sectionsTableContainer');
-    const emptyState = document.getElementById('sectionsEmptyState');
-    const tableElem = document.getElementById('sectionsTabulatorTable');
+    
+    tbody.innerHTML = '';
+    let index = 0;
+    const chunkSize = 20;
+    
+    function renderChunk() {
+        if (renderId !== currentSectionsRenderId) return;
+        
+        const chunk = items.slice(index, index + chunkSize);
+        if (!chunk.length) return;
+        
+        tbody.insertAdjacentHTML('beforeend', chunk.map(renderSectionRowHtml).join(''));
+        index += chunkSize;
+        
+        if (index < items.length) {
+            requestAnimationFrame(() => setTimeout(renderChunk, 0));
+        }
+    }
+    
+    renderChunk();
+}
 
-    if (!tableElem) return;
+function renderSectionsPage() {
+    const tbody = document.getElementById('sectionsTableBody');
+    if (!tbody) return;
 
-    const tableData = [];
+    const page = window.__tdSectionsPage || 1;
+    const perPage = window.__tdSectionsPerPage || 30;
+    
+    const start = (page - 1) * perPage;
+    const end = page * perPage;
+    const sliced = currentFilteredSections.slice(start, end);
+
+    const emptyHtml = '<tr>'
+        + '<td colspan="9" class="px-6 py-20 text-center">'
+        + '<div class="flex flex-col items-center justify-center">'
+        + '<div class="w-20 h-20 rounded-full bg-slate-50 border border-slate-200 flex items-center justify-center mb-6">'
+        + '<i class="bi bi-inbox text-4xl text-slate-400"></i>'
+        + '</div>'
+        + '<h4 class="text-lg font-bold text-slate-800">No sections found</h4>'
+        + '<p class="text-sm text-slate-500 mt-1 max-w-xs mx-auto">Create one section to assign modules.</p>'
+        + '</div>'
+        + '</td>'
+        + '</tr>';
+
+    _renderSectionsChunked(tbody, sliced, emptyHtml);
+    renderSectionsPagination(currentFilteredSections.length);
+}
+
+export function renderSectionsPagination(total) {
+    const wrap = document.getElementById('sectionsPoolPagination');
+    if (!wrap) return;
+    
+    if (total === 0) {
+        wrap.innerHTML = '';
+        return;
+    }
+    
+    const cur = window.__tdSectionsPage || 1;
+    const perPage = window.__tdSectionsPerPage || 30;
+    const last = Math.ceil(total / perPage) || 1;
+    
+    let html = '<div class="flex flex-wrap justify-between items-center w-full gap-3 px-2">';
+    html += '<span class="text-xs font-semibold text-slate-600">Page ' + cur + ' of ' + last + ' <span class="mx-1 text-slate-300">•</span> ' + total + ' sections</span>';
+    html += '<div class="flex gap-2">';
+    html += '<button type="button" class="min-h-9 px-3 py-1.5 text-xs font-semibold rounded-lg border border-slate-200 bg-white text-slate-700 hover:bg-slate-50 hover:border-slate-300 transition-colors duration-150 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer" data-s-page="prev"' + (cur <= 1 ? ' disabled' : '') + '>Previous</button>';
+    html += '<button type="button" class="min-h-9 px-3 py-1.5 text-xs font-semibold rounded-lg border border-slate-200 bg-white text-slate-700 hover:bg-slate-50 hover:border-slate-300 transition-colors duration-150 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer" data-s-page="next"' + (cur >= last ? ' disabled' : '') + '>Next</button>';
+    html += '</div></div>';
+    wrap.innerHTML = html;
+    
+    if (wrap.dataset.bound !== '1') {
+        wrap.dataset.bound = '1';
+        wrap.addEventListener('click', function (e) {
+            const btn = e.target.closest('[data-s-page]');
+            if (!btn || btn.disabled) return;
+            
+            const dir = btn.getAttribute('data-s-page');
+            const curPage = window.__tdSectionsPage || 1;
+            
+            showTableLoader('sectionsTableContainer');
+            
+            setTimeout(() => {
+                if (dir === 'prev') {
+                    window.__tdSectionsPage = Math.max(1, curPage - 1);
+                } else if (dir === 'next') {
+                    window.__tdSectionsPage = curPage + 1;
+                }
+                renderSectionsPage();
+                hideTableLoader('sectionsTableContainer');
+            }, 400);
+        });
+    }
+}
+
+function applySectionsFilterAndSearch() {
+    const searchInput = document.getElementById('sectionsTableSearch');
+    const query = searchInput ? searchInput.value.toLowerCase().trim() : '';
+    const showShared = document.getElementById('sectionsShowSharedToggle')?.checked;
+
+    let filtered = localAllSections;
+    if (window.__currentUserRole === 'teacher' && !showShared) {
+        filtered = localAllSections.filter(s => s.is_owner);
+    }
+
+    if (query) {
+        filtered = filtered.filter(s => {
+            const name = (s.name || '').toLowerCase();
+            const testTitle = (s.test_title || '').toLowerCase();
+            const type = (s.type || '').toLowerCase();
+            const id = String(s.id);
+            return name.includes(query) || testTitle.includes(query) || type.includes(query) || id.includes(query);
+        });
+    }
+
+    currentFilteredSections = filtered;
+}
+
+export function renderSectionsTable(tests) {
+    const sectionsData = [];
     tests.forEach(test => {
         (test.sections || []).forEach(section => {
-            tableData.push({
+            sectionsData.push({
                 id: section.id,
                 test_title: test.title,
                 name: section.name,
@@ -83,152 +197,127 @@ export function renderSectionsTable(tests) {
         });
     });
 
-    if (!tableData.length) {
+    localAllSections = sectionsData;
+    const tableContainer = document.getElementById('sectionsTableContainer');
+    const emptyState = document.getElementById('sectionsEmptyState');
+    if (!tableContainer) return;
+
+    applySectionsFilterAndSearch();
+
+    if (!currentFilteredSections.length && !sectionsData.length) {
         if (emptyState) emptyState.classList.remove('hidden');
-        if (tableContainer) tableContainer.classList.add('hidden');
+        tableContainer.classList.add('hidden');
         return;
     }
 
     if (emptyState) emptyState.classList.add('hidden');
-    if (tableContainer) tableContainer.classList.remove('hidden');
+    tableContainer.classList.remove('hidden');
 
-    let sectionsSearchTimeout = null;
+    window.__tdSectionsPage = 1;
+    renderSectionsPage();
+    initSectionsEvents();
+}
 
-    if (!sectionsTabulator) {
-        sectionsTabulator = new Tabulator("#sectionsTabulatorTable", {
-            data: tableData,
-            minHeight: 400,
-            layout: "fitColumns",
-            responsiveLayout: "collapse",
-            pagination: true,
-            paginationSize: 30,
-            paginationCounter: "rows",
-            placeholder: "No sections found",
-            rowFormatter: function(row) {
-                const data = row.getData();
-                if (!data.is_owner) {
-                    row.getElement().classList.add("row-shared");
-                }
-            },
-            columns: [
-                { title: "ID", field: "id", width: 70 },
-                { title: "Test Title", field: "test_title" },
-                { 
-                    title: "Section Name <i class='bi bi-pencil ms-1 text-muted' style='font-size:0.75rem'></i>", 
-                    field: "name", 
-                    editable: function(cell) {
-                        return cell.getRow().getData().is_owner;
-                    },
-                    editor: "input", 
-                    cellEdited: handleSectionNameEdit 
-                },
-                { title: "Type", field: "type" },
-                { title: "Created At", field: "created_at", width: 140 },
-                { title: "Created By", field: "is_owner", formatter: sectionCreatedByFormatter, headerSort: false, width: 140 },
-                { 
-                    title: "Public", 
-                    field: "is_public", 
-                    formatter: sectionPublicFormatter, 
-                    headerSort: false, 
-                    width: 95,
-                    cellClick: function(e, cell) {
-                        const target = e.target;
-                        if (target.classList.contains('section-public-checkbox')) {
-                            const data = cell.getRow().getData();
-                            const checked = target.checked;
-                            
-                            fetch(`${BASE_URL}/sections/${data.id}`, {
-                                method: 'PUT',
-                                headers: {
-                                    'Content-Type': 'application/json',
-                                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
-                                    'Accept': 'application/json'
-                                },
-                                body: JSON.stringify({ is_public: checked })
-                            }).then(res => res.json()).then(res => {
-                                if (res.status === 'success') {
-                                    showAlert('success', 'Section visibility updated!');
-                                    data.is_public = checked;
-                                    cell.getRow().update(data);
-                                } else {
-                                    showAlert('danger', res.message || 'Failed to update visibility');
-                                    target.checked = !checked;
-                                }
-                            }).catch(() => {
-                                showAlert('danger', 'Error updating section visibility');
-                                target.checked = !checked;
-                            });
-                        }
-                    }
-                },
-                { title: "Order", field: "order", width: 90 },
-                { title: "Actions", field: "id", headerSort: false, formatter: sectionActionsFormatter, width: 100 }
-            ],
-            pageChanged: function(page) {
-                showTableLoader('sectionsTableContainer');
-                setTimeout(() => {
-                    hideTableLoader('sectionsTableContainer');
-                }, 400);
-            }
-        });
-        const updateFilters = () => {
-            const searchVal = document.getElementById('sectionsTableSearch')?.value?.toLowerCase()?.trim() || '';
-            const showShared = document.getElementById('sectionsShowSharedToggle')?.checked;
-            
-            sectionsTabulator.clearFilter();
-            
-            if (searchVal) {
-                sectionsTabulator.setFilter(function(data) {
-                    const nameMatch = data.name ? data.name.toLowerCase().includes(searchVal) : false;
-                    const testTitleMatch = data.test_title ? data.test_title.toLowerCase().includes(searchVal) : false;
-                    return nameMatch || testTitleMatch;
-                });
-            }
-            if (window.__currentUserRole === 'teacher' && !showShared) {
-                sectionsTabulator.setFilter("is_owner", "==", true);
-            }
-        };
+let eventsBound = false;
+function initSectionsEvents() {
+    if (eventsBound) return;
+    eventsBound = true;
 
-        document.getElementById('sectionsShowSharedToggle')?.addEventListener('change', function() {
-            showTableLoader('sectionsTableContainer');
-            updateFilters();
-            setTimeout(() => hideTableLoader('sectionsTableContainer'), 200);
-        });
-
-        document.getElementById('sectionsTableSearch')?.addEventListener('input', function(e) {
+    const searchInput = document.getElementById('sectionsTableSearch');
+    if (searchInput) {
+        let sectionsSearchTimeout = null;
+        searchInput.addEventListener('input', function(e) {
             showTableLoader('sectionsTableContainer');
             if (sectionsSearchTimeout) clearTimeout(sectionsSearchTimeout);
             sectionsSearchTimeout = setTimeout(() => {
-                updateFilters();
-                setTimeout(() => hideTableLoader('sectionsTableContainer'), 200);
+                applySectionsFilterAndSearch();
+                window.__tdSectionsPage = 1;
+                renderSectionsPage();
+                setTimeout(() => {
+                    hideTableLoader('sectionsTableContainer');
+                }, 200);
             }, 400);
         });
+    }
 
-        if (window.__currentUserRole === 'teacher' && !document.getElementById('sectionsShowSharedToggle')?.checked) {
-            sectionsTabulator.setFilter("is_owner", "==", true);
-        }
+    document.getElementById('sectionsShowSharedToggle')?.addEventListener('change', function() {
+        showTableLoader('sectionsTableContainer');
+        setTimeout(() => {
+            applySectionsFilterAndSearch();
+            window.__tdSectionsPage = 1;
+            renderSectionsPage();
+            hideTableLoader('sectionsTableContainer');
+        }, 300);
+    });
 
-        setTimeout(() => {
-            if (sectionsTabulator) {
-                sectionsTabulator.redraw(true);
-                const el = document.getElementById('sectionsTabulatorTable');
-                if (el) {
-                    el.classList.remove('opacity-0');
-                    el.classList.add('opacity-100');
+    const tbody = document.getElementById('sectionsTableBody');
+    if (tbody) {
+        // Toggle Public visibility
+        tbody.addEventListener('change', function(e) {
+            const checkbox = e.target.closest('.section-public-checkbox');
+            if (!checkbox) return;
+            
+            const sectionId = checkbox.dataset.id;
+            const checked = checkbox.checked;
+            
+            fetch(`${BASE_URL}/sections/${sectionId}`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+                    'Accept': 'application/json'
+                },
+                body: JSON.stringify({ is_public: checked })
+            }).then(res => res.json()).then(res => {
+                if (res.status === 'success') {
+                    showAlert('success', 'Section visibility updated!');
+                    const s = localAllSections.find(item => String(item.id) === String(sectionId));
+                    if (s) s.is_public = checked;
+                } else {
+                    showAlert('danger', res.message || 'Failed to update visibility');
+                    checkbox.checked = !checked;
                 }
+            }).catch(() => {
+                showAlert('danger', 'Error updating section visibility');
+                checkbox.checked = !checked;
+            });
+        });
+
+        // Edit Section Name on change/blur
+        tbody.addEventListener('change', function(e) {
+            const input = e.target.closest('.section-name-input');
+            if (!input) return;
+
+            const sectionId = input.dataset.id;
+            const newName = input.value.trim();
+            if (!newName) {
+                showAlert('danger', 'Section name cannot be empty');
+                input.value = input.defaultValue || '';
+                return;
             }
-        }, 100);
-    } else {
-        sectionsTabulator.replaceData(tableData);
-        setTimeout(() => {
-            if (sectionsTabulator) {
-                sectionsTabulator.redraw(true);
-                const el = document.getElementById('sectionsTabulatorTable');
-                if (el) {
-                    el.classList.remove('opacity-0');
-                    el.classList.add('opacity-100');
+
+            fetch(`${BASE_URL}/sections/${sectionId}`, {
+                method: 'PUT',
+                headers: { 
+                    'Content-Type': 'application/json', 
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content, 
+                    'Accept': 'application/json' 
+                },
+                body: JSON.stringify({ name: newName })
+            }).then(res => res.json()).then(res => {
+                if (res.status === 'success') {
+                    showAlert('success', 'Section name updated successfully!');
+                    input.defaultValue = newName;
+                    const s = localAllSections.find(item => String(item.id) === String(sectionId));
+                    if (s) s.name = newName;
+                } else {
+                    showAlert('danger', res.message || 'Failed to update section name');
+                    input.value = input.defaultValue || '';
                 }
-            }
-        }, 50);
+            }).catch(() => {
+                showAlert('danger', 'Error updating section name');
+                input.value = input.defaultValue || '';
+            });
+        });
     }
 }

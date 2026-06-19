@@ -347,9 +347,11 @@
 }
 .sd-table-th {
     padding: 0.75rem 1rem;
-    font-weight: 700;
-    font-size: 0.875rem;
-    color: #fff;
+    font-weight: 600;
+    font-size: 0.78rem;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: rgba(255, 255, 255, 0.85);
     background-color: #4d4d4d;
 }
 .sd-table-row {

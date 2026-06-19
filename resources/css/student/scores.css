@@ -441,11 +441,11 @@ table.sd-table thead tr {
 }
 table.sd-table th {
     padding: 0.85rem 1rem;
-    font-weight: 700;
-    font-size: 0.78rem;
+    font-weight: 600;
+    font-size: 0.72rem;
     text-transform: uppercase;
-    letter-spacing: 0.05em;
-    color: rgba(255, 255, 255, 0.85);
+    letter-spacing: 0.08em;
+    color: rgba(255, 255, 255, 0.7);
     white-space: nowrap;
     cursor: pointer;
     user-select: none;
@@ -476,7 +476,7 @@ table.sd-table td {
 }
 .sd-q-num {
     display: inline-block;
-    font-weight: 800;
+    font-weight: 600;
     color: #0a2d6e;
     font-size: 0.9rem;
 }
@@ -537,7 +537,7 @@ table.sd-table td {
     border: 1.5px solid #c7dff7;
     background: #f0f7ff;
     color: #0077c8;
-    font-weight: 700;
+    font-weight: 600;
     font-size: 0.78rem;
     cursor: pointer;
     transition: all 0.15s;

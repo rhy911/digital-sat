@@ -1,13 +1,13 @@
 import { 
     SKILL_DOMAINS, TEST_DASHBOARD_TAB_KEY, SNAPSHOT_URL, TESTS_STORE_URL, SECTIONS_STORE_URL, 
-    MODULES_STORE_URL, SECTIONS_LINK_MODULE_URL, BASE_URL, BULK_STORE_URL,
+    MODULES_STORE_URL, BASE_URL, BULK_STORE_URL,
     CSV_BULK_URL, MEDIA_UPLOAD_URL
 } from './core/config.js';
 import './core/examples.js';
 import { 
     showAlert, showCustomConfirm, getTomSelectValue, captureTomSelectPreservation,
     rebuildSectionTestTomSelect, rebuildModuleSectionTomSelect, rebuildQuestionModuleTomSelect,
-    rebuildQuestionPassageTomSelect, rebuildLinkModuleTomSelect, initTomSelectOn,
+    rebuildQuestionPassageTomSelect, initTomSelectOn,
     destroyTomSelectIfAny, optionExistsInSelect, humanizeUnderscores, capitalizeFirstLetter,
     loadHeavyDependencies, showTableLoader, hideTableLoader
 } from './utils/helpers.js';
@@ -31,12 +31,13 @@ import {
 } from './components/builder.js';
 import { initQuickAuthorWizard } from './components/wizard.js';
 import * as BulkImport from './components/bulk-import.js';
+import './ui/sidebar.js';
 
 document.addEventListener('DOMContentLoaded', async function () {
     await loadHeavyDependencies();
 
     function rememberTestDashboardTab() {
-        const activeBtn = document.querySelector('#dashboardTabs .sidebar-link.active') || document.querySelector('#dashboardTabs .nav-link.active');
+        const activeBtn = document.querySelector('#dashboardTabs .sidebar-link.active, #dashboardTabs .sidebar-link-builder.active, #dashboardTabs .nav-link.active');
         if (!activeBtn) return;
         const target = activeBtn.getAttribute('data-bs-target');
         if (target) sessionStorage.setItem(TEST_DASHBOARD_TAB_KEY, target);
@@ -51,10 +52,22 @@ document.addEventListener('DOMContentLoaded', async function () {
             targetId = sessionStorage.getItem(TEST_DASHBOARD_TAB_KEY);
         }
         if (!targetId) {
-            const activeBtn = document.querySelector('#dashboardTabs .sidebar-link.active') || document.querySelector('#dashboardTabs .nav-link.active');
+            const activeBtn = document.querySelector('#dashboardTabs .sidebar-link.active, #dashboardTabs .sidebar-link-builder.active, #dashboardTabs .nav-link.active');
             if (activeBtn) targetId = activeBtn.getAttribute('data-bs-target');
         }
         if (!targetId) targetId = '#tests';
+
+        const activeTitle = document.getElementById('dashboard-active-title');
+        if (activeTitle) {
+            const titleMap = {
+                '#tests': 'Practice Tests',
+                '#sections': 'Sections',
+                '#modules': 'Modules',
+                '#questions': 'Question Bank',
+                '#builder': 'Easy Builder',
+            };
+            activeTitle.textContent = titleMap[targetId] || 'Test Dashboard';
+        }
 
         await loadHeavyDependencies();
 
@@ -115,7 +128,6 @@ document.addEventListener('DOMContentLoaded', async function () {
         rebuildQuestionModuleTomSelect(tests, p.builderModuleId, 'builderModuleId');
         rebuildQuestionModuleTomSelect(tests, p.questionsTableModuleFilter, 'questionsTableModuleFilter');
         rebuildQuestionPassageTomSelect(passages, p.questionPassage);
-        rebuildLinkModuleTomSelect(allModules, p.linkModule);
         
         initRemoteQuestionPicker('answerQuestionId', p.answerQuestionId);
         initRemoteQuestionPicker('explanationQuestionId', p.explanationQuestionId);
@@ -502,7 +514,6 @@ document.addEventListener('DOMContentLoaded', async function () {
     setupForm('testForm', TESTS_STORE_URL);
     setupForm('sectionForm', SECTIONS_STORE_URL);
     setupForm('moduleForm', MODULES_STORE_URL);
-    setupForm('linkModuleForm', SECTIONS_LINK_MODULE_URL);
 
     // Initializations
     initTestDashboardDelegatedActions();
@@ -511,11 +522,6 @@ document.addEventListener('DOMContentLoaded', async function () {
     document.querySelectorAll('#dashboardTabs .sidebar-link, #dashboardTabs .sidebar-link-builder').forEach(btn => {
         btn.addEventListener('click', (e) => {
             const target = btn.getAttribute('data-bs-target');
-            if (target !== '#builder' && window.confirmBuilderNavigation && !window.confirmBuilderNavigation()) {
-                e.preventDefault();
-                e.stopImmediatePropagation();
-                return;
-            }
             if (target) {
                 // Immediately hide tables to prevent any visual snap or data jumping
                 const testsTable = document.getElementById('testsTabulatorTable');
@@ -563,6 +569,15 @@ document.addEventListener('DOMContentLoaded', async function () {
     
     // Save All button
     document.getElementById('submitBuilderBtn')?.addEventListener('click', submitBuilderQuestions);
+    
+    // Dismiss tips banner
+    document.getElementById('builderDismissInstructionsBtn')?.addEventListener('click', function () {
+        localStorage.setItem('test_builder_instructions_dismissed', 'true');
+        const banner = this.closest('.bg-indigo-50');
+        if (banner) {
+            banner.remove();
+        }
+    });
     
     // Module ID select change handler
     document.getElementById('builderModuleId')?.addEventListener('change', async (e) => {
@@ -638,6 +653,163 @@ document.addEventListener('DOMContentLoaded', async function () {
         } catch (err) {
             showAlert('danger', 'Filter failed: ' + err.message);
         }
+    });
+
+    function getOffcanvasTargetFromTrigger(trigger) {
+        if (!trigger) return null;
+        const explicitTarget = trigger.getAttribute('data-offcanvas-target');
+        if (explicitTarget) return explicitTarget;
+
+        const alpineClick = trigger.getAttribute('x-on:click') || trigger.getAttribute('@click') || '';
+        const match = alpineClick.match(/open-offcanvas['"]\s*,\s*['"]([^'"]+)/);
+        return match ? match[1] : null;
+    }
+
+    function getModalTargetFromTrigger(trigger) {
+        if (!trigger) return null;
+        const explicitTarget = trigger.getAttribute('data-modal-target');
+        if (explicitTarget) return explicitTarget;
+
+        const alpineClick = trigger.getAttribute('x-on:click') || trigger.getAttribute('@click') || '';
+        const match = alpineClick.match(/open-modal['"]\s*,\s*['"]([^'"]+)/);
+        return match ? match[1] : null;
+    }
+
+    function setOffcanvasOpen(id, open) {
+        if (!id) return;
+        const dialog = document.getElementById(id) || document.querySelector(`[data-offcanvas-dialog="${id}"]`);
+        if (!dialog) return;
+
+        dialog.style.display = open ? 'block' : 'none';
+        dialog.setAttribute('aria-hidden', open ? 'false' : 'true');
+        dialog.querySelectorAll('[x-show]').forEach(child => {
+            child.style.display = open ? '' : 'none';
+        });
+        document.body.classList.toggle('overflow-hidden', open);
+
+        if (open) {
+            const focusable = dialog.querySelector('input:not([type="hidden"]), select, textarea, button, [href], [tabindex]:not([tabindex="-1"])');
+            setTimeout(() => focusable?.focus(), 0);
+        }
+    }
+
+    window.addEventListener('open-offcanvas', event => setOffcanvasOpen(event.detail, true));
+    window.addEventListener('close-offcanvas', event => setOffcanvasOpen(event.detail, false));
+
+    function setModalOpen(id, open) {
+        if (!id) return;
+        const dialog = document.getElementById(id) || document.querySelector(`[data-modal-dialog="${id}"]`);
+        if (!dialog) return;
+
+        dialog.style.display = open ? 'block' : 'none';
+        dialog.setAttribute('aria-hidden', open ? 'false' : 'true');
+        dialog.querySelectorAll('[x-show]').forEach(child => {
+            child.style.display = open ? '' : 'none';
+        });
+        document.body.classList.toggle('overflow-hidden', open);
+
+        if (open) {
+            const focusable = dialog.querySelector('button, input:not([type="hidden"]), select, textarea, [href], [tabindex]:not([tabindex="-1"])');
+            setTimeout(() => focusable?.focus(), 0);
+        }
+    }
+
+    window.addEventListener('open-modal', event => setModalOpen(event.detail, true));
+    window.addEventListener('close-modal', event => setModalOpen(event.detail, false));
+
+    document.addEventListener('click', event => {
+        const modalCloseButton = event.target.closest('[data-modal-close]');
+        if (modalCloseButton) {
+            const dialog = modalCloseButton.closest('[data-modal-dialog]');
+            if (dialog?.id) setModalOpen(dialog.id, false);
+            return;
+        }
+
+        const closeButton = event.target.closest('[data-offcanvas-close]');
+        if (closeButton) {
+            const dialog = closeButton.closest('[data-offcanvas-dialog]');
+            if (dialog?.id) setOffcanvasOpen(dialog.id, false);
+            return;
+        }
+
+        const trigger = event.target.closest('button, a, [role="button"]');
+        const modalTargetId = getModalTargetFromTrigger(trigger);
+        if (modalTargetId) {
+            event.preventDefault();
+            setModalOpen(modalTargetId, true);
+            return;
+        }
+
+        const targetId = getOffcanvasTargetFromTrigger(trigger);
+        if (!targetId) return;
+
+        event.preventDefault();
+        setOffcanvasOpen(targetId, true);
+    });
+
+    // Global click handler to manage actions-dropdown menus
+    document.addEventListener('click', function (e) {
+        const trigger = e.target.closest('[data-dropdown-trigger]');
+        const openMenus = document.querySelectorAll('.actions-dropdown .dropdown-menu:not(.hidden)');
+        
+        if (trigger) {
+            e.preventDefault();
+            e.stopPropagation();
+            const dropdown = trigger.closest('.actions-dropdown');
+            const menu = dropdown?.querySelector('.dropdown-menu');
+            
+            openMenus.forEach(m => {
+                if (m !== menu) m.classList.add('hidden');
+            });
+            
+            if (menu) {
+                const isOpening = menu.classList.contains('hidden');
+                menu.classList.toggle('hidden');
+                const isOpen = !menu.classList.contains('hidden');
+                trigger.setAttribute('aria-expanded', String(isOpen));
+                
+                if (isOpen) {
+                    const rect = trigger.getBoundingClientRect();
+                    const menuHeight = menu.offsetHeight || 80;
+                    const menuWidth = menu.offsetWidth || 140;
+                    
+                    menu.style.position = 'fixed';
+                    menu.style.right = 'auto';
+                    menu.style.left = (rect.right - menuWidth) + 'px';
+                    
+                    if (rect.bottom + menuHeight + 8 > window.innerHeight) {
+                        menu.style.top = (rect.top - menuHeight - 4) + 'px';
+                    } else {
+                        menu.style.top = (rect.bottom + 4) + 'px';
+                    }
+                }
+            }
+        } else {
+            openMenus.forEach(m => {
+                m.classList.add('hidden');
+                const trig = m.closest('.actions-dropdown')?.querySelector('[data-dropdown-trigger]');
+                if (trig) trig.setAttribute('aria-expanded', 'false');
+            });
+        }
+    });
+
+    // Close actions-dropdown menus on scroll to keep fixed positioning aligned
+    document.addEventListener('scroll', function () {
+        const openMenus = document.querySelectorAll('.actions-dropdown .dropdown-menu:not(.hidden)');
+        openMenus.forEach(menu => {
+            menu.classList.add('hidden');
+            const trigger = menu.closest('.actions-dropdown')?.querySelector('[data-dropdown-trigger]');
+            if (trigger) trigger.setAttribute('aria-expanded', 'false');
+        });
+    }, true);
+
+    document.addEventListener('keydown', function (e) {
+        if (e.key !== 'Escape') return;
+        document.querySelectorAll('.actions-dropdown .dropdown-menu:not(.hidden)').forEach(menu => {
+            menu.classList.add('hidden');
+            const trigger = menu.closest('.actions-dropdown')?.querySelector('[data-dropdown-trigger]');
+            if (trigger) trigger.setAttribute('aria-expanded', 'false');
+        });
     });
 
     // Start data fetch

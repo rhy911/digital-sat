@@ -400,19 +400,19 @@ export function updateGridStatusCounts() {
         statusTitle.textContent = "Blocker Errors Found";
         statusMsg.textContent = "You must resolve all blockers highlighted in red before those rows can be imported.";
         importApprovedBtn.textContent = "Import Approved Rows";
-        importApprovedBtn.className = "px-6 py-3 bg-gradient-to-r from-amber-600 to-amber-700 hover:from-amber-500 hover:to-amber-600 text-white font-extrabold text-xs uppercase tracking-wider rounded-xl shadow-lg cursor-pointer";
+        importApprovedBtn.className = "px-6 py-3 bg-amber-700 hover:bg-amber-800 text-white font-extrabold text-xs uppercase tracking-wider rounded-xl cursor-pointer";
     } else if (warningCount > 0) {
         statusAlert.className = "p-4 rounded-xl mb-5 bg-amber-500/5 border border-amber-500/15 text-amber-300 flex items-center justify-between shadow-xl gap-4";
         statusTitle.textContent = "Warnings Present";
         statusMsg.textContent = "Grid has minor warnings highlighted in yellow. You are ready to import all rows; missing details will use defaults.";
         importApprovedBtn.textContent = "Import All Rows";
-        importApprovedBtn.className = "px-6 py-3 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-extrabold text-xs uppercase tracking-wider rounded-xl shadow-lg cursor-pointer";
+        importApprovedBtn.className = "px-6 py-3 bg-emerald-700 hover:bg-emerald-800 text-white font-extrabold text-xs uppercase tracking-wider rounded-xl cursor-pointer";
     } else {
         statusAlert.className = "p-4 rounded-xl mb-5 bg-emerald-500/5 border border-emerald-500/15 text-emerald-300 flex items-center justify-between shadow-xl gap-4";
         statusTitle.textContent = "Validation Passed Successfully";
         statusMsg.textContent = "All rows are 100% valid! You are ready to import.";
         importApprovedBtn.textContent = "Import All Rows";
-        importApprovedBtn.className = "px-6 py-3 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-extrabold text-xs uppercase tracking-wider rounded-xl shadow-lg cursor-pointer";
+        importApprovedBtn.className = "px-6 py-3 bg-emerald-700 hover:bg-emerald-800 text-white font-extrabold text-xs uppercase tracking-wider rounded-xl cursor-pointer";
     }
 }
 
@@ -500,7 +500,7 @@ export function renderPreview(items) {
         }
 
         html += `
-            <div class="glass-panel border border-slate-800 p-5 rounded-2xl shadow-xl mb-4">
+            <div class="dash-panel p-5 mb-4">
                 <div class="flex justify-between items-center flex-wrap gap-2 border-b border-slate-800/80 pb-3 mb-3">
                     <div class="flex items-center gap-2 flex-wrap">
                         <span class="inline-flex items-center px-2 py-0.5 rounded bg-indigo-500/10 text-indigo-400 border border-indigo-500/20 font-extrabold text-[10px]">Item ${index + 1}</span>

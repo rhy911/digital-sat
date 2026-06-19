@@ -1,4 +1,4 @@
-import { getPremiumToolbar, compileMarkdownToHtml, processMedia, showAlert, showCustomConfirm } from '../utils/helpers.js';
+import { getPremiumToolbar, compileMarkdownToHtml, processMedia, showAlert, showCustomConfirm, escapeHtml } from '../utils/helpers.js';
 import { MEDIA_UPLOAD_URL, SKILL_DOMAINS, BASE_URL } from '../core/config.js';
 
 let editPassageEditor, editStemEditor, editExplanationEditor;
@@ -76,7 +76,7 @@ export function updateEditQuestionPreview() {
 
     let passageHtml = '';
     if (showPassage && passageValue.trim()) {
-        passageHtml = `<div class="edit-passage-preview p-3 mb-3 bg-light rounded-3 small border-start border-3 border-secondary">${compileMarkdownToHtml(processMedia(passageValue))}</div>`;
+        passageHtml = `<div class="edit-passage-preview p-3 mb-3 rounded-lg text-sm border border-slate-200 bg-slate-50 text-slate-800">${compileMarkdownToHtml(processMedia(passageValue))}</div>`;
     }
 
     const stemHtml = compileMarkdownToHtml(processMedia(stemValue));
@@ -89,15 +89,15 @@ export function updateEditQuestionPreview() {
             const correctRadio = document.getElementById(`editChoice${label}Correct`);
 
             const rawContent = contentInput ? contentInput.value.trim() : '';
-            const content = rawContent ? compileMarkdownToHtml(processMedia(rawContent)) : `<span class="text-muted italic">Option ${label} content...</span>`;
+            const content = rawContent ? compileMarkdownToHtml(processMedia(rawContent)) : `<span class="text-slate-500 italic">Option ${label} content...</span>`;
             const isCorrect = correctRadio ? correctRadio.checked : false;
 
             choicesHtml += `
-                <div class="flex items-center gap-2 mb-2 p-2 rounded border ${isCorrect ? 'border-success bg-success-subtle' : 'border-light'}" style="transition: all 0.2s;">
-                    <div class="rounded-circle flex items-center justify-center text-white bg-${isCorrect ? 'success' : 'secondary'} fw-bold" style="width: 24px; height: 24px; font-size: 12px; flex-shrink: 0;">
+                <div class="flex items-center gap-2 mb-2 p-2 rounded-lg border ${isCorrect ? 'is-correct-choice border-emerald-300 bg-emerald-50' : 'border-slate-300 bg-white'}" style="transition: all 0.2s;">
+                    <div class="rounded-full flex items-center justify-center ${isCorrect ? 'text-emerald-900 bg-emerald-100' : 'text-slate-700 bg-slate-100'} fw-bold" style="width: 24px; height: 24px; font-size: 12px; flex-shrink: 0;">
                         ${label}
                     </div>
-                    <div class="grow small">${content}</div>
+                    <div class="grow text-sm text-slate-800">${content}</div>
                 </div>
             `;
         });
@@ -106,9 +106,9 @@ export function updateEditQuestionPreview() {
         const sprAnswersInput = document.getElementById('editSprAnswers');
         const sprVal = sprAnswersInput ? sprAnswersInput.value.trim() : '';
         questionBodyHtml = `
-            <div class="answer-input-container p-3 bg-light rounded-3 mt-3 border border-warning border-opacity-25">
-                <label class="d-block mb-2 fw-bold text-dark small"><i class="bi bi-pencil-fill text-warning"></i> Student Produced Response:</label>
-                <div class="form-control bg-white font-monospace text-black text-center py-2 fs-5 border-warning border-opacity-50" style="max-width: 150px; letter-spacing: 2px;">
+            <div class="answer-input-container p-3 bg-slate-50 rounded-lg mt-3 border border-amber-200">
+                <label class="d-block mb-2 fw-bold text-slate-800 small"><i class="bi bi-pencil-fill text-amber-750"></i> Student produced response</label>
+                <div class="form-control bg-white font-monospace text-slate-900 text-center py-2 fs-5 border-amber-300" style="max-width: 150px; letter-spacing: 2px;">
                     ${sprVal || '______'}
                 </div>
             </div>
@@ -118,7 +118,7 @@ export function updateEditQuestionPreview() {
     let explanationHtml = '';
     if (explanationValue.trim()) {
         explanationHtml = `
-            <div class="explanation-preview p-2 mt-3 bg-light rounded small text-muted border-top border-light">
+            <div class="explanation-preview p-3 mt-3 bg-slate-50 rounded-lg text-sm text-slate-650 border border-slate-200">
                 <strong>Explanation:</strong> ${compileMarkdownToHtml(processMedia(explanationValue))}
             </div>
         `;
@@ -126,8 +126,8 @@ export function updateEditQuestionPreview() {
 
     previewContainer.innerHTML = `
         ${passageHtml}
-        <div class="edit-stem-preview fw-semibold text-dark">
-            ${stemHtml || '<span class="text-muted italic">Enter question stem to view preview...</span>'}
+        <div class="edit-stem-preview fw-semibold text-slate-900">
+            ${stemHtml || '<span class="text-slate-500 italic">Enter question stem to view preview...</span>'}
         </div>
         ${questionBodyHtml}
         ${explanationHtml}
@@ -184,11 +184,11 @@ export function refreshEditMediaList() {
     } else {
         foundUrls.forEach(url => {
             const col = document.createElement('div');
-            col.className = 'relative group border border-slate-800/80 rounded-xl p-2 bg-slate-900/60 shadow-md flex items-center justify-center h-28 transition-all hover:border-indigo-500/30';
+            col.className = 'relative group border border-slate-200 rounded-lg p-2 bg-white flex items-center justify-center h-28 transition-all hover:border-indigo-300';
             col.innerHTML = `
                 <img src="${url}" class="max-h-24 rounded-lg object-contain w-full h-full" onerror="this.src='https://placehold.co/100x100?text=Error'">
-                <button type="button" class="absolute -top-2 -right-2 w-6 h-6 bg-rose-600 hover:bg-rose-500 text-white rounded-full shadow-lg flex items-center justify-center text-xs font-black transition-all cursor-pointer hover:scale-110" 
-                        data-action="remove-media" data-url="${url}" data-is-url="true" title="Remove from all fields">
+                <button type="button" class="absolute -top-2 -right-2 w-6 h-6 bg-rose-600 hover:bg-rose-700 text-white rounded-full shadow-sm flex items-center justify-center text-xs font-black transition-all cursor-pointer" 
+                        data-action="remove-media" data-url="${url}" data-is-url="true" title="Remove from all fields" aria-label="Remove media from all fields">
                     &times;
                 </button>
             `;
@@ -197,17 +197,17 @@ export function refreshEditMediaList() {
 
         foundPlaceholders.forEach(filename => {
             const col = document.createElement('div');
-            col.className = 'relative group border border-slate-800/80 rounded-xl p-2 bg-slate-900/60 shadow-md flex flex-col items-center justify-center h-28 transition-all hover:border-indigo-500/30';
+            col.className = 'relative group border border-slate-200 rounded-lg p-2 bg-white flex flex-col items-center justify-center h-28 transition-all hover:border-indigo-300';
             const predictedUrl = `/storage/media/${filename}`;
             col.innerHTML = `
                 <img src="${predictedUrl}" class="max-h-16 rounded-lg object-contain w-full mb-1" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex'">
                 <div class="flex flex-col items-center justify-center" style="display:none;">
                     <i class="bi bi-file-earmark-image text-slate-500" style="font-size: 1.5rem;"></i>
-                    <div class="text-[9px] text-slate-400 text-truncate px-1 max-w-[80px] font-mono">${filename}</div>
+                    <div class="text-[9px] text-slate-400 text-truncate px-1 max-w-[80px] font-mono" title="${escapeHtml(filename)}">${filename}</div>
                 </div>
                 <div class="text-[9px] text-slate-500 font-extrabold uppercase tracking-wider mt-1">Placeholder</div>
-                <button type="button" class="absolute -top-2 -right-2 w-6 h-6 bg-rose-600 hover:bg-rose-500 text-white rounded-full shadow-lg flex items-center justify-center text-xs font-black transition-all cursor-pointer hover:scale-110" 
-                        data-action="remove-media" data-url="${filename}" data-is-url="false" title="Remove from all fields">
+                <button type="button" class="absolute -top-2 -right-2 w-6 h-6 bg-rose-600 hover:bg-rose-700 text-white rounded-full shadow-sm flex items-center justify-center text-xs font-black transition-all cursor-pointer" 
+                        data-action="remove-media" data-url="${filename}" data-is-url="false" title="Remove from all fields" aria-label="Remove media from all fields">
                     &times;
                 </button>
             `;
