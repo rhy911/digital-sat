@@ -31,6 +31,10 @@ class User extends Authenticatable implements MustVerifyEmail
         'two_factor_expired_at',
         'is_active',
         'avatar',
+        'teacher_approval_status',
+        'teacher_reviewed_by',
+        'teacher_reviewed_at',
+        'teacher_rejection_reason',
     ];
 
     /**
@@ -57,6 +61,7 @@ class User extends Authenticatable implements MustVerifyEmail
             'is_2FA_enabled' => 'boolean',
             'is_active' => 'boolean',
             'two_factor_expired_at' => 'datetime',
+            'teacher_reviewed_at' => 'datetime',
         ];
     }
 
@@ -72,4 +77,9 @@ class User extends Authenticatable implements MustVerifyEmail
     {
         return $this->hasMany(UserTest::class);
     }
+
+    public function ownedClassrooms() { return $this->hasMany(Classroom::class, 'owner_id'); }
+    public function classroomMemberships() { return $this->hasMany(ClassroomMembership::class, 'student_id'); }
+    public function assignmentRecipients() { return $this->hasMany(AssignmentRecipient::class, 'student_id'); }
+    public function isApprovedTeacher(): bool { return $this->role === 'teacher' && in_array($this->teacher_approval_status, [null, 'approved'], true); }
 }

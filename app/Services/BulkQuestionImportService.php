@@ -359,6 +359,7 @@ class BulkQuestionImportService
         
         $validated = $this->validate($payload);
         $module = Module::with('section')->findOrFail($validated['module_id']);
+        app(TestContentLockService::class)->ensureModuleUnlocked($module);
         $sectionType = $module->section?->type;
 
         $createdIds = [];

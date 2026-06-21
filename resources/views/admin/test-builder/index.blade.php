@@ -4,6 +4,13 @@
         @vite(['resources/css/admin/test-builder.css'])
     @endpush
 
+    @php
+        $workspaceUrl = auth()->user()->role === 'admin'
+            ? route('admin.teacher-applications.index')
+            : route('home');
+        $workspaceLabel = auth()->user()->role === 'admin' ? 'Admin workspace' : 'Home';
+    @endphp
+
     <div data-test-builder-shell class="test-builder-shell flex bg-[#f6f8fb] text-[#0f172a] relative font-sans"
         x-data="{ 
             activeTab: sessionStorage.getItem('testDashboardActiveTab') ? sessionStorage.getItem('testDashboardActiveTab').replace('#', '') : 'tests', 
@@ -50,7 +57,7 @@
             :class="mobileSidebarOpen ? 'translate-x-0' : '-translate-x-full'"
             @keydown.escape.window="mobileSidebarOpen = false">
             <div class="test-builder-sidebar-header border-b border-slate-800">
-                <a href="/" class="test-builder-sidebar-brand flex flex-col gap-1 no-underline" title="DigiSAT Content Suite">
+                <a href="{{ $workspaceUrl }}" class="test-builder-sidebar-brand flex flex-col gap-1 no-underline" title="Return to {{ $workspaceLabel }}">
                     <span class="test-builder-sidebar-wordmark"><x-brand.wordmark size="lg" tone="inverse" /></span>
                     <span class="test-builder-sidebar-label text-[10px] text-indigo-400 font-extrabold tracking-widest uppercase">Content Suite</span>
                 </a>
@@ -64,6 +71,7 @@
                     <i class="bi bi-layout-sidebar-inset" aria-hidden="true"></i>
                 </button>
             </div>
+
 
             <nav class="flex-1 overflow-y-auto px-4 py-6 space-y-1.5" id="dashboardTabs" role="tablist"
                  @keydown.arrow-down.prevent="focusNext()"
@@ -197,9 +205,9 @@
                         </div>
                         <div class="hidden sm:block w-px h-8 bg-slate-200"></div>
                         <div class="flex items-center gap-2">
-                            <a href="{{ route('home') }}"
+                            <a href="{{ $workspaceUrl }}"
                                 class="text-slate-500 hover:text-indigo-600 flex items-center justify-center w-10 h-10 rounded-xl hover:bg-slate-100"
-                                title="Go to home" aria-label="Go to home">
+                                title="Return to {{ $workspaceLabel }}" aria-label="Return to {{ $workspaceLabel }}">
                                 <i class="bi bi-house text-xl"></i>
                             </a>
                             <form id="logoutForm" action="{{ route('logout') }}" method="POST">

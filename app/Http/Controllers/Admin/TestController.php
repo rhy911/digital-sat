@@ -38,6 +38,9 @@ class TestController extends Controller
     {
         $test = Test::findOrFail($id);
         $this->authorize('update', $test);
+        if ($test->isContentLocked() && collect(array_keys($request->validated()))->intersect(['test_type', 'total_duration_minutes', 'break_duration_minutes', 'status'])->isNotEmpty()) {
+            app(\App\Services\TestContentLockService::class)->ensureUnlocked($test);
+        }
 
         $validated = $request->validated();
         if (isset($validated['is_public'])) {
@@ -56,6 +59,7 @@ class TestController extends Controller
     {
         $test = Test::findOrFail($id);
         $this->authorize('delete', $test);
+        app(\App\Services\TestContentLockService::class)->ensureUnlocked($test);
 
         try {
             $this->testManagement->deleteTest((int) $id, $request->boolean('delete_children'));

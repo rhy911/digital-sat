@@ -27,13 +27,24 @@ class SessionController extends Controller
         }
 
         $user = Auth::user();
+        $attemptUlid = request()->query('attempt');
+        $requestedAttempt = null;
+        if ($attemptUlid) {
+            $requestedAttempt = UserTest::where('ulid', $attemptUlid)->firstOrFail();
+            abort_unless((int) $requestedAttempt->user_id === (int) Auth::id(), 403, 'Unauthorized.');
+            abort_unless($requestedAttempt->status === 'in_progress', 409, 'This attempt is no longer active.');
+        }
         $module = null;
         if ($ulid) {
-            $module = Module::visibleTo($user)
-                ->where('ulid', $ulid)
-                ->firstOrFail();
+            $moduleQuery = Module::query();
+            if (!$requestedAttempt?->assignment_id) {
+                $moduleQuery->visibleTo($user);
+            } else {
+                $moduleQuery->whereHas('sections', fn ($query) => $query->where('test_id', $requestedAttempt->test_id));
+            }
+            $module = $moduleQuery->where('ulid', $ulid)->firstOrFail();
 
-            [$section, $test] = $this->resolveModuleContext($module, $user);
+            [$section, $test] = $this->resolveModuleContext($module, $user, $requestedAttempt?->assignment_id ? $requestedAttempt->test_id : null);
             $this->loadCurrentModuleQuestions($module);
         } else {
             $test = Test::visibleTo($user)
@@ -82,7 +93,7 @@ class SessionController extends Controller
         $durationMinutes = $isPreview ? 0 : ($module->duration_minutes ?? ($section->type === 'math' ? 35 : 32));
 
         // Determine next module for navigation
-        [$nextModule, $nextModuleSection] = $this->resolveNextModule($module, $section, $test, $user);
+        [$nextModule, $nextModuleSection] = $this->resolveNextModule($module, $section, $test, $user, (bool) $requestedAttempt?->assignment_id);
 
         // Determine which view to use based on section type
         $viewName = $section->type === 'math' ? 'engine.module.math' : 'engine.module.reading';
@@ -91,16 +102,8 @@ class SessionController extends Controller
         $userTest = null;
         $savedAnswers = collect();
         if (Auth::check()) {
-            $attemptUlid = request()->query('attempt');
-
-            if ($attemptUlid) {
-                $userTest = UserTest::where('ulid', $attemptUlid)->first();
-                if (!$userTest) {
-                    abort(404, 'Attempt not found.');
-                }
-                if ((int) $userTest->user_id !== (int) Auth::id()) {
-                    abort(403, 'Unauthorized.');
-                }
+            if ($requestedAttempt) {
+                $userTest = $requestedAttempt;
                 if ((int) $userTest->test_id !== (int) $test->id) {
                     abort(400, 'Attempt does not belong to this test.');
                 }
@@ -174,11 +177,11 @@ class SessionController extends Controller
         ]);
     }
 
-    private function resolveModuleContext(Module $module, $user): array
+    private function resolveModuleContext(Module $module, $user, ?int $attemptTestId = null): array
     {
-        $activeVisibleTest = fn($query) => $query
-            ->visibleTo($user)
-            ->whereIn('status', ['active', 'draft']);
+        $activeVisibleTest = fn($query) => $attemptTestId
+            ? $query->whereKey($attemptTestId)
+            : $query->visibleTo($user)->whereIn('status', ['active', 'draft']);
 
         $sectionQuery = $module->sections()
             ->with('test')

@@ -135,6 +135,7 @@ class QuestionController extends Controller
     public function update(UpdateQuestionRequest $request, $id)
     {
         $question = Question::with(['passage', 'answerChoices', 'explanation'])->findOrFail($id);
+        app(\App\Services\TestContentLockService::class)->ensureQuestionUnlocked($question);
 
         $validated = $request->validated();
 
@@ -210,6 +211,7 @@ class QuestionController extends Controller
         $validated = $request->validated();
 
         $module = Module::findOrFail($validated['module_id']);
+        app(\App\Services\TestContentLockService::class)->ensureModuleUnlocked($module);
 
         $question = Question::visibleTo(auth()->user())->findOrFail($validated['question_id']);
 
@@ -338,6 +340,7 @@ class QuestionController extends Controller
     {
         $question = Question::findOrFail($id);
         $this->authorize('delete', $question);
+        app(\App\Services\TestContentLockService::class)->ensureQuestionUnlocked($question);
 
         $question->delete();
         return response()->json(['status' => 'success', 'message' => 'Question deleted.']);

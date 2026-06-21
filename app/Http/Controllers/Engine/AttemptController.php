@@ -13,10 +13,11 @@ class AttemptController extends Controller
     public function attemptOptions($testId)
     {
         $user = Auth::user();
-        $test = Test::where('id', $testId)->where('status', 'active')->firstOrFail();
+        $test = Test::visibleTo($user)->where('id', $testId)->where('status', 'active')->firstOrFail();
 
         $latestInProgress = UserTest::where('user_id', $user->id)
             ->where('test_id', $test->id)
+            ->whereNull('assignment_id')
             ->where('status', 'in_progress')
             ->latest('updated_at')
             ->first();
@@ -38,13 +39,14 @@ class AttemptController extends Controller
     public function startTest(Request $request, $testId)
     {
         $user = Auth::user();
-        $test = Test::where('id', $testId)->where('status', 'active')->firstOrFail();
+        $test = Test::visibleTo($user)->where('id', $testId)->where('status', 'active')->firstOrFail();
 
         $mode = $request->input('mode', 'fresh');
 
         if ($mode === 'fresh') {
             UserTest::where('user_id', $user->id)
                 ->where('test_id', $test->id)
+                ->whereNull('assignment_id')
                 ->where('status', 'in_progress')
                 ->delete();
 
@@ -56,6 +58,7 @@ class AttemptController extends Controller
         } else {
             $userTest = UserTest::where('user_id', $user->id)
                 ->where('test_id', $test->id)
+                ->whereNull('assignment_id')
                 ->where('status', 'in_progress')
                 ->latest('updated_at')
                 ->first();

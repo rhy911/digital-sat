@@ -82,20 +82,39 @@
         </div>
 
         <!-- Configurable Flow -->
-        <div id="wizard-config-flow" class="hidden border-t border-slate-200 pt-6 space-y-5">
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div class="md:col-span-2 space-y-2">
-                    <label class="text-xs font-bold text-slate-600">Test title</label>
-                    <input type="text" id="wizard-config-title"
-                        class="w-full px-4 py-2.5 rounded-lg border border-slate-200 bg-white text-slate-900 placeholder-slate-400 focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 outline-none text-sm transition-all"
-                        placeholder="New Practice Test">
-                </div>
-                <div class="space-y-2">
-                    <label class="text-xs font-bold text-slate-600">Workflow</label>
-                    <div id="wizard-config-label"
-                        class="px-4 py-2.5 rounded-lg border border-slate-200 bg-slate-50 text-slate-700 text-sm font-bold">
-                        Full SAT
+        <div id="wizard-config-flow" class="hidden border-t border-slate-200 pt-5 space-y-5">
+            <section class="rounded-xl bg-indigo-50/70 border border-indigo-200 p-4 sm:p-5" aria-labelledby="wizard-title-heading">
+                <div class="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+                    <div class="flex items-start gap-3">
+                        <span class="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-indigo-600 text-xs font-extrabold text-white" aria-hidden="true">1</span>
+                        <div>
+                            <h5 id="wizard-title-heading" class="text-sm font-extrabold text-slate-900">Name your test</h5>
+                            <p id="wizard-title-help" class="mt-1 text-xs font-medium leading-relaxed text-slate-600">Add your own title, or leave blank to use the suggested title.</p>
+                        </div>
                     </div>
+                    <div class="flex items-center gap-2 sm:pt-0.5">
+                        <span class="text-[11px] font-semibold text-slate-500">Template</span>
+                        <span id="wizard-config-label" class="rounded-full bg-white px-2.5 py-1 text-xs font-bold text-indigo-700 ring-1 ring-inset ring-indigo-200">Full SAT</span>
+                    </div>
+                </div>
+
+                <div class="mt-4">
+                    <label for="wizard-config-title" class="mb-2 flex items-center gap-2 text-sm font-bold text-slate-800">
+                        Test title
+                        <span class="rounded bg-white px-1.5 py-0.5 text-[10px] font-bold text-slate-500 ring-1 ring-inset ring-indigo-200">Optional</span>
+                    </label>
+                    <input type="text" id="wizard-config-title" maxlength="255" autocomplete="off"
+                        aria-describedby="wizard-title-help"
+                        class="w-full rounded-lg border-2 border-indigo-300 bg-white px-4 py-3 text-base font-semibold text-slate-900 placeholder-slate-400 outline-none transition-colors focus:border-indigo-600 focus:ring-4 focus:ring-indigo-500/15"
+                        placeholder="Example: Grade 11 Full Practice Test">
+                </div>
+            </section>
+
+            <div class="flex items-center gap-3" aria-hidden="true">
+                <span class="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-slate-200 text-xs font-extrabold text-slate-700">2</span>
+                <div>
+                    <h5 class="text-sm font-extrabold text-slate-900">Configure modules</h5>
+                    <p class="mt-0.5 text-xs font-medium text-slate-500">Review the preset structure and adjust it as needed.</p>
                 </div>
             </div>
 

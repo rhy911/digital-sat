@@ -49,6 +49,20 @@ Route::middleware('auth')->group(function () {
     Route::post('/logout', LogoutController::class)->name('logout');
 });
 
+Route::middleware(['auth', 'verified'])->group(function () {
+    Route::get('/profile', [\App\Http\Controllers\ProfileController::class, 'show'])->name('profile');
+    Route::post('/profile', [\App\Http\Controllers\ProfileController::class, 'update'])->name('profile.update');
+});
+
+Route::middleware(['auth', 'verified'])->get('/dashboard', function () {
+    $user = auth()->user();
+    return match ($user->role) {
+        'teacher' => redirect()->route($user->isApprovedTeacher() ? 'home' : 'teacher.application.status'),
+        'admin' => redirect()->route('admin.teacher-applications.index'),
+        default => redirect()->route('home'),
+    };
+})->name('dashboard');
+
 // Verified Student routes
 Route::middleware(['auth', 'verified'])->prefix('student')->group(function () {
     Route::get('/dashboard', \App\Http\Controllers\Student\DashboardController::class)->name('home.legacy');
@@ -60,6 +74,49 @@ Route::middleware(['auth', 'verified'])->prefix('student')->group(function () {
     Route::get('/practice/{userTest:ulid}', [\App\Http\Controllers\Student\PracticeController::class, 'show'])->name('my-practice');
     Route::delete('/practice/{userTest:ulid}', [\App\Http\Controllers\Student\PracticeController::class, 'destroy'])->name('my-practice.destroy');
     Route::get('/scores/{userTest:ulid}', [\App\Http\Controllers\Student\ScoreController::class, 'show'])->name('my-practice.score');
+    Route::middleware('role:student')->group(function () {
+        Route::get('/classes', [\App\Http\Controllers\Student\ClassroomController::class, 'index'])->name('student.classes.index');
+        Route::post('/classes/join', [\App\Http\Controllers\Student\ClassroomController::class, 'join'])->middleware('throttle:10,1')->name('student.classes.join');
+        Route::post('/classes/memberships/{membership}/leave', [\App\Http\Controllers\Student\ClassroomController::class, 'leave'])->name('student.classes.leave');
+        Route::get('/assignments', [\App\Http\Controllers\Student\AssignmentController::class, 'index'])->name('student.assignments.index');
+        Route::get('/assignments/{assignment}', [\App\Http\Controllers\Student\AssignmentController::class, 'show'])->name('student.assignments.show');
+        Route::post('/assignments/{assignment}/start', [\App\Http\Controllers\Student\AssignmentController::class, 'start'])->name('student.assignments.start');
+    });
+});
+
+Route::middleware(['auth', 'verified', 'role:student'])->get('/join/{code}', function (string $code) {
+    return redirect()->route('student.classes.index', ['code' => strtoupper($code)]);
+})->name('student.classes.join-link');
+
+Route::middleware(['auth', 'verified', 'role:admin,teacher'])->prefix('teacher')->name('teacher.')->group(function () {
+    Route::get('/application', \App\Http\Controllers\Teacher\ApplicationStatusController::class)->name('application.status');
+
+    Route::middleware('teacher.approved')->group(function () {
+        Route::get('/workspace', [\App\Http\Controllers\Teacher\ClassroomController::class, 'workspace'])->name('workspace');
+        Route::get('/progress', [\App\Http\Controllers\Teacher\ClassroomController::class, 'progress'])->name('progress');
+        Route::get('/classes', [\App\Http\Controllers\Teacher\ClassroomController::class, 'index'])->name('classes.index');
+        Route::get('/assignments', [\App\Http\Controllers\Teacher\AssignmentController::class, 'index'])->name('assignments.index');
+        Route::post('/classes', [\App\Http\Controllers\Teacher\ClassroomController::class, 'store'])->name('classes.store');
+        Route::get('/classes/{classroom}', [\App\Http\Controllers\Teacher\ClassroomController::class, 'show'])->name('classes.show');
+        Route::put('/classes/{classroom}', [\App\Http\Controllers\Teacher\ClassroomController::class, 'update'])->name('classes.update');
+        Route::post('/classes/{classroom}/rotate-code', [\App\Http\Controllers\Teacher\ClassroomController::class, 'rotateCode'])->name('classes.rotate-code');
+        Route::post('/classes/{classroom}/archive', [\App\Http\Controllers\Teacher\ClassroomController::class, 'archive'])->name('classes.archive');
+        Route::post('/classes/{classroom}/restore', [\App\Http\Controllers\Teacher\ClassroomController::class, 'restore'])->name('classes.restore');
+        Route::post('/memberships/{membership}/approve', [\App\Http\Controllers\Teacher\MembershipController::class, 'approve'])->name('memberships.approve');
+        Route::post('/memberships/{membership}/reject', [\App\Http\Controllers\Teacher\MembershipController::class, 'reject'])->name('memberships.reject');
+        Route::post('/memberships/{membership}/remove', [\App\Http\Controllers\Teacher\MembershipController::class, 'remove'])->name('memberships.remove');
+        Route::post('/classes/{classroom}/assignments', [\App\Http\Controllers\Teacher\AssignmentController::class, 'store'])->name('assignments.store');
+        Route::get('/assignments/{assignment}', [\App\Http\Controllers\Teacher\AssignmentController::class, 'show'])->name('assignments.show');
+        Route::put('/assignments/{assignment}', [\App\Http\Controllers\Teacher\AssignmentController::class, 'update'])->name('assignments.update');
+        Route::post('/assignments/{assignment}/publish', [\App\Http\Controllers\Teacher\AssignmentController::class, 'publish'])->name('assignments.publish');
+        Route::post('/assignments/{assignment}/close', [\App\Http\Controllers\Teacher\AssignmentController::class, 'close'])->name('assignments.close');
+        Route::post('/assignments/{assignment}/reopen', [\App\Http\Controllers\Teacher\AssignmentController::class, 'reopen'])->name('assignments.reopen');
+    });
+});
+
+Route::middleware(['auth', 'verified', 'role:admin'])->prefix('admin')->name('admin.')->group(function () {
+    Route::get('/teacher-applications', [\App\Http\Controllers\Admin\TeacherApplicationController::class, 'index'])->name('teacher-applications.index');
+    Route::post('/teacher-applications/{teacher}', [\App\Http\Controllers\Admin\TeacherApplicationController::class, 'decide'])->name('teacher-applications.decide');
 });
 
 // Verified Engine routes
@@ -76,7 +133,7 @@ Route::middleware(['auth', 'verified'])->prefix('engine')->group(function () {
 });
 
 // Verified Admin/Teacher routes
-Route::middleware(['auth', 'verified', 'role:admin,teacher'])->prefix('admin')->name('home-dashboard.')->group(function () {
+Route::middleware(['auth', 'verified', 'role:admin,teacher', 'teacher.approved'])->prefix('admin')->name('home-dashboard.')->group(function () {
     Route::get('/teacher/test-builder', [\App\Http\Controllers\Admin\TestBuilderController::class, 'index'])->name('index');
     Route::get('/teacher/test-builder/snapshot', [\App\Http\Controllers\Admin\TestBuilderController::class, 'snapshot'])->name('snapshot');
     

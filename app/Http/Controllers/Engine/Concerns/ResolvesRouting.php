@@ -8,11 +8,12 @@ use App\Models\Test;
 
 trait ResolvesRouting
 {
-    protected function resolveNextModule(Module $module, Section $section, Test $test, $user): array
+    protected function resolveNextModule(Module $module, Section $section, Test $test, $user, bool $allowPrivate = false): array
     {
         if ((int) $module->module_number === 1) {
-            $nextModule = $section->modules()
-                ->visibleTo($user)
+            $nextModuleQuery = $section->modules();
+            if (!$allowPrivate) $nextModuleQuery->visibleTo($user);
+            $nextModule = $nextModuleQuery
                 ->where('module_number', 2)
                 ->reorder()
                 ->orderByRaw('CASE WHEN difficulty_level = ? THEN 0 ELSE 1 END', [Module::DIFFICULTY_HARD])
@@ -33,8 +34,9 @@ trait ResolvesRouting
             return [null, null];
         }
 
-        $nextModule = $nextSection->modules()
-            ->visibleTo($user)
+        $nextModuleQuery = $nextSection->modules();
+        if (!$allowPrivate) $nextModuleQuery->visibleTo($user);
+        $nextModule = $nextModuleQuery
             ->where('module_number', 1)
             ->reorder()
             ->orderBy('modules.order')

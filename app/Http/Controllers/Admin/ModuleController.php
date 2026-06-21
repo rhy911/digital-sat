@@ -27,6 +27,7 @@ class ModuleController extends Controller
 
         if (empty($validated['section_id']) && !empty($validated['test_id']) && !empty($validated['section_type'])) {
             $test = Test::findOrFail($validated['test_id']);
+            app(\App\Services\TestContentLockService::class)->ensureUnlocked($test);
             if (auth()->user()->role === 'teacher' && $test->created_by !== auth()->id()) {
                 abort(403, 'Unauthorized. You do not own the parent test.');
             }
@@ -45,6 +46,7 @@ class ModuleController extends Controller
 
         if (!empty($validated['section_id'])) {
             $section = Section::findOrFail($validated['section_id']);
+            app(\App\Services\TestContentLockService::class)->ensureUnlocked($section->test);
             if (auth()->user()->role === 'teacher' && $section->created_by !== auth()->id()) {
                 abort(403, 'Unauthorized. You do not own the parent section.');
             }
@@ -85,6 +87,7 @@ class ModuleController extends Controller
     {
         $module = Module::findOrFail($id);
         $this->authorize('update', $module);
+        app(\App\Services\TestContentLockService::class)->ensureModuleUnlocked($module);
 
         $validated = $request->validated();
         if (isset($validated['is_public'])) {
@@ -107,6 +110,7 @@ class ModuleController extends Controller
     {
         $module = Module::findOrFail($id);
         $this->authorize('delete', $module);
+        app(\App\Services\TestContentLockService::class)->ensureModuleUnlocked($module);
 
         try {
             $this->testManagement->deleteModule((int) $id, $request->boolean('delete_children'));

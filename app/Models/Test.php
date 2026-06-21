@@ -18,10 +18,12 @@ class Test extends Model
         'status',
         'created_by',
         'is_public',
+        'content_locked_at',
     ];
 
     protected $casts = [
         'is_public' => 'boolean',
+        'content_locked_at' => 'datetime',
     ];
 
     protected static function booted()
@@ -60,6 +62,17 @@ class Test extends Model
     public function userTests()
     {
         return $this->hasMany(UserTest::class);
+    }
+
+    public function assignments() { return $this->hasMany(Assignment::class); }
+    public function isContentLocked(): bool { return $this->content_locked_at !== null; }
+
+    public function isStructurallyComplete(): bool
+    {
+        $this->loadMissing('sections.modules.questions');
+        return $this->sections->isNotEmpty()
+            && $this->sections->every(fn ($section) => $section->modules->isNotEmpty()
+                && $section->modules->every(fn ($module) => $module->questions->isNotEmpty()));
     }
 
     /**

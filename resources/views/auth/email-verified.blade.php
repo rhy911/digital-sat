@@ -81,7 +81,7 @@
         </div>
 
         <!-- Direct button just in case -->
-        <a href="{{ route('home') }}" class="primary-btn no-underline text-center w-full active mt-2" role="button">
+        <a href="{{ route('dashboard') }}" class="primary-btn no-underline text-center w-full active mt-2" role="button">
             Continue Now
         </a>
     </div>
@@ -96,7 +96,7 @@
                     if (countdownEl) countdownEl.textContent = seconds;
                     if (seconds <= 0) {
                         clearInterval(interval);
-                        window.location.href = "{{ route('home') }}";
+                        window.location.href = "{{ route('dashboard') }}";
                     }
                 }, 1000);
             });

@@ -230,6 +230,9 @@ class TestManagementService
      */
     public function cloneModule(int $id, ?int $sectionId = null, ?int $userId = null): Module
     {
+        if ($sectionId) {
+            app(TestContentLockService::class)->ensureUnlocked(Section::findOrFail($sectionId)->test);
+        }
         return DB::transaction(function () use ($id, $sectionId, $userId) {
             $originalModule = Module::findOrFail($id);
             
@@ -254,6 +257,7 @@ class TestManagementService
     public function deleteTest(int $id, bool $deleteChildren): void
     {
         $test = Test::with('sections.modules.questions')->findOrFail($id);
+        app(TestContentLockService::class)->ensureUnlocked($test);
         
         DB::transaction(function () use ($test, $deleteChildren) {
             if ($deleteChildren) {
@@ -278,6 +282,7 @@ class TestManagementService
     {
         $section = Section::with(['test', 'modules.questions'])->findOrFail($id);
         $test = $section->test;
+        app(TestContentLockService::class)->ensureUnlocked($test);
 
         DB::transaction(function () use ($section, $deleteChildren) {
             if ($deleteChildren) {
@@ -303,6 +308,7 @@ class TestManagementService
     {
         $module = Module::with(['section.test', 'questions'])->findOrFail($id);
         $test = $module->section->test ?? null;
+        app(TestContentLockService::class)->ensureModuleUnlocked($module);
 
         DB::transaction(function () use ($module, $deleteChildren) {
             if ($deleteChildren) {

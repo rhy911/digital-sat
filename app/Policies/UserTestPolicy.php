@@ -13,6 +13,10 @@ class UserTestPolicy
             return true;
         }
 
+        if ($user->role === 'teacher' && $userTest->assignment_id) {
+            return $userTest->assignment()->where('teacher_id', $user->id)->exists();
+        }
+
         return (int) $userTest->user_id === (int) $user->id;
     }
 

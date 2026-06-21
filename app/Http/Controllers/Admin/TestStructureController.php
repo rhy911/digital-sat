@@ -109,6 +109,7 @@ class TestStructureController extends Controller
         $sectionId = $request->input('section_id');
         if ($sectionId) {
             $section = Section::findOrFail($sectionId);
+            app(\App\Services\TestContentLockService::class)->ensureUnlocked($section->test);
             if (auth()->user()->role === 'teacher' && $section->created_by !== auth()->id()) {
                 abort(403, 'Unauthorized. You do not own the target section.');
             }

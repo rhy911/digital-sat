@@ -23,16 +23,33 @@ class UserFactory extends Factory
      */
     public function definition(): array
     {
+        $role = fake()->randomElement(['student', 'teacher']);
         return [
             'name' => fake()->name(),
             'username' => fake()->unique()->userName(),
             'email' => fake()->unique()->safeEmail(),
             'email_verified_at' => now(),
             'password' => static::$password ??= Hash::make('password'), // Pass mặc định là: password
-            'role' => fake()->randomElement(['student', 'teacher']), // Random 1 trong 2 role
+            'role' => $role,
+            'teacher_approval_status' => $role === 'teacher' ? 'approved' : null,
             'is_active' => true,
             'is_2FA_enabled' => false,
         ];
+    }
+
+    public function student(): static
+    {
+        return $this->state(fn () => ['role' => 'student', 'teacher_approval_status' => null]);
+    }
+
+    public function teacher(bool $approved = true): static
+    {
+        return $this->state(fn () => ['role' => 'teacher', 'teacher_approval_status' => $approved ? 'approved' : 'pending']);
+    }
+
+    public function admin(): static
+    {
+        return $this->state(fn () => ['role' => 'admin', 'teacher_approval_status' => null]);
     }
 
     /**

@@ -70,16 +70,24 @@ class LoginController extends Controller
                     ->with('warning', 'Email của bạn chưa được xác minh.');
             }
 
+            $defaultTarget = match ($user->role) {
+                'teacher' => $user->isApprovedTeacher() ? route('home') : route('teacher.application.status'),
+                'admin' => route('admin.teacher-applications.index'),
+                default => route('home'),
+            };
+
             // Return JSON response for AJAX or redirect for web
             if ($request->wantsJson()) {
+                $target = $request->session()->pull('url.intended', $defaultTarget);
                 return response()->json([
                     'message' => 'Đăng nhập thành công.',
                     'user' => $user,
                     'email_verified' => $user->hasVerifiedEmail(),
+                    'redirect' => $target,
                 ], 200);
             }
 
-            return redirect()->intended(route('home'));
+            return redirect()->intended($defaultTarget);
         } catch (\Exception $e) {
             $message = $e->getMessage();
             if ($e instanceof ValidationException) {

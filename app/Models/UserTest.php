@@ -10,6 +10,8 @@ class UserTest extends Model
         'ulid',
         'user_id',
         'test_id',
+        'assignment_id',
+        'attempt_number',
         'score_reading_writing',
         'score_math',
         'total_score',
@@ -29,6 +31,7 @@ class UserTest extends Model
         'current_module_started_at' => 'datetime',
         'current_module_id' => 'integer',
         'current_module_elapsed_seconds' => 'integer',
+        'attempt_number' => 'integer',
     ];
 
     protected static function booted()
@@ -54,6 +57,8 @@ class UserTest extends Model
     {
         return $this->belongsTo(Test::class);
     }
+
+    public function assignment() { return $this->belongsTo(Assignment::class); }
 
     public function userAnswers()
     {

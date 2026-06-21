@@ -13,6 +13,7 @@ export default defineConfig({
                 'resources/css/student/practice.css',
                 'resources/css/student/scores.css',
                 'resources/css/admin/test-builder.css',
+                'resources/css/classroom.css',
                 'resources/css/engine/main.css',
                 'resources/js/app.js',
                 'resources/js/auth.js',

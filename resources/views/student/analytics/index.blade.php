@@ -1,6 +1,10 @@
 <x-layouts.student :user="$user" header-type="progress" :cancel-route="route('home')">
     @push('styles')
-        @vite(['resources/css/student/analytics.css'])
+        @if($user->role === 'teacher' && $user->isApprovedTeacher())
+            @vite(['resources/css/student/analytics.css', 'resources/css/classroom.css'])
+        @else
+            @vite(['resources/css/student/analytics.css'])
+        @endif
     @endpush
 
     @php
@@ -30,6 +34,9 @@
         $displayName = $user->username ?? 'student';
         $todayLabel = now()->format('l, M j');
         $formatSkillLabel = fn ($value) => $value ? \Illuminate\Support\Str::headline(str_replace(['_', '-'], ' ', $value)) : 'Unclassified';
+        $canUseTeacherWorkspace = $user->role === 'teacher' && $user->isApprovedTeacher();
+        $storedHomeTab = session('teacher_home.tab', 'progress');
+        $initialHomeTab = $canUseTeacherWorkspace && in_array($storedHomeTab, ['classes', 'reports'], true) ? $storedHomeTab : 'progress';
         $sectionSummaries = collect([
             'reading_and_writing' => [
                 'label' => 'Reading and Writing',
@@ -97,6 +104,8 @@
         });
     @endphp
 
+    <div x-data="{ tab: '{{ $initialHomeTab }}' }" @teacher-home-tab-requested.window="tab = $event.detail.tab" @teacher-home-tab-changed.window="tab = $event.detail.tab">
+    <div x-show="tab === 'progress'">
     <div class="ds-home">
         <section class="ds-workspace-head" aria-labelledby="progress-title">
             <div class="ds-profile-panel">
@@ -443,5 +452,13 @@
                 @endforelse
             </article>
         </section>
+    </div>
+    </div>
+
+    @if($canUseTeacherWorkspace)
+        <div x-show="tab === 'classes' || tab === 'reports'" x-cloak class="ds-teacher-workspace">
+            <livewire:teacher.workspace />
+        </div>
+    @endif
     </div>
 </x-layouts.student>

@@ -1,6 +1,6 @@
 <x-layouts.student :user="$user" header-type="progress" title="Choose Practice" :cancel-route="route('home')">
     @push('styles')
-        @vite(['resources/css/student/analytics.css'])
+        @vite(['resources/css/student/analytics.css', 'resources/css/student/practice.css'])
     @endpush
 
     <div class="ds-home ds-practice-page">

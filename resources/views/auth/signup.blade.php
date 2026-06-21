@@ -103,12 +103,11 @@
                         <span class="role-title">Student</span>
                         <span class="role-desc">Practice tests & track your progress</span>
                     </div>
-                    <div class="role-option-card disabled" id="roleCardTeacher" aria-disabled="true"
-                        title="Teacher signup is temporarily unavailable.">
-                        <input type="radio" name="role" id="roleTeacher" value="teacher" disabled>
+                    <div class="role-option-card" id="roleCardTeacher">
+                        <input type="radio" name="role" id="roleTeacher" value="teacher">
                         <span class="role-icon">🎓</span>
                         <span class="role-title">Teacher</span>
-                        <span class="role-desc">Teacher signup is temporarily unavailable</span>
+                        <span class="role-desc">Create classes after administrator approval</span>
                     </div>
                 </div>
             </div>

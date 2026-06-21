@@ -63,6 +63,7 @@ export function initQuickAuthorWizard() {
     const shortCounts = document.getElementById('wizard-short-counts');
     const rwCountInput = document.getElementById('wizard-short-rw-count');
     const mathCountInput = document.getElementById('wizard-short-math-count');
+    const titleInput = document.getElementById('wizard-config-title');
 
     if (!fullSatBtn || !shortTestBtn || !moduleOnlyBtn || !customBtn || !configFlow) return;
 
@@ -89,13 +90,17 @@ export function initQuickAuthorWizard() {
     function openWorkflow(type) {
         currentWorkflow = type;
         const preset = WORKFLOWS[type];
-        document.getElementById('wizard-config-title').value = preset.title;
+        titleInput.value = '';
+        titleInput.placeholder = preset.title;
         document.getElementById('wizard-config-label').textContent = preset.label;
         shortCounts?.classList.toggle('hidden', type !== 'short_test');
         optionsGrid?.classList.add('hidden');
         loadingEl?.classList.add('hidden');
         configFlow.classList.remove('hidden');
         renderRows(preset.rows);
+        requestAnimationFrame(() => {
+            titleInput.focus();
+        });
     }
 
     function rebuildShortRows() {
@@ -161,11 +166,8 @@ export function initQuickAuthorWizard() {
     }
 
     function buildPayload() {
-        const title = document.getElementById('wizard-config-title').value.trim();
-        if (!title) {
-            showAlert('danger', 'Please enter a test title.');
-            return null;
-        }
+        const preset = WORKFLOWS[currentWorkflow];
+        const title = titleInput.value.trim() || preset.title;
 
         const modules = collectRows();
         if (modules.length === 0) {
@@ -179,7 +181,6 @@ export function initQuickAuthorWizard() {
             return null;
         }
 
-        const preset = WORKFLOWS[currentWorkflow];
         return {
             title,
             test_type: currentWorkflow,

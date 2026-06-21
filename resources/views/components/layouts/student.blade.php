@@ -49,9 +49,13 @@
     @stack('scripts')
     {{ $scripts ?? '' }}
     <script>
-        document.addEventListener('DOMContentLoaded', function() {
+        function initStudentHeader() {
             const triggerId = "{{ $headerType === 'progress' ? 'progressUserDropdown' : 'userDropdown' }}";
             const menuId = "{{ $headerType === 'progress' ? 'progressDropdownMenu' : 'dropdownMenu' }}";
+            const trigger = document.getElementById(triggerId);
+
+            if (!trigger || trigger.dataset.menuReady === 'true') return;
+            trigger.dataset.menuReady = 'true';
 
             if (typeof window.initDropdownToggle === 'function') {
                 const { menuEl } = window.initDropdownToggle({
@@ -74,7 +78,10 @@
                     window.initAjaxLogout({ formEl: logoutForm, redirectTo: '/signin', tokenStorageKey: 'api_token' });
                 }
             }
-        });
+        }
+
+        document.addEventListener('DOMContentLoaded', initStudentHeader);
+        document.addEventListener('livewire:navigated', initStudentHeader);
     </script>
 </body>
 </html>
