@@ -41,11 +41,6 @@ class AssignmentAttemptService
                 throw ValidationException::withMessages(['assignment' => 'You have used every allowed attempt.']);
             }
 
-            $test = \App\Models\Test::lockForUpdate()->findOrFail($assignment->test_id);
-            if (!$test->content_locked_at) {
-                $test->forceFill(['content_locked_at' => now()])->save();
-            }
-
             return UserTest::create([
                 'user_id' => $student->id,
                 'test_id' => $assignment->test_id,

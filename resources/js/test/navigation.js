@@ -242,7 +242,7 @@ function scheduleAutosave() {
   clearTimeout(autosaveTimer);
   autosaveTimer = setTimeout(() => {
     autosaveAnswers();
-  }, 700);
+  }, window.isAssignmentAttempt ? 0 : 700);
 }
 
 async function autosaveAnswers() {
@@ -275,6 +275,14 @@ async function autosaveAnswers() {
       body: payload,
       keepalive: true
     });
+
+    if (response.status === 409) {
+      const data = await response.json();
+      if (data.error === 'module_expired') {
+        await submitModule({ skipConfirm: true, timedOut: true });
+        return;
+      }
+    }
 
     if (!response.ok) {
       throw new Error(`Autosave failed with status ${response.status}`);
@@ -368,6 +376,8 @@ export async function submitModule(options = {}) {
         });
     }
 
+    const timedOut = Boolean(options.timedOut || data.timed_out);
+
     if (data.test_completed) {
       hideLoadingScreen();
       let secondsLeft = 5;
@@ -429,7 +439,35 @@ export async function submitModule(options = {}) {
         }
       }, 1000);
     } else if (data.next_module_id) {
-      navigateModule(`/engine/session/${data.next_module_id}`);
+      if (timedOut) {
+        hideLoadingScreen();
+        let secondsLeft = 5;
+        let continueTimer;
+        let hasNavigated = false;
+        const doNavigate = () => {
+          if (hasNavigated) return;
+          hasNavigated = true;
+          if (continueTimer) clearInterval(continueTimer);
+          navigateModule(`/engine/session/${data.next_module_id}`);
+        };
+
+        showCustomAlert(
+          `Time is up. Your saved answers were submitted. Continuing to the next module in <strong id="module-continue-countdown">5</strong> seconds.`,
+          "warning",
+          "Module Complete",
+          true,
+          "Continue Now"
+        ).then(doNavigate);
+
+        continueTimer = setInterval(() => {
+          secondsLeft--;
+          const counterEl = document.getElementById('module-continue-countdown');
+          if (counterEl) counterEl.textContent = secondsLeft;
+          if (secondsLeft <= 0) doNavigate();
+        }, 1000);
+      } else {
+        navigateModule(`/engine/session/${data.next_module_id}`);
+      }
     } else {
       hideLoadingScreen();
       console.error("Submission failed", data);

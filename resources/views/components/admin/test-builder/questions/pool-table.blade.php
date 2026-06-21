@@ -5,13 +5,7 @@
     class="relative rounded-xl border border-slate-200 bg-white shadow-sm overflow-hidden mb-6">
     <div
         class="px-6 py-4 bg-slate-50 border-b border-slate-200 flex flex-wrap justify-between items-center gap-3">
-        <h5 class="font-bold text-slate-800 flex items-center gap-3 mb-0 text-base">
-            <div
-                class="w-8 h-8 rounded-lg bg-indigo-50 border border-indigo-100 flex items-center justify-center">
-                <i class="bi bi-database-fill-gear text-indigo-600 text-sm leading-none"></i>
-            </div>
-            Question bank
-        </h5>
+        <h5 class="font-bold text-slate-800 mb-0 text-sm">All questions</h5>
         <span
             class="status-chip status-chip-readonly"
             id="questionsPoolCountBadge">{{ $questionsTotal }} questions</span>
@@ -89,12 +83,12 @@
             </div>
             <div class="questions-filter-actions flex gap-2">
                 <button type="button"
-                    class="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg shadow-md text-xs font-bold uppercase tracking-wider flex items-center gap-1.5 cursor-pointer transition-colors duration-150"
+                    class="min-h-10 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-xs font-bold flex items-center gap-1.5 cursor-pointer transition-colors duration-150"
                     id="questionsTableFilterBtn">
-                    <i class="bi bi-filter text-sm"></i> Apply Filters
+                    <i class="bi bi-filter text-sm"></i> Apply filters
                 </button>
                 <button type="button"
-                    class="px-4 py-2 bg-white border border-slate-200 text-slate-600 rounded-lg hover:bg-slate-50 text-xs font-bold uppercase tracking-wider flex items-center gap-1.5 cursor-pointer transition-colors duration-150"
+                    class="min-h-10 px-4 py-2 bg-white border border-slate-200 text-slate-600 rounded-lg hover:bg-slate-50 text-xs font-bold flex items-center gap-1.5 cursor-pointer transition-colors duration-150"
                     id="questionsTableFilterClearBtn">
                     <i class="bi bi-x-circle text-sm"></i> Clear
                 </button>

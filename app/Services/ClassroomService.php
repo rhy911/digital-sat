@@ -5,12 +5,15 @@ namespace App\Services;
 use App\Models\AssignmentRecipient;
 use App\Models\Classroom;
 use App\Models\ClassroomMembership;
+use App\Models\Test;
 use App\Models\User;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 
 class ClassroomService
 {
+    public function __construct(private TestContentLockService $locks) {}
+
     public function requestMembership(User $student, string $joinCode): ClassroomMembership
     {
         if ($student->role !== 'student') {
@@ -53,8 +56,7 @@ class ClassroomService
 
             if ($approve) {
                 $membership->classroom->assignments()
-                    ->where('status', 'published')
-                    ->where(fn ($query) => $query->whereNull('due_at')->orWhere('due_at', '>', now()))
+                    ->whereIn('status', ['published', 'closed'])
                     ->each(fn ($assignment) => AssignmentRecipient::updateOrCreate(
                         ['assignment_id' => $assignment->id, 'student_id' => $membership->student_id],
                         ['status' => 'active', 'assigned_at' => now(), 'withdrawn_at' => null]
@@ -82,7 +84,9 @@ class ClassroomService
     {
         DB::transaction(function () use ($classroom) {
             $classroom->update(['status' => 'archived']);
+            $testIds = $classroom->assignments()->where('status', 'published')->pluck('test_id')->unique();
             $classroom->assignments()->where('status', 'published')->update(['status' => 'closed', 'closed_at' => now()]);
+            Test::whereKey($testIds)->each(fn (Test $test) => $this->locks->syncLock($test));
         });
     }
 }

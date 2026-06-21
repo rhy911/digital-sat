@@ -56,6 +56,8 @@ class LoginController extends Controller
                 }
             }
 
+            $request->session()->regenerate();
+
             // Check if email is verified
             if (!$user->hasVerifiedEmail()) {
                 // Return JSON for AJAX requests or redirect for form submissions

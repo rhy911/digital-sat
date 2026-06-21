@@ -1,6 +1,8 @@
 import './bootstrap';
 import Alpine from 'alpinejs';
 import { initTruncatedTooltips } from './ui/truncated-tooltip.js';
+import { initDialogManager } from './ui/dialog-manager.js';
+import { initAttemptMonitorPolling } from './teacher/attempt-monitor.js';
 
 if (!window.Alpine) {
     window.Alpine = Alpine;
@@ -8,6 +10,8 @@ if (!window.Alpine) {
 }
 
 initTruncatedTooltips();
+initDialogManager();
+initAttemptMonitorPolling();
 
 
 
@@ -620,3 +624,29 @@ export function initLandingPage() {
     });
 }
 window.initLandingPage = initLandingPage;
+
+// Global form submit confirmation interceptor using custom confirm modals
+document.addEventListener('submit', async (e) => {
+    const form = e.target;
+    if (form.hasAttribute('data-confirm')) {
+        if (form.dataset.confirmed === 'true') {
+            return;
+        }
+
+        e.preventDefault();
+
+        const message = form.getAttribute('data-confirm');
+        let confirmed = false;
+
+        if (typeof window.showCustomConfirm === 'function') {
+            confirmed = await window.showCustomConfirm(message, 'warning', 'Confirm Action');
+        } else {
+            confirmed = window.confirm(message);
+        }
+
+        if (confirmed) {
+            form.dataset.confirmed = 'true';
+            form.submit();
+        }
+    }
+});

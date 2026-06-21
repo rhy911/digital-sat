@@ -31,6 +31,7 @@ trait HandlesAnswers
         $userTest = UserTest::where('id', $validated['user_test_id'])
             ->where('user_id', Auth::id())
             ->where('status', 'in_progress')
+            ->lockForUpdate()
             ->first();
 
         if (!$userTest) {

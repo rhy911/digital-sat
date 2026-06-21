@@ -23,6 +23,8 @@ export const state = {
   // Timer state
   timeLeft: 0, // in seconds
   timerInterval: null,
+  timerStartedAtMs: null,
+  timerInitialSeconds: 0,
   isUntimed: false,
   isPaused: false,
   isSubmitting: false

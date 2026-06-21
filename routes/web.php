@@ -26,16 +26,16 @@ Route::redirect('/home', '/student/progress');
 Route::middleware('guest')->group(function () {
     Route::get('/signin', [PageController::class, 'showSignin'])->name('signin');
     Route::get('/signin/form', [PageController::class, 'showSigninForm'])->name('signin.form');
-    Route::post('/signin', LoginController::class);
+    Route::post('/signin', LoginController::class)->middleware('throttle:5,1');
 
     Route::get('/signup', [PageController::class, 'showSignup'])->name('signup');
-    Route::post('/signup', RegisterController::class);
+    Route::post('/signup', RegisterController::class)->middleware('throttle:5,1');
 
     Route::get('/forgot', [PageController::class, 'showForgot'])->name('forgot');
-    Route::post('/forgot', ForgotPasswordController::class);
+    Route::post('/forgot', ForgotPasswordController::class)->middleware('throttle:5,1');
 
     Route::get('/reset-password/{token}', [PageController::class, 'showResetPassword'])->name('password.reset');
-    Route::post('/reset-password', ResetPasswordController::class)->name('password.update');
+    Route::post('/reset-password', ResetPasswordController::class)->middleware('throttle:5,1')->name('password.update');
 });
 
 // Verification notice
@@ -45,7 +45,9 @@ Route::get('/email-verify', [PageController::class, 'showEmailVerifyNotice'])->n
 Route::get('/email/verify/{id}/{hash}', VerifyEmailController::class)->name('verification.verify');
 
 Route::middleware('auth')->group(function () {
-    Route::post('/email/verification-notification', ResendVerificationController::class)->name('verification.send');
+    Route::post('/email/verification-notification', ResendVerificationController::class)
+        ->middleware('throttle:6,1')
+        ->name('verification.send');
     Route::post('/logout', LogoutController::class)->name('logout');
 });
 
@@ -106,11 +108,13 @@ Route::middleware(['auth', 'verified', 'role:admin,teacher'])->prefix('teacher')
         Route::post('/memberships/{membership}/reject', [\App\Http\Controllers\Teacher\MembershipController::class, 'reject'])->name('memberships.reject');
         Route::post('/memberships/{membership}/remove', [\App\Http\Controllers\Teacher\MembershipController::class, 'remove'])->name('memberships.remove');
         Route::post('/classes/{classroom}/assignments', [\App\Http\Controllers\Teacher\AssignmentController::class, 'store'])->name('assignments.store');
+        Route::get('/assignments/{assignment}/students/{student}/attempts', [\App\Http\Controllers\Teacher\AssignmentController::class, 'attemptMonitor'])->name('assignments.attempt-monitor');
         Route::get('/assignments/{assignment}', [\App\Http\Controllers\Teacher\AssignmentController::class, 'show'])->name('assignments.show');
         Route::put('/assignments/{assignment}', [\App\Http\Controllers\Teacher\AssignmentController::class, 'update'])->name('assignments.update');
         Route::post('/assignments/{assignment}/publish', [\App\Http\Controllers\Teacher\AssignmentController::class, 'publish'])->name('assignments.publish');
         Route::post('/assignments/{assignment}/close', [\App\Http\Controllers\Teacher\AssignmentController::class, 'close'])->name('assignments.close');
         Route::post('/assignments/{assignment}/reopen', [\App\Http\Controllers\Teacher\AssignmentController::class, 'reopen'])->name('assignments.reopen');
+        Route::delete('/assignments/{assignment}', [\App\Http\Controllers\Teacher\AssignmentController::class, 'destroy'])->name('assignments.destroy');
     });
 });
 

@@ -83,8 +83,6 @@ function handleReviewButtonClick(e) {
 // ============================================================================
 
 document.addEventListener("DOMContentLoaded", () => {
-  console.log('=== TEST INITIALIZATION ===');
-
   initializeDOMElements();
   generateQuestionButtons();
   initializeQuestionTracking();

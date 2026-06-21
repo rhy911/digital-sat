@@ -16,7 +16,7 @@
         @php($pending = $classroom->memberships->where('status', 'pending'))
         @if($pending->isNotEmpty())<div class="pending-block"><h3>Pending requests</h3>@foreach($pending as $membership)<div class="roster-row"><div><strong>{{ $membership->student->name }}</strong><span>{{ $membership->student->email }}</span></div>@if($classroom->status === 'active')<div class="row-actions"><form method="POST" action="{{ route('teacher.memberships.approve', $membership) }}">@csrf<button class="class-button class-button--primary">Approve</button></form><form method="POST" action="{{ route('teacher.memberships.reject', $membership) }}">@csrf<button class="class-button">Reject</button></form></div>@endif</div>@endforeach</div>@endif
         @forelse($classroom->memberships->where('status', 'active') as $membership)
-            <div class="roster-row"><div><strong>{{ $membership->student->name }}</strong><span>{{ $membership->student->email }}</span></div>@if($classroom->status === 'active')<form method="POST" action="{{ route('teacher.memberships.remove', $membership) }}" onsubmit="return confirm('Remove this student? Result history will remain.')">@csrf<button class="text-button text-button--danger">Remove</button></form>@endif</div>
+            <div class="roster-row"><div><strong>{{ $membership->student->name }}</strong><span>{{ $membership->student->email }}</span></div>@if($classroom->status === 'active')<form method="POST" action="{{ route('teacher.memberships.remove', $membership) }}" data-confirm="Remove this student? Result history will remain.">@csrf<button class="text-button text-button--danger">Remove</button></form>@endif</div>
         @empty <div class="class-empty class-empty--compact"><p>No active students. Share code <strong>{{ $classroom->join_code }}</strong>.</p></div> @endforelse
     </section>
     <section id="assignments" class="class-panel">
@@ -24,7 +24,7 @@
         @if($classroom->status === 'active')
         <details class="create-disclosure"><summary>Create assignment</summary>
             <form method="POST" action="{{ route('teacher.assignments.store', $classroom) }}" class="form-grid">@csrf
-                <label>Test<select name="test_id" required><option value="">Select an owned test</option>@foreach($tests as $test)<option value="{{ $test->id }}">{{ $test->title }}{{ $test->content_locked_at ? ' (locked)' : '' }}</option>@endforeach</select></label>
+                <label>Test<select name="test_id" required><option value="">Select an owned test</option>@foreach($tests as $test)<option value="{{ $test->id }}">{{ $test->title }}{{ $test->isContentLocked() ? ' (locked)' : '' }}</option>@endforeach</select></label>
                 <label>Assignment title<input name="title" required maxlength="180"></label>
                 <label class="span-2">Instructions<textarea name="instructions" rows="3"></textarea></label>
                 <label>Available from (Asia/Ho_Chi_Minh)<input type="datetime-local" name="available_at"></label><label>Due at (Asia/Ho_Chi_Minh)<input type="datetime-local" name="due_at"></label>
@@ -36,6 +36,6 @@
             <a class="assignment-row" wire:navigate href="{{ route('teacher.assignments.show', $assignment) }}"><div><span class="status-chip status-chip--{{ $assignment->status }}">{{ ucfirst($assignment->status) }}</span><strong>{{ $assignment->title }}</strong><span>{{ $assignment->test->title }}</span></div><div><span>{{ $assignment->attempt_limit }} attempt{{ $assignment->attempt_limit === 1 ? '' : 's' }}</span><span>{{ $assignment->due_at?->format('M j, g:i A') ?: 'No due time' }}</span></div></a>
         @empty <div class="class-empty class-empty--compact"><p>No assignments. Create a draft when your test is ready.</p></div> @endforelse
     </section>
-    <div class="danger-zone">@if($classroom->status === 'active')<form method="POST" action="{{ route('teacher.classes.archive', $classroom) }}" onsubmit="return confirm('Archive class and close published assignments?')">@csrf<button class="class-button class-button--danger">Archive class</button></form>@else<form method="POST" action="{{ route('teacher.classes.restore', $classroom) }}">@csrf<button class="class-button">Restore class</button></form>@endif</div>
+    <div class="danger-zone">@if($classroom->status === 'active')<form method="POST" action="{{ route('teacher.classes.archive', $classroom) }}" data-confirm="Archive class and close published assignments?">@csrf<button class="class-button class-button--danger">Archive class</button></form>@else<form method="POST" action="{{ route('teacher.classes.restore', $classroom) }}">@csrf<button class="class-button">Restore class</button></form>@endif</div>
     </div>
 </x-layouts.student>

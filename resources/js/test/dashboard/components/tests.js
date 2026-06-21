@@ -27,33 +27,11 @@ function renderTestRowHtml(t) {
         ? `<div class="flex items-center justify-center"><input type="checkbox" data-id="${t.id}" class="w-4 h-4 text-indigo-600 border-slate-300 bg-white rounded cursor-pointer test-public-checkbox" ${t.is_public ? 'checked' : ''} title="${t.is_public ? 'Public (Click to make Private)' : 'Private (Click to make Public)'}" aria-label="Toggle public visibility"></div>`
         : `<div class="flex items-center justify-center"><input type="checkbox" checked disabled class="w-4 h-4 text-slate-400 border-slate-200 bg-slate-100 rounded cursor-not-allowed opacity-60" title="Shared (View only)" aria-label="Shared resource"></div>`;
 
-    // Status select dropdown
-    let statusHtml = '';
-    if (isOwner) {
-        let selectClass = 'px-2 py-1 text-[11px] font-extrabold uppercase tracking-wider rounded-md border cursor-pointer transition-colors duration-150 status-select outline-none';
-        if (t.status === 'active') {
-            selectClass += ' bg-emerald-50 border-emerald-200 text-emerald-800 hover:bg-emerald-100/70';
-        } else if (t.status === 'draft') {
-            selectClass += ' bg-amber-50 border-amber-200 text-amber-700 hover:bg-amber-100/70';
-        } else {
-            selectClass += ' bg-slate-50 border-slate-200 text-slate-700 hover:bg-slate-100/70';
-        }
-        statusHtml = `
-            <div class="flex items-center justify-center w-full h-full">
-                <select class="${selectClass}" data-test-id="${t.id}" aria-label="Change status">
-                    <option value="draft" ${t.status === 'draft' ? 'selected' : ''}>Draft</option>
-                    <option value="active" ${t.status === 'active' ? 'selected' : ''}>Active</option>
-                    <option value="archived" ${t.status === 'archived' ? 'selected' : ''}>Archived</option>
-                </select>
-            </div>
-        `;
-    } else {
-        let chipClass = 'status-chip status-chip-readonly';
-        if (t.status === 'active') chipClass = 'status-chip status-chip-active';
-        if (t.status === 'draft') chipClass = 'status-chip status-chip-draft';
-        if (t.status === 'archived') chipClass = 'status-chip status-chip-archived';
-        statusHtml = `<div class="flex items-center justify-center w-full h-full"><span class="${chipClass}">${escapeHtml(humanizeUnderscores(t.status))}</span></div>`;
-    }
+    let chipClass = 'status-chip status-chip-readonly';
+    if (t.status === 'active') chipClass = 'status-chip status-chip-active';
+    if (t.status === 'draft') chipClass = 'status-chip status-chip-draft';
+    if (t.status === 'archived') chipClass = 'status-chip status-chip-archived';
+    const statusHtml = `<div class="flex items-center justify-center w-full h-full"><span class="${chipClass}">${escapeHtml(humanizeUnderscores(t.status))}</span></div>`;
 
     // Actions dropdown
     const actionsHtml = isOwner
@@ -62,6 +40,9 @@ function renderTestRowHtml(t) {
                 Actions <i class="bi bi-chevron-down text-[10px]"></i>
             </button>
             <div class="dropdown-menu hidden">
+                ${t.status !== 'active' ? `<button type="button" class="dropdown-item change-test-status-btn" data-id="${t.id}" data-status="active"><i class="bi bi-send-check mr-2"></i> Publish</button>` : ''}
+                ${t.status !== 'draft' ? `<button type="button" class="dropdown-item change-test-status-btn" data-id="${t.id}" data-status="draft"><i class="bi bi-pencil mr-2"></i> Return to draft</button>` : ''}
+                ${t.status !== 'archived' ? `<button type="button" class="dropdown-item change-test-status-btn" data-id="${t.id}" data-status="archived"><i class="bi bi-archive mr-2"></i> Archive</button>` : ''}
                 <button type="button" class="dropdown-item clone-test-btn" data-id="${t.id}"><i class="bi bi-copy mr-2"></i> Clone</button>
                 <button type="button" class="dropdown-item text-danger delete-test-btn" data-id="${t.id}"><i class="bi bi-trash mr-2"></i> Delete</button>
             </div>

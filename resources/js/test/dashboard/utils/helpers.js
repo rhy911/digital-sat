@@ -189,6 +189,10 @@ export function getOrCreateAlertModal() {
     modal = document.createElement('div');
     modal.id = 'customAlertModal';
     modal.className = 'custom-alert-modal hidden';
+    modal.setAttribute('role', 'dialog');
+    modal.setAttribute('aria-modal', 'true');
+    modal.setAttribute('aria-labelledby', 'customAlertTitle');
+    modal.setAttribute('aria-describedby', 'customAlertMessage');
     modal.innerHTML = `
         <div class="custom-alert-backdrop"></div>
         <div class="custom-alert-box">
@@ -220,9 +224,9 @@ export function getOrCreateAlertModal() {
                 background: rgba(8, 12, 21, 0.7);
             }
             .custom-alert-box {
-                position: relative; background: #111827; border-radius: 16px;
-                box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
-                width: 90%; max-width: 440px; padding: 28px; border: 1px solid rgba(255, 255, 255, 0.08);
+                position: relative; background: #ffffff; border-radius: 12px;
+                box-shadow: 0 8px 24px rgba(15, 23, 42, 0.18);
+                width: 90%; max-width: 440px; padding: 28px;
                 display: flex; flex-direction: column; align-items: center; text-align: center;
                 transform: scale(1); transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1); z-index: 1;
                 will-change: transform;
@@ -237,22 +241,23 @@ export function getOrCreateAlertModal() {
             .custom-alert-icon.error { background-color: rgba(239, 68, 68, 0.1); color: #f87171; }
             .custom-alert-icon.success { background-color: rgba(16, 185, 129, 0.1); color: #34d399; }
             .custom-alert-content { margin-bottom: 24px; width: 100%; }
-            .custom-alert-title { font-size: 1.2rem; font-weight: 700; color: #f8fafc; margin-bottom: 10px; font-family: system-ui, -apple-system, sans-serif; }
-            .custom-alert-message { font-size: 0.95rem; color: #94a3b8; line-height: 1.6; margin: 0; font-family: system-ui, -apple-system, sans-serif; }
+            .custom-alert-title { font-size: 1.1rem; font-weight: 700; color: #0f172a; margin-bottom: 10px; font-family: system-ui, -apple-system, sans-serif; }
+            .custom-alert-message { font-size: 0.9rem; color: #475569; line-height: 1.6; margin: 0; font-family: system-ui, -apple-system, sans-serif; }
             .custom-alert-input {
-                width: 100%; margin-top: 16px; padding: 10px 14px; background: #1e293b; color: #ffffff;
-                border: 1px solid rgba(255, 255, 255, 0.12); border-radius: 8px; font-size: 0.95rem; outline: none;
+                width: 100%; margin-top: 16px; padding: 10px 14px; background: #ffffff; color: #0f172a;
+                border: 1px solid #cbd5e1; border-radius: 8px; font-size: 0.95rem; outline: none;
                 transition: all 0.2s ease; font-family: system-ui, -apple-system, sans-serif;
             }
             .custom-alert-input:focus {
-                border-color: #6366f1; box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.25); background: #1e293b;
+                border-color: #3347b9; box-shadow: 0 0 0 3px rgba(51, 71, 185, 0.16); background: #ffffff;
             }
             .custom-alert-actions { display: flex; gap: 12px; width: 100%; justify-content: center; }
             .custom-alert-btn { flex: 1; max-width: 160px; padding: 10px 18px; border-radius: 8px; font-size: 0.95rem; font-weight: 600; cursor: pointer; transition: all 0.15s ease; border: none; outline: none; display: inline-flex; align-items: center; justify-content: center; }
-            .custom-alert-btn.btn-primary { background: linear-gradient(135deg, #4f46e5 0%, #4338ca 100%); color: #ffffff; box-shadow: 0 4px 10px rgba(79, 70, 229, 0.3); }
-            .custom-alert-btn.btn-primary:hover { background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%); transform: translateY(-1px); box-shadow: 0 6px 12px rgba(79, 70, 229, 0.4); }
-            .custom-alert-btn.btn-secondary { background-color: #1e293b; color: #e2e8f0; border: 1px solid rgba(255, 255, 255, 0.08); }
-            .custom-alert-btn.btn-secondary:hover { background-color: #334155; color: #ffffff; transform: translateY(-1px); }
+            .custom-alert-btn.btn-primary { background: #3347b9; color: #ffffff; }
+            .custom-alert-btn.btn-primary:hover { background: #27378f; }
+            .custom-alert-btn.btn-secondary { background-color: #ffffff; color: #334155; border: 1px solid #cbd5e1; }
+            .custom-alert-btn.btn-secondary:hover { background-color: #f8fafc; color: #0f172a; }
+            .custom-alert-btn:focus-visible { outline: 2px solid #3347b9; outline-offset: 2px; }
         `;
         document.head.appendChild(style);
     }
@@ -363,7 +368,11 @@ export function showCustomConfirm(message, type = 'warning', title = 'Confirm Ac
             `;
         }
 
+        const opener = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+        const appShell = document.querySelector('[data-test-builder-shell]');
         modal.classList.remove('hidden');
+        if (appShell) appShell.inert = true;
+        requestAnimationFrame(() => cancelBtn.focus({ preventScroll: true }));
 
         const handleConfirm = () => {
             cleanup();
@@ -375,14 +384,34 @@ export function showCustomConfirm(message, type = 'warning', title = 'Confirm Ac
             resolve(false);
         };
 
+        const handleKeydown = event => {
+            if (event.key === 'Escape') {
+                event.preventDefault();
+                handleCancel();
+                return;
+            }
+            if (event.key !== 'Tab') return;
+            if (event.shiftKey && document.activeElement === cancelBtn) {
+                event.preventDefault();
+                confirmBtn.focus();
+            } else if (!event.shiftKey && document.activeElement === confirmBtn) {
+                event.preventDefault();
+                cancelBtn.focus();
+            }
+        };
+
         const cleanup = () => {
             modal.classList.add('hidden');
+            if (appShell) appShell.inert = false;
             confirmBtn.removeEventListener('click', handleConfirm);
             cancelBtn.removeEventListener('click', handleCancel);
+            modal.removeEventListener('keydown', handleKeydown);
+            if (opener?.isConnected) opener.focus({ preventScroll: true });
         };
 
         confirmBtn.addEventListener('click', handleConfirm);
         cancelBtn.addEventListener('click', handleCancel);
+        modal.addEventListener('keydown', handleKeydown);
     });
 }
 
@@ -736,5 +765,4 @@ export function formatDateToShort(dateStr) {
     const year = String(date.getFullYear()).slice(-2);
     return `${day}/${month}/${year}`;
 }
-
 

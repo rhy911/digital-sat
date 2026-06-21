@@ -1,5 +1,5 @@
 import { 
-    SKILL_DOMAINS, TEST_DASHBOARD_TAB_KEY, SNAPSHOT_URL, TESTS_STORE_URL, SECTIONS_STORE_URL, 
+    SKILL_DOMAINS, TEST_DASHBOARD_TAB_KEY, SNAPSHOT_URL, SECTIONS_STORE_URL,
     MODULES_STORE_URL, BASE_URL, BULK_STORE_URL,
     CSV_BULK_URL, MEDIA_UPLOAD_URL
 } from './core/config.js';
@@ -58,6 +58,7 @@ document.addEventListener('DOMContentLoaded', async function () {
         if (!targetId) targetId = '#tests';
 
         const activeTitle = document.getElementById('dashboard-active-title');
+        const activeDescription = document.getElementById('dashboard-active-description');
         if (activeTitle) {
             const titleMap = {
                 '#tests': 'Practice Tests',
@@ -67,6 +68,16 @@ document.addEventListener('DOMContentLoaded', async function () {
                 '#builder': 'Easy Builder',
             };
             activeTitle.textContent = titleMap[targetId] || 'Test Dashboard';
+        }
+        if (activeDescription) {
+            const descriptionMap = {
+                '#tests': 'Create and manage SAT practice tests.',
+                '#builder': 'Write questions with a live Bluebook-style preview.',
+                '#sections': 'Organize Reading & Writing and Math sections.',
+                '#modules': 'Manage module timing, difficulty, and capacity.',
+                '#questions': 'Search, review, and reuse assessment content.',
+            };
+            activeDescription.textContent = descriptionMap[targetId] || 'Manage SAT assessment content.';
         }
 
         await loadHeavyDependencies();
@@ -161,9 +172,9 @@ document.addEventListener('DOMContentLoaded', async function () {
     }
 
     // Expose to window for global access
-    window.refreshTestDashboardData = function () {
+    window.refreshTestDashboardData = async function (preserve = null) {
         rememberTestDashboardTab();
-        window.location.reload();
+        return refreshTestDashboardData(preserve || captureTomSelectPreservation(null));
     };
     window.removeMediaFromEditModal = removeMediaFromEditModal;
     window.addBuilderBlock = addBuilderBlock;
@@ -174,16 +185,18 @@ document.addEventListener('DOMContentLoaded', async function () {
         if (!root || root.dataset.delegatedActionsBound === '1') return;
         root.dataset.delegatedActionsBound = '1';
 
-        root.addEventListener('change', function (e) {
-            const sel = e.target.closest('select.status-select[data-test-id]');
-            if (sel) updateTestStatus(sel.getAttribute('data-test-id'), sel.value, () => refreshTestDashboardData(captureTomSelectPreservation(null)));
-        });
-
         root.addEventListener('click', async function (e) {
-            const btn = e.target.closest('.delete-test-btn, .delete-section-btn, .delete-module-btn, .delete-question-btn, .edit-question-btn, .clone-test-btn, .clone-module-btn');
+            const btn = e.target.closest('.delete-test-btn, .delete-section-btn, .delete-module-btn, .delete-question-btn, .edit-question-btn, .clone-test-btn, .clone-module-btn, .change-test-status-btn');
             if (!btn) return;
 
             const id = btn.getAttribute('data-id');
+            if (btn.classList.contains('change-test-status-btn')) {
+                const status = btn.getAttribute('data-status');
+                const action = status === 'active' ? 'Publish this test for students?' : status === 'archived' ? 'Archive this test?' : 'Return this test to draft?';
+                if (!await showCustomConfirm(action, status === 'active' ? 'info' : 'warning', status === 'active' ? 'Publish Test' : 'Change Test Status')) return;
+                await updateTestStatus(id, status, () => refreshTestDashboardData(captureTomSelectPreservation(null)));
+                return;
+            }
             if (btn.classList.contains('edit-question-btn')) {
                 openEditQuestionModal(id);
                 return;
@@ -511,7 +524,6 @@ document.addEventListener('DOMContentLoaded', async function () {
         });
     }
 
-    setupForm('testForm', TESTS_STORE_URL);
     setupForm('sectionForm', SECTIONS_STORE_URL);
     setupForm('moduleForm', MODULES_STORE_URL);
 
@@ -569,6 +581,18 @@ document.addEventListener('DOMContentLoaded', async function () {
     
     // Save All button
     document.getElementById('submitBuilderBtn')?.addEventListener('click', submitBuilderQuestions);
+
+    document.getElementById('builderPreviewToggle')?.addEventListener('click', event => {
+        const preview = document.querySelector('#builderMainGrid .live-preview-drawer');
+        if (!preview) return;
+        const open = preview.classList.toggle('is-open');
+        event.currentTarget.setAttribute('aria-expanded', String(open));
+        event.currentTarget.querySelector('span').textContent = open ? 'Hide preview' : 'Show preview';
+        if (open) {
+            const behavior = window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth';
+            requestAnimationFrame(() => preview.scrollIntoView({ behavior, block: 'nearest' }));
+        }
+    });
     
     // Dismiss tips banner
     document.getElementById('builderDismissInstructionsBtn')?.addEventListener('click', function () {
@@ -588,7 +612,32 @@ document.addEventListener('DOMContentLoaded', async function () {
         }
     });
 
-    initQuickAuthorWizard();
+    initQuickAuthorWizard({
+        onCreated: async test => {
+            const sections = [...(test.sections || [])].sort((a, b) => (a.order || 0) - (b.order || 0));
+            const firstModule = sections
+                .flatMap(section => [...(section.modules || [])].sort((a, b) => (a.order || 0) - (b.order || 0)))
+                .find(Boolean);
+
+            if (!firstModule) throw new Error('Draft created, but no module was returned. Open it from Practice Tests.');
+
+            await refreshTestDashboardData({ builderModuleId: String(firstModule.id) });
+            const builderTab = document.getElementById('builder-tab');
+            builderTab?.click();
+            sessionStorage.setItem(TEST_DASHBOARD_TAB_KEY, '#builder');
+
+            const moduleSelect = document.getElementById('builderModuleId');
+            if (moduleSelect?.tomselect) {
+                moduleSelect.tomselect.setValue(String(firstModule.id), true);
+            } else if (moduleSelect) {
+                moduleSelect.value = String(firstModule.id);
+            }
+
+            clearBuilderWorkspace();
+            await fetchModuleQuestions(firstModule.id);
+            return document.getElementById('addBuilderBlockBtn');
+        },
+    });
     BulkImport.initBulkImport();
 
     // Question Bank Filters Event Listeners
@@ -653,98 +702,6 @@ document.addEventListener('DOMContentLoaded', async function () {
         } catch (err) {
             showAlert('danger', 'Filter failed: ' + err.message);
         }
-    });
-
-    function getOffcanvasTargetFromTrigger(trigger) {
-        if (!trigger) return null;
-        const explicitTarget = trigger.getAttribute('data-offcanvas-target');
-        if (explicitTarget) return explicitTarget;
-
-        const alpineClick = trigger.getAttribute('x-on:click') || trigger.getAttribute('@click') || '';
-        const match = alpineClick.match(/open-offcanvas['"]\s*,\s*['"]([^'"]+)/);
-        return match ? match[1] : null;
-    }
-
-    function getModalTargetFromTrigger(trigger) {
-        if (!trigger) return null;
-        const explicitTarget = trigger.getAttribute('data-modal-target');
-        if (explicitTarget) return explicitTarget;
-
-        const alpineClick = trigger.getAttribute('x-on:click') || trigger.getAttribute('@click') || '';
-        const match = alpineClick.match(/open-modal['"]\s*,\s*['"]([^'"]+)/);
-        return match ? match[1] : null;
-    }
-
-    function setOffcanvasOpen(id, open) {
-        if (!id) return;
-        const dialog = document.getElementById(id) || document.querySelector(`[data-offcanvas-dialog="${id}"]`);
-        if (!dialog) return;
-
-        dialog.style.display = open ? 'block' : 'none';
-        dialog.setAttribute('aria-hidden', open ? 'false' : 'true');
-        dialog.querySelectorAll('[x-show]').forEach(child => {
-            child.style.display = open ? '' : 'none';
-        });
-        document.body.classList.toggle('overflow-hidden', open);
-
-        if (open) {
-            const focusable = dialog.querySelector('input:not([type="hidden"]), select, textarea, button, [href], [tabindex]:not([tabindex="-1"])');
-            setTimeout(() => focusable?.focus(), 0);
-        }
-    }
-
-    window.addEventListener('open-offcanvas', event => setOffcanvasOpen(event.detail, true));
-    window.addEventListener('close-offcanvas', event => setOffcanvasOpen(event.detail, false));
-
-    function setModalOpen(id, open) {
-        if (!id) return;
-        const dialog = document.getElementById(id) || document.querySelector(`[data-modal-dialog="${id}"]`);
-        if (!dialog) return;
-
-        dialog.style.display = open ? 'block' : 'none';
-        dialog.setAttribute('aria-hidden', open ? 'false' : 'true');
-        dialog.querySelectorAll('[x-show]').forEach(child => {
-            child.style.display = open ? '' : 'none';
-        });
-        document.body.classList.toggle('overflow-hidden', open);
-
-        if (open) {
-            const focusable = dialog.querySelector('button, input:not([type="hidden"]), select, textarea, [href], [tabindex]:not([tabindex="-1"])');
-            setTimeout(() => focusable?.focus(), 0);
-        }
-    }
-
-    window.addEventListener('open-modal', event => setModalOpen(event.detail, true));
-    window.addEventListener('close-modal', event => setModalOpen(event.detail, false));
-
-    document.addEventListener('click', event => {
-        const modalCloseButton = event.target.closest('[data-modal-close]');
-        if (modalCloseButton) {
-            const dialog = modalCloseButton.closest('[data-modal-dialog]');
-            if (dialog?.id) setModalOpen(dialog.id, false);
-            return;
-        }
-
-        const closeButton = event.target.closest('[data-offcanvas-close]');
-        if (closeButton) {
-            const dialog = closeButton.closest('[data-offcanvas-dialog]');
-            if (dialog?.id) setOffcanvasOpen(dialog.id, false);
-            return;
-        }
-
-        const trigger = event.target.closest('button, a, [role="button"]');
-        const modalTargetId = getModalTargetFromTrigger(trigger);
-        if (modalTargetId) {
-            event.preventDefault();
-            setModalOpen(modalTargetId, true);
-            return;
-        }
-
-        const targetId = getOffcanvasTargetFromTrigger(trigger);
-        if (!targetId) return;
-
-        event.preventDefault();
-        setOffcanvasOpen(targetId, true);
     });
 
     // Global click handler to manage actions-dropdown menus

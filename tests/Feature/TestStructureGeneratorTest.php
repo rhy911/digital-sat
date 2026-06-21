@@ -128,6 +128,35 @@ class TestStructureGeneratorTest extends TestCase
         ]);
     }
 
+    public function test_configured_test_defaults_to_draft_and_returns_a_builder_module()
+    {
+        $this->withoutMiddleware();
+        $user = User::factory()->create(['role' => 'teacher']);
+
+        $response = $this->actingAs($user)->postJson(route('home-dashboard.tests.generate-configured'), [
+            'title' => 'Teacher Draft',
+            'test_type' => 'module_only',
+            'modules' => [[
+                'section_type' => 'reading_writing',
+                'module_number' => 1,
+                'difficulty_level' => 'standard',
+                'duration_minutes' => 32,
+                'total_questions' => 27,
+            ]],
+        ]);
+
+        $response->assertCreated()
+            ->assertJsonPath('data.status', 'draft')
+            ->assertJsonPath('data.created_by', $user->id)
+            ->assertJsonStructure(['data' => ['sections' => [['modules' => [['id']]]]]]);
+
+        $this->assertDatabaseHas('tests', [
+            'title' => 'Teacher Draft',
+            'status' => 'draft',
+            'created_by' => $user->id,
+        ]);
+    }
+
     public function test_custom_test_populates_questions_from_pool()
     {
         $this->withoutMiddleware();

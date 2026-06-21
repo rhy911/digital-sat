@@ -21,19 +21,22 @@ $maxWidthClass = [
 @endphp
 
 <div
-    id="{{ $id }}"
-    data-modal-dialog="{{ $id }}"
     x-data="{ show: false }"
-    x-on:open-modal.window="if ($event.detail === '{{ $id }}') { show = true; document.body.classList.add('overflow-hidden'); }"
-    x-on:close-modal.window="if ($event.detail === '{{ $id }}') { show = false; document.body.classList.remove('overflow-hidden'); }"
-    x-on:keydown.escape.window="show = false; document.body.classList.remove('overflow-hidden');"
-    x-show="show"
-    class="fixed inset-0 z-50 overflow-y-auto"
-    aria-labelledby="modal-title-{{ $id }}"
-    role="dialog"
-    aria-modal="true"
-    style="display: none;"
+    x-on:open-modal.window="if ($event.detail === '{{ $id }}') show = true"
+    x-on:close-modal.window="if ($event.detail === '{{ $id }}') show = false"
 >
+    <template x-teleport="body">
+    <div
+        id="{{ $id }}"
+        data-modal-dialog="{{ $id }}"
+        x-show="show"
+        class="fixed inset-0 z-50 overflow-y-auto"
+        aria-labelledby="modal-title-{{ $id }}"
+        role="dialog"
+        aria-modal="true"
+        :aria-hidden="show ? 'false' : 'true'"
+        style="display: none;"
+    >
     <!-- Background overlay -->
     <div
         x-show="show"
@@ -46,7 +49,7 @@ $maxWidthClass = [
         class="fixed inset-0 bg-slate-950/65 transform-gpu"
         style="will-change: opacity;"
         data-modal-close
-        x-on:click="show = false; document.body.classList.remove('overflow-hidden');"
+        x-on:click="$dispatch('close-modal', '{{ $id }}')"
         aria-hidden="true"
     ></div>
 
@@ -68,7 +71,7 @@ $maxWidthClass = [
                 <h3 class="text-lg font-semibold text-slate-900" id="modal-title-{{ $id }}">
                     {{ $title }}
                 </h3>
-                <button type="button" data-modal-close x-on:click="show = false; document.body.classList.remove('overflow-hidden');" class="text-slate-500 hover:text-slate-900 focus:outline-none cursor-pointer" aria-label="Close modal">
+                <button type="button" data-modal-close x-on:click="$dispatch('close-modal', '{{ $id }}')" class="text-slate-500 hover:text-slate-900 focus:outline-none cursor-pointer" aria-label="Close modal">
                     <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
                     </svg>
@@ -87,4 +90,6 @@ $maxWidthClass = [
             @endif
         </div>
     </div>
+    </div>
+    </template>
 </div>

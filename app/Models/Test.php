@@ -65,7 +65,10 @@ class Test extends Model
     }
 
     public function assignments() { return $this->hasMany(Assignment::class); }
-    public function isContentLocked(): bool { return $this->content_locked_at !== null; }
+    public function isContentLocked(): bool
+    {
+        return $this->assignments()->where('status', 'published')->exists();
+    }
 
     public function isStructurallyComplete(): bool
     {

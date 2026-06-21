@@ -6,9 +6,8 @@
 
 <div
     x-data="{ show: false }"
-    x-on:open-offcanvas.window="if ($event.detail === '{{ $id }}') { show = true; document.body.classList.add('overflow-hidden'); }"
-    x-on:close-offcanvas.window="if ($event.detail === '{{ $id }}') { show = false; document.body.classList.remove('overflow-hidden'); }"
-    x-on:keydown.escape.window="show = false; document.body.classList.remove('overflow-hidden');"
+    x-on:open-offcanvas.window="if ($event.detail === '{{ $id }}') show = true"
+    x-on:close-offcanvas.window="if ($event.detail === '{{ $id }}') show = false"
 >
     <template x-teleport="body">
         <div
@@ -19,6 +18,7 @@
             aria-labelledby="offcanvas-title-{{ $id }}"
             role="dialog"
             aria-modal="true"
+            :aria-hidden="show ? 'false' : 'true'"
             style="display: none;"
         >
             <!-- Background backdrop, show/hide based on slide-over state. -->
@@ -33,7 +33,7 @@
                 class="fixed inset-0 bg-slate-950/80 transform-gpu"
                 style="will-change: opacity;"
                 data-offcanvas-close
-                x-on:click="show = false; document.body.classList.remove('overflow-hidden');"
+                x-on:click="$dispatch('close-offcanvas', '{{ $id }}')"
             ></div>
 
             <div class="fixed inset-0 overflow-hidden pointer-events-none">
@@ -63,7 +63,7 @@
                                         {{ $title }}
                                     </h5>
                                 @endif
-                                <button type="button" data-offcanvas-close aria-label="Close panel" x-on:click="show = false; document.body.classList.remove('overflow-hidden');" class="text-slate-500 hover:text-slate-900 hover:bg-slate-100 rounded-lg p-1.5 focus:outline-hidden transition-colors cursor-pointer">
+                                <button type="button" data-offcanvas-close aria-label="Close panel" x-on:click="$dispatch('close-offcanvas', '{{ $id }}')" class="text-slate-500 hover:text-slate-900 hover:bg-slate-100 rounded-lg p-1.5 focus:outline-hidden transition-colors cursor-pointer">
                                     <span class="sr-only">Close panel</span>
                                     <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
                                         <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />

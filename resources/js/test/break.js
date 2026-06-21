@@ -23,7 +23,7 @@ export function initializeBreakControls() {
 function startBreak() {
   if (isOnBreak) return;
   isOnBreak = true;
-  pauseTimer();
+  if (!window.isAssignmentAttempt) pauseTimer();
 
   document.querySelector('main')?.classList.add('hidden');
   const footer = document.querySelector('footer');
@@ -49,7 +49,7 @@ function endBreak() {
   const overlay = getBreakOverlay();
   overlay.classList.add('hidden');
   overlay.style.display = 'none';
-  resumeTimer();
+  if (!window.isAssignmentAttempt) resumeTimer();
 }
 
 function getBreakOverlay() {
@@ -68,10 +68,13 @@ function getBreakOverlay() {
   breakOverlay.style.background = '#ffffff';
   breakOverlay.style.alignItems = 'center';
   breakOverlay.style.justifyContent = 'center';
+  const assignmentCopy = window.isAssignmentAttempt
+    ? '<h2 class="text-2xl font-bold text-slate-900 mb-3">Break started</h2><p class="text-slate-600 mb-6">Your assignment module timer continues while you are on this break.</p>'
+    : '<h2 class="text-2xl font-bold text-slate-900 mb-3">Break paused</h2><p class="text-slate-600 mb-6">Your timer is paused. Continue when you are ready.</p>';
+
   breakOverlay.innerHTML = `
     <div class="text-center px-6 max-w-md">
-      <h2 class="text-2xl font-bold text-slate-900 mb-3">Break paused</h2>
-      <p class="text-slate-600 mb-6">Your timer is paused. Continue when you are ready.</p>
+      ${assignmentCopy}
       <button type="button" id="continueTestBtn" class="bg-[#fedb00] text-[#1e1e1e] py-3 px-8 rounded-full font-semibold text-sm shadow-[inset_0_0_0_1px_#1e1e1e] hover:shadow-[inset_0_0_0_2px_#1e1e1e]">
         Continue Test
       </button>

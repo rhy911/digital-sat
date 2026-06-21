@@ -6,13 +6,14 @@
     <!-- Easy Question Builder Card -->
     <div class="dash-panel mb-5 overflow-hidden">
         <div class="px-6 py-4 bg-slate-50 border-b border-slate-200 flex justify-between items-center">
-            <h5 class="font-bold text-slate-800 flex items-center gap-3 mb-0 text-base">
-                <div class="w-8 h-8 rounded-lg bg-indigo-50 border border-indigo-100 flex items-center justify-center">
-                    <i class="bi bi-magic text-indigo-600"></i>
-                </div>
-                Easy Builder
-            </h5>
-            <span id="builderActiveCountBadge" class="bg-indigo-50 border border-indigo-100 text-indigo-700 font-bold px-3 py-1 text-xs rounded-full">0 questions</span>
+            <h5 class="font-bold text-slate-800 mb-0 text-sm">Question workspace</h5>
+            <div class="flex items-center gap-2">
+                <button type="button" id="builderPreviewToggle" aria-expanded="false"
+                    class="inline-flex min-h-10 items-center gap-2 rounded-lg border border-slate-300 bg-white px-3 py-2 text-xs font-bold text-slate-700 hover:bg-slate-50 xl:hidden">
+                    <i class="bi bi-eye" aria-hidden="true"></i><span>Show preview</span>
+                </button>
+                <span id="builderActiveCountBadge" class="bg-indigo-50 border border-indigo-100 text-indigo-700 font-bold px-3 py-1 text-xs rounded-full">0 questions</span>
+            </div>
         </div>
 
         <div class="p-5">
@@ -75,7 +76,7 @@
                 <!-- Left Sidebar Navigator -->
                 <div class="lg:col-span-3 left-navigator">
                     <div class="sticky top-6">
-                        <div class="rounded-2xl border border-slate-200 bg-white shadow-sm overflow-hidden">
+                        <div class="rounded-xl border border-slate-200 bg-white overflow-hidden">
                             <div class="px-4 py-3 bg-slate-50 border-b border-slate-200">
                                 <h6 class="text-xs font-bold text-slate-600 flex items-center gap-2 mb-0">
                                     <i class="bi bi-compass text-indigo-650"></i> Module questions
@@ -135,7 +136,7 @@
                 <!-- Right Live Preview Drawer -->
                 <div class="lg:col-span-4 live-preview-drawer">
                     <div class="sticky top-6">
-                        <div class="rounded-2xl border border-slate-200 bg-white shadow-sm overflow-hidden flex flex-col live-preview-drawer-container">
+                        <div class="rounded-xl border border-slate-200 bg-white overflow-hidden flex flex-col live-preview-drawer-container">
                             <div class="px-4 py-3 bg-slate-50 border-b border-slate-200">
                                 <h6 class="text-xs font-bold text-slate-600 flex items-center gap-2 mb-0">
                                     <i class="bi bi-eye-fill text-indigo-600"></i> Live preview
@@ -153,8 +154,8 @@
             </div>
         </div>
 
-        <div class="px-6 py-4 bg-slate-50 border-t border-slate-200 flex justify-between items-center gap-4">
-            <span id="builderAutoSaveIndicator" class="text-slate-500 text-xs font-medium opacity-0 flex items-center gap-2">
+        <div class="builder-save-footer px-6 py-4 bg-white border-t border-slate-200 flex justify-between items-center gap-4">
+            <span id="builderAutoSaveIndicator" class="text-slate-500 text-xs font-medium opacity-0 flex items-center gap-2" aria-live="polite">
                 <i class="bi bi-cloud-check text-emerald-600 text-base"></i> Draft saved at <span class="time font-bold text-slate-800"></span>
             </span>
             <div class="flex gap-2">

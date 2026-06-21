@@ -17,7 +17,6 @@ export function toggleTimer() {
     clockIcon.classList.remove("hidden");
     timerToggle.textContent = "Show";
   }
-  console.log(`Timer toggled: ${timerDisplay.classList.contains("hidden") ? "Hidden" : "Visible"}`);
 }
 
 // ============================================================================
@@ -325,4 +324,3 @@ export function showCustomConfirm(message, type = 'warning', title = 'Confirm Ac
 // Expose globally for general usage
 window.showCustomAlert = showCustomAlert;
 window.showCustomConfirm = showCustomConfirm;
-

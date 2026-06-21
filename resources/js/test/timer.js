@@ -1,6 +1,5 @@
 import { state } from './state.js';
 import { submitModule } from './navigation.js';
-import { showCustomAlert } from './ui.js';
 
 /**
  * Initialize and start the countdown timer
@@ -8,9 +7,14 @@ import { showCustomAlert } from './ui.js';
 export function startTimer(durationMinutes) {
   stopTimer();
   state.isPaused = false;
+  const isAssignmentTimer = Boolean(window.isAssignmentAttempt);
+  const assignmentRemaining = Number(window.serverRemainingSeconds);
+  const initialSeconds = isAssignmentTimer && Number.isFinite(assignmentRemaining)
+    ? Math.max(0, Math.floor(assignmentRemaining))
+    : Math.round(durationMinutes * 60);
 
   // Infinite/Untimed logic or time limit hit
-  if (durationMinutes <= 0) {
+  if (initialSeconds <= 0) {
     if (window.isPreview) {
       state.isUntimed = true;
       state.timeLeft = 0;
@@ -26,13 +30,21 @@ export function startTimer(durationMinutes) {
   }
 
   state.isUntimed = false;
-  state.timeLeft = Math.round(durationMinutes * 60);
+  state.timeLeft = initialSeconds;
+  state.timerInitialSeconds = initialSeconds;
+  state.timerStartedAtMs = performance.now();
   updateTimerDisplay();
 
   state.timerInterval = setInterval(() => {
-    if (state.isPaused || state.isSubmitting) return;
+    if (state.isSubmitting) return;
 
-    state.timeLeft--;
+    if (isAssignmentTimer) {
+      const elapsed = Math.floor((performance.now() - state.timerStartedAtMs) / 1000);
+      state.timeLeft = Math.max(0, state.timerInitialSeconds - elapsed);
+    } else {
+      if (state.isPaused) return;
+      state.timeLeft--;
+    }
 
     if (state.timeLeft <= 0) {
       stopTimer();
@@ -53,12 +65,12 @@ export function stopTimer() {
 }
 
 export function pauseTimer() {
-  if (state.isUntimed || state.isSubmitting) return;
+  if (window.isAssignmentAttempt || state.isUntimed || state.isSubmitting) return;
   state.isPaused = true;
 }
 
 export function resumeTimer() {
-  if (state.isSubmitting) return;
+  if (window.isAssignmentAttempt || state.isSubmitting) return;
   state.isPaused = false;
 }
 
@@ -87,6 +99,5 @@ function updateTimerDisplay() {
  */
 async function handleTimeUp() {
   if (state.isSubmitting) return;
-  await showCustomAlert("Time is up! Submitting your answers now.", "warning", "Time Up");
-  await submitModule({ skipConfirm: true });
+  await submitModule({ skipConfirm: true, timedOut: true });
 }

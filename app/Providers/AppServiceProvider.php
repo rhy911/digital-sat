@@ -32,13 +32,13 @@ class AppServiceProvider extends ServiceProvider
             \App\Models\QuestionExplanation::{$event}(fn ($explanation) => $explanation->question && $locks->ensureQuestionUnlocked($explanation->question));
             \App\Models\SprCorrectAnswer::{$event}(fn ($answer) => $answer->question && $locks->ensureQuestionUnlocked($answer->question));
             \App\Models\Passage::{$event}(function ($passage) {
-                if ($passage->questions()->whereHas('modules.sections.test', fn ($query) => $query->whereNotNull('content_locked_at'))->exists()) {
-                    throw \Illuminate\Validation\ValidationException::withMessages(['passage' => 'This passage belongs to a locked assigned test. Clone its content before editing.']);
+                if ($passage->questions()->whereHas('modules.sections.test.assignments', fn ($query) => $query->where('status', 'published'))->exists()) {
+                    throw \Illuminate\Validation\ValidationException::withMessages(['passage' => 'This passage belongs to a test in an open assignment. Close or delete the assignment before editing it.']);
                 }
             });
         }
         \App\Models\Test::updating(function ($test) use ($locks) {
-            if ($test->getOriginal('content_locked_at') && $test->isDirty(['test_type', 'total_duration_minutes', 'break_duration_minutes', 'status'])) {
+            if ($test->isDirty(['test_type', 'total_duration_minutes', 'break_duration_minutes', 'status'])) {
                 $locks->ensureUnlocked($test);
             }
         });

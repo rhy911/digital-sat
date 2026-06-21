@@ -7,6 +7,7 @@ use App\Http\Controllers\Engine\Concerns\HandlesAnswers;
 use App\Http\Controllers\Engine\Concerns\ResolvesRouting;
 use App\Http\Requests\Engine\SubmitModuleRequest;
 use App\Models\UserTest;
+use App\Services\AssignmentModuleTimingService;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
@@ -16,6 +17,8 @@ use Illuminate\Validation\ValidationException;
 class SubmissionController extends Controller
 {
     use HandlesAnswers, ResolvesRouting;
+
+    public function __construct(private AssignmentModuleTimingService $assignmentTiming) {}
 
     public function submit(SubmitModuleRequest $request)
     {
@@ -27,11 +30,18 @@ class SubmissionController extends Controller
 
             $validated = $request->validated();
 
-            return DB::transaction(function () use ($validated) {
+            $result = DB::transaction(function () use ($validated) {
                 [$userTest, $module] = $this->resolveSubmissionContext($validated);
                 $section = $module->section;
-                
-                if ($userTest->current_module_started_at) {
+                $timedOut = false;
+
+                if ($userTest->assignment_id) {
+                    if ((int) $userTest->current_module_id !== (int) $module->id) {
+                        throw new AuthorizationException('This module is not active for the assignment attempt.');
+                    }
+
+                    $timedOut = $this->assignmentTiming->syncElapsed($userTest, $module)['expired'];
+                } elseif ($userTest->current_module_started_at) {
                     $test = $module->section->test;
                     $duration = ($test && $test->title === 'Test Preview') ? 0 : ($module->duration_minutes ?? ($section->type === 'math' ? 35 : 32));
                     if ($duration > 0) {
@@ -43,8 +53,10 @@ class SubmissionController extends Controller
                     }
                 }
 
-                // 1. Save answers
-                $this->saveModuleAnswers($userTest, $module, $validated['answers']);
+                // Assignment answers arriving after the server deadline are not accepted.
+                if (!$timedOut) {
+                    $this->saveModuleAnswers($userTest, $module, $validated['answers']);
+                }
 
                 // 2. Logic for Routing or Finalizing - Run synchronously
                 \App\Jobs\ScoreModuleJob::dispatchSync($userTest->id, $module->id, $section->id);
@@ -54,14 +66,17 @@ class SubmissionController extends Controller
                 if (Cache::has($cacheKey)) {
                     $result = Cache::get($cacheKey);
                     Cache::forget($cacheKey); // Clean up
-                    return response()->json($result);
+                    return $result + ['timed_out' => $timedOut];
                 }
 
-                return response()->json([
+                return [
                     'error' => 'Scoring failed',
-                    'message' => 'Unable to determine test routing.'
-                ], 500);
+                    'message' => 'Unable to determine test routing.',
+                    'timed_out' => $timedOut,
+                ];
             });
+
+            return response()->json($result, isset($result['error']) ? 500 : 200);
 
         } catch (AuthorizationException $e) {
             return response()->json([

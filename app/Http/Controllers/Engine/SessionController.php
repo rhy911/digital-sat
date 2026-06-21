@@ -10,12 +10,15 @@ use App\Models\Test;
 use App\Models\Section;
 use App\Models\UserTest;
 use App\Models\UserTestAnswer;
+use App\Services\AssignmentModuleTimingService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
 class SessionController extends Controller
 {
     use ResolvesRouting;
+
+    public function __construct(private AssignmentModuleTimingService $assignmentTiming) {}
 
     public function show($ulid = null)
     {
@@ -101,6 +104,8 @@ class SessionController extends Controller
         // Get user test record
         $userTest = null;
         $savedAnswers = collect();
+        $isAssignmentAttempt = false;
+        $serverRemainingSeconds = null;
         if (Auth::check()) {
             if ($requestedAttempt) {
                 $userTest = $requestedAttempt;
@@ -131,15 +136,22 @@ class SessionController extends Controller
                 $userTest->current_module_elapsed_seconds = 0;
                 $userTest->save();
             } else if ($userTest->current_module_started_at && !$isPreview) {
-                // Practice resumption: reset started_at to now() to restart session timer
-                $userTest->current_module_started_at = now();
-                $userTest->save();
+                if (!$userTest->assignment_id) {
+                    // Practice resumption pauses while away and resumes from saved elapsed time.
+                    $userTest->current_module_started_at = now();
+                    $userTest->save();
 
-                // Compute remaining duration based on saved accumulated elapsed seconds
-                $elapsedSeconds = $userTest->current_module_elapsed_seconds;
-                $totalSeconds = $durationMinutes * 60;
-                $remainingSeconds = max(0, $totalSeconds - $elapsedSeconds);
-                $durationMinutes = $remainingSeconds / 60;
+                    $elapsedSeconds = $userTest->current_module_elapsed_seconds;
+                    $totalSeconds = $durationMinutes * 60;
+                    $remainingSeconds = max(0, $totalSeconds - $elapsedSeconds);
+                    $durationMinutes = $remainingSeconds / 60;
+                }
+            }
+
+            $isAssignmentAttempt = (bool) $userTest->assignment_id;
+            if ($isAssignmentAttempt && !$isPreview) {
+                $timing = $this->assignmentTiming->syncElapsed($userTest, $module);
+                $serverRemainingSeconds = $timing['remaining_seconds'];
             }
 
             $savedAnswers = UserTestAnswer::where('user_test_id', $userTest->id)
@@ -174,6 +186,8 @@ class SessionController extends Controller
             'userTestUlid' => $userTest ? $userTest->ulid : null,
             'userTest' => $userTest,
             'savedAnswers' => $savedAnswers,
+            'isAssignmentAttempt' => $isAssignmentAttempt,
+            'serverRemainingSeconds' => $serverRemainingSeconds,
         ]);
     }
 
@@ -256,6 +270,8 @@ class SessionController extends Controller
             'userTestUlid' => null,
             'userTest' => null,
             'savedAnswers' => collect(),
+            'isAssignmentAttempt' => false,
+            'serverRemainingSeconds' => null,
         ]);
     }
 

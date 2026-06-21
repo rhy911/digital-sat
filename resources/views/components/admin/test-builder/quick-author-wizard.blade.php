@@ -1,182 +1,126 @@
-<x-ui.modal id="quickAuthorWizardModal" max-width="3xl">
+<x-ui.modal id="createTestWizardModal" max-width="4xl">
     <x-slot:title>
-        <div class="flex items-center gap-3">
-            <div class="w-9 h-9 rounded-lg bg-indigo-50 border border-indigo-100 flex items-center justify-center">
-                <i class="bi bi-magic text-indigo-600 text-lg"></i>
-            </div>
-            <div>
-                <h4 class="text-base font-extrabold text-slate-900 leading-none">Quick Author</h4>
-                <p class="text-xs text-slate-500 font-medium mt-1 leading-none">Choose a starting structure for a new test.</p>
-            </div>
+        <div>
+            <h4 class="text-base font-extrabold leading-tight text-slate-900">Create test</h4>
+            <p class="mt-1 text-xs font-medium text-slate-600">Start from a trusted SAT structure, then adjust only what you need.</p>
         </div>
     </x-slot:title>
 
-    <div class="space-y-6 py-1">
-        <!-- Recent Continuation Section -->
-        <div id="wizard-recent-work-container" class="hidden">
-            <div class="flex items-center justify-between mb-3 px-1">
-                <h6 class="text-xs font-bold text-slate-600 flex items-center gap-2">
-                    <span class="w-1.5 h-1.5 rounded-full bg-indigo-500"></span> Continue recent work
-                </h6>
+    <div class="create-test-wizard">
+        <div id="wizard-options" class="space-y-5">
+            <div>
+                <h5 class="text-sm font-extrabold text-slate-900">Choose a starting structure</h5>
+                <p class="mt-1 text-sm text-slate-600">Every test starts as a private draft. You can publish it when content is ready.</p>
             </div>
-            <div class="flex flex-wrap gap-2.5" id="wizard-recent-work-list">
-                <!-- Populated via JS -->
+
+            <div class="grid grid-cols-1 gap-3 md:grid-cols-2" role="list">
+                <button type="button" id="wizard-btn-full-sat" data-dialog-initial-focus
+                    class="wizard-template-option group flex min-h-24 items-center gap-4 rounded-xl border-2 border-indigo-300 bg-indigo-50/60 p-4 text-left outline-none transition-colors hover:bg-indigo-50 focus-visible:ring-4 focus-visible:ring-indigo-500/20">
+                    <span class="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg bg-indigo-600 text-white"><i class="bi bi-journal-text text-lg" aria-hidden="true"></i></span>
+                    <span class="min-w-0 flex-1">
+                        <span class="flex items-center gap-2"><strong class="text-sm text-slate-900">Full SAT</strong><span class="rounded-full bg-white px-2 py-0.5 text-[11px] font-bold text-indigo-700 ring-1 ring-inset ring-indigo-200">Recommended</span></span>
+                        <span class="mt-1 block text-xs font-medium leading-relaxed text-slate-600">Six modules using the standard Bluebook structure.</span>
+                    </span>
+                    <i class="bi bi-arrow-right text-slate-400 transition-transform group-hover:translate-x-0.5" aria-hidden="true"></i>
+                </button>
+
+                <button type="button" id="wizard-btn-short-test"
+                    class="wizard-template-option group flex min-h-24 items-center gap-4 rounded-xl border border-slate-200 bg-white p-4 text-left outline-none transition-colors hover:border-indigo-300 hover:bg-slate-50 focus-visible:ring-4 focus-visible:ring-indigo-500/20">
+                    <span class="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg bg-slate-100 text-slate-700"><i class="bi bi-lightning-charge text-lg" aria-hidden="true"></i></span>
+                    <span class="min-w-0 flex-1"><strong class="text-sm text-slate-900">Short test</strong><span class="mt-1 block text-xs font-medium leading-relaxed text-slate-600">One Reading &amp; Writing and one Math module.</span></span>
+                    <i class="bi bi-arrow-right text-slate-400 transition-transform group-hover:translate-x-0.5" aria-hidden="true"></i>
+                </button>
+
+                <button type="button" id="wizard-btn-module-only"
+                    class="wizard-template-option group flex min-h-24 items-center gap-4 rounded-xl border border-slate-200 bg-white p-4 text-left outline-none transition-colors hover:border-indigo-300 hover:bg-slate-50 focus-visible:ring-4 focus-visible:ring-indigo-500/20">
+                    <span class="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg bg-slate-100 text-slate-700"><i class="bi bi-box-seam text-lg" aria-hidden="true"></i></span>
+                    <span class="min-w-0 flex-1"><strong class="text-sm text-slate-900">Single module</strong><span class="mt-1 block text-xs font-medium leading-relaxed text-slate-600">Start with one reusable Reading &amp; Writing module.</span></span>
+                    <i class="bi bi-arrow-right text-slate-400 transition-transform group-hover:translate-x-0.5" aria-hidden="true"></i>
+                </button>
+
+                <button type="button" id="wizard-btn-custom"
+                    class="wizard-template-option group flex min-h-24 items-center gap-4 rounded-xl border border-slate-200 bg-white p-4 text-left outline-none transition-colors hover:border-indigo-300 hover:bg-slate-50 focus-visible:ring-4 focus-visible:ring-indigo-500/20">
+                    <span class="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg bg-slate-100 text-slate-700"><i class="bi bi-sliders text-lg" aria-hidden="true"></i></span>
+                    <span class="min-w-0 flex-1"><strong class="text-sm text-slate-900">Custom structure</strong><span class="mt-1 block text-xs font-medium leading-relaxed text-slate-600">Begin with one module and define your own blueprint.</span></span>
+                    <i class="bi bi-arrow-right text-slate-400 transition-transform group-hover:translate-x-0.5" aria-hidden="true"></i>
+                </button>
             </div>
         </div>
 
-        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-            <!-- Option 1: Full SAT -->
-            <button type="button"
-                class="group relative rounded-lg border border-slate-200 bg-white p-4 text-left cursor-pointer hover:border-indigo-300 hover:bg-slate-50 transition-colors duration-150 flex flex-col gap-3 outline-none focus:ring-2 focus:ring-indigo-500/40"
-                id="wizard-btn-full-sat">
-                <div class="flex items-center justify-between gap-3">
-                    <div class="w-9 h-9 bg-indigo-50 text-indigo-600 border border-indigo-100 rounded-lg flex items-center justify-center">
-                        <i class="bi bi-journal-text text-lg leading-none"></i>
-                    </div>
-                    <span class="text-[11px] font-semibold text-indigo-700 bg-indigo-50 border border-indigo-100 rounded-full px-2 py-0.5">Standard</span>
-                </div>
-                <div>
-                    <h4 class="text-sm font-bold text-slate-900 mb-1 leading-tight">Full SAT</h4>
-                    <p class="text-slate-500 text-xs leading-snug font-medium">Create the standard six-module test.</p>
-                </div>
-            </button>
-
-            <!-- Option 1b: Short Test -->
-            <button type="button"
-                class="group relative rounded-lg border border-slate-200 bg-white p-4 text-left cursor-pointer hover:border-indigo-300 hover:bg-slate-50 transition-colors duration-150 flex flex-col gap-3 outline-none focus:ring-2 focus:ring-indigo-500/40"
-                id="wizard-btn-short-test">
-                <div class="w-9 h-9 bg-slate-50 text-slate-700 border border-slate-200 rounded-lg flex items-center justify-center">
-                    <i class="bi bi-lightning-charge text-lg leading-none"></i>
-                </div>
-                <div>
-                    <h4 class="text-sm font-bold text-slate-900 mb-1 leading-tight">Short test</h4>
-                    <p class="text-slate-500 text-xs leading-snug font-medium">Start with fewer custom modules.</p>
-                </div>
-            </button>
-
-            <!-- Option 1c: Module Only -->
-            <button type="button"
-                class="group relative rounded-lg border border-slate-200 bg-white p-4 text-left cursor-pointer hover:border-indigo-300 hover:bg-slate-50 transition-colors duration-150 flex flex-col gap-3 outline-none focus:ring-2 focus:ring-indigo-500/40"
-                id="wizard-btn-module-only">
-                <div class="w-9 h-9 bg-slate-50 text-slate-700 border border-slate-200 rounded-lg flex items-center justify-center">
-                    <i class="bi bi-box-seam text-lg leading-none"></i>
-                </div>
-                <div>
-                    <h4 class="text-sm font-bold text-slate-900 mb-1 leading-tight">Module</h4>
-                    <p class="text-slate-500 text-xs leading-snug font-medium">Create one reusable module.</p>
-                </div>
-            </button>
-
-            <!-- Option 2: Custom Content -->
-            <button type="button"
-                class="group relative rounded-lg border border-slate-200 bg-white p-4 text-left cursor-pointer hover:border-indigo-300 hover:bg-slate-50 transition-colors duration-150 flex flex-col gap-3 outline-none focus:ring-2 focus:ring-indigo-500/40"
-                id="wizard-btn-custom">
-                <div class="w-9 h-9 bg-slate-50 text-slate-700 border border-slate-200 rounded-lg flex items-center justify-center">
-                    <i class="bi bi-puzzle text-lg leading-none"></i>
-                </div>
-                <div>
-                    <h4 class="text-sm font-bold text-slate-900 mb-1 leading-tight">Custom</h4>
-                    <p class="text-slate-500 text-xs leading-snug font-medium">Assemble your own SAT parts.</p>
-                </div>
-            </button>
-        </div>
-
-        <!-- Configurable Flow -->
-        <div id="wizard-config-flow" class="hidden border-t border-slate-200 pt-5 space-y-5">
-            <section class="rounded-xl bg-indigo-50/70 border border-indigo-200 p-4 sm:p-5" aria-labelledby="wizard-title-heading">
+        <div id="wizard-config-flow" class="hidden space-y-5">
+            <section class="rounded-xl bg-indigo-50/70 p-4 ring-1 ring-inset ring-indigo-200 sm:p-5" aria-labelledby="wizard-title-heading">
                 <div class="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-                    <div class="flex items-start gap-3">
-                        <span class="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-indigo-600 text-xs font-extrabold text-white" aria-hidden="true">1</span>
-                        <div>
+                    <div>
+                        <div class="flex items-center gap-2">
                             <h5 id="wizard-title-heading" class="text-sm font-extrabold text-slate-900">Name your test</h5>
-                            <p id="wizard-title-help" class="mt-1 text-xs font-medium leading-relaxed text-slate-600">Add your own title, or leave blank to use the suggested title.</p>
+                            <span class="rounded-full bg-white px-2 py-0.5 text-[11px] font-bold text-slate-600 ring-1 ring-inset ring-indigo-200">Draft</span>
                         </div>
+                        <p id="wizard-title-help" class="mt-1 text-xs font-medium leading-relaxed text-slate-600">Leave blank to use the suggested title. Drafts are not visible to students.</p>
                     </div>
-                    <div class="flex items-center gap-2 sm:pt-0.5">
-                        <span class="text-[11px] font-semibold text-slate-500">Template</span>
-                        <span id="wizard-config-label" class="rounded-full bg-white px-2.5 py-1 text-xs font-bold text-indigo-700 ring-1 ring-inset ring-indigo-200">Full SAT</span>
+                    <span id="wizard-config-label" class="self-start rounded-full bg-white px-2.5 py-1 text-xs font-bold text-indigo-700 ring-1 ring-inset ring-indigo-200">Full SAT</span>
+                </div>
+                <label for="wizard-config-title" class="mt-4 block text-xs font-bold text-slate-700">Test title <span class="font-medium text-slate-500">(optional)</span></label>
+                <input type="text" id="wizard-config-title" maxlength="255" autocomplete="off"
+                    aria-describedby="wizard-title-help"
+                    class="mt-2 w-full rounded-lg border border-indigo-300 bg-white px-4 py-3 text-base font-semibold text-slate-900 placeholder-slate-500 outline-none transition-colors focus:border-indigo-600 focus:ring-4 focus:ring-indigo-500/15">
+            </section>
+
+            <section aria-labelledby="wizard-structure-heading">
+                <div class="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+                    <div>
+                        <h5 id="wizard-structure-heading" class="text-sm font-extrabold text-slate-900">Structure summary</h5>
+                        <p class="mt-1 text-xs font-medium text-slate-600">Review the blueprint now. Detailed controls stay out of the way until requested.</p>
                     </div>
+                    <div id="wizard-summary-totals" class="flex flex-wrap gap-2 text-xs font-bold text-slate-600" aria-live="polite"></div>
                 </div>
 
-                <div class="mt-4">
-                    <label for="wizard-config-title" class="mb-2 flex items-center gap-2 text-sm font-bold text-slate-800">
-                        Test title
-                        <span class="rounded bg-white px-1.5 py-0.5 text-[10px] font-bold text-slate-500 ring-1 ring-inset ring-indigo-200">Optional</span>
+                <div class="mt-3 flex flex-wrap items-center justify-between gap-3">
+                    <button type="button" id="wizard-toggle-customize" aria-expanded="false"
+                        class="inline-flex min-h-11 items-center gap-2 rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-bold text-slate-700 transition-colors hover:bg-slate-50 focus-visible:ring-4 focus-visible:ring-indigo-500/20">
+                        <i class="bi bi-sliders" aria-hidden="true"></i><span>Customize modules</span>
+                    </button>
+                    <label id="wizard-populate-control" class="hidden min-h-11 items-center gap-3 rounded-lg bg-slate-50 px-3 py-2 text-sm font-semibold text-slate-700">
+                        <input type="checkbox" id="wizard-populate-pool" class="h-4 w-4 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500">
+                        Fill modules from question bank
                     </label>
-                    <input type="text" id="wizard-config-title" maxlength="255" autocomplete="off"
-                        aria-describedby="wizard-title-help"
-                        class="w-full rounded-lg border-2 border-indigo-300 bg-white px-4 py-3 text-base font-semibold text-slate-900 placeholder-slate-400 outline-none transition-colors focus:border-indigo-600 focus:ring-4 focus:ring-indigo-500/15"
-                        placeholder="Example: Grade 11 Full Practice Test">
+                </div>
+
+                <div class="mt-3 overflow-hidden rounded-xl border border-slate-200 bg-white">
+                    <div id="wizard-module-summary" class="divide-y divide-slate-100"></div>
                 </div>
             </section>
 
-            <div class="flex items-center gap-3" aria-hidden="true">
-                <span class="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-slate-200 text-xs font-extrabold text-slate-700">2</span>
-                <div>
-                    <h5 class="text-sm font-extrabold text-slate-900">Configure modules</h5>
-                    <p class="mt-0.5 text-xs font-medium text-slate-500">Review the preset structure and adjust it as needed.</p>
+            <section id="wizard-customize-panel" class="hidden space-y-3 border-t border-slate-200 pt-5" aria-labelledby="wizard-customize-heading">
+                <div class="flex items-center justify-between gap-3">
+                    <div><h5 id="wizard-customize-heading" class="text-sm font-extrabold text-slate-900">Module settings</h5><p class="mt-1 text-xs text-slate-600">Duration is in minutes. Question count must match available content when filling from the bank.</p></div>
+                    <button type="button" id="wizard-btn-add-row" class="inline-flex min-h-11 shrink-0 items-center gap-2 rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm font-bold text-slate-700 hover:bg-slate-50"><i class="bi bi-plus-lg" aria-hidden="true"></i>Add module</button>
                 </div>
-            </div>
-
-            <div id="wizard-short-counts" class="hidden grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div class="space-y-2">
-                    <label class="text-xs font-bold text-slate-600">Reading &amp; Writing modules</label>
-                    <input type="number" min="0" max="10" value="1" id="wizard-short-rw-count"
-                        class="w-full px-4 py-2.5 rounded-lg border border-slate-200 bg-white text-slate-900 focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 outline-none text-sm transition-all">
+                <div class="overflow-x-auto rounded-xl border border-slate-200">
+                    <table class="w-full min-w-[760px] text-left text-sm">
+                        <thead class="border-b border-slate-200 bg-slate-50 text-xs font-bold text-slate-600"><tr><th class="px-3 py-3">Section</th><th class="px-3 py-3">Module</th><th class="px-3 py-3">Difficulty</th><th class="px-3 py-3">Minutes</th><th class="px-3 py-3">Questions</th><th class="px-3 py-3 text-right">Action</th></tr></thead>
+                        <tbody id="wizard-module-rows" class="divide-y divide-slate-100 bg-white"></tbody>
+                    </table>
                 </div>
-                <div class="space-y-2">
-                    <label class="text-xs font-bold text-slate-600">Math modules</label>
-                    <input type="number" min="0" max="10" value="1" id="wizard-short-math-count"
-                        class="w-full px-4 py-2.5 rounded-lg border border-slate-200 bg-white text-slate-900 focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 outline-none text-sm transition-all">
+                <div id="wizard-row-feedback" class="hidden items-center justify-between gap-3 rounded-lg bg-slate-100 px-3 py-2 text-xs font-semibold text-slate-700" role="status">
+                    <span>Module removed.</span><button type="button" id="wizard-undo-remove" class="min-h-9 rounded-md px-3 font-bold text-indigo-700 hover:bg-white">Undo</button>
                 </div>
-            </div>
+            </section>
 
-            <div class="overflow-x-auto rounded-lg border border-slate-200">
-                <table class="w-full text-sm text-left">
-                    <thead class="bg-slate-50 text-slate-400 border-b border-slate-200 font-semibold uppercase tracking-wider text-[10px]">
-                        <tr>
-                            <th class="px-3 py-2.5 font-semibold text-slate-400 tracking-wider">Section</th>
-                            <th class="px-3 py-2.5 font-semibold text-slate-400 tracking-wider">Module</th>
-                            <th class="px-3 py-2.5 font-semibold text-slate-400 tracking-wider">Difficulty</th>
-                            <th class="px-3 py-2.5 font-semibold text-slate-400 tracking-wider">Duration</th>
-                            <th class="px-3 py-2.5 font-semibold text-slate-400 tracking-wider">Questions</th>
-                            <th class="px-3 py-2.5 font-semibold text-slate-400 text-right tracking-wider">Action</th>
-                        </tr>
-                    </thead>
-                    <tbody id="wizard-module-rows" class="divide-y divide-slate-100 bg-white"></tbody>
-                </table>
-            </div>
+            <div id="wizard-form-error" class="hidden rounded-lg bg-rose-50 px-4 py-3 text-sm font-semibold text-rose-800 ring-1 ring-inset ring-rose-200" role="alert"></div>
 
-            <div class="flex flex-wrap justify-between items-center gap-3 pt-2">
-                <button type="button"
-                    class="px-4 py-2.5 bg-white border border-slate-200 text-slate-700 font-semibold text-sm rounded-lg hover:bg-slate-50 transition-colors flex items-center gap-2 cursor-pointer"
-                    id="wizard-btn-add-row">
-                    <i class="bi bi-plus-lg"></i> Add module
-                </button>
-                <div class="flex gap-3">
-                    <button type="button"
-                        class="px-4 py-2.5 bg-white border border-slate-200 text-slate-700 font-semibold text-sm rounded-lg hover:bg-slate-50 transition-colors flex items-center gap-2 cursor-pointer"
-                        id="wizard-btn-back">
-                        <i class="bi bi-arrow-left"></i> Back
-                    </button>
-                    <button type="button"
-                        class="px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold text-sm rounded-lg transition-colors duration-150 flex items-center gap-2 cursor-pointer"
-                        id="wizard-btn-create-configured">
-                        Create test <i class="bi bi-check2-circle"></i>
-                    </button>
+            <div class="wizard-actions -mx-4 flex flex-col-reverse gap-3 border-t border-slate-200 bg-white px-4 py-4 sm:-mx-6 sm:flex-row sm:items-center sm:justify-between sm:px-6">
+                <button type="button" id="wizard-btn-back" class="inline-flex min-h-11 items-center justify-center gap-2 rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-bold text-slate-700 hover:bg-slate-50"><i class="bi bi-arrow-left" aria-hidden="true"></i>Choose another structure</button>
+                <div class="flex items-center justify-end gap-3">
+                    <button type="button" data-modal-close x-on:click="$dispatch('close-modal', 'createTestWizardModal')" class="min-h-11 rounded-lg px-4 py-2 text-sm font-bold text-slate-600 hover:bg-slate-100">Cancel</button>
+                    <button type="button" id="wizard-btn-create-configured" class="inline-flex min-h-11 items-center justify-center gap-2 rounded-lg bg-indigo-600 px-5 py-2 text-sm font-bold text-white transition-colors hover:bg-indigo-700 disabled:cursor-not-allowed disabled:opacity-60">Create draft <i class="bi bi-arrow-right" aria-hidden="true"></i></button>
                 </div>
             </div>
         </div>
 
-        <!-- Loading State -->
-        <div id="wizard-loading" class="text-center py-16 hidden flex flex-col items-center justify-center">
-            <div class="relative w-16 h-16">
-                <div class="absolute inset-0 border-4 border-indigo-500/20 rounded-full"></div>
-                <div class="absolute inset-0 border-4 border-indigo-500 border-t-transparent rounded-full animate-spin">
-                </div>
-            </div>
-            <h4 class="mt-6 text-slate-900 font-bold text-sm">Generating</h4>
-            <p class="mt-2 text-slate-500 text-xs font-medium">Building your SAT structure...</p>
+        <div id="wizard-loading" class="hidden min-h-80 flex-col items-center justify-center text-center" role="status" aria-live="polite">
+            <span class="h-10 w-10 animate-spin rounded-full border-4 border-indigo-100 border-t-indigo-600" aria-hidden="true"></span>
+            <h4 class="mt-5 text-sm font-extrabold text-slate-900">Creating your draft</h4>
+            <p class="mt-2 text-xs font-medium text-slate-600">Building sections and modules, then opening the first module.</p>
         </div>
     </div>
 </x-ui.modal>

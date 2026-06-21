@@ -744,11 +744,7 @@ export function initBulkImport() {
             const result = await response.json();
             if (response.ok) {
                 showAlert('success', result.message || 'Bulk import completed.');
-                if (window.refreshTestDashboardData) {
-                    await window.refreshTestDashboardData(captureTomSelectPreservation(null));
-                } else {
-                    window.location.reload();
-                }
+                await window.refreshTestDashboardData?.(captureTomSelectPreservation(null));
             } else {
                 if (result.data && result.data.items) {
                     showAlert('warning', 'Import failed due to validation errors. We loaded them into the validation grid below for correction.');
@@ -782,11 +778,7 @@ export function initBulkImport() {
             const result = await response.json();
             if (response.ok) {
                 showAlert('success', result.message || 'CSV import completed.');
-                if (window.refreshTestDashboardData) {
-                    await window.refreshTestDashboardData(captureTomSelectPreservation(null));
-                } else {
-                    window.location.reload();
-                }
+                await window.refreshTestDashboardData?.(captureTomSelectPreservation(null));
             } else {
                 if (result.data && result.data.items) {
                     showAlert('warning', 'CSV Import failed due to validation errors. We loaded them into the validation grid below for correction.');
@@ -821,11 +813,7 @@ export function initBulkImport() {
             if (response.ok) {
                 showAlert('success', result.message);
                 fileInput.value = '';
-                if (window.refreshTestDashboardData) {
-                    await window.refreshTestDashboardData(captureTomSelectPreservation(null));
-                } else {
-                    window.location.reload();
-                }
+                await window.refreshTestDashboardData?.(captureTomSelectPreservation(null));
             } else {
                 showAlert('danger', result.message || 'ZIP import failed.');
             }
@@ -939,11 +927,7 @@ export function initBulkImport() {
                         if (instruction) instruction.classList.remove('text-success');
                     });
 
-                    if (window.refreshTestDashboardData) {
-                        await window.refreshTestDashboardData(captureTomSelectPreservation(null));
-                    } else {
-                        window.location.reload();
-                    }
+                    await window.refreshTestDashboardData?.(captureTomSelectPreservation(null));
                 } else {
                     showAlert('danger', result.message || 'Import submission failed.');
                 }

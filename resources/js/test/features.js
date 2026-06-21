@@ -468,7 +468,7 @@ export function initializeSimpleFullscreen() {
 
     const docEl = document.documentElement;
     if (docEl.requestFullscreen) {
-      docEl.requestFullscreen().catch(err => console.log('Fullscreen rejected:', err));
+      docEl.requestFullscreen().catch(() => {});
     } else if (docEl.mozRequestFullScreen) {
       docEl.mozRequestFullScreen();
     } else if (docEl.webkitRequestFullscreen) {
@@ -484,5 +484,4 @@ export function initializeSimpleFullscreen() {
 
   document.addEventListener('click', fullscreenListener);
 }
-
 

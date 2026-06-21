@@ -3,35 +3,14 @@
 <div x-show="activeTab === 'modules'" id="modules" role="tabpanel" aria-labelledby="modules-tab"
     :aria-hidden="activeTab === 'modules' ? 'false' : 'true'" :class="{ 'active': activeTab === 'modules' }"
     class="tab-pane" style="display: none;">
-    <!-- Header Actions -->
-    <div class="mb-4 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-        <div>
-            <h3 class="text-lg font-extrabold text-slate-900 tracking-tight">Modules</h3>
-            <p class="text-sm text-slate-600 font-medium">Build reusable timed module sets and link them to sections.</p>
-        </div>
-        <div class="flex flex-wrap gap-2">
-
-            <button
-                class="px-4 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold text-sm rounded-lg shadow-sm flex items-center gap-2 cursor-pointer transition-colors duration-150"
-                x-on:click="$dispatch('open-offcanvas', 'createModuleOffcanvas')">
-                <i class="bi bi-plus-lg text-xs"></i> Create module
-            </button>
-        </div>
-    </div>
-
     <!-- Existing Modules Listing -->
     <div id="modulesTableContainer"
         class="relative rounded-xl border border-slate-200 bg-white shadow-sm overflow-hidden">
         <div
             class="px-6 py-4 border-b border-slate-200 bg-slate-50 flex flex-col md:flex-row md:items-center justify-between gap-4">
-            <h5 class="font-bold text-slate-800 flex items-center gap-3 mb-0 text-base">
-                <div
-                    class="w-8 h-8 rounded-lg bg-indigo-50 border border-indigo-100 flex items-center justify-center">
-                    <i class="bi bi-list-ul text-indigo-600"></i>
-                </div>
-                Modules
-            </h5>
+            <h5 class="font-bold text-slate-800 mb-0 text-sm">All modules</h5>
             <div class="flex items-center gap-4 flex-wrap md:flex-nowrap">
+                <button class="inline-flex min-h-10 items-center gap-2 rounded-lg bg-indigo-600 px-3 py-2 text-xs font-bold text-white hover:bg-indigo-700" x-on:click="$dispatch('open-offcanvas', 'createModuleOffcanvas')"><i class="bi bi-plus-lg" aria-hidden="true"></i>Create module</button>
                 @if(auth()->user()->role === 'teacher')
                     <div class="flex items-center gap-2 bg-white px-3 py-1.5 rounded-lg border border-slate-200">
                         <label for="modulesShowSharedToggle"

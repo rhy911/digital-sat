@@ -1,9 +1,13 @@
-<x-layouts.teacher title="Teacher applications">
-    <div class="admin-review">
+<x-layouts.student :user="auth()->user()" title="Teacher applications" header-type="progress">
+    @push('styles')
+        @vite(['resources/css/student/analytics.css', 'resources/css/classroom.css'])
+    @endpush
+    <div class="ds-teacher-workspace teacher-detail">
         <div class="page-heading">
             <div><h1>Teacher applications</h1><p>Approve verified educators before they can create classes or content.</p></div>
         </div>
         @if(session('success'))<div class="class-alert class-alert--success" role="status">{{ session('success') }}</div>@endif
+        @if($errors->any())<div class="class-alert class-alert--error" role="alert">{{ $errors->first() }}</div>@endif
         <section class="class-panel">
             <div class="report-table-wrap">
                 <table class="report-table">
@@ -32,4 +36,4 @@
         </section>
         {{ $applications->links() }}
     </div>
-</x-layouts.teacher>
+</x-layouts.student>

@@ -13,6 +13,7 @@ use App\Models\Section;
 use App\Models\Test;
 use App\Models\User;
 use App\Models\UserTest;
+use App\Models\UserTestAnswer;
 use App\Notifications\AssignmentPublishedNotification;
 use App\Notifications\MembershipDecisionNotification;
 use App\Notifications\TeacherApprovalDecisionNotification;
@@ -78,11 +79,9 @@ class TeacherClassManagementTest extends TestCase
         $this->actingAs($admin)
             ->get(route('admin.teacher-applications.index'))
             ->assertOk()
-            ->assertSee('Admin workspace')
+            ->assertSee('Teacher applications')
             ->assertSee('Applications')
-            ->assertSeeText('Assignments & reports', false)
-            ->assertSee('Content Builder')
-            ->assertSee('wire:navigate', false);
+            ->assertSee('Test Builder');
     }
 
     public function test_teacher_workspace_switches_sections_and_class_status_without_route_navigation(): void
@@ -238,19 +237,20 @@ class TeacherClassManagementTest extends TestCase
         $this->assertDatabaseHas('assignment_recipients', ['assignment_id' => $assignment->id, 'student_id' => $late->id, 'status' => 'active']);
     }
 
-    public function test_assignment_attempt_locks_private_test_and_enforces_limit(): void
+    public function test_publishing_assignment_locks_private_test_and_attempt_limit_is_enforced(): void
     {
         $teacher = $this->teacher(); $student = $this->student(); $classroom = $this->classroom($teacher); $test = $this->testFor($teacher);
         $this->complete($test);
-        $assignment = $this->assignment($classroom, $test, ['status' => 'published', 'published_at' => now(), 'attempt_limit' => 1]);
-        AssignmentRecipient::create(['assignment_id' => $assignment->id, 'student_id' => $student->id, 'status' => 'active', 'assigned_at' => now()]);
+        ClassroomMembership::create(['classroom_id' => $classroom->id, 'student_id' => $student->id, 'status' => 'active']);
+        $assignment = $this->assignment($classroom, $test, ['attempt_limit' => 1]);
+
+        $assignment = app(\App\Services\AssignmentService::class)->publish($assignment);
+        $this->assertNotNull($test->fresh()->content_locked_at);
 
         $response = $this->actingAs($student)->post(route('student.assignments.start', $assignment))->assertRedirect();
         $this->actingAs($student)->get($response->headers->get('Location'))->assertOk();
         $attempt = UserTest::firstOrFail();
         $this->assertSame(1, $attempt->attempt_number);
-        $this->assertNotNull($test->fresh()->content_locked_at);
-
         $attempt->update(['status' => 'completed', 'completed_at' => now(), 'total_score' => 1200]);
         $this->actingAs($student)->from(route('student.assignments.show', $assignment))->post(route('student.assignments.start', $assignment))->assertSessionHasErrors('assignment');
     }
@@ -290,7 +290,8 @@ class TeacherClassManagementTest extends TestCase
 
     public function test_locked_test_rejects_structural_edits(): void
     {
-        $teacher = $this->teacher(); $test = $this->testFor($teacher); $test->update(['content_locked_at' => now()]);
+        $teacher = $this->teacher(); $test = $this->testFor($teacher); $classroom = $this->classroom($teacher);
+        $this->assignment($classroom, $test, ['status' => 'published', 'published_at' => now()]);
         $this->actingAs($teacher)->put(route('home-dashboard.tests.update', $test), ['title' => $test->title, 'test_type' => 'short_test', 'status' => 'active'])->assertSessionHasErrors('test');
     }
 
@@ -304,17 +305,94 @@ class TeacherClassManagementTest extends TestCase
     public function test_report_uses_highest_score_and_excludes_withdrawn_recipient(): void
     {
         $teacher = $this->teacher(); $active = $this->student(); $withdrawn = $this->student(); $classroom = $this->classroom($teacher); $test = $this->testFor($teacher);
-        $assignment = $this->assignment($classroom, $test, ['status' => 'published']);
+        $this->complete($test);
+        $module = $test->sections()->firstOrFail()->modules()->firstOrFail();
+        $assignment = $this->assignment($classroom, $test, ['status' => 'published', 'attempt_limit' => 3]);
         AssignmentRecipient::create(['assignment_id' => $assignment->id, 'student_id' => $active->id, 'status' => 'active', 'assigned_at' => now()]);
         AssignmentRecipient::create(['assignment_id' => $assignment->id, 'student_id' => $withdrawn->id, 'status' => 'withdrawn', 'assigned_at' => now(), 'withdrawn_at' => now()]);
         UserTest::create(['user_id' => $active->id, 'test_id' => $test->id, 'assignment_id' => $assignment->id, 'attempt_number' => 1, 'status' => 'completed', 'total_score' => 1000, 'completed_at' => now()]);
         UserTest::create(['user_id' => $active->id, 'test_id' => $test->id, 'assignment_id' => $assignment->id, 'attempt_number' => 2, 'status' => 'completed', 'total_score' => 1300, 'completed_at' => now()]);
+        UserTest::create(['user_id' => $active->id, 'test_id' => $test->id, 'assignment_id' => $assignment->id, 'attempt_number' => 3, 'status' => 'in_progress', 'current_module_id' => $module->id, 'current_module_elapsed_seconds' => 754]);
         UserTest::create(['user_id' => $withdrawn->id, 'test_id' => $test->id, 'assignment_id' => $assignment->id, 'attempt_number' => 1, 'status' => 'completed', 'total_score' => 1500, 'completed_at' => now()]);
+
+        $this->actingAs($teacher)
+            ->get(route('teacher.assignments.show', $assignment))
+            ->assertOk()
+            ->assertSee('View attempts')
+            ->assertSee('class="attempt-detail-trigger"', false)
+            ->assertSee('x-data', false)
+            ->assertSee("x-on:click.prevent=\"\$dispatch('open-modal'", false)
+            ->assertSee('role="dialog"', false)
+            ->assertSee('Attempts for '.$active->name)
+            ->assertSee('Active now')
+            ->assertSee('Math · Module 1')
+            ->assertSee('0 / 1')
+            ->assertSee('12:34')
+            ->assertSee('Attempt 2')
+            ->assertSee('1300 points')
+            ->assertSee('No responses saved yet');
 
         $report = app(\App\Services\AssignmentReportService::class)->build($assignment);
         $this->assertSame(1, $report['metrics']['assigned']);
         $this->assertSame(1300, $report['metrics']['average_score']);
         $this->assertSame(1300, $report['rows']->first(fn ($row) => $row['recipient']->student_id === $active->id)['best']->total_score);
+    }
+
+    public function test_teacher_attempt_monitor_returns_live_recipient_snapshot(): void
+    {
+        $teacher = $this->teacher();
+        $otherTeacher = $this->teacher();
+        $student = $this->student();
+        $outsider = $this->student();
+        $classroom = $this->classroom($teacher);
+        $test = $this->testFor($teacher);
+        $this->complete($test);
+        $module = $test->sections()->firstOrFail()->modules()->firstOrFail();
+        $question = $module->questions()->firstOrFail();
+        $assignment = $this->assignment($classroom, $test, ['status' => 'published', 'attempt_limit' => 2]);
+        AssignmentRecipient::create(['assignment_id' => $assignment->id, 'student_id' => $student->id, 'status' => 'active', 'assigned_at' => now()]);
+        $completed = UserTest::create([
+            'user_id' => $student->id,
+            'test_id' => $test->id,
+            'assignment_id' => $assignment->id,
+            'attempt_number' => 1,
+            'status' => 'completed',
+            'total_score' => 1200,
+            'completed_at' => now(),
+        ]);
+        $active = UserTest::create([
+            'user_id' => $student->id,
+            'test_id' => $test->id,
+            'assignment_id' => $assignment->id,
+            'attempt_number' => 2,
+            'status' => 'in_progress',
+            'current_module_id' => $module->id,
+            'current_module_elapsed_seconds' => 75,
+        ]);
+        UserTestAnswer::create([
+            'user_test_id' => $active->id,
+            'module_id' => $module->id,
+            'question_id' => $question->id,
+            'selected_answer' => '2',
+            'is_correct' => true,
+        ]);
+
+        $url = route('teacher.assignments.attempt-monitor', [$assignment, $student]);
+        $response = $this->actingAs($teacher)->getJson($url.'?active_attempt='.$completed->id);
+
+        $response->assertOk()
+            ->assertJsonStructure(['html', 'updated_at'])
+            ->assertJsonPath('html', fn (string $html) => str_contains($html, 'data-attempt-monitor')
+                && str_contains($html, 'data-active-attempt="'.$completed->id.'"')
+                && str_contains($html, 'Answered: 2')
+                && str_contains($html, '1 / 1')
+                && str_contains($html, '1:15')
+                && str_contains($html, 'Live updates'));
+
+        $this->actingAs($otherTeacher)->getJson($url)->assertForbidden();
+        $this->actingAs($teacher)
+            ->getJson(route('teacher.assignments.attempt-monitor', [$assignment, $outsider]))
+            ->assertNotFound();
     }
 
     public function test_ajax_teacher_login_returns_teacher_workspace_redirect(): void
@@ -347,13 +425,16 @@ class TeacherClassManagementTest extends TestCase
     public function test_archiving_closes_work_blocks_new_starts_and_preserves_resume(): void
     {
         $teacher = $this->teacher(); $started = $this->student(); $newStudent = $this->student(); $classroom = $this->classroom($teacher); $test = $this->testFor($teacher);
-        $assignment = $this->assignment($classroom, $test, ['status' => 'published']);
+        $this->complete($test);
+        $assignment = app(\App\Services\AssignmentService::class)->publish($this->assignment($classroom, $test));
+        $this->assertNotNull($test->fresh()->content_locked_at);
         foreach ([$started, $newStudent] as $student) AssignmentRecipient::create(['assignment_id' => $assignment->id, 'student_id' => $student->id, 'status' => 'active', 'assigned_at' => now()]);
         $attempt = UserTest::create(['user_id' => $started->id, 'test_id' => $test->id, 'assignment_id' => $assignment->id, 'attempt_number' => 1, 'status' => 'in_progress']);
 
         $this->actingAs($teacher)->post(route('teacher.classes.archive', $classroom))->assertRedirect(route('teacher.classes.index'));
         $this->assertSame('archived', $classroom->fresh()->status);
         $this->assertSame('closed', $assignment->fresh()->status);
+        $this->assertNull($test->fresh()->content_locked_at);
         $this->assertTrue($attempt->is(app(\App\Services\AssignmentAttemptService::class)->startOrResume($assignment->fresh(), $started)));
         try {
             app(\App\Services\AssignmentAttemptService::class)->startOrResume($assignment->fresh(), $newStudent);
@@ -401,9 +482,116 @@ class TeacherClassManagementTest extends TestCase
 
     public function test_question_content_is_immutable_after_test_lock(): void
     {
-        $teacher = $this->teacher(); $test = $this->testFor($teacher); $this->complete($test); $test->update(['content_locked_at' => now()]);
+        $teacher = $this->teacher(); $test = $this->testFor($teacher); $this->complete($test);
+        $this->assignment($this->classroom($teacher), $test, ['status' => 'published', 'published_at' => now()]);
         $question = $test->sections->first()->modules->first()->questions->first();
         $this->expectException(\Illuminate\Validation\ValidationException::class);
         $question->update(['stem' => 'Changed after assignment started']);
+    }
+
+    public function test_new_student_gets_assigned_to_both_published_and_closed_assignments(): void
+    {
+        $teacher = $this->teacher();
+        $student = $this->student();
+        $classroom = $this->classroom($teacher);
+        $test = $this->testFor($teacher);
+
+        $publishedAssignment = $this->assignment($classroom, $test, ['status' => 'published', 'published_at' => now(), 'due_at' => null]);
+        $closedAssignment = $this->assignment($classroom, $test, ['status' => 'closed', 'published_at' => now()->subDay(), 'closed_at' => now(), 'due_at' => now()->subHours(12)]);
+
+        $membership = ClassroomMembership::create(['classroom_id' => $classroom->id, 'student_id' => $student->id, 'status' => 'pending', 'requested_at' => now()]);
+        $this->actingAs($teacher)->post(route('teacher.memberships.approve', $membership));
+
+        $this->assertDatabaseHas('assignment_recipients', ['assignment_id' => $publishedAssignment->id, 'student_id' => $student->id, 'status' => 'active']);
+        $this->assertDatabaseHas('assignment_recipients', ['assignment_id' => $closedAssignment->id, 'student_id' => $student->id, 'status' => 'active']);
+    }
+
+    public function test_reopening_assignment_assigns_all_active_members(): void
+    {
+        $teacher = $this->teacher();
+        $student = $this->student();
+        $classroom = $this->classroom($teacher);
+        $test = $this->testFor($teacher);
+
+        $assignment = $this->assignment($classroom, $test, ['status' => 'closed', 'published_at' => now()->subDay(), 'closed_at' => now(), 'due_at' => null]);
+        $membership = ClassroomMembership::create(['classroom_id' => $classroom->id, 'student_id' => $student->id, 'status' => 'active', 'requested_at' => now()]);
+
+        AssignmentRecipient::where('assignment_id', $assignment->id)->where('student_id', $student->id)->delete();
+
+        $this->actingAs($teacher)->post(route('teacher.assignments.reopen', $assignment))->assertRedirect();
+
+        $this->assertSame('published', $assignment->fresh()->status);
+        $this->assertDatabaseHas('assignment_recipients', ['assignment_id' => $assignment->id, 'student_id' => $student->id, 'status' => 'active']);
+    }
+
+    public function test_assignment_with_null_due_date_reopens_successfully(): void
+    {
+        $teacher = $this->teacher();
+        $classroom = $this->classroom($teacher);
+        $test = $this->testFor($teacher);
+        $assignment = $this->assignment($classroom, $test, ['status' => 'closed', 'published_at' => now()->subDay(), 'closed_at' => now(), 'due_at' => null]);
+
+        $this->actingAs($teacher)->post(route('teacher.assignments.reopen', $assignment))->assertRedirect();
+        $this->assertSame('published', $assignment->fresh()->status);
+        $this->assertNull($assignment->fresh()->due_at);
+    }
+
+    public function test_teacher_can_delete_owned_assignment_soft_delete(): void
+    {
+        $teacher = $this->teacher();
+        $otherTeacher = $this->teacher();
+        $classroom = $this->classroom($teacher);
+        $test = $this->testFor($teacher);
+        $assignment = $this->assignment($classroom, $test, ['status' => 'published', 'published_at' => now(), 'due_at' => null]);
+
+        $this->actingAs($otherTeacher)->delete(route('teacher.assignments.destroy', $assignment))->assertForbidden();
+        $this->assertFalse($assignment->fresh()->trashed());
+
+        $this->actingAs($teacher)->delete(route('teacher.assignments.destroy', $assignment))->assertRedirect(route('teacher.classes.show', $classroom));
+        $this->assertTrue($assignment->fresh()->trashed());
+    }
+
+    public function test_closing_or_deleting_last_published_assignment_unlocks_test(): void
+    {
+        $teacher = $this->teacher();
+        $classroom = $this->classroom($teacher);
+        $test = $this->testFor($teacher);
+        $this->complete($test);
+        $service = app(\App\Services\AssignmentService::class);
+        $first = $service->publish($this->assignment($classroom, $test));
+        $second = $service->publish($this->assignment($classroom, $test, ['title' => 'Second assignment']));
+
+        $service->close($first);
+        $this->assertNotNull($test->fresh()->content_locked_at);
+
+        $this->actingAs($teacher)->delete(route('teacher.assignments.destroy', $second))->assertRedirect();
+        $this->assertNull($test->fresh()->content_locked_at);
+        $this->assertFalse($test->fresh()->isContentLocked());
+    }
+
+    public function test_reopening_assignment_locks_test_again(): void
+    {
+        $teacher = $this->teacher();
+        $classroom = $this->classroom($teacher);
+        $test = $this->testFor($teacher);
+        $assignment = $this->assignment($classroom, $test, ['status' => 'closed', 'closed_at' => now()]);
+
+        app(\App\Services\AssignmentService::class)->reopen($assignment);
+
+        $this->assertNotNull($test->fresh()->content_locked_at);
+        $this->assertTrue($test->fresh()->isContentLocked());
+    }
+
+    public function test_teacher_can_remove_student_from_roster(): void
+    {
+        $teacher = $this->teacher();
+        $student = $this->student();
+        $classroom = $this->classroom($teacher);
+        $membership = ClassroomMembership::create(['classroom_id' => $classroom->id, 'student_id' => $student->id, 'status' => 'active']);
+
+        $this->actingAs($teacher)->post(route('teacher.memberships.remove', $membership))
+            ->assertRedirect();
+
+        $this->assertSame('removed', $membership->fresh()->status);
     }
 }
