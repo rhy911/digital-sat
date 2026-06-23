@@ -146,16 +146,14 @@ header .user-dropdown .dropdown-menu .dropdown-item svg {
 }
 
 /* Active State */
-.section-header .btn-group .btn-check:checked+.btn {
+.section-header .btn-group .btn-check:checked + .btn {
     background-color: #505050;
     color: white;
 }
 
-.section-header .btn-group .btn-check:checked+.btn:hover {
+.section-header .btn-group .btn-check:checked + .btn:hover {
     background-color: #505050;
 }
-
-
 
 main section .test-box,
 main section .option,

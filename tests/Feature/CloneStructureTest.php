@@ -54,7 +54,8 @@ class CloneStructureTest extends TestCase
         $clonedModule = $clonedSection->modules()->first();
         $this->assertStringContainsString('_CLONE_', $clonedModule->key);
         
-        // Assert cloned module has no questions
-        $this->assertEquals(0, $clonedModule->questions()->count());
+        // Copied containers stay independent while item-bank questions remain shared.
+        $this->assertEquals($module->questions()->pluck('questions.id'), $clonedModule->questions()->pluck('questions.id'));
+        $this->assertSame($clonedSection->id, $clonedModule->section_id);
     }
 }

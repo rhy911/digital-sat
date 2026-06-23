@@ -48,11 +48,12 @@ function renderModuleRowHtml(mod) {
           + 'Actions <i class="bi bi-chevron-down text-[10px]"></i>'
           + '</button>'
           + '<div class="dropdown-menu hidden">'
+          + '<button type="button" class="dropdown-item reuse-module-btn" data-id="' + escapeHtml(mod.id) + '" data-section-id="' + escapeHtml((sections[0] && sections[0].id) || '') + '"><i class="bi bi-copy mr-2"></i>Reuse in test</button>'
           + '<button type="button" class="dropdown-item clone-module-btn" data-id="' + escapeHtml(mod.id) + '"><i class="bi bi-copy mr-2"></i> Clone</button>'
           + '<button type="button" class="dropdown-item text-danger delete-module-btn" data-id="' + escapeHtml(mod.id) + '"><i class="bi bi-trash mr-2"></i> Delete</button>'
           + '</div>'
           + '</div>'
-        : '<span class="status-chip status-chip-readonly">Read-Only</span>';
+        : '<button type="button" class="min-h-9 rounded-lg border border-slate-300 bg-white px-3 text-xs font-bold text-slate-700 hover:bg-slate-50 reuse-module-btn" data-id="' + escapeHtml(mod.id) + '" data-section-id="' + escapeHtml((sections[0] && sections[0].id) || '') + '">Reuse</button>';
 
     const rowClass = isOwner ? '' : 'row-shared';
 

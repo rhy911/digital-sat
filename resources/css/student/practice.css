@@ -15,7 +15,10 @@
     overflow: hidden;
     border: 1px solid var(--ds-border);
     background: var(--ds-surface);
-    transition: border-color 200ms ease, transform 200ms ease, box-shadow 200ms ease;
+    transition:
+        border-color 200ms ease,
+        transform 200ms ease,
+        box-shadow 200ms ease;
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.02);
 }
 
@@ -32,7 +35,11 @@
 
 /* Cohesive Unified Header */
 .practice-card-header-cohesive {
-    background: linear-gradient(135deg, oklch(22% 0.055 255) 0%, oklch(16% 0.045 255) 100%);
+    background: linear-gradient(
+        135deg,
+        oklch(22% 0.055 255) 0%,
+        oklch(16% 0.045 255) 100%
+    );
     padding: 14px 16px;
     display: flex;
     justify-content: space-between;
@@ -87,7 +94,11 @@
 }
 
 .total-score-panel {
-    background: linear-gradient(135deg, oklch(96.5% 0.018 255) 0%, oklch(93.5% 0.028 275) 100%);
+    background: linear-gradient(
+        135deg,
+        oklch(96.5% 0.018 255) 0%,
+        oklch(93.5% 0.028 275) 100%
+    );
     border: 1px solid var(--ds-border);
     border-radius: 0.625rem;
     display: flex;
@@ -133,7 +144,10 @@
     padding: 8px 10px;
     border-radius: 0.5rem;
     border: 1px solid transparent;
-    transition: transform 150ms ease, box-shadow 150ms ease, border-color 150ms ease;
+    transition:
+        transform 150ms ease,
+        box-shadow 150ms ease,
+        border-color 150ms ease;
 }
 
 .section-score-item:hover {
@@ -241,7 +255,9 @@
     font-weight: 750;
     text-decoration: none;
     cursor: pointer;
-    transition: background-color 150ms ease, transform 150ms ease;
+    transition:
+        background-color 150ms ease,
+        transform 150ms ease;
 }
 
 .practice-card-btn-primary:hover {
@@ -266,7 +282,10 @@
     font-weight: 600;
     color: var(--ds-ink);
     cursor: pointer;
-    transition: background-color 150ms ease, border-color 150ms ease, transform 150ms ease;
+    transition:
+        background-color 150ms ease,
+        border-color 150ms ease,
+        transform 150ms ease;
 }
 
 .practice-card-btn-outline:hover {

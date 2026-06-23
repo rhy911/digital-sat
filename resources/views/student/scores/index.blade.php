@@ -6,15 +6,51 @@
         <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/auto-render.min.js"></script>
     </x-slot>
 
+    @php
+        $isScaledSatResult = in_array($userTest->test->test_type, ['full_length', 'adaptive_full_length'], true) && $userTest->total_score !== null;
+        $accuracyPercent = $stats['total']['questions'] > 0
+            ? (int) round(($stats['total']['correct'] / $stats['total']['questions']) * 100)
+            : 0;
+    @endphp
+
     {{-- ══════════════════════════════════════════════
          HERO BANNER
     ══════════════════════════════════════════════ --}}
     <div class="sd-hero">
         <div class="sd-hero-inner">
-            <div>
-                <span class="sd-hero-score">{{ $userTest->total_score ?? '—' }}</span>
-                <span class="sd-hero-score-range">/ 1600</span>
-            </div>
+            @if ($isScaledSatResult)
+                <p class="sd-score-context">
+                    {{ $userTest->score_estimate_kind === 'adaptive_irt_provisional' ? 'Provisional IRT estimate' : 'Estimated practice score · Normal conversion' }}
+                </p>
+                <div>
+                    <span class="sd-hero-score">{{ $userTest->total_score }}</span>
+                    <span class="sd-hero-score-range">/ 1600</span>
+                </div>
+                <p class="sd-score-disclosure">
+                    @if($userTest->score_estimate_kind === 'adaptive_irt_provisional')
+                        EAP 3PL ability estimate using your adaptive route. Estimated range
+                        {{ $userTest->total_score_lower }}–{{ $userTest->total_score_upper }}.
+                        Item parameters and scaled mapping remain provisional.
+                    @elseif($userTest->score_estimate_kind === 'normal_generic')
+                        Route-neutral estimate using all presented questions and built-in conversion
+                        {{ $userTest->score_conversion_version }}. A form-specific table may improve accuracy.
+                    @else
+                        Route-neutral estimate using all presented questions and approved conversion
+                        v{{ $userTest->scoreConversionSet?->version ?? 'legacy' }}.
+                    @endif
+                    Not an official College Board score.
+                </p>
+            @else
+                <div class="flex flex-wrap items-baseline gap-x-3 gap-y-1">
+                    <span class="sd-hero-score">{{ $accuracyPercent }}%</span>
+                    <span class="sd-hero-score-range">correct</span>
+                </div>
+                <p class="mt-2 max-w-2xl text-sm font-semibold text-slate-700">
+                    {{ $stats['total']['correct'] }} of {{ $stats['total']['questions'] }} scored questions correct.
+                    Practice performance, not a calibrated SAT score.
+                    This test type does not produce a full SAT scaled estimate.
+                </p>
+            @endif
             <p class="sd-hero-meta">
                 {{ $userTest->test->title }}
                 &nbsp;·&nbsp;

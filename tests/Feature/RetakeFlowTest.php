@@ -29,7 +29,7 @@ class RetakeFlowTest extends TestCase
 
         $this->test = Test::create([
             'title' => 'SAT Math Practice',
-            'test_type' => 'short_test',
+            'test_type' => 'module_only',
             'break_duration_minutes' => 0,
             'status' => 'active',
             'is_public' => true,
@@ -138,6 +138,7 @@ class RetakeFlowTest extends TestCase
         $newAttempt = UserTest::where('ulid', $data['user_test_ulid'])->first();
         $this->assertNotNull($newAttempt);
         $this->assertEquals('in_progress', $newAttempt->status);
+        $this->assertSame($this->module->id, $newAttempt->current_module_id);
     }
 
     public function test_start_test_in_fresh_mode_deletes_ongoing_attempt(): void
@@ -156,8 +157,9 @@ class RetakeFlowTest extends TestCase
         $response->assertOk();
         $data = $response->json();
 
-        // 3. Assert the ongoing attempt is deleted
-        $this->assertNull(UserTest::find($ongoingAttempt->id));
+        // 3. Assert the ongoing attempt is marked abandoned
+        $ongoingAttempt->refresh();
+        $this->assertEquals('abandoned', $ongoingAttempt->status);
 
         // 4. Assert new attempt is created
         $newAttempt = UserTest::where('ulid', $data['user_test_ulid'])->first();
@@ -171,6 +173,7 @@ class RetakeFlowTest extends TestCase
             'user_id' => $this->student->id,
             'test_id' => $this->test->id,
             'status' => 'in_progress',
+            'current_module_id' => $this->module->id,
         ]);
 
         $response = $this->actingAs($this->student)
@@ -216,10 +219,10 @@ class RetakeFlowTest extends TestCase
         $response = $this->actingAs($this->student)
             ->get(route('engine.session', ['ulid' => $this->module->ulid, 'attempt' => $userTest->ulid]));
 
-        $response->assertStatus(400);
+        $response->assertNotFound();
     }
 
-    public function test_show_module_fallback_when_no_attempt_parameter(): void
+    public function test_show_module_without_attempt_parameter_is_rejected(): void
     {
         // 1. Create a completed attempt
         UserTest::create([
@@ -229,17 +232,13 @@ class RetakeFlowTest extends TestCase
             'completed_at' => now(),
         ]);
 
-        // 2. Request page without attempt query - should create a fresh attempt automatically
-        // instead of reusing the completed one
+        // Bare module URLs must never select or create progression state.
         $this->assertEquals(1, UserTest::count());
 
         $response = $this->actingAs($this->student)
             ->get(route('engine.session', ['ulid' => $this->module->ulid]));
 
-        $response->assertOk();
-        $this->assertEquals(2, UserTest::count());
-
-        $newAttempt = UserTest::where('status', 'in_progress')->first();
-        $this->assertNotNull($newAttempt);
+        $response->assertStatus(409);
+        $this->assertEquals(1, UserTest::count());
     }
 }

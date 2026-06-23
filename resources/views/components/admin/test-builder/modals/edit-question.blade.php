@@ -1,7 +1,8 @@
 <x-ui.modal id="editQuestionModal" max-width="80%">
     <x-slot:title>
         <div class="flex items-center gap-2">
-            <i class="bi bi-pencil-square text-indigo-600" id="editQuestionModalIcon"></i> <span id="editQuestionModalTitleText">Edit Question</span> #<span id="editQuestionIdDisplay"></span>
+            <i class="bi bi-pencil-square text-indigo-600" id="editQuestionModalIcon"></i> <span
+                id="editQuestionModalTitleText">Edit Question</span> #<span id="editQuestionIdDisplay"></span>
         </div>
     </x-slot:title>
 
@@ -9,8 +10,7 @@
         <div id="editQuestionModalLoader"
             class="absolute inset-0 bg-white/95 z-50 flex flex-col items-center justify-center rounded-xl transition-all duration-300">
             <div class="flex flex-col items-center gap-4">
-                <div
-                    class="w-12 h-12 border-4 border-slate-200 border-t-indigo-600 rounded-full animate-spin">
+                <div class="w-12 h-12 border-4 border-slate-200 border-t-indigo-600 rounded-full animate-spin">
                 </div>
                 <div class="text-[10px] font-black text-slate-600 uppercase tracking-widest">Initialising editor...
                 </div>
@@ -110,15 +110,17 @@
                             <h6 class="text-sm font-bold text-slate-900 flex items-center gap-2 mb-3">
                                 <i class="bi bi-list-ol text-indigo-600"></i> Answer choices (MCQ)
                             </h6>
-                            @foreach(['A', 'B', 'C', 'D'] as $choiceIndex => $label)
+                            @foreach (['A', 'B', 'C', 'D'] as $choiceIndex => $label)
                                 <div class="grid grid-cols-12 gap-3 items-center">
-                                    <div class="col-span-1 text-center font-bold text-slate-600">{{ $label }}</div>
-                                    <input type="hidden" name="choices[{{ $choiceIndex }}][label]" value="{{ $label }}">
+                                    <div class="col-span-1 text-center font-bold text-slate-600">{{ $label }}
+                                    </div>
+                                    <input type="hidden" name="choices[{{ $choiceIndex }}][label]"
+                                        value="{{ $label }}">
                                     <div class="col-span-8">
                                         <input type="text"
                                             class="w-full px-3 py-1.5 text-sm text-slate-900 bg-white border border-slate-300 rounded-lg placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-600 edit-choice-input"
-                                            name="choices[{{ $choiceIndex }}][content]" id="editChoice{{ $label }}Content"
-                                            placeholder="Option content">
+                                            name="choices[{{ $choiceIndex }}][content]"
+                                            id="editChoice{{ $label }}Content" placeholder="Option content">
                                     </div>
                                     <div class="col-span-3 pl-2">
                                         <label
@@ -211,7 +213,8 @@
                 </div>
 
                 <!-- Right Side: Real-time Live Preview (Sticky) -->
-                <div class="lg:col-span-5 p-6 bg-slate-50 flex flex-col h-full overflow-y-auto edit-question-preview-pane">
+                <div
+                    class="lg:col-span-5 p-6 bg-slate-50 flex flex-col h-full overflow-y-auto edit-question-preview-pane">
                     <div class="flex justify-between items-center mb-4 pb-3 border-b border-slate-200">
                         <span class="text-sm font-bold text-slate-900 flex items-center gap-2">
                             <i class="bi bi-file-earmark-richtext text-amber-700"></i> Question preview

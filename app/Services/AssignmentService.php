@@ -9,7 +9,10 @@ use Illuminate\Validation\ValidationException;
 
 class AssignmentService
 {
-    public function __construct(private TestContentLockService $locks) {}
+    public function __construct(
+        private TestContentLockService $locks,
+        private TestStructureService $structures,
+    ) {}
 
     public function publish(Assignment $assignment): Assignment
     {
@@ -21,9 +24,10 @@ class AssignmentService
             if ($assignment->classroom->status !== 'active' || $assignment->test->status !== 'active') {
                 throw ValidationException::withMessages(['assignment' => 'Class and test must both be active.']);
             }
-            if (!$assignment->test->isStructurallyComplete()) {
+            if (! $assignment->test->isStructurallyComplete()) {
                 throw ValidationException::withMessages(['assignment' => 'Test must contain questions in every module before publishing.']);
             }
+            $this->structures->validateForPublication($assignment->test);
 
             foreach ($assignment->classroom->activeMemberships as $membership) {
                 AssignmentRecipient::updateOrCreate(
@@ -34,6 +38,7 @@ class AssignmentService
 
             $assignment->update(['status' => 'published', 'published_at' => now(), 'closed_at' => null]);
             $this->locks->syncLock($assignment->test);
+
             return $assignment->fresh(['recipients.student', 'classroom', 'test']);
         });
     }
@@ -57,6 +62,7 @@ class AssignmentService
         }
 
         DB::transaction(function () use ($assignment) {
+            $this->structures->validateForPublication($assignment->test);
             $assignment->update(['status' => 'published', 'closed_at' => null]);
             $this->locks->syncLock($assignment->test);
 

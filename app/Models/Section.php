@@ -4,10 +4,11 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Section extends Model
 {
-    use HasFactory;
+    use HasFactory, SoftDeletes;
 
     public const TYPE_RW = 'reading_writing';
     public const TYPE_MATH = 'math';
@@ -50,7 +51,7 @@ class Section extends Model
 
     public function test()
     {
-        return $this->belongsTo(Test::class);
+        return $this->belongsTo(Test::class)->withTrashed();
     }
 
     public function modules()

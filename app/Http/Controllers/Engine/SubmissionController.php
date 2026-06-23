@@ -4,21 +4,26 @@ namespace App\Http\Controllers\Engine;
 
 use App\Http\Controllers\Controller;
 use App\Http\Controllers\Engine\Concerns\HandlesAnswers;
-use App\Http\Controllers\Engine\Concerns\ResolvesRouting;
 use App\Http\Requests\Engine\SubmitModuleRequest;
 use App\Models\UserTest;
+use App\Models\UserTestModuleSubmission;
+use App\Services\AttemptProgressionService;
 use App\Services\AssignmentModuleTimingService;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Validation\ValidationException;
+use Symfony\Component\HttpKernel\Exception\ConflictHttpException;
 
 class SubmissionController extends Controller
 {
-    use HandlesAnswers, ResolvesRouting;
+    use HandlesAnswers;
 
-    public function __construct(private AssignmentModuleTimingService $assignmentTiming) {}
+    public function __construct(
+        private AssignmentModuleTimingService $assignmentTiming,
+        private AttemptProgressionService $progression,
+    ) {}
 
     public function submit(SubmitModuleRequest $request)
     {
@@ -31,15 +36,37 @@ class SubmissionController extends Controller
             $validated = $request->validated();
 
             $result = DB::transaction(function () use ($validated) {
-                [$userTest, $module] = $this->resolveSubmissionContext($validated);
+                $userTest = UserTest::where('id', $validated['user_test_id'])
+                    ->where('user_id', auth()->id())
+                    ->lockForUpdate()
+                    ->first();
+
+                if (!$userTest) {
+                    throw new AuthorizationException('This test attempt is no longer available.');
+                }
+
+                $receipt = UserTestModuleSubmission::where('user_test_id', $userTest->id)
+                    ->where('module_id', $validated['module_id'])
+                    ->first();
+
+                if ($receipt) {
+                    $isCompletedTransition = !empty($receipt->result['test_completed'])
+                        && $userTest->status === 'completed';
+                    $isCurrentTransition = $receipt->issued_next_module_id
+                        && (int) $receipt->issued_next_module_id === (int) $userTest->current_module_id;
+
+                    if ($isCompletedTransition || $isCurrentTransition) {
+                        return $receipt->result;
+                    }
+
+                    throw new ConflictHttpException('This submission is stale because the attempt has already progressed.');
+                }
+
+                [$userTest, $module] = $this->resolveSubmissionContext($validated, $userTest);
                 $section = $module->section;
                 $timedOut = false;
 
                 if ($userTest->assignment_id) {
-                    if ((int) $userTest->current_module_id !== (int) $module->id) {
-                        throw new AuthorizationException('This module is not active for the assignment attempt.');
-                    }
-
                     $timedOut = $this->assignmentTiming->syncElapsed($userTest, $module)['expired'];
                 } elseif ($userTest->current_module_started_at) {
                     $test = $module->section->test;
@@ -56,6 +83,9 @@ class SubmissionController extends Controller
                 // Assignment answers arriving after the server deadline are not accepted.
                 if (!$timedOut) {
                     $this->saveModuleAnswers($userTest, $module, $validated['answers']);
+                } else {
+                    // Preserve autosaved work and materialize every unanswered item as omitted.
+                    $this->saveModuleAnswers($userTest, $module, [], true);
                 }
 
                 // 2. Logic for Routing or Finalizing - Run synchronously
@@ -66,7 +96,20 @@ class SubmissionController extends Controller
                 if (Cache::has($cacheKey)) {
                     $result = Cache::get($cacheKey);
                     Cache::forget($cacheKey); // Clean up
-                    return $result + ['timed_out' => $timedOut];
+                    $result += ['timed_out' => $timedOut];
+
+                    if (!isset($result['error'])) {
+                        $nextModule = $this->progression->advance($userTest, $result);
+                        UserTestModuleSubmission::create([
+                            'user_test_id' => $userTest->id,
+                            'module_id' => $module->id,
+                            'issued_next_module_id' => $nextModule?->id,
+                            'result' => $result,
+                            'submitted_at' => now(),
+                        ]);
+                    }
+
+                    return $result;
                 }
 
                 return [
@@ -83,6 +126,11 @@ class SubmissionController extends Controller
                 'error' => 'Unauthorized submission.',
                 'message' => $e->getMessage(),
             ], 403);
+        } catch (ConflictHttpException $e) {
+            return response()->json([
+                'error' => 'module_progression_conflict',
+                'message' => $e->getMessage(),
+            ], 409);
         } catch (ValidationException $e) {
             throw $e;
         } catch (\Throwable $e) {

@@ -3,9 +3,7 @@
 namespace Tests\Feature;
 
 use App\Models\Module;
-use App\Models\Question;
 use App\Models\Section;
-use App\Models\Test;
 use App\Services\TestManagementService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
@@ -19,7 +17,7 @@ class TestManagementServiceTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
-        $this->service = new TestManagementService();
+        $this->service = new TestManagementService;
     }
 
     public function test_generate_full_sat_structure()
@@ -37,11 +35,11 @@ class TestManagementServiceTest extends TestCase
 
         $rwSection = $test->sections->where('type', Section::TYPE_RW)->first();
         $this->assertNotNull($rwSection);
-        $this->assertCount(3, $rwSection->modules); // Standard, Easy, Hard
+        $this->assertCount(2, $rwSection->modules); // Fixed Module 1 and Module 2
 
         $mathSection = $test->sections->where('type', Section::TYPE_MATH)->first();
         $this->assertNotNull($mathSection);
-        $this->assertCount(3, $mathSection->modules); // Standard, Easy, Hard
+        $this->assertCount(2, $mathSection->modules); // Fixed Module 1 and Module 2
     }
 
     public function test_clone_test()
@@ -86,7 +84,7 @@ class TestManagementServiceTest extends TestCase
 
         $this->service->deleteTest($test->id, true);
 
-        $this->assertDatabaseMissing('tests', ['id' => $test->id]);
-        $this->assertDatabaseMissing('sections', ['id' => $sectionId]);
+        $this->assertSoftDeleted('tests', ['id' => $test->id]);
+        $this->assertSoftDeleted('sections', ['id' => $sectionId]);
     }
 }

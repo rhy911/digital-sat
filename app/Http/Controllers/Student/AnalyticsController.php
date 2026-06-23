@@ -17,9 +17,10 @@ class AnalyticsController extends Controller
         $user = $request->user();
         $completedTests = $user->userTests()
             ->whereHas('test', fn($q) => $q->where('title', '!=', 'Test Preview'))
-            ->with(['test', 'userAnswers.question'])
+            ->with(['test', 'scoreConversionSet'])
             ->where('status', 'completed')
             ->orderBy('completed_at', 'desc')
+            ->limit(15)
             ->get();
 
         $inProgressTests = $user->userTests()

@@ -32,6 +32,19 @@
     letter-spacing: -2px;
     text-shadow: 0 2px 20px rgba(0, 0, 0, 0.2);
 }
+.sd-score-context {
+    margin: 0 0 0.5rem;
+    color: rgba(255, 255, 255, 0.92);
+    font-size: 0.875rem;
+    font-weight: 750;
+}
+.sd-score-disclosure {
+    max-width: 68ch;
+    margin: 0.75rem 0 0;
+    color: rgba(255, 255, 255, 0.88);
+    font-size: 0.875rem;
+    line-height: 1.5;
+}
 .sd-hero-score-range {
     font-size: 1.1rem;
     color: rgba(255, 255, 255, 0.7);

@@ -3,7 +3,6 @@
 namespace App\Http\Controllers\Engine;
 
 use App\Http\Controllers\Controller;
-use App\Http\Controllers\Engine\Concerns\ResolvesRouting;
 use App\Models\Module;
 use App\Models\Question;
 use App\Models\Test;
@@ -11,14 +10,16 @@ use App\Models\Section;
 use App\Models\UserTest;
 use App\Models\UserTestAnswer;
 use App\Services\AssignmentModuleTimingService;
-use Illuminate\Http\Request;
+use App\Services\AttemptProgressionService;
 use Illuminate\Support\Facades\Auth;
+use Symfony\Component\HttpKernel\Exception\ConflictHttpException;
 
 class SessionController extends Controller
 {
-    use ResolvesRouting;
-
-    public function __construct(private AssignmentModuleTimingService $assignmentTiming) {}
+    public function __construct(
+        private AssignmentModuleTimingService $assignmentTiming,
+        private AttemptProgressionService $progression,
+    ) {}
 
     public function show($ulid = null)
     {
@@ -29,50 +30,27 @@ class SessionController extends Controller
             return $this->showStaticPreview('math');
         }
 
-        $user = Auth::user();
         $attemptUlid = request()->query('attempt');
-        $requestedAttempt = null;
-        if ($attemptUlid) {
-            $requestedAttempt = UserTest::where('ulid', $attemptUlid)->firstOrFail();
-            abort_unless((int) $requestedAttempt->user_id === (int) Auth::id(), 403, 'Unauthorized.');
-            abort_unless($requestedAttempt->status === 'in_progress', 409, 'This attempt is no longer active.');
+        if (!$attemptUlid) {
+            throw new ConflictHttpException('An active test attempt is required.');
         }
-        $module = null;
-        if ($ulid) {
-            $moduleQuery = Module::query();
-            if (!$requestedAttempt?->assignment_id) {
-                $moduleQuery->visibleTo($user);
-            } else {
-                $moduleQuery->whereHas('sections', fn ($query) => $query->where('test_id', $requestedAttempt->test_id));
-            }
-            $module = $moduleQuery->where('ulid', $ulid)->firstOrFail();
 
-            [$section, $test] = $this->resolveModuleContext($module, $user, $requestedAttempt?->assignment_id ? $requestedAttempt->test_id : null);
-            $this->loadCurrentModuleQuestions($module);
+        $user = Auth::user();
+        $requestedAttempt = UserTest::where('ulid', $attemptUlid)->firstOrFail();
+        abort_unless((int) $requestedAttempt->user_id === (int) Auth::id(), 403, 'Unauthorized.');
+        abort_unless($requestedAttempt->status === 'in_progress', 409, 'This attempt is no longer active.');
+
+        $moduleQuery = Module::query();
+        if (!$requestedAttempt->assignment_id) {
+            $moduleQuery->visibleTo($user);
         } else {
-            $test = Test::visibleTo($user)
-                ->with([
-                    'sections' => fn($q) => $q->orderBy('order'),
-                ])->whereIn('status', ['active', 'draft'])
-                ->orderByRaw("CASE WHEN title = 'Test Preview' THEN 0 ELSE 1 END")
-                ->first();
-
-            if (! $test) {
-                abort(404, 'No test available. Please create a test first.');
-            }
-
-            if ($test->sections->isEmpty()) {
-                abort(404, 'Test has no sections. Please add sections and modules first.');
-            }
-
-            // Default to first module of first section
-            $section = $test->sections->firstWhere('type', 'reading_writing') ?? $test->sections->first();
-            $module = $this->firstModuleForSection($section, $user);
-
-            if ($module) {
-                $this->loadCurrentModuleQuestions($module);
-            }
+            $moduleQuery->whereHas('sections', fn ($query) => $query->where('test_id', $requestedAttempt->test_id));
         }
+        $module = $moduleQuery->where('ulid', $ulid)->firstOrFail();
+
+        [$section, $test] = $this->resolveModuleContext($module, $user, $requestedAttempt->test_id);
+        $this->progression->assertIssued($requestedAttempt, $module);
+        $this->loadCurrentModuleQuestions($module);
 
         if (! $module) {
             abort(404, 'No module found. Please add modules first.');
@@ -95,9 +73,6 @@ class SessionController extends Controller
         $isPreview = ($test->title === 'Test Preview');
         $durationMinutes = $isPreview ? 0 : ($module->duration_minutes ?? ($section->type === 'math' ? 35 : 32));
 
-        // Determine next module for navigation
-        [$nextModule, $nextModuleSection] = $this->resolveNextModule($module, $section, $test, $user, (bool) $requestedAttempt?->assignment_id);
-
         // Determine which view to use based on section type
         $viewName = $section->type === 'math' ? 'engine.module.math' : 'engine.module.reading';
 
@@ -107,31 +82,12 @@ class SessionController extends Controller
         $isAssignmentAttempt = false;
         $serverRemainingSeconds = null;
         if (Auth::check()) {
-            if ($requestedAttempt) {
-                $userTest = $requestedAttempt;
-                if ((int) $userTest->test_id !== (int) $test->id) {
-                    abort(400, 'Attempt does not belong to this test.');
-                }
-            } else {
-                // Legacy fallback: find latest in_progress attempt
-                $userTest = UserTest::where('user_id', Auth::id())
-                    ->where('test_id', $test->id)
-                    ->where('status', 'in_progress')
-                    ->latest('updated_at')
-                    ->first();
-
-                if (!$userTest) {
-                    // Create new attempt
-                    $userTest = UserTest::create([
-                        'user_id' => Auth::id(),
-                        'test_id' => $test->id,
-                        'status' => 'in_progress',
-                    ]);
-                }
+            $userTest = $requestedAttempt;
+            if ((int) $userTest->test_id !== (int) $test->id) {
+                abort(400, 'Attempt does not belong to this test.');
             }
 
-            if ((int) $userTest->current_module_id !== (int) $module->id) {
-                $userTest->current_module_id = $module->id;
+            if (!$userTest->current_module_started_at) {
                 $userTest->current_module_started_at = now();
                 $userTest->current_module_elapsed_seconds = 0;
                 $userTest->save();
@@ -155,6 +111,7 @@ class SessionController extends Controller
             }
 
             $savedAnswers = UserTestAnswer::where('user_test_id', $userTest->id)
+                ->where('module_id', $module->id)
                 ->whereIn('question_id', $questions->pluck('id'))
                 ->pluck('selected_answer', 'question_id');
         }
@@ -180,8 +137,8 @@ class SessionController extends Controller
             'moduleNumber' => $module->module_number,
             'sectionName' => $section->name,
             'sectionType' => $section->type,
-            'nextModuleId' => $nextModule ? $nextModule->ulid : null,
-            'nextModuleName' => $nextModule ? ($nextModule->module_number == 2 ? 'Module 2' : 'Section ' . ($nextModuleSection?->order ?? '')) : null,
+            'nextModuleId' => null,
+            'nextModuleName' => null,
             'userTestId' => $userTest ? $userTest->id : null,
             'userTestUlid' => $userTest ? $userTest->ulid : null,
             'userTest' => $userTest,
@@ -229,13 +186,6 @@ class SessionController extends Controller
             'questions.passage',
             'questions.answerChoices' => fn($q) => $q->orderBy('order'),
         ]);
-    }
-
-    private function firstModuleForSection(Section $section, $user): ?Module
-    {
-        return $section->modules()
-            ->visibleTo($user)
-            ->first();
     }
 
     private function showStaticPreview($type)

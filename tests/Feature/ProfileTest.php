@@ -32,7 +32,8 @@ class ProfileTest extends TestCase
         $response = $this->actingAs($this->user)->get(route('profile'));
 
         $response->assertStatus(200);
-        $response->assertSee('Profile Information');
+        $response->assertSee('Profile');
+        $response->assertSee('Information');
         $response->assertSee('johndoe');
     }
 

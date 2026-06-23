@@ -7,11 +7,19 @@ use App\Models\Question;
 use App\Models\Section;
 use App\Models\Test;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Validation\ValidationException;
 use Illuminate\Support\Str;
+use Illuminate\Validation\ValidationException;
 
 class TestManagementService
 {
+    public function __construct(
+        private ?TestStructureService $structures = null,
+        private ?TestContentCopyService $copies = null,
+    ) {
+        $this->structures ??= app(TestStructureService::class);
+        $this->copies ??= app(TestContentCopyService::class);
+    }
+
     /**
      * Auto-generate full SAT structure safely using transactions.
      */
@@ -29,6 +37,7 @@ class TestManagementService
 
     public function createConfiguredTestFromBlueprint(array $blueprint, $user = null, ?int $userId = null): Test
     {
+        $this->structures->validateBlueprint($blueprint);
         $modules = collect($blueprint['modules'] ?? [])->values();
 
         if ($modules->isEmpty()) {
@@ -102,6 +111,10 @@ class TestManagementService
 
             $test->refreshTotalDuration();
 
+            if (($blueprint['status'] ?? 'draft') === 'active') {
+                $this->structures->validateForPublication($test->fresh());
+            }
+
             return $test->load('sections.modules.questions');
         });
     }
@@ -137,6 +150,15 @@ class TestManagementService
             ];
         }
 
+        if ($testType === Test::TYPE_FULL) {
+            return [
+                ['section_type' => Section::TYPE_RW, 'module_number' => 1, 'difficulty_level' => Module::DIFFICULTY_STANDARD, 'duration_minutes' => Module::RW_DURATION, 'total_questions' => Module::RW_QUESTIONS],
+                ['section_type' => Section::TYPE_RW, 'module_number' => 2, 'difficulty_level' => Module::DIFFICULTY_STANDARD, 'duration_minutes' => Module::RW_DURATION, 'total_questions' => Module::RW_QUESTIONS],
+                ['section_type' => Section::TYPE_MATH, 'module_number' => 1, 'difficulty_level' => Module::DIFFICULTY_STANDARD, 'duration_minutes' => Module::MATH_DURATION, 'total_questions' => Module::MATH_QUESTIONS],
+                ['section_type' => Section::TYPE_MATH, 'module_number' => 2, 'difficulty_level' => Module::DIFFICULTY_STANDARD, 'duration_minutes' => Module::MATH_DURATION, 'total_questions' => Module::MATH_QUESTIONS],
+            ];
+        }
+
         return [
             ['section_type' => Section::TYPE_RW, 'module_number' => 1, 'difficulty_level' => Module::DIFFICULTY_STANDARD, 'duration_minutes' => Module::RW_DURATION, 'total_questions' => Module::RW_QUESTIONS],
             ['section_type' => Section::TYPE_RW, 'module_number' => 2, 'difficulty_level' => Module::DIFFICULTY_EASY, 'duration_minutes' => Module::RW_DURATION, 'total_questions' => Module::RW_QUESTIONS],
@@ -165,9 +187,9 @@ class TestManagementService
      */
     private function createStandardModuleForSection(Section $section, int $moduleNumber, string $difficultyLevel, int $duration, int $totalQuestions, ?int $userId = null, ?int $order = null): Module
     {
-        $uniqueKey = strtoupper(substr($section->type, 0, 2)) . '_M' . $moduleNumber . '_' . strtoupper($difficultyLevel) . '_' . strtoupper(Str::random(6));
+        $uniqueKey = strtoupper(substr($section->type, 0, 2)).'_M'.$moduleNumber.'_'.strtoupper($difficultyLevel).'_'.strtoupper(Str::random(6));
         $order ??= ($moduleNumber === 1) ? 1 : (($difficultyLevel === Module::DIFFICULTY_EASY) ? 2 : 3);
-        
+
         $module = Module::create([
             'section_id' => $section->id,
             'module_number' => $moduleNumber,
@@ -179,8 +201,9 @@ class TestManagementService
             'created_by' => $userId,
             'is_public' => false,
         ]);
-        
+
         $module->sections()->syncWithoutDetaching([$section->id]);
+
         return $module;
     }
 
@@ -189,40 +212,7 @@ class TestManagementService
      */
     public function cloneTest(int $id, ?int $userId = null): Test
     {
-        return DB::transaction(function () use ($id, $userId) {
-            $originalTest = Test::with('sections.modules')->findOrFail($id);
-            
-            $clonedTest = $originalTest->replicate();
-            $clonedTest->ulid = (string) Str::ulid();
-            $clonedTest->title = $originalTest->title . ' (Clone)';
-            $clonedTest->status = 'draft';
-            $clonedTest->created_by = $userId;
-            $clonedTest->is_public = false;
-            $clonedTest->save();
-
-            foreach ($originalTest->sections as $section) {
-                $clonedSection = $section->replicate();
-                $clonedSection->test_id = $clonedTest->id;
-                $clonedSection->created_by = $userId;
-                $clonedSection->is_public = false;
-                $clonedSection->save();
-
-                foreach ($section->modules as $module) {
-                    $clonedModule = $module->replicate();
-                    $clonedModule->ulid = (string) Str::ulid();
-                    $clonedModule->key = $module->key . '_CLONE_' . strtoupper(Str::random(4));
-                    $clonedModule->created_by = $userId;
-                    $clonedModule->is_public = false;
-                    $clonedModule->save();
-
-                    // Attach to the new section
-                    $clonedModule->sections()->attach($clonedSection->id);
-                }
-            }
-            
-            $clonedTest->refreshTotalDuration();
-            return $clonedTest->load('sections.modules');
-        });
+        return $this->copies->copyTest(Test::findOrFail($id), $userId);
     }
 
     /**
@@ -233,22 +223,8 @@ class TestManagementService
         if ($sectionId) {
             app(TestContentLockService::class)->ensureUnlocked(Section::findOrFail($sectionId)->test);
         }
-        return DB::transaction(function () use ($id, $sectionId, $userId) {
-            $originalModule = Module::findOrFail($id);
-            
-            $clonedModule = $originalModule->replicate();
-            $clonedModule->ulid = (string) Str::ulid();
-            $clonedModule->key = $originalModule->key . '_CLONE_' . strtoupper(Str::random(4));
-            $clonedModule->created_by = $userId;
-            $clonedModule->is_public = false;
-            $clonedModule->save();
 
-            if ($sectionId) {
-                $clonedModule->sections()->attach($sectionId);
-            }
-
-            return $clonedModule;
-        });
+        return $this->copies->copyModule(Module::findOrFail($id), $sectionId ? Section::findOrFail($sectionId) : null, $userId);
     }
 
     /**
@@ -258,7 +234,11 @@ class TestManagementService
     {
         $test = Test::with('sections.modules.questions')->findOrFail($id);
         app(TestContentLockService::class)->ensureUnlocked($test);
-        
+
+        if (DB::table('user_tests')->where('test_id', $test->id)->exists()) {
+            throw ValidationException::withMessages(['test' => 'Cannot delete test with existing student attempts.']);
+        }
+
         DB::transaction(function () use ($test, $deleteChildren) {
             if ($deleteChildren) {
                 foreach ($test->sections as $section) {
@@ -283,6 +263,10 @@ class TestManagementService
         $section = Section::with(['test', 'modules.questions'])->findOrFail($id);
         $test = $section->test;
         app(TestContentLockService::class)->ensureUnlocked($test);
+
+        if ($test && DB::table('user_tests')->where('test_id', $test->id)->exists()) {
+            throw ValidationException::withMessages(['section' => 'Cannot delete section of a test with existing student attempts.']);
+        }
 
         DB::transaction(function () use ($section, $deleteChildren) {
             if ($deleteChildren) {
@@ -309,6 +293,10 @@ class TestManagementService
         $module = Module::with(['section.test', 'questions'])->findOrFail($id);
         $test = $module->section->test ?? null;
         app(TestContentLockService::class)->ensureModuleUnlocked($module);
+
+        if ($test && DB::table('user_tests')->where('test_id', $test->id)->exists()) {
+            throw ValidationException::withMessages(['module' => 'Cannot delete module of a test with existing student attempts.']);
+        }
 
         DB::transaction(function () use ($module, $deleteChildren) {
             if ($deleteChildren) {

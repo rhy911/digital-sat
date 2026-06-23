@@ -38,47 +38,67 @@ class AssignmentReportService
 
     public function build(Assignment $assignment): array
     {
-        $assignment->load([
-            'classroom', 'test', 'recipients.student',
-            'attempts' => fn ($query) => $query->with([
-                'user',
-                'currentModule.section',
-                'userAnswers.question.answerChoices',
-                'userAnswers.question.sprCorrectAnswers',
-                'userAnswers.question.explanation',
-            ])->orderBy('attempt_number'),
-        ]);
+        $assignment->load(['classroom', 'test']);
 
-        $attemptsByStudent = $assignment->attempts->groupBy('user_id');
-        $this->applyLiveElapsed($assignment->attempts);
-        $rows = $assignment->recipients->map(function ($recipient) use ($attemptsByStudent, $assignment) {
-            $attempts = $attemptsByStudent->get($recipient->student_id, collect());
-            $completed = $attempts->where('status', 'completed');
+        $activeRecipientIds = $assignment->recipients()->where('status', 'active')->pluck('student_id');
+        $assignedCount = $activeRecipientIds->count();
+
+        $bestScores = \App\Models\UserTest::where('assignment_id', $assignment->id)
+            ->whereIn('user_id', $activeRecipientIds)
+            ->where('status', 'completed')
+            ->selectRaw('user_id, MAX(total_score) as best_score, MAX(score_reading_writing) as best_rw, MAX(score_math) as best_math')
+            ->groupBy('user_id')
+            ->get();
+
+        $completedCount = $bestScores->count();
+        $averageScore = $completedCount ? (int) round($bestScores->average('best_score')) : null;
+        $averageRw = $completedCount ? (int) round($bestScores->average('best_rw')) : null;
+        $averageMath = $completedCount ? (int) round($bestScores->average('best_math')) : null;
+
+        $inProgressCount = \App\Models\UserTest::where('assignment_id', $assignment->id)
+            ->whereIn('user_id', $activeRecipientIds)
+            ->where('status', 'in_progress')
+            ->distinct('user_id')
+            ->count('user_id');
+
+        $recipientsPaginator = $assignment->recipients()
+            ->with('student')
+            ->orderBy('id')
+            ->paginate(15);
+
+        $attempts = \App\Models\UserTest::where('assignment_id', $assignment->id)
+            ->whereIn('user_id', $recipientsPaginator->pluck('student_id'))
+            ->with(['currentModule.section'])
+            ->orderBy('attempt_number')
+            ->get();
+            
+        $this->applyLiveElapsed($attempts);
+        $attemptsByStudent = $attempts->groupBy('user_id');
+
+        $rows = $recipientsPaginator->map(function ($recipient) use ($attemptsByStudent, $assignment) {
+            $studentAttempts = $attemptsByStudent->get($recipient->student_id, collect());
+            $completed = $studentAttempts->where('status', 'completed');
             $best = $completed->sortByDesc('total_score')->first();
             return [
                 'recipient' => $recipient,
-                'attempts' => $attempts,
+                'attempts' => $studentAttempts,
                 'completed_count' => $completed->count(),
                 'best' => $best,
-                'in_progress' => $attempts->firstWhere('status', 'in_progress'),
+                'in_progress' => $studentAttempts->firstWhere('status', 'in_progress'),
                 'late' => $best && $assignment->due_at ? $best->completed_at?->gt($assignment->due_at) : false,
             ];
         });
 
-        $activeRows = $rows->where(fn ($row) => $row['recipient']->status === 'active');
-        $scores = $activeRows->pluck('best.total_score')->filter(fn ($score) => $score !== null);
-        $rwScores = $activeRows->pluck('best.score_reading_writing')->filter(fn ($score) => $score !== null);
-        $mathScores = $activeRows->pluck('best.score_math')->filter(fn ($score) => $score !== null);
-
         return [
+            'paginator' => $recipientsPaginator,
             'rows' => $rows,
             'metrics' => [
-                'assigned' => $activeRows->count(),
-                'completed' => $activeRows->where(fn ($row) => $row['best'] !== null)->count(),
-                'in_progress' => $activeRows->where(fn ($row) => $row['in_progress'] !== null)->count(),
-                'average_score' => $scores->isEmpty() ? null : (int) round($scores->average()),
-                'average_rw' => $rwScores->isEmpty() ? null : (int) round($rwScores->average()),
-                'average_math' => $mathScores->isEmpty() ? null : (int) round($mathScores->average()),
+                'assigned' => $assignedCount,
+                'completed' => $completedCount,
+                'in_progress' => $inProgressCount,
+                'average_score' => $averageScore,
+                'average_rw' => $averageRw,
+                'average_math' => $averageMath,
             ],
         ];
     }

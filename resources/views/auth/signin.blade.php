@@ -1,13 +1,13 @@
 @php
     $role = request()->query('role');
     if ($role === 'teacher') {
-        $titleText = "Sign In as Teacher";
-        $subtitleText = "Continue tracking student progress.";
+        $titleText = 'Sign In as Teacher';
+        $subtitleText = 'Continue tracking student progress.';
     } elseif ($role === 'admin') {
-        $titleText = "Administrator Sign In";
-        $subtitleText = "System management and configuration.";
+        $titleText = 'Administrator Sign In';
+        $subtitleText = 'System management and configuration.';
     } else {
-        $titleText = "Sign In as Student";
+        $titleText = 'Sign In as Student';
         $subtitleText = "Ready for today's practice?";
     }
 @endphp
@@ -39,7 +39,8 @@
     <!-- Form -->
     <form class="w-11/12" id="signinForm" action="{{ route('signin') }}" method="POST" novalidate>
         @csrf
-        <input type="hidden" name="role" value="{{ in_array($role, ['student', 'teacher', 'admin']) ? $role : 'student' }}">
+        <input type="hidden" name="role"
+            value="{{ in_array($role, ['student', 'teacher', 'admin']) ? $role : 'student' }}">
 
         <div class="auth-form-group">
             <label for="email" class="form-label">Email Address</label>
@@ -62,8 +63,8 @@
 
         <x-auth.alerts />
 
-        <button type="submit" class="submit-btn" id="submitBtn" data-processing-text="Processing..."
-            disabled>Sign In</button>
+        <button type="submit" class="submit-btn" id="submitBtn" data-processing-text="Processing..." disabled>Sign
+            In</button>
     </form>
 
     <!-- Help -->
@@ -74,8 +75,9 @@
     @endif
 
     <div class="flex items-center justify-center gap-2 text-sm text-[#94a3b8]">
-        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#10b981"
-            stroke-width="3" stroke-linecap="round" stroke-linejoin="round" class="feather feather-check-circle">
+        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none"
+            stroke="#10b981" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"
+            class="feather feather-check-circle">
             <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
             <polyline points="22 4 12 14.01 9 11.01"></polyline>
         </svg>

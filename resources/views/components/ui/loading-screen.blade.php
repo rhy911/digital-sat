@@ -19,7 +19,7 @@
         </div>
         <h4 class="loading-title fw-bold mb-2">{{ $title }}</h4>
         <p id="loadingStatusText" class="loading-status">{{ $statusText }}</p>
-        @if($cancelRoute)
+        @if ($cancelRoute)
             <a id="loadingCancelLink" href="{{ $cancelRoute }}" class="loading-cancel hidden">{{ $cancelText }}</a>
         @endif
     </div>
@@ -37,7 +37,8 @@
                 if (!loadingScreen) return;
 
                 function shouldHandleClick(event, link) {
-                    if (event.defaultPrevented || event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) {
+                    if (event.defaultPrevented || event.button !== 0 || event.metaKey || event.ctrlKey || event
+                        .shiftKey || event.altKey) {
                         return false;
                     }
                     if (link.target && link.target !== '_self') {
@@ -45,8 +46,9 @@
                     }
 
                     const url = new URL(link.href, window.location.origin);
-                    return url.origin === window.location.origin && 
-                        (url.pathname.startsWith('/take-test') || url.pathname.startsWith('/engine/take-test') || url.pathname.startsWith('/engine/session'));
+                    return url.origin === window.location.origin &&
+                        (url.pathname.startsWith('/take-test') || url.pathname.startsWith('/engine/take-test') || url
+                            .pathname.startsWith('/engine/session'));
                 }
 
                 function navigateAfterLoaderPaint(href) {
@@ -60,7 +62,7 @@
                     loadingScreen.setAttribute('aria-hidden', 'false');
                     document.body.style.cursor = 'wait';
 
-                    @if($cancelRoute)
+                    @if ($cancelRoute)
                         window.clearTimeout(loadingRecoveryTimer);
                         loadingRecoveryTimer = window.setTimeout(() => {
                             if (loadingStatusText) {

@@ -9,6 +9,7 @@ use App\Models\Question;
 use App\Models\Section;
 use App\Models\Test;
 use App\Models\User;
+use App\Models\UserTest;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
@@ -45,13 +46,25 @@ class StudentPracticeVisibilityTest extends TestCase
 
         $privateModule = $privateTest->sections()->first()->modules()->first();
         $publicModule = $publicTest->sections()->first()->modules()->first();
+        $privateAttempt = UserTest::create([
+            'user_id' => $student->id,
+            'test_id' => $privateTest->id,
+            'status' => 'in_progress',
+            'current_module_id' => $privateModule->id,
+        ]);
+        $publicAttempt = UserTest::create([
+            'user_id' => $student->id,
+            'test_id' => $publicTest->id,
+            'status' => 'in_progress',
+            'current_module_id' => $publicModule->id,
+        ]);
 
         $this->actingAs($student)
-            ->get(route('engine.session', ['ulid' => $privateModule->ulid]))
+            ->get(route('engine.session', ['ulid' => $privateModule->ulid, 'attempt' => $privateAttempt->ulid]))
             ->assertNotFound();
 
         $this->actingAs($student)
-            ->get(route('engine.session', ['ulid' => $publicModule->ulid]))
+            ->get(route('engine.session', ['ulid' => $publicModule->ulid, 'attempt' => $publicAttempt->ulid]))
             ->assertOk();
     }
 

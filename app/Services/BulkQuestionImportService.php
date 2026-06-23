@@ -58,13 +58,32 @@ class BulkQuestionImportService
             throw ValidationException::withMessages(['zip_file' => ['Could not open ZIP file.']]);
         }
 
-        // Security check for path traversal
+        // Security check for path traversal and ZIP bombs
+        $maxFiles = 1000;
+        $maxTotalSize = 1024 * 1024 * 200; // 200 MB
+        $totalSize = 0;
+
+        if ($zip->numFiles > $maxFiles) {
+            $zip->close();
+            throw ValidationException::withMessages(['zip_file' => ['ZIP file contains too many files.']]);
+        }
+
         for ($i = 0; $i < $zip->numFiles; $i++) {
-            $filename = $zip->getNameIndex($i);
+            $stat = $zip->statIndex($i);
+            if ($stat === false) continue;
+            
+            $filename = $stat['name'];
             if (str_contains($filename, '..') || str_starts_with($filename, '/') || str_starts_with($filename, '\\')) {
                 $zip->close();
                 throw ValidationException::withMessages(['zip_file' => ['ZIP file contains invalid paths (path traversal risk).']]);
             }
+            
+            $totalSize += $stat['size'];
+        }
+
+        if ($totalSize > $maxTotalSize) {
+            $zip->close();
+            throw ValidationException::withMessages(['zip_file' => ['ZIP file uncompressed size is too large.']]);
         }
 
         $tempDir = 'temp/import_' . Str::random(10);
@@ -184,12 +203,19 @@ class BulkQuestionImportService
         $processString = function ($str) use ($basePath) {
             if (!$str) return $str;
             return preg_replace_callback('/\[Media:([^\]]+)\]/i', function ($matches) use ($basePath) {
-                $filename = trim($matches[1]);
+                // Prevent path traversal by extracting only the base name
+                $filename = basename(trim($matches[1]));
                 
-                // Search strategy: 1. exact path, 2. recursive search in basePath
+                $validExtensions = ['png', 'jpg', 'jpeg', 'gif', 'svg', 'webp'];
+                $ext = strtolower(pathinfo($filename, PATHINFO_EXTENSION));
+                
+                if (!in_array($ext, $validExtensions)) {
+                    \Illuminate\Support\Facades\Log::warning("Media file has invalid extension: $filename");
+                    return $matches[0];
+                }
+
                 $foundSrc = null;
                 
-                // Try direct relative paths first
                 $searchPaths = [
                     $basePath . '/' . $filename,
                     $basePath . '/images/' . $filename,
@@ -199,20 +225,6 @@ class BulkQuestionImportService
                     if (file_exists($path)) {
                         $foundSrc = $path;
                         break;
-                    }
-                }
-
-                // If not found, do a recursive search for the filename
-                if (!$foundSrc) {
-                    $allFiles = new \RecursiveIteratorIterator(
-                        new \RecursiveDirectoryIterator($basePath, \RecursiveDirectoryIterator::SKIP_DOTS),
-                        \RecursiveIteratorIterator::LEAVES_ONLY
-                    );
-                    foreach ($allFiles as $file) {
-                        if (strcasecmp($file->getFilename(), $filename) === 0) {
-                            $foundSrc = $file->getPathname();
-                            break;
-                        }
                     }
                 }
 

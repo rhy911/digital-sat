@@ -10,6 +10,8 @@
     </div>
 
     <x-slot:footer>
-        <button type="button" class="px-4 py-2 bg-white border border-slate-200 text-slate-700 hover:text-slate-900 font-semibold text-sm rounded-lg hover:bg-slate-50 cursor-pointer" x-on:click="$dispatch('close-modal', 'importPreviewModal')">Close</button>
+        <button type="button"
+            class="px-4 py-2 bg-white border border-slate-200 text-slate-700 hover:text-slate-900 font-semibold text-sm rounded-lg hover:bg-slate-50 cursor-pointer"
+            x-on:click="$dispatch('close-modal', 'importPreviewModal')">Close</button>
     </x-slot:footer>
 </x-ui.modal>

@@ -70,7 +70,7 @@ Route::middleware(['auth', 'verified'])->prefix('student')->group(function () {
     Route::get('/dashboard', \App\Http\Controllers\Student\DashboardController::class)->name('home.legacy');
     Route::get('/progress', \App\Http\Controllers\Student\AnalyticsController::class)->name('home');
     Route::get('/progress-detail', \App\Http\Controllers\Student\AnalyticsController::class)->name('home.progress');
-    
+
     Route::get('/practice', [\App\Http\Controllers\Student\PracticeController::class, 'index'])->name('home.practice');
     Route::get('/practice/preview', [\App\Http\Controllers\Student\PracticeController::class, 'preview'])->name('test.preview');
     Route::get('/practice/{userTest:ulid}', [\App\Http\Controllers\Student\PracticeController::class, 'show'])->name('my-practice');
@@ -127,7 +127,7 @@ Route::middleware(['auth', 'verified', 'role:admin'])->prefix('admin')->name('ad
 Route::middleware(['auth', 'verified'])->prefix('engine')->group(function () {
     Route::get('/session/{ulid?}', [SessionController::class, 'show'])->name('engine.session');
     Route::get('/submit-status/{userTest:ulid}', [SubmissionController::class, 'checkStatus'])->name('engine.submit-status');
-    
+
     Route::get('/test/{test_id}/attempt-options', [AttemptController::class, 'attemptOptions'])->name('engine.test.attempt-options');
     Route::post('/test/start/{test_id}', [AttemptController::class, 'startTest'])->name('engine.test.start');
     Route::post('/test/autosave-module', [AnswerController::class, 'autosave'])
@@ -140,14 +140,14 @@ Route::middleware(['auth', 'verified'])->prefix('engine')->group(function () {
 Route::middleware(['auth', 'verified', 'role:admin,teacher', 'teacher.approved'])->prefix('admin')->name('home-dashboard.')->group(function () {
     Route::get('/teacher/test-builder', [\App\Http\Controllers\Admin\TestBuilderController::class, 'index'])->name('index');
     Route::get('/teacher/test-builder/snapshot', [\App\Http\Controllers\Admin\TestBuilderController::class, 'snapshot'])->name('snapshot');
-    
+
     // Questions list and search
     Route::get('/questions/list', [\App\Http\Controllers\Admin\QuestionController::class, 'index'])->name('questions.list');
     Route::get('/questions/search', [\App\Http\Controllers\Admin\QuestionController::class, 'search'])->name('questions.search');
     Route::get('/questions/{id}', [\App\Http\Controllers\Admin\QuestionController::class, 'show'])->name('questions.show');
     Route::put('/questions/{id}', [\App\Http\Controllers\Admin\QuestionController::class, 'update'])->name('questions.update');
     Route::delete('/questions/{id}', [\App\Http\Controllers\Admin\QuestionController::class, 'destroy'])->name('questions.delete');
-    
+
     Route::post('/questions/bulk', [\App\Http\Controllers\Admin\QuestionController::class, 'bulkStore'])->name('questions.bulk-store');
     Route::post('/questions/bulk-preview', [\App\Http\Controllers\Admin\QuestionController::class, 'bulkPreview'])->name('questions.bulk-preview');
     Route::post('/questions/bulk-csv', [\App\Http\Controllers\Admin\QuestionController::class, 'bulkStoreCsv'])->name('questions.bulk-csv-store');
@@ -162,6 +162,14 @@ Route::middleware(['auth', 'verified', 'role:admin,teacher', 'teacher.approved']
     Route::post('/tests/generate-full', [\App\Http\Controllers\Admin\TestStructureController::class, 'generateFullSat'])->name('tests.generate-full');
     Route::post('/tests/generate-configured', [\App\Http\Controllers\Admin\TestStructureController::class, 'generateConfigured'])->name('tests.generate-configured');
     Route::post('/tests/{id}/clone', [\App\Http\Controllers\Admin\TestStructureController::class, 'cloneTest'])->name('tests.clone');
+    Route::post('/tests/{test}/convert-to-normal', [\App\Http\Controllers\Admin\TestStructureController::class, 'convertToNormal'])->name('tests.convert-to-normal');
+    Route::post('/tests/{test}/score-conversions', [\App\Http\Controllers\Admin\ScoreConversionController::class, 'store'])->name('tests.score-conversions.store');
+    Route::post('/score-conversions/{scoreConversionSet}/approve', [\App\Http\Controllers\Admin\ScoreConversionController::class, 'approve'])->name('score-conversions.approve');
+    Route::get('/tests/reusable-content', [\App\Http\Controllers\Admin\ReusableContentController::class, 'catalog'])->name('tests.reusable-content');
+    Route::post('/sections/{section}/derive-test', [\App\Http\Controllers\Admin\ReusableContentController::class, 'deriveSection'])->name('sections.derive-test');
+    Route::post('/modules/{module}/derive-test', [\App\Http\Controllers\Admin\ReusableContentController::class, 'deriveModule'])->name('modules.derive-test');
+    Route::post('/sections/{section}/reuse', [\App\Http\Controllers\Admin\ReusableContentController::class, 'reuseSection'])->name('sections.reuse');
+    Route::post('/modules/{module}/reuse', [\App\Http\Controllers\Admin\ReusableContentController::class, 'reuseModule'])->name('modules.reuse');
 
     // Sections
     Route::post('/sections', [\App\Http\Controllers\Admin\SectionController::class, 'store'])->name('sections.store');

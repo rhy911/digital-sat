@@ -13,7 +13,7 @@ class ScoreController extends Controller
     {
         $user = Auth::user();
         $this->authorize('view', $userTest);
-        $userTest->load(['test', 'user', 'userAnswers.module', 'userAnswers.question.explanation', 'userAnswers.question.answerChoices', 'userAnswers.question.sprCorrectAnswers']);
+        $userTest->load(['test', 'user', 'scoreConversionSet', 'userAnswers.module', 'userAnswers.question.explanation', 'userAnswers.question.answerChoices', 'userAnswers.question.sprCorrectAnswers']);
         $moduleIds = $userTest->userAnswers->pluck('module_id')->filter()->unique()->values();
         $questionIds = $userTest->userAnswers->pluck('question_id')->filter()->unique()->values();
         $questionPositions = collect();

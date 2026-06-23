@@ -16,7 +16,7 @@ class StoreTestRequest extends FormRequest
         return [
             'title' => 'required|string|max:255',
             'description' => 'nullable|string',
-            'test_type' => 'required|in:full_length,section_only,module_only,short_test,custom_test',
+            'test_type' => 'required|in:full_length,adaptive_full_length,section_only,module_only,short_test,custom_test',
             'break_duration_minutes' => 'required|integer|min:0',
             'status' => 'required|in:draft,active,archived',
             'is_public' => 'nullable|boolean',

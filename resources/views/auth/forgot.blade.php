@@ -1,20 +1,21 @@
 <x-layouts.auth title="Forgot Password">
     @push('scripts')
-    <script>
-        document.addEventListener('DOMContentLoaded', () => {
-            new AuthForm('forgotForm', {
-                onSuccess: (data) => {
-                    const successMsg = document.getElementById('successMessage');
-                    const forgotForm = document.getElementById('forgotForm');
-                    if (successMsg) {
-                        successMsg.textContent = data.message || 'Password reset link sent! Check your email.';
-                        successMsg.style.display = 'block';
+        <script>
+            document.addEventListener('DOMContentLoaded', () => {
+                new AuthForm('forgotForm', {
+                    onSuccess: (data) => {
+                        const successMsg = document.getElementById('successMessage');
+                        const forgotForm = document.getElementById('forgotForm');
+                        if (successMsg) {
+                            successMsg.textContent = data.message ||
+                                'Password reset link sent! Check your email.';
+                            successMsg.style.display = 'block';
+                        }
+                        if (forgotForm) forgotForm.reset();
                     }
-                    if (forgotForm) forgotForm.reset();
-                }
+                });
             });
-        });
-    </script>
+        </script>
     @endpush
 
     <!-- Back -->
@@ -31,13 +32,15 @@
         @csrf
         <div class="auth-form-group">
             <label for="email" class="form-label">Email Address</label>
-            <input type="email" class="form-control" id="email" name="email" placeholder="Enter your email address" required>
+            <input type="email" class="form-control" id="email" name="email"
+                placeholder="Enter your email address" required>
             <div class="invalid-feedback">Please enter your email address.</div>
         </div>
 
         <x-auth.alerts :show-success="true" />
 
-        <button type="submit" id="submitBtn" class="submit-btn" data-processing-text="Sending..." disabled>Send Reset Link</button>
+        <button type="submit" id="submitBtn" class="submit-btn" data-processing-text="Sending..." disabled>Send Reset
+            Link</button>
     </form>
 
     <!-- Help -->

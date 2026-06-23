@@ -98,7 +98,8 @@
                 <div class="role-selector-container">
                     <div class="role-option-card {{ $defaultRole !== 'teacher' ? 'selected' : '' }}"
                         id="roleCardStudent">
-                        <input type="radio" name="role" id="roleStudent" value="student" {{ $defaultRole !== 'teacher' ? 'checked' : '' }}>
+                        <input type="radio" name="role" id="roleStudent" value="student"
+                            {{ $defaultRole !== 'teacher' ? 'checked' : '' }}>
                         <span class="role-icon">📖</span>
                         <span class="role-title">Student</span>
                         <span class="role-desc">Practice tests & track your progress</span>
@@ -132,7 +133,8 @@
 
             <div class="auth-form-group">
                 <label for="username" class="form-label">Username</label>
-                <input type="text" class="form-control" id="username" name="username" autocomplete="username" required>
+                <input type="text" class="form-control" id="username" name="username" autocomplete="username"
+                    required>
             </div>
 
             <div class="auth-form-group">

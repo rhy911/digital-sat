@@ -3,9 +3,10 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
-use App\Models\Test;
 use App\Models\Module;
 use App\Models\Section;
+use App\Models\Test;
+use App\Services\TestContentLockService;
 use App\Services\TestManagementService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
@@ -24,7 +25,7 @@ class TestStructureController extends Controller
     {
         $validated = $request->validate([
             'title' => 'required|string|max:255',
-            'test_type' => 'sometimes|string|in:full_length,short_test,module_only',
+            'test_type' => 'sometimes|string|in:full_length,adaptive_full_length,short_test,module_only',
         ]);
 
         $testType = $validated['test_type'] ?? 'full_length';
@@ -35,13 +36,14 @@ class TestStructureController extends Controller
             return response()->json([
                 'status' => 'success',
                 'message' => 'SAT Structure created successfully.',
-                'data' => $test
+                'data' => $test,
             ], 201);
         } catch (\Exception $e) {
             Log::error('Failed to generate structure', ['exception' => $e]);
+
             return response()->json([
                 'status' => 'error',
-                'message' => 'Failed to generate structure. Please try again or contact support.'
+                'message' => 'Failed to generate structure. Please try again or contact support.',
             ], 500);
         }
     }
@@ -50,7 +52,7 @@ class TestStructureController extends Controller
     {
         $validated = $request->validate([
             'title' => 'required|string|max:255',
-            'test_type' => 'required|string|in:full_length,short_test,module_only,section_only,custom_test',
+            'test_type' => 'required|string|in:full_length,adaptive_full_length,short_test,module_only,section_only,custom_test',
             'status' => 'sometimes|string|in:draft,active,archived',
             'break_duration_minutes' => 'sometimes|integer|min:0|max:120',
             'populate_from_pool' => 'sometimes|boolean',
@@ -74,9 +76,10 @@ class TestStructureController extends Controller
             throw $e;
         } catch (\Exception $e) {
             Log::error('Failed to generate configured structure', ['exception' => $e]);
+
             return response()->json([
                 'status' => 'error',
-                'message' => 'Failed to generate configured structure. Please try again or contact support.'
+                'message' => 'Failed to generate configured structure. Please try again or contact support.',
             ], 500);
         }
     }
@@ -91,15 +94,40 @@ class TestStructureController extends Controller
             return response()->json([
                 'status' => 'success',
                 'message' => 'Test cloned successfully.',
-                'data' => $test
+                'data' => $test,
             ], 201);
         } catch (\Exception $e) {
             Log::error('Failed to clone test', ['exception' => $e]);
+
             return response()->json([
                 'status' => 'error',
-                'message' => 'Failed to clone test. Please try again or contact support.'
+                'message' => 'Failed to clone test. Please try again or contact support.',
             ], 500);
         }
+    }
+
+    public function convertToNormal(Test $test, TestContentLockService $locks)
+    {
+        $this->authorize('update', $test);
+        $locks->ensureUnlocked($test);
+        if ($test->test_type !== Test::TYPE_ADAPTIVE_FULL) {
+            throw ValidationException::withMessages(['test_type' => 'Only Adaptive Full drafts can be converted.']);
+        }
+        if ($test->status !== 'draft') {
+            throw ValidationException::withMessages(['status' => 'Return the test to draft before converting its type.']);
+        }
+        if ($test->userTests()->exists()) {
+            throw ValidationException::withMessages(['test_type' => 'Test type cannot change after student attempts exist. Clone the test into a new draft.']);
+        }
+        $test->load('sections.modules');
+        if ($test->sections->count() !== 2 || $test->sections->contains(fn ($section) => $section->modules->where('module_number', 1)->count() !== 1
+            || $section->modules->where('module_number', 2)->count() !== 1)) {
+            throw ValidationException::withMessages(['test_structure' => 'Keep exactly one Module 2 in each section before converting to Normal Full.']);
+        }
+
+        $test->update(['test_type' => Test::TYPE_FULL]);
+
+        return response()->json(['status' => 'success', 'message' => 'Draft converted to Normal Full.', 'data' => $test->fresh()]);
     }
 
     public function cloneModule(Request $request, $id)
@@ -121,13 +149,14 @@ class TestStructureController extends Controller
             return response()->json([
                 'status' => 'success',
                 'message' => 'Module cloned successfully.',
-                'data' => $module
+                'data' => $module,
             ], 201);
         } catch (\Exception $e) {
             Log::error('Failed to clone module', ['exception' => $e]);
+
             return response()->json([
                 'status' => 'error',
-                'message' => 'Failed to clone module. Please try again or contact support.'
+                'message' => 'Failed to clone module. Please try again or contact support.',
             ], 500);
         }
     }

@@ -5,6 +5,19 @@ let localAllTests = [];
 let currentFilteredTests = [];
 let currentTestsRenderId = 0;
 
+function testTypeLabel(type) {
+    const labels = {
+        full_length: 'Normal Full Test',
+        adaptive_full_length: 'Adaptive Full Test',
+        short_test: 'Short Test',
+        module_only: 'Single Module',
+        section_only: 'Section Only',
+        custom_test: 'Custom Test'
+    };
+
+    return labels[type] || humanizeUnderscores(type);
+}
+
 if (typeof window.__tdTestsPage === 'undefined') {
     window.__tdTestsPage = 1;
 }
@@ -43,6 +56,8 @@ function renderTestRowHtml(t) {
                 ${t.status !== 'active' ? `<button type="button" class="dropdown-item change-test-status-btn" data-id="${t.id}" data-status="active"><i class="bi bi-send-check mr-2"></i> Publish</button>` : ''}
                 ${t.status !== 'draft' ? `<button type="button" class="dropdown-item change-test-status-btn" data-id="${t.id}" data-status="draft"><i class="bi bi-pencil mr-2"></i> Return to draft</button>` : ''}
                 ${t.status !== 'archived' ? `<button type="button" class="dropdown-item change-test-status-btn" data-id="${t.id}" data-status="archived"><i class="bi bi-archive mr-2"></i> Archive</button>` : ''}
+                ${t.raw_type === 'full_length' ? `<button type="button" class="dropdown-item score-conversion-btn" data-id="${t.id}" data-title="${escapeHtml(t.title)}"><i class="bi bi-graph-up-arrow mr-2"></i> Score conversion</button>` : ''}
+                ${t.can_convert_to_normal ? `<button type="button" class="dropdown-item convert-to-normal-btn" data-id="${t.id}"><i class="bi bi-arrow-left-right mr-2"></i> Convert to Normal Full</button>` : ''}
                 <button type="button" class="dropdown-item clone-test-btn" data-id="${t.id}"><i class="bi bi-copy mr-2"></i> Clone</button>
                 <button type="button" class="dropdown-item text-danger delete-test-btn" data-id="${t.id}"><i class="bi bi-trash mr-2"></i> Delete</button>
             </div>
@@ -190,16 +205,32 @@ function applyTestsFilterAndSearch() {
 
 export function renderTestsTable(tests) {
     localAllTests = tests.map(function(t) {
+        const rawType = t.raw_type || t.test_type || t.type;
+        const sections = Array.isArray(t.sections) ? t.sections : [];
+        const hasOnePathPerSection = sections.length === 2 && sections.every(section => {
+            const modules = Array.isArray(section.modules) ? section.modules : [];
+            return modules.filter(module => Number(module.module_number) === 1).length === 1
+                && modules.filter(module => Number(module.module_number) === 2).length === 1;
+        });
+        const canConvertToNormal = t.can_convert_to_normal !== undefined
+            ? Boolean(t.can_convert_to_normal)
+            : rawType === 'adaptive_full_length'
+                && t.status === 'draft'
+                && Number(t.user_tests_count || 0) === 0
+                && hasOnePathPerSection;
+
         return {
             id: t.id,
             title: t.title,
-            type: humanizeUnderscores(t.test_type || t.type),
+            raw_type: rawType,
+            type: testTypeLabel(rawType),
             status: t.status,
             duration: t.total_duration_minutes || t.duration || 0,
             created_by: t.created_by,
             created_by_name: t.created_by_name || (t.creator ? (t.creator.username || t.creator.email) : 'Admin'),
             created_at: formatDateToShort(t.created_at),
             is_public: t.is_public,
+            can_convert_to_normal: canConvertToNormal,
             is_owner: t.is_owner !== undefined ? t.is_owner : (t.created_by === window.__currentUserId || window.__currentUserRole === 'admin')
         };
     });
@@ -258,6 +289,22 @@ function initTestsEvents() {
 
     const tbody = document.getElementById('testsTableBody');
     if (tbody) {
+        tbody.addEventListener('click', function(e) {
+            const button = e.target.closest('.score-conversion-btn');
+            if (!button) return;
+            const panel = document.getElementById('scoreConversionPanel');
+            if (!panel) return;
+            document.getElementById('scoreConversionTestId').value = button.dataset.id;
+            document.getElementById('scoreConversionTitle').textContent = `Score conversion · ${button.dataset.title || `Test ${button.dataset.id}`}`;
+            document.getElementById('scoreConversionApprove').disabled = true;
+            document.getElementById('scoreConversionApprove').removeAttribute('data-set-id');
+            document.getElementById('scoreConversionStatus').classList.add('hidden');
+            panel.classList.remove('hidden');
+            const behavior = window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth';
+            panel.scrollIntoView({ behavior, block: 'nearest' });
+            document.getElementById('scoreConversionSource').focus({ preventScroll: true });
+        });
+
         // Toggle Public visibility
         tbody.addEventListener('change', function(e) {
             const checkbox = e.target.closest('.test-public-checkbox');
@@ -326,6 +373,93 @@ function initTestsEvents() {
             });
         });
     }
+
+    initScoreConversionPanel();
+}
+
+function initScoreConversionPanel() {
+    const panel = document.getElementById('scoreConversionPanel');
+    const form = document.getElementById('scoreConversionForm');
+    if (!panel || !form || form.dataset.bound === '1') return;
+    form.dataset.bound = '1';
+    const status = document.getElementById('scoreConversionStatus');
+    const importButton = document.getElementById('scoreConversionImport');
+    const approveButton = document.getElementById('scoreConversionApprove');
+    const setStatus = (message, error = false) => {
+        status.textContent = message;
+        status.classList.remove('hidden', 'bg-slate-100', 'text-slate-700', 'bg-red-50', 'text-red-800');
+        status.classList.add(error ? 'bg-red-50' : 'bg-slate-100', error ? 'text-red-800' : 'text-slate-700');
+    };
+    const responseMessage = data => data.errors
+        ? Object.values(data.errors).flat().join(' ')
+        : (data.message || 'Request failed.');
+
+    document.getElementById('scoreConversionClose')?.addEventListener('click', () => {
+        panel.classList.add('hidden');
+    });
+
+    form.addEventListener('submit', async event => {
+        event.preventDefault();
+        let rows;
+        try {
+            const parsed = JSON.parse(document.getElementById('scoreConversionRows').value);
+            rows = Array.isArray(parsed) ? parsed : parsed.rows;
+            if (!Array.isArray(rows)) throw new Error('Expected a JSON array of conversion rows.');
+        } catch (error) {
+            setStatus(error.message || 'Conversion rows must be valid JSON.', true);
+            return;
+        }
+
+        importButton.disabled = true;
+        approveButton.disabled = true;
+        setStatus('Importing and validating draft...');
+        try {
+            const testId = document.getElementById('scoreConversionTestId').value;
+            const response = await fetch(`${BASE_URL}/tests/${testId}/score-conversions`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json',
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+                },
+                body: JSON.stringify({
+                    source_name: document.getElementById('scoreConversionSource').value,
+                    source_url: document.getElementById('scoreConversionSourceUrl').value || null,
+                    rows,
+                }),
+            });
+            const data = await response.json();
+            if (!response.ok) throw new Error(responseMessage(data));
+            approveButton.dataset.setId = data.data.id;
+            approveButton.disabled = false;
+            setStatus(`Draft conversion v${data.data.version} imported. Approve to run full scoring audit.`);
+        } catch (error) {
+            setStatus(error.message, true);
+        } finally {
+            importButton.disabled = false;
+        }
+    });
+
+    approveButton.addEventListener('click', async () => {
+        if (!approveButton.dataset.setId) return;
+        approveButton.disabled = true;
+        setStatus('Running form and conversion audit...');
+        try {
+            const response = await fetch(`${BASE_URL}/score-conversions/${approveButton.dataset.setId}/approve`, {
+                method: 'POST',
+                headers: {
+                    'Accept': 'application/json',
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+                },
+            });
+            const data = await response.json();
+            if (!response.ok) throw new Error(responseMessage(data));
+            setStatus(`Conversion v${data.data.version} approved. Form is locked and eligible for estimated scores.`);
+        } catch (error) {
+            approveButton.disabled = false;
+            setStatus(error.message, true);
+        }
+    });
 }
 
 export async function updateTestStatus(testId, status, refreshCallback) {

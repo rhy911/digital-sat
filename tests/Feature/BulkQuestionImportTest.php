@@ -235,6 +235,7 @@ class BulkQuestionImportTest extends TestCase
     public function test_import_sets_created_by_correctly(): void
     {
         $teacher = User::factory()->create(['role' => 'teacher']);
+        $this->module->update(['created_by' => $teacher->id]);
 
         $response = $this->actingAs($teacher)
             ->postJson(route('home-dashboard.questions.bulk-store'), [
@@ -263,5 +264,115 @@ class BulkQuestionImportTest extends TestCase
         $question = Question::where('stem', 'Teacher created question via bulk import.')->first();
         $this->assertNotNull($question);
         $this->assertEquals($teacher->id, $question->created_by);
+    }
+
+    public function test_import_zip_rejects_path_traversal_in_filename(): void
+    {
+        Storage::fake('public');
+        Storage::fake('local');
+
+        $zipPath = tempnam(sys_get_temp_dir(), 'test_zip_import') . '.zip';
+        $zip = new ZipArchive();
+        
+        if ($zip->open($zipPath, ZipArchive::CREATE | ZipArchive::OVERWRITE) !== true) {
+            $this->fail("Could not create test ZIP file.");
+        }
+
+        $questionsJson = json_encode([
+            'items' => [
+                [
+                    'stem' => 'question',
+                    'question_type' => 'multiple_choice',
+                    'difficulty' => 'easy',
+                    'skill_domain' => 'information_and_ideas',
+                    'passage' => 'Some passage',
+                    'correct_choice' => 'A',
+                    'choices' => [
+                        'A' => 'Choice A',
+                        'B' => 'Choice B'
+                    ]
+                ]
+            ]
+        ]);
+
+        $zip->addFromString('questions.json', $questionsJson);
+        $zip->addFromString('../../../etc/passwd', 'fake content');
+        $zip->close();
+
+        $uploadedFile = new UploadedFile($zipPath, 'questions_import.zip', 'application/zip', null, true);
+
+        $response = $this->actingAs($this->user)
+            ->postJson(route('home-dashboard.questions.bulk-zip'), [
+                'zip_file' => $uploadedFile,
+                'module_id' => $this->module->id,
+                'start_position' => 1,
+            ]);
+
+        if (file_exists($zipPath)) {
+            unlink($zipPath);
+        }
+
+        $response->assertStatus(422);
+        $response->assertJsonValidationErrors(['zip_file']);
+    }
+
+    public function test_import_zip_prevents_local_file_disclosure_via_media_tag(): void
+    {
+        Storage::fake('public');
+        Storage::fake('local');
+        
+        $secretPath = storage_path('app/secret.txt');
+        file_put_contents($secretPath, 'SUPER SECRET CONTENT');
+
+        $zipPath = tempnam(sys_get_temp_dir(), 'test_zip_import') . '.zip';
+        $zip = new ZipArchive();
+        
+        if ($zip->open($zipPath, ZipArchive::CREATE | ZipArchive::OVERWRITE) !== true) {
+            $this->fail("Could not create test ZIP file.");
+        }
+
+        $questionsJson = json_encode([
+            'items' => [
+                [
+                    'stem' => 'What is the answer for this question?',
+                    'question_type' => 'multiple_choice',
+                    'difficulty' => 'easy',
+                    'skill_domain' => 'information_and_ideas',
+                    'passage' => 'Some passage',
+                    'correct_choice' => 'A',
+                    'choices' => [
+                        'A' => 'Choice A [Media:../../secret.txt]',
+                        'B' => 'Choice B'
+                    ]
+                ]
+            ]
+        ]);
+
+        $zip->addFromString('questions.json', $questionsJson);
+        $zip->close();
+
+        $uploadedFile = new UploadedFile($zipPath, 'questions_import.zip', 'application/zip', null, true);
+
+        $response = $this->actingAs($this->user)
+            ->postJson(route('home-dashboard.questions.bulk-zip'), [
+                'zip_file' => $uploadedFile,
+                'module_id' => $this->module->id,
+                'start_position' => 1,
+            ]);
+
+        if (file_exists($zipPath)) {
+            unlink($zipPath);
+        }
+
+        $response->assertStatus(201);
+        
+        $question = Question::where('stem', 'What is the answer for this question?')->first();
+        $choiceA = AnswerChoice::where('question_id', $question->id)->where('label', 'A')->first();
+        
+        $this->assertEquals('Choice A [Media:../../secret.txt]', $choiceA->content);
+        
+        if (file_exists($secretPath)) {
+            unlink($secretPath);
+        }
     }
 }

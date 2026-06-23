@@ -14,7 +14,9 @@ class TeacherApprovalDecisionNotification extends Notification implements Should
     public function via(object $notifiable): array { return ['mail']; }
     public function toMail(object $notifiable): MailMessage
     {
-        $mail = (new MailMessage)->subject('Teacher account review')->greeting("Hello {$notifiable->name},");
+        $name = str_replace(["\r", "\n"], ' ', $notifiable->name);
+        
+        $mail = (new MailMessage)->subject('Teacher account review')->greeting("Hello {$name},");
         if ($this->approved) return $mail->line('Your teacher account has been approved.')->action('Open teacher workspace', route('teacher.classes.index'));
         return $mail->line('Your teacher account request was not approved.')->line($this->reason ?: 'Contact an administrator for more information.');
     }

@@ -1,5 +1,4 @@
-<div id="validation-grid-container"
-    class="dash-panel overflow-hidden mb-8 hidden">
+<div id="validation-grid-container" class="dash-panel overflow-hidden mb-8 hidden">
     <div class="px-6 py-4 bg-slate-50 border-b border-slate-200 flex justify-between items-center">
         <div>
             <h5 class="text-base font-extrabold text-slate-900 flex items-center gap-3 tracking-tight">
@@ -8,7 +7,8 @@
                 </div>
                 <span>Review &amp; Validate Import Items</span>
             </h5>
-            <p class="text-xs text-slate-500 mt-1 font-medium">Double-click cells to edit import fields. Red cells block import; yellow cells need review.</p>
+            <p class="text-xs text-slate-500 mt-1 font-medium">Double-click cells to edit import fields. Red cells block
+                import; yellow cells need review.</p>
         </div>
         <div>
             <button type="button"
@@ -19,7 +19,8 @@
         </div>
     </div>
     <div class="p-6">
-        <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 p-4 rounded-xl bg-slate-50 border border-slate-200 mb-6">
+        <div
+            class="flex flex-col md:flex-row md:items-center justify-between gap-4 p-4 rounded-xl bg-slate-50 border border-slate-200 mb-6">
             <div class="flex items-center gap-2.5">
                 <span
                     class="inline-flex items-center justify-center w-6 h-6 rounded-full bg-white text-slate-500 font-extrabold text-[11px] border border-slate-200">1</span>
@@ -53,7 +54,8 @@
                 <div>
                     <strong class="font-extrabold text-amber-800 uppercase tracking-wider text-xs"
                         id="gridStatusTitle">Validation Errors Found</strong>
-                    <div id="gridStatusMsg" class="text-xs text-amber-700 mt-0.5 leading-relaxed font-medium">Fix required SAT fields in the grid before import.</div>
+                    <div id="gridStatusMsg" class="text-xs text-amber-700 mt-0.5 leading-relaxed font-medium">Fix
+                        required SAT fields in the grid before import.</div>
                 </div>
             </div>
             <div class="flex gap-2 shrink-0">

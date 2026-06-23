@@ -8,14 +8,13 @@ use App\Models\UserTest;
 use App\Models\UserTestAnswer;
 use App\Services\SatScoringService;
 use Illuminate\Database\Seeder;
-use Illuminate\Support\Facades\DB;
 
 class ScoringTestSeeder extends Seeder
 {
     public function run()
     {
         $user = User::first();
-        if (!$user) {
+        if (! $user) {
             $user = User::create([
                 'username' => 'testuser',
                 'email' => 'test@example.com',
@@ -25,13 +24,14 @@ class ScoringTestSeeder extends Seeder
         }
 
         $test = Test::with('sections.modules.questions.answerChoices')->first();
-        if (!$test) {
+        if (! $test) {
             echo "No test found to run simulation.\n";
+
             return;
         }
 
         echo "--- SCENARIO A: ROUTING TEST ---\n";
-        
+
         // Clean up previous test runs for this user/test to ensure fresh state
         UserTest::where('user_id', $user->id)->where('test_id', $test->id)->delete();
 
@@ -53,7 +53,7 @@ class ScoringTestSeeder extends Seeder
             );
         }
 
-        $scoringService = new SatScoringService();
+        $scoringService = new SatScoringService;
         $m1Responses = UserTestAnswer::where('user_test_id', $userTest->id)
             ->whereIn('question_id', $m1->questions->pluck('id'))
             ->with('question')
@@ -61,7 +61,7 @@ class ScoringTestSeeder extends Seeder
 
         $thetaM1 = $scoringService->estimateTheta($m1Responses);
         $path = $scoringService->routeModule2($thetaM1);
-        
+
         echo "Theta M1: $thetaM1\n";
         echo "Routed Path: $path (Expected: hard)\n";
 
@@ -70,7 +70,7 @@ class ScoringTestSeeder extends Seeder
 
         echo "\n--- SCENARIO B: SCORING TEST ---\n";
         $m2 = $section->modules->where('module_number', 2)->where('difficulty_level', $path)->first();
-        
+
         echo "Simulating 50% correct in M2: {$m2->difficulty_level}\n";
         $m2Questions = $m2->questions;
         foreach ($m2Questions as $index => $q) {
@@ -90,14 +90,9 @@ class ScoringTestSeeder extends Seeder
             ->get();
 
         $result = $scoringService->scoreSection($m1Responses, $m2Responses);
-        
-        echo "Final RW Theta: {$result['theta']}\n";
-        echo "Final RW Scaled Score: {$result['scaled_score']} (200-800)\n";
 
-        echo "\n--- SCENARIO C: EDGE CASES ---\n";
-        $allCorrectScore = $scoringService->thetaToScaledScore(3.5, 'hard');
-        $allWrongScore = $scoringService->thetaToScaledScore(-3.5, 'hard');
-        echo "Perfect Theta (3.5) Hard Path -> Score: $allCorrectScore (Expected: 800)\n";
-        echo "Worst Theta (-3.5) Hard Path -> Score: $allWrongScore (Expected: 200)\n";
+        echo "Final RW Theta: {$result['theta']}\n";
+        echo "Final RW Raw Score: {$result['raw_score']} / {$result['scored_questions']}\n";
+        echo "Scaled score requires an approved form-specific conversion set.\n";
     }
 }

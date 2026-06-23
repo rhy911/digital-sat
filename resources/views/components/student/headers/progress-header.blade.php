@@ -95,7 +95,7 @@
 
         <div class="ds-account">
             <button type="button" class="ds-account__button" id="progressUserDropdown" aria-haspopup="menu" aria-expanded="false">
-                <span class="ds-account__name">{{ $user->username ?? 'Guest' }}</span>
+                <span class="ds-account__name">{{ $user->name ?? $user->username ?? 'Guest' }}</span>
                 <img src="{{ asset('images/default_avt.jpg') }}" alt="" class="ds-account__avatar">
             </button>
 

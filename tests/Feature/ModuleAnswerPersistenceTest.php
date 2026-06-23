@@ -146,4 +146,92 @@ class ModuleAnswerPersistenceTest extends TestCase
 
         return $question;
     }
+
+    public function test_answers_are_isolated_by_module_for_shared_questions(): void
+    {
+        $user = User::factory()->create([
+            'role' => 'student',
+            'email_verified_at' => now(),
+        ]);
+
+        $test = Test::create([
+            'title' => 'Shared Question Test',
+            'test_type' => 'short_test',
+            'break_duration_minutes' => 0,
+            'status' => 'active',
+            'is_public' => true,
+        ]);
+
+        $section = Section::create([
+            'test_id' => $test->id,
+            'name' => 'Math',
+            'type' => Section::TYPE_MATH,
+            'order' => 1,
+            'is_public' => true,
+        ]);
+
+        $module1 = Module::create([
+            'section_id' => $section->id,
+            'key' => 'SHARED_MATH_M1',
+            'module_number' => 1,
+            'difficulty_level' => Module::DIFFICULTY_STANDARD,
+            'duration_minutes' => 20,
+            'total_questions' => 1,
+            'order' => 1,
+            'is_public' => true,
+        ]);
+        $module1->sections()->syncWithoutDetaching([$section->id]);
+
+        $module2 = Module::create([
+            'section_id' => $section->id,
+            'key' => 'SHARED_MATH_M2',
+            'module_number' => 2,
+            'difficulty_level' => Module::DIFFICULTY_STANDARD,
+            'duration_minutes' => 20,
+            'total_questions' => 1,
+            'order' => 2,
+            'is_public' => true,
+        ]);
+        $module2->sections()->syncWithoutDetaching([$section->id]);
+
+        $sharedQuestion = $this->createMcq('Shared Question');
+        $module1->questions()->attach($sharedQuestion->id, ['position' => 1]);
+        $module2->questions()->attach($sharedQuestion->id, ['position' => 1]);
+
+        $userTest = UserTest::create([
+            'user_id' => $user->id,
+            'test_id' => $test->id,
+            'status' => 'in_progress',
+        ]);
+
+        UserTestAnswer::create([
+            'user_test_id' => $userTest->id,
+            'module_id' => $module1->id,
+            'question_id' => $sharedQuestion->id,
+            'selected_answer' => 'A',
+            'is_correct' => true,
+            'question_snapshot' => '{}',
+        ]);
+
+        UserTestAnswer::create([
+            'user_test_id' => $userTest->id,
+            'module_id' => $module2->id,
+            'question_id' => $sharedQuestion->id,
+            'selected_answer' => 'B',
+            'is_correct' => false,
+            'question_snapshot' => '{}',
+        ]);
+
+        $m1Answers = UserTestAnswer::where('user_test_id', $userTest->id)
+            ->where('module_id', $module1->id)
+            ->get();
+        $this->assertCount(1, $m1Answers);
+        $this->assertEquals('A', $m1Answers->first()->selected_answer);
+
+        $m2Answers = UserTestAnswer::where('user_test_id', $userTest->id)
+            ->where('module_id', $module2->id)
+            ->get();
+        $this->assertCount(1, $m2Answers);
+        $this->assertEquals('B', $m2Answers->first()->selected_answer);
+    }
 }

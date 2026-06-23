@@ -10,6 +10,7 @@ class ScoreConversion extends Model
     use HasFactory;
 
     protected $fillable = [
+        'score_conversion_set_id',
         'test_id',
         'section_type',
         'm2_difficulty',
@@ -20,5 +21,10 @@ class ScoreConversion extends Model
     public function test()
     {
         return $this->belongsTo(Test::class);
+    }
+
+    public function conversionSet()
+    {
+        return $this->belongsTo(ScoreConversionSet::class, 'score_conversion_set_id');
     }
 }

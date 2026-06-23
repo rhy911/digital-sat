@@ -20,10 +20,11 @@ class VerifyEmailNotification extends Notification
     public function toMail(object $notifiable): MailMessage
     {
         $verificationUrl = $this->verificationUrl($notifiable);
+        $name = str_replace(["\r", "\n"], ' ', $notifiable->name);
 
         return (new MailMessage)
             ->subject('Xác minh địa chỉ email của bạn')
-            ->greeting('Xin chào ' . $notifiable->name . ',')
+            ->greeting('Xin chào ' . $name . ',')
             ->line('Vui lòng nhấp vào nút bên dưới để xác minh địa chỉ email của bạn.')
             ->action('Xác minh email', $verificationUrl)
             ->line('Nếu bạn không tạo tài khoản, vui lòng bỏ qua email này.')

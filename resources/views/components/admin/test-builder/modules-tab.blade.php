@@ -10,8 +10,11 @@
             class="px-6 py-4 border-b border-slate-200 bg-slate-50 flex flex-col md:flex-row md:items-center justify-between gap-4">
             <h5 class="font-bold text-slate-800 mb-0 text-sm">All modules</h5>
             <div class="flex items-center gap-4 flex-wrap md:flex-nowrap">
-                <button class="inline-flex min-h-10 items-center gap-2 rounded-lg bg-indigo-600 px-3 py-2 text-xs font-bold text-white hover:bg-indigo-700" x-on:click="$dispatch('open-offcanvas', 'createModuleOffcanvas')"><i class="bi bi-plus-lg" aria-hidden="true"></i>Create module</button>
-                @if(auth()->user()->role === 'teacher')
+                <button
+                    class="inline-flex min-h-10 items-center gap-2 rounded-lg bg-indigo-600 px-3 py-2 text-xs font-bold text-white hover:bg-indigo-700"
+                    x-on:click="$dispatch('open-offcanvas', 'createModuleOffcanvas')"><i class="bi bi-plus-lg"
+                        aria-hidden="true"></i>Create module</button>
+                @if (auth()->user()->role === 'teacher')
                     <div class="flex items-center gap-2 bg-white px-3 py-1.5 rounded-lg border border-slate-200">
                         <label for="modulesShowSharedToggle"
                             class="text-xs font-bold text-slate-600 cursor-pointer select-none">Show shared</label>
@@ -63,10 +66,11 @@
                             if (auth()->user()->role === 'teacher' && !$isOwner) {
                                 continue;
                             }
-                            $creatorName = $module->creator ? ($module->creator->username ?? $module->creator->email) : 'Admin';
+                            $creatorName = $module->creator
+                                ? $module->creator->name ?? $module->creator->username ?? $module->creator->email
+                                : 'Admin';
                         @endphp
-                        <tr
-                            class="{{ !$isOwner ? 'row-shared' : '' }}">
+                        <tr class="{{ !$isOwner ? 'row-shared' : '' }}">
                             <td class="px-6 py-4 font-normal text-slate-400">{{ $module->id }}</td>
 
                             <td class="px-6 py-4">
@@ -80,7 +84,8 @@
                                             <div>
                                                 <span class="status-chip status-chip-shared">
                                                     <i class="bi bi-tag mr-1.5"></i> {{ $sec->test->title ?? 'Test' }}
-                                                    &raquo; <span class="ml-1 opacity-90 text-slate-800 font-medium normal-case">{{ $sec->name }}</span>
+                                                    &raquo; <span
+                                                        class="ml-1 opacity-90 text-slate-800 font-medium normal-case">{{ $sec->name }}</span>
                                                 </span>
                                             </div>
                                         @endforeach
@@ -88,14 +93,17 @@
                                 @endif
                             </td>
                             <td class="px-6 py-4 text-center">
-                                <span class="status-chip status-chip-readonly">Module {{ $module->module_number }}</span>
+                                <span class="status-chip status-chip-readonly">Module
+                                    {{ $module->module_number }}</span>
                             </td>
                             <td class="px-6 py-4 text-center">
                                 @php
                                     $diffColors = [
                                         'hard' => 'status-chip-archived text-rose-700 bg-rose-50 border-rose-100',
-                                        'easy' => 'status-chip-active text-emerald-700 bg-emerald-50 border-emerald-100',
-                                        'standard' => 'status-chip-shared text-indigo-700 bg-indigo-50 border-indigo-100',
+                                        'easy' =>
+                                            'status-chip-active text-emerald-700 bg-emerald-50 border-emerald-100',
+                                        'standard' =>
+                                            'status-chip-shared text-indigo-700 bg-indigo-50 border-indigo-100',
                                     ];
                                     $colorClass = $diffColors[$module->difficulty_level] ?? 'status-chip-readonly';
                                 @endphp
@@ -109,13 +117,16 @@
                             </td>
                             <td class="px-6 py-4 text-center">
                                 <div class="flex items-center justify-center">
-                                    @if($isOwner)
+                                    @if ($isOwner)
                                         @php
-                                            $title = $module->is_public ? 'Public (Click to make Private)' : 'Private (Click to make Public)';
+                                            $title = $module->is_public
+                                                ? 'Public (Click to make Private)'
+                                                : 'Private (Click to make Public)';
                                         @endphp
                                         <input type="checkbox" data-id="{{ $module->id }}"
                                             class="w-4 h-4 text-indigo-600 border-slate-300 bg-white rounded cursor-pointer module-public-toggle"
-                                            {{ $module->is_public ? 'checked' : '' }} title="{{ $title }}" aria-label="Toggle public visibility">
+                                            {{ $module->is_public ? 'checked' : '' }} title="{{ $title }}"
+                                            aria-label="Toggle public visibility">
                                     @else
                                         <input type="checkbox" checked disabled
                                             class="w-4 h-4 text-slate-400 border-slate-200 bg-slate-100 rounded cursor-not-allowed opacity-60"
@@ -123,21 +134,29 @@
                                     @endif
                                 </div>
                             </td>
-                            <td class="px-6 py-4 font-semibold text-slate-700 text-center">{{ $module->duration_minutes }}<span
+                            <td class="px-6 py-4 font-semibold text-slate-700 text-center">
+                                {{ $module->duration_minutes }}<span
                                     class="text-[10px] ml-0.5 opacity-50 uppercase tracking-tighter">min</span></td>
                             <td class="px-6 py-4 font-bold text-slate-750 text-xs text-center">
                                 <span class="text-slate-900 font-extrabold">{{ $module->questions_count ?? 0 }}</span>
                                 <span class="text-slate-400 font-normal">/ {{ $module->total_questions }}</span>
                             </td>
                             <td class="px-6 py-4 text-center">
-                                @if($isOwner)
+                                @if ($isOwner)
                                     <div class="actions-dropdown">
-                                        <button type="button" class="px-2.5 py-1.5 text-xs font-bold rounded-lg border border-slate-200 bg-white text-slate-700 cursor-pointer hover:bg-slate-50 flex items-center gap-1" data-dropdown-trigger="true" aria-expanded="false" aria-label="Toggle actions menu">
+                                        <button type="button"
+                                            class="px-2.5 py-1.5 text-xs font-bold rounded-lg border border-slate-200 bg-white text-slate-700 cursor-pointer hover:bg-slate-50 flex items-center gap-1"
+                                            data-dropdown-trigger="true" aria-expanded="false"
+                                            aria-label="Toggle actions menu">
                                             Actions <i class="bi bi-chevron-down text-[10px]"></i>
                                         </button>
                                         <div class="dropdown-menu hidden">
-                                            <button type="button" class="dropdown-item clone-module-btn" data-id="{{ $module->id }}"><i class="bi bi-copy mr-2"></i> Clone</button>
-                                            <button type="button" class="dropdown-item text-danger delete-module-btn" data-id="{{ $module->id }}"><i class="bi bi-trash mr-2"></i> Delete</button>
+                                            <button type="button" class="dropdown-item clone-module-btn"
+                                                data-id="{{ $module->id }}"><i class="bi bi-copy mr-2"></i>
+                                                Clone</button>
+                                            <button type="button" class="dropdown-item text-danger delete-module-btn"
+                                                data-id="{{ $module->id }}"><i class="bi bi-trash mr-2"></i>
+                                                Delete</button>
                                         </div>
                                     </div>
                                 @else
@@ -154,7 +173,8 @@
                                         <i class="bi bi-inbox text-3xl text-slate-400"></i>
                                     </div>
                                     <h4 class="text-base font-extrabold text-slate-800">No modules found</h4>
-                                    <p class="text-xs text-slate-500 mt-1 max-w-xs mx-auto leading-relaxed">Create one module, then link it to any section that should use it.</p>
+                                    <p class="text-xs text-slate-500 mt-1 max-w-xs mx-auto leading-relaxed">Create one
+                                        module, then link it to any section that should use it.</p>
                                     <button
                                         class="mt-6 px-5 py-3 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold text-sm rounded-lg shadow-sm cursor-pointer"
                                         x-on:click="$dispatch('open-offcanvas', 'createModuleOffcanvas')">
@@ -181,7 +201,8 @@
                 <label for="moduleTest"
                     class="text-xs font-extrabold text-slate-500 tracking-wider uppercase mb-2 block">Target Test <span
                         class="text-slate-500 font-normal normal-case">(Optional)</span></label>
-                <select class="form-select tom-select w-full bg-white border border-slate-200 text-slate-800 text-sm placeholder-slate-400 hover:border-indigo-500/40 focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 focus:outline-hidden transition-all duration-200 rounded-xl"
+                <select
+                    class="form-select tom-select w-full bg-white border border-slate-200 text-slate-800 text-sm placeholder-slate-400 hover:border-indigo-500/40 focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 focus:outline-hidden transition-all duration-200 rounded-xl"
                     id="moduleTest" name="test_id">
                     <option value="">No test (Standalone reusable module)</option>
                     @foreach ($tests as $test)
@@ -195,8 +216,8 @@
 
             <div>
                 <label for="moduleSectionType"
-                    class="text-xs font-extrabold text-slate-500 tracking-wider uppercase mb-2 block">Section Type <span
-                        class="text-rose-500">*</span></label>
+                    class="text-xs font-extrabold text-slate-500 tracking-wider uppercase mb-2 block">Section Type
+                    <span class="text-rose-500">*</span></label>
                 <select
                     class="w-full px-4 py-2.5 rounded-xl border border-slate-200 bg-white text-slate-800 text-sm hover:border-indigo-500/40 focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 focus:outline-hidden transition-all duration-200 appearance-none bg-no-repeat bg-position-[right_1rem_center] bg-size-[1em_1em]"
                     style="background-image: url('data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 fill=%22none%22 viewBox=%220 0 24 24%22 stroke=%22%2394a3b8%22 stroke-width=%222%22%3E%3Cpath stroke-linecap=%22round%22 stroke-linejoin=%22round%22 d=%22M19 9l-7 7-7-7%22 /%3E%3C/svg%3E')"

@@ -8,6 +8,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Auth\Access\AuthorizationException;
 use App\Services\AssignmentModuleTimingService;
+use Symfony\Component\HttpKernel\Exception\ConflictHttpException;
 
 class AnswerController extends Controller
 {
@@ -30,10 +31,6 @@ class AnswerController extends Controller
                 [$userTest, $module] = $this->resolveSubmissionContext($validated);
 
                 if ($userTest->assignment_id) {
-                    if ((int) $userTest->current_module_id !== (int) $module->id) {
-                        throw new AuthorizationException('This module is not active for the assignment attempt.');
-                    }
-
                     $timing = $this->assignmentTiming->syncElapsed($userTest, $module);
                     if ($timing['expired']) {
                         return ['expired' => true, 'saved_count' => 0];
@@ -66,6 +63,11 @@ class AnswerController extends Controller
                 'error' => 'Unauthorized autosave.',
                 'message' => $e->getMessage(),
             ], 403);
+        } catch (ConflictHttpException $e) {
+            return response()->json([
+                'error' => 'module_progression_conflict',
+                'message' => $e->getMessage(),
+            ], 409);
         }
     }
 }

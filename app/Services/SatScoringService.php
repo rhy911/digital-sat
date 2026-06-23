@@ -2,159 +2,141 @@
 
 namespace App\Services;
 
+use App\Models\Module;
 use Illuminate\Support\Collection;
+use InvalidArgumentException;
 
 class SatScoringService
 {
-    public const MIN_SCORE = 200;
-    public const MAX_SCORE_HARD = 800;
-    public const MAX_SCORE_EASY = 640;
-    public const THETA_MAX = 3.5;
-    public const THETA_MIN = -3.5;
+    private const GRID_MIN = -4.0;
+
+    private const GRID_MAX = 4.0;
+
+    private const GRID_STEP = 0.05;
 
     /**
-     * Calculate score for a section (R&W or Math)
+     * Score section responses on the internal ability scale.
+     * Scaled reporting belongs to ScoreConversionService.
      *
-     * @param  Collection  $module1Responses Each item should have 'is_correct' and 'question' relation with irt_a, irt_b, irt_c
-     * @param  Collection  $module2Responses
-     * @param  string|null $m2Path The path taken for Module 2. If null, it will be recalculated.
-     * @return array{scaled_score: int, theta: float, module2_path: string}
+     * @return array{raw_score:int,scored_questions:int,theta:float,theta_se:float,module2_path:string,method:string}
      */
     public function scoreSection(
         Collection $module1Responses,
         Collection $module2Responses,
         ?string $m2Path = null
     ): array {
-        // Step 1: Filter pretest questions
-        $m1 = $module1Responses->filter(fn($r) => !$r->question->is_pretest);
-        $m2 = $module2Responses->filter(fn($r) => !$r->question->is_pretest);
+        $m1 = $this->scoredResponses($module1Responses);
+        $m2 = $this->scoredResponses($module2Responses);
+        if ($m1->isEmpty() || $m2->isEmpty()) {
+            throw new InvalidArgumentException('Both adaptive modules require scored responses.');
+        }
 
-        // Step 2: Estimate Theta after Module 1 for routing
-        $thetaM1 = $this->estimateTheta($m1);
-        $m2Path = $m2Path ?? $this->routeModule2($thetaM1);
-
-        // Step 3: Final Theta using all responses
-        $allResponses = $m1->concat($m2);
-        $thetaFinal = $this->estimateTheta($allResponses);
-
-        // Step 4: Convert Theta to scaled score
-        $scaledScore = $this->thetaToScaledScore($thetaFinal, $m2Path);
+        $module1Ability = $this->estimateAbility($m1);
+        $path = $m2Path ?? $this->routeModule2($module1Ability['theta']);
+        $allResponses = $m1->concat($m2)->values();
+        $ability = $this->estimateAbility($allResponses);
 
         return [
-            'scaled_score' => $scaledScore,
-            'theta' => round($thetaFinal, 3),
-            'module2_path' => $m2Path,
+            'raw_score' => $allResponses->where('is_correct', true)->count(),
+            'scored_questions' => $allResponses->count(),
+            'theta' => round($ability['theta'], 3),
+            'theta_se' => round($ability['se'], 3),
+            'module2_path' => $path,
+            'method' => $ability['method'],
         ];
     }
 
     /**
-     * Calculate total SAT score
-     */
-    public function scoreFull(
-        Collection $rwM1, Collection $rwM2, ?string $rwPath = null,
-        Collection $mathM1, Collection $mathM2, ?string $mathPath = null
-    ): array {
-        $rw = $this->scoreSection($rwM1, $rwM2, $rwPath);
-        $math = $this->scoreSection($mathM1, $mathM2, $mathPath);
-
-        return [
-            'total_score' => $rw['scaled_score'] + $math['scaled_score'],
-            'rw_score' => $rw['scaled_score'],
-            'math_score' => $math['scaled_score'],
-            'rw_theta' => $rw['theta'],
-            'math_theta' => $math['theta'],
-            'rw_path' => $rw['module2_path'],
-            'math_path' => $math['module2_path'],
-        ];
-    }
-
-    /**
-     * Estimate theta using Maximum Likelihood Estimation (MLE) - Newton-Raphson
-     *
-     * @param  Collection  $responses  Each item needs: is_correct (bool), question (irt_a, irt_b, irt_c)
-     * @return float  theta in range [-4.0, 4.0]
+     * Compatibility helper for callers that only need theta.
      */
     public function estimateTheta(Collection $responses): float
     {
-        $correctCount = $responses->where('is_correct', true)->count();
-        $total = $responses->count();
+        return $this->estimateAbility($responses)['theta'];
+    }
 
-        if ($total === 0) return 0.0;
-        
-        // Edge cases: All correct or all wrong
-        if ($correctCount === $total) return self::THETA_MAX;
-        if ($correctCount === 0) return self::THETA_MIN;
-
-        $theta = 0.0;
-
-        for ($iter = 0; $iter < 30; $iter++) {
-            $numerator = 0.0;
-            $denominator = 0.0;
-
-            foreach ($responses as $r) {
-                $a = (float) ($r->question->irt_a ?? 1.0); // Default a=1.0 if missing
-                $b = (float) ($r->question->irt_b ?? 0.0); // Default b=0.0 if missing
-                $c = (float) ($r->question->irt_c ?? 0.0); // Default c=0.0 if missing
-
-                // Probability of correct response (3PL Model)
-                $p = $c + (1 - $c) / (1 + exp(-$a * ($theta - $b)));
-                $q = 1 - $p;
-
-                // Avoid division by zero
-                $oneMinusC = max(1e-10, 1 - $c);
-                $pMinusC = max(0, $p - $c);
-                
-                if ($p * $q < 1e-10) continue;
-
-                // First derivative of log-likelihood
-                $numerator += $a * ($r->is_correct - $p) * ($pMinusC / ($oneMinusC * $p));
-                
-                // Second derivative of log-likelihood (Fisher Information)
-                $denominator += ($a ** 2) * ($pMinusC ** 2) / ($oneMinusC ** 2 * $p * $q);
-            }
-
-            if ($denominator < 1e-10) break;
-
-            $delta = $numerator / $denominator;
-            $theta += $delta;
-
-            // Convergence check
-            if (abs($delta) < 0.001) break;
+    /**
+     * Estimate ability with a standard-normal-prior EAP over a fixed theta grid.
+     *
+     * @return array{theta:float,se:float,method:string,item_count:int}
+     */
+    public function estimateAbility(Collection $responses): array
+    {
+        $responses = $this->scoredResponses($responses)->values();
+        if ($responses->isEmpty()) {
+            throw new InvalidArgumentException('Ability estimation requires at least one scored response.');
         }
 
-        return max(-4.0, min(4.0, $theta));
+        $logPosteriors = [];
+        for ($theta = self::GRID_MIN; $theta <= self::GRID_MAX + 1e-9; $theta += self::GRID_STEP) {
+            $logPosterior = -0.5 * ($theta ** 2);
+            foreach ($responses as $response) {
+                [$a, $b, $c] = $this->itemParameters($response);
+                $probability = $c + (1 - $c) / (1 + exp(-$a * ($theta - $b)));
+                $probability = max(1e-12, min(1 - 1e-12, $probability));
+                $logPosterior += $response->is_correct
+                    ? log($probability)
+                    : log(1 - $probability);
+            }
+
+            $logPosteriors[] = ['theta' => $theta, 'log_weight' => $logPosterior];
+        }
+
+        $maxLogWeight = max(array_column($logPosteriors, 'log_weight'));
+        $weightSum = 0.0;
+        $weightedTheta = 0.0;
+        foreach ($logPosteriors as &$point) {
+            $point['weight'] = exp($point['log_weight'] - $maxLogWeight);
+            $weightSum += $point['weight'];
+            $weightedTheta += $point['theta'] * $point['weight'];
+        }
+        unset($point);
+
+        if (! is_finite($weightSum) || $weightSum <= 0.0) {
+            throw new InvalidArgumentException('Ability estimation produced an invalid posterior.');
+        }
+
+        $mean = $weightedTheta / $weightSum;
+        $variance = 0.0;
+        foreach ($logPosteriors as $point) {
+            $variance += (($point['theta'] - $mean) ** 2) * $point['weight'];
+        }
+        $variance /= $weightSum;
+
+        return [
+            'theta' => round($mean, 6),
+            'se' => round(sqrt(max(0.0, $variance)), 6),
+            'method' => 'eap_3pl_v1',
+            'item_count' => $responses->count(),
+        ];
     }
 
-    /**
-     * Route to Module 2 difficulty based on M1 theta
-     */
     public function routeModule2(float $thetaM1): string
     {
-        return $thetaM1 >= 0.0 ? \App\Models\Module::DIFFICULTY_HARD : \App\Models\Module::DIFFICULTY_EASY;
+        return $thetaM1 >= 0.0 ? Module::DIFFICULTY_HARD : Module::DIFFICULTY_EASY;
+    }
+
+    private function scoredResponses(Collection $responses): Collection
+    {
+        return $responses->filter(fn ($response) => ! (bool) $response->question?->is_pretest);
     }
 
     /**
-     * Convert theta to scaled score (200-800) using Sigmoid function
+     * @return array{float,float,float}
      */
-    public function thetaToScaledScore(float $theta, string $module2): int
+    private function itemParameters(object $response): array
     {
-        // Edge cases for max/min ability
-        if ($theta >= self::THETA_MAX) return $module2 === \App\Models\Module::DIFFICULTY_HARD ? self::MAX_SCORE_HARD : self::MAX_SCORE_EASY;
-        if ($theta <= self::THETA_MIN) return self::MIN_SCORE;
+        $question = $response->question ?? null;
+        if (! $question || ! is_numeric($question->irt_a) || ! is_numeric($question->irt_b) || ! is_numeric($question->irt_c)) {
+            throw new InvalidArgumentException('Scored questions require explicit IRT parameters.');
+        }
 
-        // Hard path: 200-800, Easy path: 200-640 (approx ceiling)
-        $maxScore = $module2 === \App\Models\Module::DIFFICULTY_HARD ? self::MAX_SCORE_HARD : self::MAX_SCORE_EASY;
-        $minScore = self::MIN_SCORE;
-        $range = $maxScore - $minScore;
+        $a = (float) $question->irt_a;
+        $b = (float) $question->irt_b;
+        $c = (float) $question->irt_c;
+        if ($a <= 0.0 || $a > 4.0 || $b < -6.0 || $b > 6.0 || $c < 0.0 || $c >= 1.0) {
+            throw new InvalidArgumentException('Question IRT parameters are outside supported bounds.');
+        }
 
-        // Sigmoid mapping
-        $sigmoid = 1 / (1 + exp(-1.2 * $theta));
-        
-        $scaled = $minScore + ($sigmoid * $range);
-        
-        // Round to nearest 10
-        $scaled = round($scaled / 10) * 10;
-
-        return (int) max($minScore, min($maxScore, $scaled));
+        return [$a, $b, $c];
     }
 }

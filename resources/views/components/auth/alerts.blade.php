@@ -10,4 +10,3 @@
 @if ($showSuccess)
     <div id="{{ $successId }}" style="{{ $successStyle }}"></div>
 @endif
-

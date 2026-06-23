@@ -4,25 +4,27 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Question extends Model
 {
-    use HasFactory;
+    use HasFactory, SoftDeletes;
 
     public const TYPE_MCQ = 'multiple_choice';
+
     public const TYPE_SPR = 'student_produced_response';
 
     protected static function booted()
     {
         static::creating(function ($question) {
-            // Automatically assign standardized March 2026 3PL IRT parameters if not explicitly provided or if default-matched
-            if ($question->irt_a === null || $question->irt_a == 0.90) {
+            // Provisional priors for new items; explicit calibration values always win.
+            if ($question->irt_a === null) {
                 $question->irt_a = $question->question_type === self::TYPE_SPR ? 1.3 : 0.9;
             }
-            if ($question->irt_c === null || $question->irt_c == 0.25) {
+            if ($question->irt_c === null) {
                 $question->irt_c = $question->question_type === self::TYPE_SPR ? 0.0 : 0.25;
             }
-            if ($question->irt_b === null || $question->irt_b == 0.00) {
+            if ($question->irt_b === null) {
                 $question->irt_b = match ($question->difficulty) {
                     'easy' => -1.2,
                     'hard' => 1.4,
@@ -48,6 +50,8 @@ class Question extends Model
         'irt_a',
         'irt_b',
         'irt_c',
+        'irt_calibration_status',
+        'irt_calibration_version',
         'external_id',
         'created_by',
     ];
@@ -68,7 +72,7 @@ class Question extends Model
 
     public function scopeVisibleTo($query, $user)
     {
-        if (!$user) {
+        if (! $user) {
             return $query->whereHas('modules', function ($m) {
                 $m->where('is_public', true);
             });
@@ -76,11 +80,12 @@ class Question extends Model
         if ($user->role === 'admin') {
             return $query;
         }
+
         return $query->where(function ($q) use ($user) {
             $q->where('created_by', $user->id)
-              ->orWhereHas('modules', function ($m) use ($user) {
-                  $m->visibleTo($user);
-              });
+                ->orWhereHas('modules', function ($m) use ($user) {
+                    $m->visibleTo($user);
+                });
         });
     }
 

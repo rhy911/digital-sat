@@ -209,6 +209,6 @@ class OwnershipAccessControlTest extends TestCase
         $response = $this->deleteJson(route('home-dashboard.tests.delete', ['id' => $test->id]));
 
         $response->assertStatus(200);
-        $this->assertDatabaseMissing('tests', ['id' => $test->id]);
+        $this->assertSoftDeleted('tests', ['id' => $test->id]);
     }
 }

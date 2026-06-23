@@ -14,7 +14,7 @@ class RegisterController extends Controller
 {
     public function __invoke(Request $request)
     {
-        Log::info('RegisterWeb called', ['email' => $request->email]);
+        Log::info('RegisterWeb called');
         try {
             $request->validate([
                 'username' => 'required|string|max:255|unique:users',
@@ -34,7 +34,7 @@ class RegisterController extends Controller
             $user->role = $role;
             $user->save();
 
-            Log::info('User created via Web', ['id' => $user->id, 'email' => $user->email]);
+            Log::info('User created via Web', ['id' => $user->id]);
 
             // Gửi email xác minh
             $user->notify(new VerifyEmailNotification());
@@ -55,10 +55,11 @@ class RegisterController extends Controller
         } catch (\Exception $e) {
             $message = $e->getMessage();
 
-            Log::error('Register error details (Web):', [
-                'error' => $message,
-                'email' => $request->email,
-            ]);
+            if (!($e instanceof \Illuminate\Validation\ValidationException)) {
+                Log::error('Register error details (Web):', [
+                    'error' => $message,
+                ]);
+            }
 
             // Return JSON for AJAX requests
             if ($request->wantsJson()) {

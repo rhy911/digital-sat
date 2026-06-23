@@ -15,10 +15,13 @@ class MembershipDecisionNotification extends Notification implements ShouldQueue
     public function via(object $notifiable): array { return ['mail']; }
     public function toMail(object $notifiable): MailMessage
     {
+        $name = str_replace(["\r", "\n"], ' ', $notifiable->name);
+        $classroomName = str_replace(["\r", "\n"], ' ', $this->classroom->name);
+
         return (new MailMessage)
             ->subject('Class request update')
-            ->greeting("Hello {$notifiable->name},")
-            ->line($this->approved ? "You are now enrolled in {$this->classroom->name}." : "Your request to join {$this->classroom->name} was not approved.")
+            ->greeting("Hello {$name},")
+            ->line($this->approved ? "You are now enrolled in {$classroomName}." : "Your request to join {$classroomName} was not approved.")
             ->action('View classes', route('student.classes.index'));
     }
 }

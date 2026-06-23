@@ -18,14 +18,17 @@
                 <a href="#fidelity" data-scroll-target="#fidelity"
                     class="rounded-md transition-colors hover:text-brand focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-brand">Immersion</a>
                 <a href="#teachers" data-scroll-target="#teachers"
-                    class="rounded-md transition-colors hover:text-brand focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-brand">Educator Tools</a>
+                    class="rounded-md transition-colors hover:text-brand focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-brand">Educator
+                    Tools</a>
                 <a href="#scoring" data-scroll-target="#scoring"
-                    class="rounded-md transition-colors hover:text-brand focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-brand">IRT Science</a>
+                    class="rounded-md transition-colors hover:text-brand focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-brand">IRT
+                    Science</a>
             </div>
 
             <div class="flex items-center gap-3 sm:gap-4">
                 <a href="/signin"
-                    class="rounded-md text-sm font-semibold transition-colors hover:text-brand focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-brand">Sign in</a>
+                    class="rounded-md text-sm font-semibold transition-colors hover:text-brand focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-brand">Sign
+                    in</a>
                 <a href="/signup"
                     class="hidden min-h-11 items-center rounded-xl bg-brand px-4 py-2.5 text-sm font-bold text-white transition hover:bg-blue-800 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-brand active:scale-[0.98] sm:inline-flex">
                     Start Free Session

@@ -39,7 +39,7 @@ class AssignmentController extends Controller
     {
         $this->authorize('view', $assignment);
         $attempt = $service->startOrResume($assignment, auth()->user());
-        $module = $assignment->test->sections()->orderBy('order')->first()?->modules()->orderBy('order')->first();
+        $module = $attempt->currentModule;
         abort_unless($module, 422, 'Assigned test has no module.');
         return redirect()->route('engine.session', ['ulid' => $module->ulid, 'attempt' => $attempt->ulid]);
     }

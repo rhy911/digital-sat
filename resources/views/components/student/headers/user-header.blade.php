@@ -11,7 +11,7 @@
             <x-brand.wordmark href="/" size="lg" tone="brand" class="{{ $logoClass }}" />
             <div class="user-dropdown relative">
                 <div class="user text-[1.125rem] font-bold flex items-center cursor-pointer py-2 px-4 rounded-lg gap-2 {{ $userClass }}" id="userDropdown">
-                    <span class="me-2">{{ $user->username ?? 'Guest' }}</span>
+                    <span class="me-2">{{ $user->name ?? $user->username ?? 'Guest' }}</span>
                     <div class="avatar w-10 h-10 ml-0">
                         <img class="w-full h-full object-cover rounded-full" src="{{ asset('images/default_avt.jpg') }}" alt="User">
                     </div>

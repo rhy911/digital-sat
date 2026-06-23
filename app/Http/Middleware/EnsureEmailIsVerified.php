@@ -11,15 +11,6 @@ class EnsureEmailIsVerified
     public function handle(Request $request, Closure $next): Response
     {
         $user = $request->user();
-        
-        // Log để debug
-        \Illuminate\Support\Facades\Log::info('Middleware verified check', [
-            'user_id' => $user?->id,
-            'email' => $user?->email,
-            'email_verified_at' => $user?->email_verified_at,
-            'has_verified_email' => $user?->hasVerifiedEmail(),
-            'path' => $request->path(),
-        ]);
 
         if (!$user ||
             ($user instanceof \Illuminate\Contracts\Auth\MustVerifyEmail &&

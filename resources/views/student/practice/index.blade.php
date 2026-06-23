@@ -23,24 +23,31 @@
 
         <div id="ajaxErrorContainer" class="ds-alert hidden" role="alert" style="margin-bottom: 1.25rem;">
             <div class="ds-alert__content" style="display: flex; align-items: center; gap: 0.75rem;">
-                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" style="width: 1.25rem; height: 1.25rem; flex-shrink: 0;" aria-hidden="true">
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m9-.75a9 9 0 11-18 0 9 9 0 0118 0zm-9 3.75h.008v.008H12v-.008z" />
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5"
+                    stroke="currentColor" style="width: 1.25rem; height: 1.25rem; flex-shrink: 0;" aria-hidden="true">
+                    <path stroke-linecap="round" stroke-linejoin="round"
+                        d="M12 9v3.75m9-.75a9 9 0 11-18 0 9 9 0 0118 0zm-9 3.75h.008v.008H12v-.008z" />
                 </svg>
                 <span id="ajaxErrorMessage"></span>
             </div>
         </div>
 
         @php
-            $inProgressAttempts = $tests->flatMap(fn($t) => $t->userTests)->where('status', 'in_progress')->sortByDesc('updated_at');
+            $inProgressAttempts = $tests
+                ->flatMap(fn($t) => $t->userTests)
+                ->where('status', 'in_progress')
+                ->sortByDesc('updated_at');
         @endphp
 
-        @if($inProgressAttempts->isNotEmpty())
+        @if ($inProgressAttempts->isNotEmpty())
             <section class="ds-resume-section" aria-labelledby="active-work-title">
                 <h2 id="active-work-title" class="ds-section-heading">Continue where you left off</h2>
                 <div class="ds-resume-grid">
-                    @foreach($inProgressAttempts as $attempt)
+                    @foreach ($inProgressAttempts as $attempt)
                         @php
-                            $moduleUlid = $attempt->currentModule?->ulid ?? $attempt->test?->sections?->first()?->modules?->first()?->ulid;
+                            $moduleUlid =
+                                $attempt->currentModule?->ulid ??
+                                $attempt->test?->sections?->first()?->modules?->first()?->ulid;
                             $currentModule = $attempt->currentModule;
                             $currentSection = $currentModule?->section;
                         @endphp
@@ -48,16 +55,20 @@
                             <div class="ds-resume-card__body">
                                 <div class="ds-resume-card__info">
                                     <div class="ds-resume-card__icon-wrapper" aria-hidden="true">
-                                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-6 h-6">
-                                            <path stroke-linecap="round" stroke-linejoin="round" d="M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
-                                            <path stroke-linecap="round" stroke-linejoin="round" d="M15.91 11.672a.375.375 0 0 1 0 .656l-5.603 3.113a.375.375 0 0 1-.557-.328V8.887c0-.286.307-.466.557-.327l5.603 3.112Z" />
+                                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
+                                            stroke-width="2" stroke="currentColor" class="w-6 h-6">
+                                            <path stroke-linecap="round" stroke-linejoin="round"
+                                                d="M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
+                                            <path stroke-linecap="round" stroke-linejoin="round"
+                                                d="M15.91 11.672a.375.375 0 0 1 0 .656l-5.603 3.113a.375.375 0 0 1-.557-.328V8.887c0-.286.307-.466.557-.327l5.603 3.112Z" />
                                         </svg>
                                     </div>
                                     <div>
                                         <h3 class="ds-resume-card__title">{{ $attempt->test->title }}</h3>
                                         <p class="ds-resume-card__status">
-                                            @if($currentModule && $currentSection)
-                                                Currently on: {{ $currentSection->name }} • Module {{ $currentModule->module_number }}
+                                            @if ($currentModule && $currentSection)
+                                                Currently on: {{ $currentSection->name }} • Module
+                                                {{ $currentModule->module_number }}
                                             @else
                                                 Ready to start: Section 1, Module 1
                                             @endif
@@ -69,11 +80,16 @@
                                 </div>
 
                                 <div class="ds-resume-card__action-wrapper">
-                                    @if($moduleUlid)
-                                        <a href="{{ route('engine.session', ['ulid' => $moduleUlid]) }}?attempt={{ $attempt->ulid }}" class="ds-button ds-button--primary ds-resume-card__button">
+                                    @if ($moduleUlid)
+                                        <a href="{{ route('engine.session', ['ulid' => $moduleUlid]) }}?attempt={{ $attempt->ulid }}"
+                                            class="ds-button ds-button--primary ds-resume-card__button">
                                             Resume Practice
-                                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" class="w-4 h-4 ml-2" aria-hidden="true" style="margin-right: -0.25rem; display: inline-block; width: 1rem; height: 1rem; vertical-align: text-bottom; margin-left: 0.5rem;">
-                                                <path stroke-linecap="round" stroke-linejoin="round" d="M13.5 4.5 21 12m0 0-7.5 7.5M21 12H3" />
+                                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
+                                                stroke-width="2.5" stroke="currentColor" class="w-4 h-4 ml-2"
+                                                aria-hidden="true"
+                                                style="margin-right: -0.25rem; display: inline-block; width: 1rem; height: 1rem; vertical-align: text-bottom; margin-left: 0.5rem;">
+                                                <path stroke-linecap="round" stroke-linejoin="round"
+                                                    d="M13.5 4.5 21 12m0 0-7.5 7.5M21 12H3" />
                                             </svg>
                                         </a>
                                     @else
@@ -95,39 +111,52 @@
                     <div>
                         <h2 id="practice-library-title" class="ds-card-title">Available tests</h2>
                     </div>
-                    @if($tests->isNotEmpty())
-                        <span class="ds-card-note">{{ $tests->count() }} {{ \Illuminate\Support\Str::plural('test', $tests->count()) }}</span>
+                    @if ($tests->isNotEmpty())
+                        <span class="ds-card-note">{{ $tests->count() }}
+                            {{ \Illuminate\Support\Str::plural('test', $tests->count()) }}</span>
                     @endif
                 </div>
 
-                @if($tests->isNotEmpty())
+                @if ($tests->isNotEmpty())
                     <div class="ds-test-grid">
-                        @foreach($tests as $test)
+                        @foreach ($tests as $test)
                             @php
                                 $sections = $test->sections;
                                 $modules = $sections->flatMap->modules->unique('id');
-                                $duration = $test->total_duration_minutes ?: $sections->sum(fn ($section) => $section->modules->unique('module_number')->sum('duration_minutes'));
-                                
+                                $duration =
+                                    $test->total_duration_minutes ?:
+                                    $sections->sum(
+                                        fn($section) => $section->modules
+                                            ->unique('module_number')
+                                            ->sum('duration_minutes'),
+                                    );
+
                                 $inProgressAttempt = $test->userTests->firstWhere('status', 'in_progress');
                                 $latestCompletedAttempt = $test->userTests->firstWhere('status', 'completed');
                             @endphp
-                            <article class="ds-test-card {{ $inProgressAttempt ? 'ds-test-card--in-progress' : '' }}" aria-labelledby="test-card-{{ $test->id }}-title">
+                            <article class="ds-test-card {{ $inProgressAttempt ? 'ds-test-card--in-progress' : '' }}"
+                                aria-labelledby="test-card-{{ $test->id }}-title">
                                 <div class="ds-test-card__body">
                                     <div class="ds-test-card__topline">
                                         <span>{{ $test->test_type ? \Illuminate\Support\Str::headline($test->test_type) : 'Full-length' }}</span>
-                                        @if($inProgressAttempt)
+                                        @if ($inProgressAttempt)
                                             <span class="ds-badge ds-badge--in-progress">In Progress</span>
                                         @elseif($latestCompletedAttempt)
-                                            <span class="ds-badge ds-badge--completed">Completed • {{ $latestCompletedAttempt->total_score }}</span>
+                                            <span class="ds-badge ds-badge--completed">Completed
+                                                @if($latestCompletedAttempt->total_score !== null)
+                                                    &bull; Estimated {{ $latestCompletedAttempt->total_score }}
+                                                @endif
+                                            </span>
                                         @else
                                             <span class="ds-badge ds-badge--new">New</span>
                                         @endif
                                     </div>
                                     <h3 id="test-card-{{ $test->id }}-title">{{ $test->title }}</h3>
-                                    @if($test->description)
+                                    @if ($test->description)
                                         <p>{{ \Illuminate\Support\Str::limit($test->description, 140) }}</p>
                                     @else
-                                        <p>Complete a scored digital SAT practice session and review your results afterward.</p>
+                                        <p>Complete a scored digital SAT practice session and review your results
+                                            afterward.</p>
                                     @endif
                                 </div>
 
@@ -139,8 +168,9 @@
                                     <span>{{ $modules->count() ?: '--' }} modules</span>
                                 </div>
 
-                                <button type="button" class="ds-button ds-button--primary ds-test-card__action" data-test-id="{{ $test->id }}">
-                                    @if($inProgressAttempt)
+                                <button type="button" class="ds-button ds-button--primary ds-test-card__action"
+                                    data-test-id="{{ $test->id }}">
+                                    @if ($inProgressAttempt)
                                         Resume practice
                                     @elseif($latestCompletedAttempt)
                                         Retake Test
@@ -166,14 +196,17 @@
 
         <div class="ds-modal__content">
             <div class="ds-modal__icon ds-modal__icon--warning">
-                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="h-6 w-6" aria-hidden="true">
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m9-.75a9 9 0 11-18 0 9 9 0 0118 0zm-9 3.75h.008v.008H12v-.008z" />
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
+                    stroke="currentColor" class="h-6 w-6" aria-hidden="true">
+                    <path stroke-linecap="round" stroke-linejoin="round"
+                        d="M12 9v3.75m9-.75a9 9 0 11-18 0 9 9 0 0118 0zm-9 3.75h.008v.008H12v-.008z" />
                 </svg>
             </div>
             <div>
                 <h3 id="attemptModalTitle" class="ds-modal__title">Resume or start fresh?</h3>
                 <p class="ds-modal__body">
-                    You have an unfinished attempt for this practice test. Continue where you left off or start a fresh attempt.
+                    You have an unfinished attempt for this practice test. Continue where you left off or start a fresh
+                    attempt.
                 </p>
             </div>
 
@@ -184,7 +217,8 @@
                 <button id="btnFreshAttempt" type="button" class="ds-button ds-button--secondary">
                     Start fresh
                 </button>
-                <button id="btnCancelAttempt" type="button" class="ds-button ds-button--secondary" style="border-color: transparent; background: transparent;">
+                <button id="btnCancelAttempt" type="button" class="ds-button ds-button--secondary"
+                    style="border-color: transparent; background: transparent;">
                     Cancel
                 </button>
             </div>
@@ -235,7 +269,10 @@
                 if (errorContainer && errorMessage) {
                     errorMessage.textContent = message;
                     errorContainer.classList.remove('hidden');
-                    errorContainer.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                    errorContainer.scrollIntoView({
+                        behavior: 'smooth',
+                        block: 'nearest'
+                    });
                 }
             }
 
@@ -266,7 +303,8 @@
 
                 btnContinue.onclick = function() {
                     hideAttemptModal();
-                    const redirectUrl = `/engine/session/${options.latest_in_progress_current_module_ulid}?attempt=${options.latest_in_progress_ulid}`;
+                    const redirectUrl =
+                        `/engine/session/${options.latest_in_progress_current_module_ulid}?attempt=${options.latest_in_progress_ulid}`;
                     navigateAfterLoaderPaint(redirectUrl);
                 };
 
@@ -351,7 +389,9 @@
                             'Accept': 'application/json',
                             'X-CSRF-TOKEN': csrfToken,
                         },
-                        body: JSON.stringify({ mode: 'fresh' }),
+                        body: JSON.stringify({
+                            mode: 'fresh'
+                        }),
                     });
 
                     if (!response.ok) {
@@ -365,7 +405,8 @@
                         return;
                     }
 
-                    window.location.href = `/engine/session/${data.first_module_ulid || firstModuleUlid}?attempt=${data.user_test_ulid}`;
+                    window.location.href =
+                        `/engine/session/${data.first_module_ulid || firstModuleUlid}?attempt=${data.user_test_ulid}`;
                 } catch (err) {
                     console.error(err);
                     hideLoadingScreen();
@@ -405,7 +446,9 @@
                             startTestFresh(testId, optionsData.first_module_ulid);
                         } catch (err) {
                             console.error(err);
-                            showAjaxError('An error occurred while loading attempt options. Please try again.');
+                            showAjaxError(
+                                'An error occurred while loading attempt options. Please try again.'
+                                );
                         }
                     });
                 });

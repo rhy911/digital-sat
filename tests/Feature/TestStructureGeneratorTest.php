@@ -28,7 +28,7 @@ class TestStructureGeneratorTest extends TestCase
 
         $this->assertDatabaseHas('tests', [
             'title' => 'Mock SAT Auto Generation Test',
-            'test_type' => 'full_length'
+            'test_type' => 'full_length',
         ]);
 
         $testId = $response->json('data.id');
@@ -42,10 +42,10 @@ class TestStructureGeneratorTest extends TestCase
         $mathSectionId = \App\Models\Section::where('test_id', $testId)->where('type', 'math')->first()->id;
 
         $rwModulesCount = \Illuminate\Support\Facades\DB::table('section_modules')->where('section_id', $rwSectionId)->count();
-        $this->assertEquals(3, $rwModulesCount);
+        $this->assertEquals(2, $rwModulesCount);
 
         $mathModulesCount = \Illuminate\Support\Facades\DB::table('section_modules')->where('section_id', $mathSectionId)->count();
-        $this->assertEquals(3, $mathModulesCount);
+        $this->assertEquals(2, $mathModulesCount);
     }
 
     public function test_can_generate_short_sat_structure()
@@ -61,13 +61,13 @@ class TestStructureGeneratorTest extends TestCase
         $response->assertStatus(201);
         $this->assertDatabaseHas('tests', [
             'title' => 'Mock Short SAT Test',
-            'test_type' => 'short_test'
+            'test_type' => 'short_test',
         ]);
 
         $testId = $response->json('data.id');
-        
+
         // Verify modules have reduced time/questions
-        $module = \App\Models\Module::whereHas('section', function($q) use ($testId) {
+        $module = \App\Models\Module::whereHas('section', function ($q) use ($testId) {
             $q->where('test_id', $testId)->where('type', 'reading_writing');
         })->first();
 
@@ -126,6 +126,30 @@ class TestStructureGeneratorTest extends TestCase
             'id' => $testId,
             'total_duration_minutes' => 40,
         ]);
+    }
+
+    public function test_configured_full_test_accepts_single_module_two_fallback_path(): void
+    {
+        $this->withoutMiddleware();
+        $user = User::factory()->create(['role' => 'admin']);
+
+        $response = $this->actingAs($user)->postJson(route('home-dashboard.tests.generate-configured'), [
+            'title' => 'Hard Path Full Test',
+            'test_type' => 'full_length',
+            'modules' => [
+                ['section_type' => 'reading_writing', 'module_number' => 1, 'difficulty_level' => 'standard', 'duration_minutes' => 32, 'total_questions' => 27],
+                ['section_type' => 'reading_writing', 'module_number' => 2, 'difficulty_level' => 'hard', 'duration_minutes' => 32, 'total_questions' => 27],
+                ['section_type' => 'math', 'module_number' => 1, 'difficulty_level' => 'standard', 'duration_minutes' => 35, 'total_questions' => 22],
+                ['section_type' => 'math', 'module_number' => 2, 'difficulty_level' => 'hard', 'duration_minutes' => 35, 'total_questions' => 22],
+            ],
+        ]);
+
+        $response->assertCreated()->assertJsonPath('data.test_type', 'full_length');
+        $this->assertSame(4, \Illuminate\Support\Facades\DB::table('modules')
+            ->join('section_modules', 'section_modules.module_id', '=', 'modules.id')
+            ->join('sections', 'sections.id', '=', 'section_modules.section_id')
+            ->where('sections.test_id', $response->json('data.id'))
+            ->count());
     }
 
     public function test_configured_test_defaults_to_draft_and_returns_a_builder_module()

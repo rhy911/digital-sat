@@ -9,20 +9,31 @@
 
     @php
         $latestCompleted = $completedTests->first();
-        $previousCompleted = $completedTests->skip(1)->first();
-        $latestScore = $latestCompleted?->total_score;
+        $scoredAttempts = $completedTests->whereNotNull('total_score')->values();
+        $latestScoreAttempt = $scoredAttempts->first();
+        $conversionKey = fn ($attempt) => implode(':', [
+            $attempt->score_estimate_kind ?? 'legacy',
+            $attempt->score_conversion_version ?? 'legacy',
+            $attempt->score_conversion_set_id ?? 'none',
+            $attempt->test?->test_type ?? 'unknown',
+        ]);
+        $latestConversionKey = $latestScoreAttempt ? $conversionKey($latestScoreAttempt) : null;
+        $comparableScores = $scoredAttempts->filter(fn ($attempt) => $conversionKey($attempt) === $latestConversionKey)->values();
+        $previousCompleted = $comparableScores->skip(1)->first();
+        $latestScore = $latestScoreAttempt?->total_score;
         $previousScore = $previousCompleted?->total_score;
         $scoreDelta = ($latestScore !== null && $previousScore !== null) ? $latestScore - $previousScore : null;
         $scorePercent = $latestScore !== null ? max(0, min(100, round((($latestScore - 400) / 1200) * 100))) : 0;
-        $rwScore = $latestCompleted?->score_reading_writing;
-        $mathScore = $latestCompleted?->score_math;
+        $rwScore = $latestScoreAttempt?->score_reading_writing;
+        $mathScore = $latestScoreAttempt?->score_math;
         $hasLatestScore = $latestScore !== null;
         $hasSectionScores = $rwScore !== null && $mathScore !== null;
-        $bestScore = $completedTests->max('total_score');
-        $averageScore = $completedTests->whereNotNull('total_score')->isNotEmpty()
-            ? round($completedTests->whereNotNull('total_score')->avg('total_score'))
+        $bestScore = $comparableScores->max('total_score');
+        $averageScore = $comparableScores->isNotEmpty()
+            ? round($comparableScores->avg('total_score'))
             : null;
-        $history = $completedTests->whereNotNull('total_score')->take(5)->reverse()->values();
+        $history = $comparableScores->take(5)->reverse()->values();
+        $hasOlderScoreVersion = $scoredAttempts->count() > $comparableScores->count();
         $hasSingleHistory = $history->count() === 1;
         $baselineAttempt = $hasSingleHistory ? $history->first() : null;
         $primaryInProgress = $inProgressTests->first();
@@ -31,7 +42,7 @@
         $lowerSection = $hasSectionScores && $rwScore <= $mathScore ? 'Reading and Writing' : 'Math';
         $sectionGap = $hasSectionScores ? abs($rwScore - $mathScore) : null;
         $nextFocus = $hasSectionScores ? $lowerSection : ($latestCompleted ? 'Score report review' : 'Test preview');
-        $displayName = $user->username ?? 'student';
+        $displayName = $user->name ?? $user->username ?? 'student';
         $todayLabel = now()->format('l, M j');
         $formatSkillLabel = fn ($value) => $value ? \Illuminate\Support\Str::headline(str_replace(['_', '-'], ' ', $value)) : 'Unclassified';
         $canUseTeacherWorkspace = $user->role === 'teacher' && $user->isApprovedTeacher();
@@ -42,16 +53,16 @@
                 'label' => 'Reading and Writing',
                 'short' => 'R&W',
                 'latest' => $rwScore,
-                'average' => $completedTests->whereNotNull('score_reading_writing')->isNotEmpty()
-                    ? round($completedTests->whereNotNull('score_reading_writing')->avg('score_reading_writing'))
+                'average' => $comparableScores->whereNotNull('score_reading_writing')->isNotEmpty()
+                    ? round($comparableScores->whereNotNull('score_reading_writing')->avg('score_reading_writing'))
                     : null,
             ],
             'math' => [
                 'label' => 'Math',
                 'short' => 'Math',
                 'latest' => $mathScore,
-                'average' => $completedTests->whereNotNull('score_math')->isNotEmpty()
-                    ? round($completedTests->whereNotNull('score_math')->avg('score_math'))
+                'average' => $comparableScores->whereNotNull('score_math')->isNotEmpty()
+                    ? round($comparableScores->whereNotNull('score_math')->avg('score_math'))
                     : null,
             ],
         ])->map(function ($section, $key) use ($latestCompleted, $formatSkillLabel) {
@@ -168,7 +179,7 @@
             <article class="ds-card ds-hero-score {{ $hasLatestScore ? '' : 'ds-hero-score--empty' }}"
                 aria-labelledby="latest-score-title">
                 <div>
-                    <span class="ds-card-label">Latest score report</span>
+                    <span class="ds-card-label">Latest estimated practice score</span>
                     <h2 id="latest-score-title">{{ $latestScore ?? 'No baseline yet' }}</h2>
                     @if($latestCompleted)
                         <p>
@@ -196,7 +207,7 @@
 
                 @if($hasLatestScore)
                     <div class="ds-score-visual">
-                        <div class="ds-score-ring" role="img" aria-label="Latest SAT score {{ $latestScore }} out of 1600"
+                        <div class="ds-score-ring" role="img" aria-label="Latest estimated practice score {{ $latestScore }} out of 1600"
                             style="--score-progress: {{ $scorePercent }}%">
                             <span>{{ $latestScore }}</span>
                         </div>
@@ -298,7 +309,10 @@
             <article class="ds-card ds-trend-card" aria-labelledby="trend-title">
                 <div class="ds-card__header">
                     <div>
-                        <h3 id="trend-title" class="ds-card-title">Recent score movement</h3>
+                        <h3 id="trend-title" class="ds-card-title">Recent estimated score movement</h3>
+                        @if($hasOlderScoreVersion)
+                            <p class="text-sm text-slate-600">Trend uses {{ $latestScoreAttempt?->score_conversion_version ?? 'legacy' }} conversion only.</p>
+                        @endif
                     </div>
                     @if($latestCompleted)
                         <a href="{{ route('my-practice.score', $latestCompleted) }}" class="ds-link">Open score report</a>
@@ -308,7 +322,7 @@
                 @if($history->isNotEmpty())
                     <div class="ds-trend-body {{ $hasSingleHistory ? 'is-single' : '' }}">
                         @if($hasSingleHistory && $baselineAttempt)
-                            <div class="ds-baseline-card" aria-label="Baseline SAT score {{ $baselineAttempt->total_score }}">
+                            <div class="ds-baseline-card" aria-label="Baseline estimated practice score {{ $baselineAttempt->total_score }}">
                                 <span>Baseline</span>
                                 <strong>{{ $baselineAttempt->total_score }}</strong>
                                 <small>{{ optional($baselineAttempt->completed_at)->format('M j, Y') ?? 'Completed' }}</small>
@@ -350,7 +364,7 @@
                                     <div class="ds-trend-chart__labels">
                                         @foreach($history as $attempt)
                                             <div class="ds-trend-chart__label"
-                                                aria-label="Test score {{ $attempt->total_score }} on {{ optional($attempt->completed_at)->format('M j') ?? 'Done' }}">
+                                                aria-label="Estimated practice score {{ $attempt->total_score }} on {{ optional($attempt->completed_at)->format('M j') ?? 'Done' }}">
                                                 <strong>{{ $attempt->total_score }}</strong>
                                                 <small>{{ optional($attempt->completed_at)->format('M j') ?? 'Done' }}</small>
                                             </div>

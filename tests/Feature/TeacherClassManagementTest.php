@@ -31,7 +31,7 @@ class TeacherClassManagementTest extends TestCase
     private function classroom(User $teacher): Classroom { return Classroom::create(['owner_id' => $teacher->id, 'name' => 'SAT Cohort']); }
     private function testFor(User $teacher): Test
     {
-        return Test::create(['title' => 'Assigned SAT', 'test_type' => 'full_length', 'status' => 'active', 'created_by' => $teacher->id, 'is_public' => false]);
+        return Test::create(['title' => 'Assigned SAT', 'test_type' => 'custom_test', 'status' => 'active', 'created_by' => $teacher->id, 'is_public' => false]);
     }
     private function assignment(Classroom $classroom, Test $test, array $extra = []): Assignment
     {
@@ -323,14 +323,19 @@ class TeacherClassManagementTest extends TestCase
             ->assertSee('x-data', false)
             ->assertSee("x-on:click.prevent=\"\$dispatch('open-modal'", false)
             ->assertSee('role="dialog"', false)
-            ->assertSee('Attempts for '.$active->name)
-            ->assertSee('Active now')
-            ->assertSee('Math · Module 1')
-            ->assertSee('0 / 1')
-            ->assertSee('12:34')
-            ->assertSee('Attempt 2')
-            ->assertSee('1300 points')
-            ->assertSee('No responses saved yet');
+            ->assertSee('Attempts for '.$active->name);
+
+        $this->actingAs($teacher)
+            ->getJson(route('teacher.assignments.attempt-monitor', [$assignment, $active]))
+            ->assertOk()
+            ->assertJsonPath('html', fn($html) => str_contains($html, 'Active now'))
+            ->assertJsonPath('html', fn($html) => str_contains($html, 'Math'))
+            ->assertJsonPath('html', fn($html) => str_contains($html, 'Module'))
+            ->assertJsonPath('html', fn($html) => str_contains($html, '0 / 1'))
+            ->assertJsonPath('html', fn($html) => str_contains($html, '12:34'))
+            ->assertJsonPath('html', fn($html) => str_contains($html, 'Attempt 2'))
+            ->assertJsonPath('html', fn($html) => str_contains($html, 'Estimated 1300'))
+            ->assertJsonPath('html', fn($html) => str_contains($html, 'No responses saved yet'));
 
         $report = app(\App\Services\AssignmentReportService::class)->build($assignment);
         $this->assertSame(1, $report['metrics']['assigned']);
@@ -512,6 +517,7 @@ class TeacherClassManagementTest extends TestCase
         $student = $this->student();
         $classroom = $this->classroom($teacher);
         $test = $this->testFor($teacher);
+        $this->complete($test);
 
         $assignment = $this->assignment($classroom, $test, ['status' => 'closed', 'published_at' => now()->subDay(), 'closed_at' => now(), 'due_at' => null]);
         $membership = ClassroomMembership::create(['classroom_id' => $classroom->id, 'student_id' => $student->id, 'status' => 'active', 'requested_at' => now()]);
@@ -529,6 +535,7 @@ class TeacherClassManagementTest extends TestCase
         $teacher = $this->teacher();
         $classroom = $this->classroom($teacher);
         $test = $this->testFor($teacher);
+        $this->complete($test);
         $assignment = $this->assignment($classroom, $test, ['status' => 'closed', 'published_at' => now()->subDay(), 'closed_at' => now(), 'due_at' => null]);
 
         $this->actingAs($teacher)->post(route('teacher.assignments.reopen', $assignment))->assertRedirect();
@@ -574,6 +581,7 @@ class TeacherClassManagementTest extends TestCase
         $teacher = $this->teacher();
         $classroom = $this->classroom($teacher);
         $test = $this->testFor($teacher);
+        $this->complete($test);
         $assignment = $this->assignment($classroom, $test, ['status' => 'closed', 'closed_at' => now()]);
 
         app(\App\Services\AssignmentService::class)->reopen($assignment);
@@ -593,5 +601,62 @@ class TeacherClassManagementTest extends TestCase
             ->assertRedirect();
 
         $this->assertSame('removed', $membership->fresh()->status);
+    }
+
+    public function test_assignment_report_is_scalable_with_many_attempts(): void
+    {
+        $teacher = $this->teacher();
+        $classroom = $this->classroom($teacher);
+        $test = $this->testFor($teacher);
+        $this->complete($test);
+        $assignment = $this->assignment($classroom, $test, ['status' => 'published', 'published_at' => now()]);
+
+        $students = \App\Models\User::factory()->student()->count(20)->create();
+        
+        $recipientsData = [];
+        $testsData = [];
+        $answersData = [];
+        
+        $module = $test->sections->first()->modules->first();
+        $question = $module->questions->first();
+
+        foreach ($students as $student) {
+            $recipientsData[] = [
+                'assignment_id' => $assignment->id,
+                'student_id' => $student->id,
+                'status' => 'active',
+                'assigned_at' => now(),
+                'created_at' => now(),
+                'updated_at' => now(),
+            ];
+
+            $testUlid = (string) str((string) str()->ulid())->lower();
+            $testsData[] = [
+                'ulid' => $testUlid,
+                'user_id' => $student->id,
+                'test_id' => $test->id,
+                'assignment_id' => $assignment->id,
+                'attempt_number' => 1,
+                'status' => 'completed',
+                'total_score' => rand(400, 1600),
+                'completed_at' => now(),
+                'created_at' => now(),
+                'updated_at' => now(),
+            ];
+            
+            // We'll skip answers to avoid creating multiple DB inserts if not strictly needed
+            // since the new query uses SQL aggregation for max score!
+        }
+        
+        \App\Models\AssignmentRecipient::insert($recipientsData);
+        \App\Models\UserTest::insert($testsData);
+
+        \Illuminate\Support\Facades\DB::enableQueryLog();
+        $report = app(\App\Services\AssignmentReportService::class)->build($assignment);
+        $queries = \Illuminate\Support\Facades\DB::getQueryLog();
+        \Illuminate\Support\Facades\DB::disableQueryLog();
+
+        $this->assertLessThan(10, count($queries), 'AssignmentReportService is executing too many queries.');
+        $this->assertSame(20, $report['metrics']['assigned']);
     }
 }

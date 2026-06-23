@@ -14,7 +14,8 @@
                     <i class="bi bi-journal-text text-3xl text-indigo-600"></i>
                 </div>
                 <h3 class="text-xl font-extrabold text-slate-900 mb-2">No practice tests yet</h3>
-                <p class="text-slate-600 mb-8 max-w-sm mx-auto text-sm leading-relaxed">Start with a draft test, then add sections and modules when you are ready.</p>
+                <p class="text-slate-600 mb-8 max-w-sm mx-auto text-sm leading-relaxed">Start with a draft test, then
+                    add sections and modules when you are ready.</p>
                 <p class="text-xs font-semibold text-slate-500">Use Create test in the page header to begin.</p>
             </div>
         </div>
@@ -26,9 +27,8 @@
                 class="px-6 py-4 border-b border-slate-200 bg-slate-50 flex flex-col md:flex-row md:items-center justify-between gap-4">
                 <h5 class="font-bold text-slate-800 mb-0 text-sm">All tests</h5>
                 <div class="flex items-center gap-4 flex-wrap md:flex-nowrap">
-                    @if(auth()->user()->role === 'teacher')
-                        <div
-                            class="flex items-center gap-2 bg-white px-3 py-1.5 rounded-lg border border-slate-200">
+                    @if (auth()->user()->role === 'teacher')
+                        <div class="flex items-center gap-2 bg-white px-3 py-1.5 rounded-lg border border-slate-200">
                             <label for="testsShowSharedToggle"
                                 class="text-xs font-bold text-slate-600 cursor-pointer select-none">Show shared</label>
                             <input type="checkbox" id="testsShowSharedToggle"
@@ -81,14 +81,21 @@
                     return [
                         'id' => $t->id,
                         'title' => $t->title,
-                        'type' => ucfirst(str_replace('_', ' ', $t->test_type)),
+                        'type' => $t->test_type,
+                        'raw_type' => $t->test_type,
                         'status' => $t->status,
                         'duration' => $t->total_duration_minutes,
                         'created_by' => $t->created_by,
-                        'created_by_name' => $t->creator ? ($t->creator->username ?? $t->creator->email) : 'Admin',
+                        'created_by_name' => $t->creator ? $t->creator->name ?? $t->creator->username ?? $t->creator->email : 'Admin',
                         'created_at' => $t->created_at ? $t->created_at->format('d/m/y') : null,
                         'is_public' => (bool) $t->is_public,
                         'is_owner' => $t->created_by === auth()->id() || auth()->user()->role === 'admin',
+                        'can_convert_to_normal' => $t->test_type === 'adaptive_full_length'
+                            && $t->status === 'draft'
+                            && $t->user_tests_count === 0
+                            && $t->sections->count() === 2
+                            && $t->sections->every(fn ($section) => $section->modules->where('module_number', 1)->count() === 1
+                                && $section->modules->where('module_number', 2)->count() === 1),
                     ];
                 });
             @endphp
@@ -96,6 +103,37 @@
                 window.__tdTestsData = @json($testsData);
             </script>
         </div>
+
+        <section id="scoreConversionPanel" class="hidden rounded-xl border border-slate-200 bg-white p-5 md:p-6"
+            aria-labelledby="scoreConversionTitle" aria-live="polite">
+            <div class="flex flex-col gap-2 border-b border-slate-200 pb-4 md:flex-row md:items-start md:justify-between">
+                <div>
+                    <h3 id="scoreConversionTitle" class="text-base font-extrabold text-slate-900">Score conversion</h3>
+                    <p class="mt-1 max-w-2xl text-sm leading-6 text-slate-600">Normal Full tests use a built-in route-neutral table. Import a reviewed form table when you need a more accurate form-specific conversion. Adaptive Full tests use the system IRT mapping.</p>
+                </div>
+                <button type="button" id="scoreConversionClose" class="min-h-11 rounded-lg px-3 text-sm font-bold text-slate-600 hover:bg-slate-100 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600">Close</button>
+            </div>
+
+            <form id="scoreConversionForm" class="mt-5 space-y-4">
+                <input type="hidden" id="scoreConversionTestId">
+                <div class="grid gap-4 md:grid-cols-2">
+                    <label class="grid gap-1.5 text-sm font-bold text-slate-700">Source name
+                        <input id="scoreConversionSource" required maxlength="255" class="min-h-11 rounded-lg border border-slate-300 px-3 font-normal text-slate-900 focus:border-indigo-600 focus:ring-2 focus:ring-indigo-600/20" placeholder="Reviewed practice estimate v1">
+                    </label>
+                    <label class="grid gap-1.5 text-sm font-bold text-slate-700">Source URL <span class="font-normal text-slate-500">Optional</span>
+                        <input id="scoreConversionSourceUrl" type="url" maxlength="2048" class="min-h-11 rounded-lg border border-slate-300 px-3 font-normal text-slate-900 focus:border-indigo-600 focus:ring-2 focus:ring-indigo-600/20" placeholder="https://...">
+                    </label>
+                </div>
+                <label class="grid gap-1.5 text-sm font-bold text-slate-700">Conversion rows (JSON)
+                    <textarea id="scoreConversionRows" required rows="9" spellcheck="false" class="rounded-lg border border-slate-300 px-3 py-2 font-mono text-xs leading-5 text-slate-900 focus:border-indigo-600 focus:ring-2 focus:ring-indigo-600/20" placeholder='[{"section_type":"math","raw_score":0,"scaled_score":200}]'></textarea>
+                </label>
+                <div id="scoreConversionStatus" class="hidden rounded-lg bg-slate-100 px-4 py-3 text-sm font-semibold text-slate-700" role="status"></div>
+                <div class="flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
+                    <button type="submit" id="scoreConversionImport" class="min-h-11 rounded-lg border border-indigo-600 bg-white px-4 text-sm font-extrabold text-indigo-700 hover:bg-indigo-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600 disabled:cursor-not-allowed disabled:opacity-50">Import draft</button>
+                    <button type="button" id="scoreConversionApprove" disabled class="min-h-11 rounded-lg bg-indigo-700 px-4 text-sm font-extrabold text-white hover:bg-indigo-800 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600 disabled:cursor-not-allowed disabled:opacity-50">Approve conversion</button>
+                </div>
+            </form>
+        </section>
     </div>
 
 </div>

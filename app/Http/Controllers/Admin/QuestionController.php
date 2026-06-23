@@ -247,6 +247,10 @@ class QuestionController extends Controller
     public function bulkPreview(Request $request, BulkQuestionImportService $bulkQuestionImport)
     {
         $payload = $bulkQuestionImport->buildPayloadFromRequest($request);
+        if (!empty($payload['module_id'])) {
+            $module = Module::findOrFail($payload['module_id']);
+            $this->authorize('update', $module);
+        }
         try {
             $validated = $bulkQuestionImport->validate($payload);
             $items = $validated['items'] ?? [];
@@ -275,6 +279,10 @@ class QuestionController extends Controller
     public function bulkStore(Request $request, BulkQuestionImportService $bulkQuestionImport)
     {
         $payload = $bulkQuestionImport->buildPayloadFromRequest($request);
+        if (!empty($payload['module_id'])) {
+            $module = Module::findOrFail($payload['module_id']);
+            $this->authorize('update', $module);
+        }
         $result = $bulkQuestionImport->import($payload);
         return response()->json(['status' => 'success', 'message' => count($result['question_ids']).' question(s) created.', 'data' => $result], 201);
     }
@@ -287,6 +295,8 @@ class QuestionController extends Controller
         $items = $csvImport->parseCsvToItems($raw, true);
         $moduleId = $request->input('module_id');
         if ($moduleId) {
+            $module = Module::findOrFail($moduleId);
+            $this->authorize('update', $module);
             try {
                 $validated = $bulkQuestionImport->validate(['module_id' => $moduleId, 'start_position' => 1, 'items' => $items]);
                 $items = $validated['items'] ?? [];
@@ -314,12 +324,20 @@ class QuestionController extends Controller
     public function bulkStoreCsv(Request $request, BulkQuestionCsvImportService $csvImport, BulkQuestionImportService $bulkQuestionImport)
     {
         $payload = $csvImport->getPayloadFromRequest($request);
+        if (!empty($payload['module_id'])) {
+            $module = Module::findOrFail($payload['module_id']);
+            $this->authorize('update', $module);
+        }
         $result = $bulkQuestionImport->import($payload);
         return response()->json(['status' => 'success', 'message' => count($result['question_ids']).' question(s) created.', 'data' => $result], 201);
     }
 
     public function bulkStoreZip(Request $request, BulkQuestionImportService $bulkQuestionImport)
     {
+        if ($request->filled('module_id')) {
+            $module = Module::findOrFail($request->input('module_id'));
+            $this->authorize('update', $module);
+        }
         try {
             $result = $bulkQuestionImport->importFromZip($request);
             return response()->json([
@@ -327,6 +345,8 @@ class QuestionController extends Controller
                 'message' => count($result['question_ids']).' question(s) created.',
                 'data' => $result
             ], 201);
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            throw $e;
         } catch (\Exception $e) {
             Log::error('ZIP Import Failed', ['exception' => $e]);
             return response()->json([
@@ -341,6 +361,10 @@ class QuestionController extends Controller
         $question = Question::findOrFail($id);
         $this->authorize('delete', $question);
         app(\App\Services\TestContentLockService::class)->ensureQuestionUnlocked($question);
+
+        if (DB::table('user_test_answers')->where('question_id', $question->id)->exists()) {
+            return response()->json(['status' => 'error', 'message' => 'Cannot delete question with existing student attempts.'], 422);
+        }
 
         $question->delete();
         return response()->json(['status' => 'success', 'message' => 'Question deleted.']);

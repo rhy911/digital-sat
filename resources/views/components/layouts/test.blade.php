@@ -21,13 +21,13 @@
     <script src="https://www.desmos.com/api/v1.12/calculator.js?apiKey=db07a8e640bc4faca92a5c89e0745235"></script>
     <script src="https://www.desmos.com/api/v1.12/scientific.js?apiKey=db07a8e640bc4faca92a5c89e0745235"></script>
     <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/auto-render.min.js" onload="if(window.smartRenderMath) { window.smartRenderMath(document.body); } else { renderMathInElement(document.body, {
-                                                                    delimiters: [
-                                                                        { left: '$$', right: '$$', display: false },
-                                                                        { left: '\\\\[', right: '\\\\]', display: true },
-                                                                    ],
-                                                                    throwOnError : false,
-                                                                    trust: true
-                                                                }); }"></script>
+                                                                        delimiters: [
+                                                                            { left: '$$', right: '$$', display: false },
+                                                                            { left: '\\\\[', right: '\\\\]', display: true },
+                                                                        ],
+                                                                        throwOnError : false,
+                                                                        trust: true
+                                                                    }); }"></script>
     @stack('styles')
 </head>
 
@@ -38,8 +38,9 @@
             <div class="loading-spinner-wrapper mb-4">
                 <div class="loading-spinner"></div>
                 <div class="loading-spinner-inner">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none"
-                        stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24"
+                        fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"
+                        stroke-linejoin="round">
                         <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
                     </svg>
                 </div>
@@ -137,7 +138,8 @@
                     class="absolute right-0 mt-2 w-48 bg-white border border-gray-200 rounded-md shadow-lg z-50"
                     x-show="open" x-cloak style="display: none;">
                     <div>
-                        <button id="takeBreakBtn" class="hidden block w-full text-left px-4 py-3 text-sm text-gray-700 hover:bg-gray-100"
+                        <button id="takeBreakBtn"
+                            class="hidden block w-full text-left px-4 py-3 text-sm text-gray-700 hover:bg-gray-100"
                             @click="open = false">
                             Take a break
                         </button>
@@ -164,9 +166,9 @@
                 :class="popoverOpen ? 'popover-open' : ''" @click="popoverOpen = !popoverOpen">
                 Question <span>{{ $currentQuestion ?? '...' }}</span> of <span
                     id="total">{{ $totalQuestions ?? '...' }}</span>
-                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
-                    stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
-                    class="feather feather-chevron-up">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"
+                    fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                    stroke-linejoin="round" class="feather feather-chevron-up">
                     <polyline points="18 15 12 9 6 15"></polyline>
                 </svg>
             </button>
@@ -183,9 +185,9 @@
                     <div
                         class="flex justify-center items-center gap-4 md:gap-6 text-sm font-medium py-4 border-b border-gray">
                         <div class="flex items-center justify-center gap-2">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24"
-                                fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"
-                                stroke-linejoin="round" class="feather feather-map-pin">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16"
+                                viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"
+                                stroke-linecap="round" stroke-linejoin="round" class="feather feather-map-pin">
                                 <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
                                 <circle cx="12" cy="10" r="3"></circle>
                             </svg>
@@ -228,9 +230,9 @@
                             Unanswered
                         </div>
                         <div class="flex items-center justify-center gap-2">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24"
-                                fill="#ab2334" stroke="currentColor" stroke-width="2" stroke-linecap="round"
-                                stroke-linejoin="round" class="feather feather-bookmark">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16"
+                                viewBox="0 0 24 24" fill="#ab2334" stroke="currentColor" stroke-width="2"
+                                stroke-linecap="round" stroke-linejoin="round" class="feather feather-bookmark">
                                 <path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"></path>
                             </svg>
                             For Review

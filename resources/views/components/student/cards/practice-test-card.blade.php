@@ -14,7 +14,7 @@
     <div class="practice-card-score-body">
         <!-- Total Score Panel -->
         <div class="total-score-panel">
-            <span class="score-label">Total Score</span>
+            <span class="score-label">Estimated Practice Score</span>
             <span class="score-value">{{ $test->total_score ?? '---' }}</span>
             <span class="score-range">400–1600</span>
         </div>

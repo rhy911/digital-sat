@@ -4,10 +4,11 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Module extends Model
 {
-    use HasFactory;
+    use HasFactory, SoftDeletes;
 
     // Digital SAT Official Constants
     const RW_DURATION = 32;
@@ -95,9 +96,9 @@ class Module extends Model
         // For backwards compatibility, return the primary belongsTo relation
         // or fall back to the first linked section via many-to-many
         if ($this->section_id) {
-            return $this->belongsTo(Section::class);
+            return $this->belongsTo(Section::class)->withTrashed();
         }
-        return $this->belongsToMany(Section::class, 'section_modules')->limit(1);
+        return $this->belongsToMany(Section::class, 'section_modules')->withTrashed()->limit(1);
     }
 
     public function getSectionAttribute()
@@ -119,7 +120,7 @@ class Module extends Model
 
     public function sections()
     {
-        return $this->belongsToMany(Section::class, 'section_modules');
+        return $this->belongsToMany(Section::class, 'section_modules')->withTrashed();
     }
 
     public function questions()

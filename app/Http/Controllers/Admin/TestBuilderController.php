@@ -7,7 +7,6 @@ use App\Models\Module;
 use App\Models\Passage;
 use App\Models\Question;
 use App\Models\Test;
-use Illuminate\Http\Request;
 
 class TestBuilderController extends Controller
 {
@@ -22,6 +21,7 @@ class TestBuilderController extends Controller
             $tests = Test::visibleTo(auth()->user())
                 ->where('title', '!=', 'Test Preview')
                 ->with(['creator', 'sections.creator', 'sections.modules.creator'])
+                ->withCount('userTests')
                 ->latest()
                 ->paginate(30);
         } catch (\Exception $e) {
@@ -52,7 +52,7 @@ class TestBuilderController extends Controller
 
         try {
             $allModules = Module::visibleTo(auth()->user())
-                ->whereHas('sections.test', fn($q) => $q->where('title', '!=', 'Test Preview'))
+                ->whereHas('sections.test', fn ($q) => $q->where('title', '!=', 'Test Preview'))
                 ->with(['creator', 'sections.test'])
                 ->withCount('questions')
                 ->latest()
@@ -74,11 +74,12 @@ class TestBuilderController extends Controller
         $tests = Test::visibleTo(auth()->user())
             ->where('title', '!=', 'Test Preview')
             ->with(['creator', 'sections.creator', 'sections.modules.creator'])
+            ->withCount('userTests')
             ->latest()
             ->paginate(30);
         $passages = Passage::latest()->paginate(30);
         $allModules = Module::visibleTo(auth()->user())
-            ->whereHas('sections.test', fn($q) => $q->where('title', '!=', 'Test Preview'))
+            ->whereHas('sections.test', fn ($q) => $q->where('title', '!=', 'Test Preview'))
             ->with(['creator', 'sections.test'])
             ->withCount('questions')
             ->latest()

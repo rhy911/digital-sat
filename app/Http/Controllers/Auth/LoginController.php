@@ -96,10 +96,11 @@ class LoginController extends Controller
                 $message = $e->validator->errors()->first();
             }
 
-            Log::error('Login error (Web):', [
-                'error' => $message,
-                'email' => $request->email ?? null,
-            ]);
+            if (!($e instanceof \Illuminate\Validation\ValidationException)) {
+                Log::error('Login error (Web):', [
+                    'error' => $message,
+                ]);
+            }
 
             // Return JSON for AJAX requests
             if ($request->wantsJson()) {

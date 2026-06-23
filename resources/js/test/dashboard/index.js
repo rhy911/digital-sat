@@ -1,30 +1,30 @@
-import { 
+import {
     SKILL_DOMAINS, TEST_DASHBOARD_TAB_KEY, SNAPSHOT_URL, SECTIONS_STORE_URL,
     MODULES_STORE_URL, BASE_URL, BULK_STORE_URL,
     CSV_BULK_URL, MEDIA_UPLOAD_URL
 } from './core/config.js';
 import './core/examples.js';
-import { 
+import {
     showAlert, showCustomConfirm, getTomSelectValue, captureTomSelectPreservation,
     rebuildSectionTestTomSelect, rebuildModuleSectionTomSelect, rebuildQuestionModuleTomSelect,
     rebuildQuestionPassageTomSelect, initTomSelectOn,
     destroyTomSelectIfAny, optionExistsInSelect, humanizeUnderscores, capitalizeFirstLetter,
     loadHeavyDependencies, showTableLoader, hideTableLoader
 } from './utils/helpers.js';
-import { 
-    initEditModalEditors, refreshEditMediaList, debouncedEditQuestionPreview, 
+import {
+    initEditModalEditors, refreshEditMediaList, debouncedEditQuestionPreview,
     updateEditQuestionPreview, removeMediaFromEditModal,
     getEditStemEditor, getEditPassageEditor, getEditExplanationEditor
 } from './ui/editors.js';
 import { renderTestsTable, updateTestStatus } from './components/tests.js';
 import { renderSectionsTable } from './components/sections.js';
 import { renderModulesTable, initModulesSearch } from './components/modules.js';
-import { 
-    renderQuestionsTable, renderQuestionsPagination, questionsListFetchUrl, 
-    openEditQuestionModal, initRemoteQuestionPicker 
+import {
+    renderQuestionsTable, renderQuestionsPagination, questionsListFetchUrl,
+    openEditQuestionModal, initRemoteQuestionPicker
 } from './components/questions.js';
-import { 
-    addBuilderBlock, syncBuilderBlockDomain, updateSidebarNavigator, 
+import {
+    addBuilderBlock, syncBuilderBlockDomain, updateSidebarNavigator,
     debouncedUpdateLivePreview, getBuilderEditors, resetBuilderBlockCount,
     clearBuilderWorkspace, fetchModuleQuestions, submitBuilderQuestions, handleClearBuilder,
     restoreBuilderDraft, clearUnchangedQuestions
@@ -101,7 +101,7 @@ document.addEventListener('DOMContentLoaded', async function () {
     async function refreshQuestionsTableOnly() {
         showTableLoader('questionsTableContainer');
         const startTime = Date.now();
-        
+
         try {
             const response = await fetch(questionsListFetchUrl(), {
                 headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
@@ -139,7 +139,7 @@ document.addEventListener('DOMContentLoaded', async function () {
         rebuildQuestionModuleTomSelect(tests, p.builderModuleId, 'builderModuleId');
         rebuildQuestionModuleTomSelect(tests, p.questionsTableModuleFilter, 'questionsTableModuleFilter');
         rebuildQuestionPassageTomSelect(passages, p.questionPassage);
-        
+
         initRemoteQuestionPicker('answerQuestionId', p.answerQuestionId);
         initRemoteQuestionPicker('explanationQuestionId', p.explanationQuestionId);
     }
@@ -150,7 +150,7 @@ document.addEventListener('DOMContentLoaded', async function () {
             fetch(questionsListFetchUrl(), { headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' }, credentials: 'same-origin' })
         ]);
         if (!snapRes.ok) throw new Error('Snapshot request failed (' + snapRes.status + ')');
-        
+
         let payload = { tests: [], passages: [], allModules: [] };
         try { payload = await snapRes.json(); } catch (e) { console.error('Snapshot JSON parse failed'); }
 
@@ -158,8 +158,8 @@ document.addEventListener('DOMContentLoaded', async function () {
         window.__tdLatestPayload = payload;
 
         let listJson = { data: [], total: 0, current_page: 1, last_page: 1 };
-        if (listRes.ok) { try { listJson = await listRes.json(); } catch (e) {} }
-        
+        if (listRes.ok) { try { listJson = await listRes.json(); } catch (e) { } }
+
         const last = listJson.last_page || 1;
         if ((listJson.current_page || 1) > last) {
             window.__tdQuestionsPage = last;
@@ -186,15 +186,41 @@ document.addEventListener('DOMContentLoaded', async function () {
         root.dataset.delegatedActionsBound = '1';
 
         root.addEventListener('click', async function (e) {
-            const btn = e.target.closest('.delete-test-btn, .delete-section-btn, .delete-module-btn, .delete-question-btn, .edit-question-btn, .clone-test-btn, .clone-module-btn, .change-test-status-btn');
+            const btn = e.target.closest('.delete-test-btn, .delete-section-btn, .delete-module-btn, .delete-question-btn, .edit-question-btn, .clone-test-btn, .clone-module-btn, .change-test-status-btn, .reuse-section-btn, .reuse-module-btn, .convert-to-normal-btn');
             if (!btn) return;
 
             const id = btn.getAttribute('data-id');
+            if (btn.classList.contains('reuse-section-btn') || btn.classList.contains('reuse-module-btn')) {
+                window.dispatchEvent(new CustomEvent('open-content-reuse', {
+                    detail: {
+                        kind: btn.classList.contains('reuse-module-btn') ? 'module' : 'section',
+                        id,
+                        sectionId: btn.getAttribute('data-section-id') || id,
+                    }
+                }));
+                return;
+            }
             if (btn.classList.contains('change-test-status-btn')) {
                 const status = btn.getAttribute('data-status');
                 const action = status === 'active' ? 'Publish this test for students?' : status === 'archived' ? 'Archive this test?' : 'Return this test to draft?';
                 if (!await showCustomConfirm(action, status === 'active' ? 'info' : 'warning', status === 'active' ? 'Publish Test' : 'Change Test Status')) return;
                 await updateTestStatus(id, status, () => refreshTestDashboardData(captureTomSelectPreservation(null)));
+                return;
+            }
+            if (btn.classList.contains('convert-to-normal-btn')) {
+                if (!await showCustomConfirm('Convert this incomplete Adaptive Full draft to a fixed Normal Full test?', 'info', 'Convert Test Type')) return;
+                const response = await fetch(`${BASE_URL}/tests/${id}/convert-to-normal`, {
+                    method: 'POST',
+                    headers: { 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content, 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
+                    credentials: 'same-origin'
+                });
+                const result = await response.json();
+                if (!response.ok) {
+                    showAlert('danger', result.message || Object.values(result.errors || {}).flat()[0] || 'Conversion failed');
+                    return;
+                }
+                showAlert('success', result.message);
+                await refreshTestDashboardData(captureTomSelectPreservation(null));
                 return;
             }
             if (btn.classList.contains('edit-question-btn')) {
@@ -209,8 +235,8 @@ document.addEventListener('DOMContentLoaded', async function () {
                 try {
                     const response = await fetch(`${BASE_URL}/tests/${id}/clone`, {
                         method: 'POST',
-                        headers: { 
-                            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content, 
+                        headers: {
+                            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
                             'Accept': 'application/json',
                             'X-Requested-With': 'XMLHttpRequest'
                         },
@@ -238,8 +264,8 @@ document.addEventListener('DOMContentLoaded', async function () {
                 try {
                     const response = await fetch(`${BASE_URL}/modules/${id}/clone`, {
                         method: 'POST',
-                        headers: { 
-                            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content, 
+                        headers: {
+                            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
                             'Accept': 'application/json',
                             'X-Requested-With': 'XMLHttpRequest'
                         },
@@ -289,7 +315,7 @@ document.addEventListener('DOMContentLoaded', async function () {
                     await refreshTestDashboardData(preserve);
                 } else {
                     let msg = 'Delete failed';
-                    try { const j = await response.json(); msg = j.message || msg; } catch (err) {}
+                    try { const j = await response.json(); msg = j.message || msg; } catch (err) { }
                     showAlert('danger', msg);
                 }
             } catch (error) { showAlert('danger', 'Error: ' + error.message); }
@@ -567,18 +593,18 @@ document.addEventListener('DOMContentLoaded', async function () {
         setTimeout(() => initTomSelectBatch(index + batchSize), 0);
     }
     initTomSelectBatch();
-    
+
     initRemoteQuestionPicker('answerQuestionId', '');
     initRemoteQuestionPicker('explanationQuestionId', '');
 
     document.getElementById('addBuilderBlockBtn')?.addEventListener('click', addBuilderBlock);
-    
+
     // Clear All button
     document.getElementById('clearBuilderBtn')?.addEventListener('click', handleClearBuilder);
-    
+
     // Clear Unchanged button
     document.getElementById('clearUnchangedBtn')?.addEventListener('click', clearUnchangedQuestions);
-    
+
     // Save All button
     document.getElementById('submitBuilderBtn')?.addEventListener('click', submitBuilderQuestions);
 
@@ -593,7 +619,7 @@ document.addEventListener('DOMContentLoaded', async function () {
             requestAnimationFrame(() => preview.scrollIntoView({ behavior, block: 'nearest' }));
         }
     });
-    
+
     // Dismiss tips banner
     document.getElementById('builderDismissInstructionsBtn')?.addEventListener('click', function () {
         localStorage.setItem('test_builder_instructions_dismissed', 'true');
@@ -602,7 +628,7 @@ document.addEventListener('DOMContentLoaded', async function () {
             banner.remove();
         }
     });
-    
+
     // Module ID select change handler
     document.getElementById('builderModuleId')?.addEventListener('change', async (e) => {
         const moduleId = e.target.value;
@@ -649,7 +675,7 @@ document.addEventListener('DOMContentLoaded', async function () {
             window.__tdQuestionsQuery = document.getElementById('questionsTableFilter')?.value || '';
             window.__tdQuestionsSection = document.getElementById('questionsTableSectionFilter')?.value || '';
             window.__tdQuestionsStatus = document.getElementById('questionsTableStatusFilter')?.value || '';
-            
+
             const moduleFilterEl = document.getElementById('questionsTableModuleFilter');
             if (moduleFilterEl) {
                 window.__tdQuestionsModule = moduleFilterEl.tomselect ? moduleFilterEl.tomselect.getValue() : moduleFilterEl.value;
@@ -708,32 +734,32 @@ document.addEventListener('DOMContentLoaded', async function () {
     document.addEventListener('click', function (e) {
         const trigger = e.target.closest('[data-dropdown-trigger]');
         const openMenus = document.querySelectorAll('.actions-dropdown .dropdown-menu:not(.hidden)');
-        
+
         if (trigger) {
             e.preventDefault();
             e.stopPropagation();
             const dropdown = trigger.closest('.actions-dropdown');
             const menu = dropdown?.querySelector('.dropdown-menu');
-            
+
             openMenus.forEach(m => {
                 if (m !== menu) m.classList.add('hidden');
             });
-            
+
             if (menu) {
                 const isOpening = menu.classList.contains('hidden');
                 menu.classList.toggle('hidden');
                 const isOpen = !menu.classList.contains('hidden');
                 trigger.setAttribute('aria-expanded', String(isOpen));
-                
+
                 if (isOpen) {
                     const rect = trigger.getBoundingClientRect();
                     const menuHeight = menu.offsetHeight || 80;
                     const menuWidth = menu.offsetWidth || 140;
-                    
+
                     menu.style.position = 'fixed';
                     menu.style.right = 'auto';
                     menu.style.left = (rect.right - menuWidth) + 'px';
-                    
+
                     if (rect.bottom + menuHeight + 8 > window.innerHeight) {
                         menu.style.top = (rect.top - menuHeight - 4) + 'px';
                     } else {
@@ -773,7 +799,7 @@ document.addEventListener('DOMContentLoaded', async function () {
     refreshTestDashboardData(captureTomSelectPreservation(null))
         .then(() => {
             restoreBuilderDraft();
-            
+
             // Check if builderModuleId has a value and load questions if empty
             const modSelect = document.getElementById('builderModuleId');
             if (modSelect && modSelect.tomselect) {

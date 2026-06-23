@@ -2,11 +2,13 @@
     <section class="landing-hero px-5 sm:px-6">
         <div class="mx-auto grid max-w-7xl items-center gap-12 lg:grid-cols-[0.92fr_1.08fr]">
             <div class="max-w-2xl">
-                <p class="mb-5 inline-flex items-center gap-2 rounded-full border border-blue-200 bg-blue-50 px-4 py-2 text-sm font-semibold text-blue-900">
+                <p
+                    class="mb-5 inline-flex items-center gap-2 rounded-full border border-blue-200 bg-blue-50 px-4 py-2 text-sm font-semibold text-blue-900">
                     <span class="h-2 w-2 rounded-full bg-brand"></span>
                     High-fidelity Digital SAT practice
                 </p>
-                <h1 class="max-w-2xl text-4xl font-bold leading-[1.04] tracking-tight text-slate-950 sm:text-6xl lg:text-7xl">
+                <h1
+                    class="max-w-2xl text-4xl font-bold leading-[1.04] tracking-tight text-slate-950 sm:text-6xl lg:text-7xl">
                     Test day should feel familiar.
                 </h1>
                 <p class="mt-7 max-w-xl text-lg leading-8 text-slate-700">
@@ -124,9 +126,15 @@
                                 </div>
                             </div>
                             <div class="space-y-2">
-                                <div class="rounded-lg border-2 border-brand bg-blue-50 p-3 text-sm font-semibold text-blue-950">A</div>
-                                <div class="rounded-lg border border-slate-200 bg-white p-3 text-sm font-semibold text-slate-600">B</div>
-                                <div class="rounded-lg border border-slate-200 bg-white p-3 text-sm font-semibold text-slate-600">C</div>
+                                <div
+                                    class="rounded-lg border-2 border-brand bg-blue-50 p-3 text-sm font-semibold text-blue-950">
+                                    A</div>
+                                <div
+                                    class="rounded-lg border border-slate-200 bg-white p-3 text-sm font-semibold text-slate-600">
+                                    B</div>
+                                <div
+                                    class="rounded-lg border border-slate-200 bg-white p-3 text-sm font-semibold text-slate-600">
+                                    C</div>
                             </div>
                         </div>
                     </div>
@@ -185,7 +193,8 @@
     </section>
 
     <section class="bg-white px-5 py-24 sm:px-6">
-        <div class="mx-auto grid max-w-7xl items-center gap-10 rounded-2xl border border-slate-200 bg-slate-950 p-8 text-white sm:p-10 lg:grid-cols-[1fr_auto] lg:p-14">
+        <div
+            class="mx-auto grid max-w-7xl items-center gap-10 rounded-2xl border border-slate-200 bg-slate-950 p-8 text-white sm:p-10 lg:grid-cols-[1fr_auto] lg:p-14">
             <div>
                 <h2 class="max-w-3xl text-4xl font-bold tracking-tight sm:text-5xl">
                     Give students a practice room that behaves like the real one.
@@ -209,12 +218,12 @@
     </section>
 
     @push('scripts')
-    <script>
-        document.addEventListener('DOMContentLoaded', () => {
-            if (typeof window.initLandingPage === 'function') {
-                window.initLandingPage();
-            }
-        });
-    </script>
+        <script>
+            document.addEventListener('DOMContentLoaded', () => {
+                if (typeof window.initLandingPage === 'function') {
+                    window.initLandingPage();
+                }
+            });
+        </script>
     @endpush
 </x-layouts.landing>

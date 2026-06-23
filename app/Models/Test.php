@@ -4,10 +4,15 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Test extends Model
 {
-    use HasFactory;
+    use HasFactory, SoftDeletes;
+
+    public const TYPE_FULL = 'full_length';
+
+    public const TYPE_ADAPTIVE_FULL = 'adaptive_full_length';
 
     protected $fillable = [
         'title',
@@ -42,15 +47,16 @@ class Test extends Model
 
     public function scopeVisibleTo($query, $user)
     {
-        if (!$user) {
+        if (! $user) {
             return $query->where('is_public', true);
         }
         if ($user->role === 'admin') {
             return $query;
         }
+
         return $query->where(function ($q) use ($user) {
             $q->where('created_by', $user->id)
-              ->orWhere('is_public', true);
+                ->orWhere('is_public', true);
         });
     }
 
@@ -64,7 +70,11 @@ class Test extends Model
         return $this->hasMany(UserTest::class);
     }
 
-    public function assignments() { return $this->hasMany(Assignment::class); }
+    public function assignments()
+    {
+        return $this->hasMany(Assignment::class);
+    }
+
     public function isContentLocked(): bool
     {
         return $this->assignments()->where('status', 'published')->exists();
@@ -73,6 +83,7 @@ class Test extends Model
     public function isStructurallyComplete(): bool
     {
         $this->loadMissing('sections.modules.questions');
+
         return $this->sections->isNotEmpty()
             && $this->sections->every(fn ($section) => $section->modules->isNotEmpty()
                 && $section->modules->every(fn ($module) => $module->questions->isNotEmpty()));
@@ -109,5 +120,17 @@ class Test extends Model
     public function scoreConversions()
     {
         return $this->hasMany(ScoreConversion::class);
+    }
+
+    public function scoreConversionSets()
+    {
+        return $this->hasMany(ScoreConversionSet::class);
+    }
+
+    public function approvedScoreConversionSet()
+    {
+        return $this->hasOne(ScoreConversionSet::class)
+            ->where('status', ScoreConversionSet::STATUS_APPROVED)
+            ->latestOfMany('version');
     }
 }

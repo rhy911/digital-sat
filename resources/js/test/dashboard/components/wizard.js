@@ -3,8 +3,19 @@ import { showAlert } from '../utils/helpers.js';
 
 const WORKFLOWS = {
     full_length: {
-        label: 'Full SAT',
-        title: 'New Full Practice Test',
+        label: 'Normal Full Test',
+        title: 'New Normal Full Practice Test',
+        breakDuration: 10,
+        rows: [
+            ['reading_writing', 1, 'standard', 32, 27],
+            ['reading_writing', 2, 'standard', 32, 27],
+            ['math', 1, 'standard', 35, 22],
+            ['math', 2, 'standard', 35, 22],
+        ],
+    },
+    adaptive_full_length: {
+        label: 'Adaptive Full Test',
+        title: 'New Adaptive Full Practice Test',
         breakDuration: 10,
         rows: [
             ['reading_writing', 1, 'standard', 32, 27],
@@ -54,15 +65,35 @@ export function initQuickAuthorWizard({ onCreated } = {}) {
     const createButton = document.getElementById('wizard-btn-create-configured');
     const errorBox = document.getElementById('wizard-form-error');
     const feedback = document.getElementById('wizard-row-feedback');
+    const reuseFlow = document.getElementById('wizard-reuse-flow');
+    const reuseFields = document.getElementById('wizard-reuse-fields');
+    const reuseSkeleton = document.getElementById('wizard-reuse-skeleton');
+    const reuseEmpty = document.getElementById('wizard-reuse-empty');
+    const reuseError = document.getElementById('wizard-reuse-error');
+    const sourceTest = document.getElementById('wizard-source-test');
+    const sourceItem = document.getElementById('wizard-source-item');
+    const destinationTest = document.getElementById('wizard-destination-test');
+    const destinationWrap = document.getElementById('wizard-destination-wrap');
+    const derivedTitleWrap = document.getElementById('wizard-derived-title-wrap');
+    const derivedTitle = document.getElementById('wizard-derived-title');
+    const reuseSubmit = document.getElementById('wizard-reuse-submit');
     let currentWorkflow = null;
     let lastRemoved = null;
+    let reuseCatalog = [];
+    let reuseMode = null;
+    let reuseKind = null;
+    let fixedSourceId = null;
+    let fixedSourceSectionId = null;
 
     if (!options || !configFlow || !titleInput || !createButton) return;
 
     document.getElementById('wizard-btn-full-sat')?.addEventListener('click', () => openWorkflow('full_length'));
+    document.getElementById('wizard-btn-adaptive-sat')?.addEventListener('click', () => openWorkflow('adaptive_full_length'));
     document.getElementById('wizard-btn-short-test')?.addEventListener('click', () => openWorkflow('short_test'));
     document.getElementById('wizard-btn-module-only')?.addEventListener('click', () => openWorkflow('module_only'));
     document.getElementById('wizard-btn-custom')?.addEventListener('click', () => openWorkflow('custom_test'));
+    document.getElementById('wizard-btn-from-section')?.addEventListener('click', () => openReuseFlow('section', 'derive'));
+    document.getElementById('wizard-btn-from-module')?.addEventListener('click', () => openReuseFlow('module', 'derive'));
     document.getElementById('wizard-btn-back')?.addEventListener('click', resetWizard);
     document.getElementById('wizard-btn-add-row')?.addEventListener('click', () => {
         addModuleRow(['reading_writing', nextModuleNumber('reading_writing'), 'standard', 20, 10], true);
@@ -71,6 +102,20 @@ export function initQuickAuthorWizard({ onCreated } = {}) {
     document.getElementById('wizard-undo-remove')?.addEventListener('click', undoRemove);
     customizeButton?.addEventListener('click', () => setCustomizeOpen(customizePanel.classList.contains('hidden')));
     createButton.addEventListener('click', createConfiguredTest);
+    sourceTest?.addEventListener('change', populateSourceItems);
+    sourceItem?.addEventListener('change', updateReuseSummary);
+    destinationTest?.addEventListener('change', updateReuseSubmitState);
+    derivedTitle?.addEventListener('input', updateReuseSubmitState);
+    reuseSubmit?.addEventListener('click', submitReuse);
+    document.getElementById('wizard-reuse-back')?.addEventListener('click', resetWizard);
+    document.getElementById('wizard-reuse-retry')?.addEventListener('click', loadReuseCatalog);
+    window.addEventListener('open-content-reuse', event => {
+        const detail = event.detail || {};
+        window.dispatchEvent(new CustomEvent('open-modal', { detail: modalId }));
+        fixedSourceId = Number(detail.id);
+        fixedSourceSectionId = Number(detail.sectionId || detail.id);
+        openReuseFlow(detail.kind, 'reuse');
+    });
     window.addEventListener('open-modal', event => {
         if (event.detail === modalId) resetWizard();
     });
@@ -79,12 +124,157 @@ export function initQuickAuthorWizard({ onCreated } = {}) {
         currentWorkflow = null;
         options.classList.remove('hidden');
         configFlow.classList.add('hidden');
+        reuseFlow?.classList.add('hidden');
         loading.classList.add('hidden');
         loading.classList.remove('flex');
         createButton.disabled = false;
         hideError();
         feedback?.classList.add('hidden');
         feedback?.classList.remove('flex');
+        fixedSourceId = null;
+        fixedSourceSectionId = null;
+        if (sourceTest) sourceTest.disabled = false;
+        if (sourceItem) sourceItem.disabled = false;
+    }
+
+    async function openReuseFlow(kind, mode) {
+        reuseKind = kind;
+        reuseMode = mode;
+        currentWorkflow = null;
+        options.classList.add('hidden');
+        configFlow.classList.add('hidden');
+        reuseFlow.classList.remove('hidden');
+        document.getElementById('wizard-reuse-kind').textContent = kind === 'section' ? 'Section' : 'Module';
+        document.getElementById('wizard-reuse-title').textContent = mode === 'derive' ? `Create from an existing ${kind}` : `Reuse ${kind} in another test`;
+        document.getElementById('wizard-reuse-help').textContent = mode === 'derive'
+            ? 'Choose trusted content to copy into a new private draft.'
+            : 'Choose an owned draft destination. Source content will not be changed.';
+        destinationWrap.classList.toggle('hidden', mode !== 'reuse');
+        destinationWrap.classList.toggle('block', mode === 'reuse');
+        derivedTitleWrap.classList.toggle('hidden', mode === 'reuse');
+        reuseSubmit.lastChild.textContent = '';
+        reuseSubmit.childNodes[0].textContent = mode === 'derive' ? 'Create independent copy ' : 'Copy into draft ';
+        await loadReuseCatalog();
+    }
+
+    async function loadReuseCatalog() {
+        reuseFields.classList.add('hidden');
+        reuseEmpty.classList.add('hidden');
+        reuseError.classList.add('hidden');
+        reuseSkeleton.classList.remove('hidden');
+        reuseSubmit.disabled = true;
+        try {
+            const response = await fetch(`${BASE_URL}/tests/reusable-content`, { headers: { Accept: 'application/json', 'X-Requested-With': 'XMLHttpRequest' }, credentials: 'same-origin' });
+            if (!response.ok) throw new Error('Could not load reusable content.');
+            reuseCatalog = (await response.json()).tests || [];
+            const available = reuseCatalog.filter(test => (test.sections || []).some(section => reuseKind === 'section' || (section.modules || []).length));
+            if (!available.length) {
+                reuseEmpty.classList.remove('hidden');
+                return;
+            }
+            sourceTest.innerHTML = available.map(test => `<option value="${test.id}">${escapeOption(test.title)}</option>`).join('');
+            const destinations = reuseCatalog.filter(test => test.status === 'draft' && (test.created_by === window.__currentUserId || window.__currentUserRole === 'admin'));
+            destinationTest.innerHTML = '<option value="">Choose a destination draft</option>' + destinations.map(test => `<option value="${test.id}">${escapeOption(test.title)}</option>`).join('');
+            populateSourceItems();
+            if (reuseMode === 'reuse') selectFixedSource();
+            reuseFields.classList.remove('hidden');
+            requestAnimationFrame(() => (reuseMode === 'reuse' ? destinationTest : sourceTest).focus());
+        } catch (error) {
+            showReuseError(error.message || 'Could not load reusable content.');
+        } finally {
+            reuseSkeleton.classList.add('hidden');
+            updateReuseSubmitState();
+        }
+    }
+
+    function sourceItemsFor(test) {
+        if (!test) return [];
+        if (reuseKind === 'section') return (test.sections || []).map(section => ({ id: section.id, sectionId: section.id, label: section.name, section, test }));
+        return (test.sections || []).flatMap(section => (section.modules || []).map(module => ({ id: module.id, sectionId: section.id, label: `${section.name} · Module ${module.module_number} · ${module.difficulty_level}`, module, section, test })));
+    }
+
+    function populateSourceItems() {
+        const test = reuseCatalog.find(item => Number(item.id) === Number(sourceTest.value));
+        const items = sourceItemsFor(test);
+        sourceItem.innerHTML = items.map(item => `<option value="${item.id}" data-section-id="${item.sectionId}">${escapeOption(item.label)}</option>`).join('');
+        updateReuseSummary();
+    }
+
+    function selectFixedSource() {
+        for (const test of reuseCatalog) {
+            const match = sourceItemsFor(test).find(item => Number(item.id) === fixedSourceId && (reuseKind !== 'module' || Number(item.sectionId) === fixedSourceSectionId));
+            if (!match) continue;
+            sourceTest.value = String(test.id);
+            populateSourceItems();
+            sourceItem.value = String(match.id);
+            sourceTest.disabled = true;
+            sourceItem.disabled = true;
+            updateReuseSummary();
+            return;
+        }
+        showReuseError('Selected source is no longer available.');
+    }
+
+    function selectedSource() {
+        const test = reuseCatalog.find(item => Number(item.id) === Number(sourceTest.value));
+        return sourceItemsFor(test).find(item => Number(item.id) === Number(sourceItem.value));
+    }
+
+    function updateReuseSummary() {
+        const source = selectedSource();
+        const summary = document.getElementById('wizard-source-summary');
+        if (!source) { summary.textContent = 'Choose content to review its details.'; updateReuseSubmitState(); return; }
+        const modules = reuseKind === 'section' ? (source.section.modules || []) : [source.module];
+        const questions = modules.reduce((total, module) => total + Number(module.questions_count || 0), 0);
+        const minutes = modules.reduce((total, module) => total + Number(module.duration_minutes || 0), 0);
+        const adaptive = modules.some(module => module.difficulty_level === 'easy') && modules.some(module => module.difficulty_level === 'hard');
+        summary.innerHTML = `<strong class="text-slate-900">${escapeOption(source.label)}</strong><dl class="mt-3 flex flex-wrap gap-x-6 gap-y-2 text-xs"><div><dt class="text-slate-500">Flow</dt><dd class="font-bold text-slate-800">${adaptive ? 'Adaptive' : 'Linear'}</dd></div><div><dt class="text-slate-500">Modules</dt><dd class="font-bold text-slate-800">${modules.length}</dd></div><div><dt class="text-slate-500">Questions</dt><dd class="font-bold text-slate-800">${questions}</dd></div><div><dt class="text-slate-500">Duration</dt><dd class="font-bold text-slate-800">${minutes} min</dd></div></dl><p class="mt-3 text-xs text-slate-600">Section and module settings become independent. Question-bank items remain shared.</p>`;
+        if (reuseMode === 'derive' && !derivedTitle.value) derivedTitle.value = `${source.label} Practice`;
+        updateReuseSubmitState();
+    }
+
+    function updateReuseSubmitState() {
+        const source = selectedSource();
+        reuseSubmit.disabled = !source || (reuseMode === 'derive' ? !derivedTitle.value.trim() : !destinationTest.value);
+    }
+
+    async function submitReuse() {
+        const source = selectedSource();
+        if (!source || reuseSubmit.disabled) return;
+        reuseSubmit.disabled = true;
+        reuseSubmit.setAttribute('aria-busy', 'true');
+        reuseError.classList.add('hidden');
+        const isModule = reuseKind === 'module';
+        const url = reuseMode === 'derive'
+            ? `${BASE_URL}/${isModule ? 'modules' : 'sections'}/${source.id}/derive-test`
+            : `${BASE_URL}/${isModule ? 'modules' : 'sections'}/${source.id}/reuse`;
+        const payload = reuseMode === 'derive' ? { title: derivedTitle.value.trim() } : { destination_test_id: Number(destinationTest.value) };
+        if (isModule) payload.source_section_id = source.sectionId;
+        try {
+            const response = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json', Accept: 'application/json', 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content, 'X-Requested-With': 'XMLHttpRequest' }, credentials: 'same-origin', body: JSON.stringify(payload) });
+            const result = await response.json();
+            if (!response.ok) throw new Error(result.message || (result.errors ? Object.values(result.errors).flat().join(' ') : 'Copy failed.'));
+            const handoffTarget = typeof onCreated === 'function' ? await onCreated(result.data) : null;
+            window.dispatchEvent(new CustomEvent('close-modal', { detail: modalId }));
+            showAlert('success', reuseMode === 'derive' ? `Draft created: ${result.data.title}.` : `Content copied into ${result.data.title}.`);
+            resetWizard();
+            window.setTimeout(() => handoffTarget?.focus({ preventScroll: true }), 100);
+        } catch (error) {
+            showReuseError(error.message || 'Copy failed. Please try again.');
+        } finally {
+            reuseSubmit.removeAttribute('aria-busy');
+            updateReuseSubmitState();
+        }
+    }
+
+    function showReuseError(message) {
+        reuseError.textContent = message;
+        reuseError.classList.remove('hidden');
+        reuseError.focus();
+    }
+
+    function escapeOption(value) {
+        return String(value ?? '').replace(/[&<>"]/g, character => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[character]);
     }
 
     function openWorkflow(type) {

@@ -31,7 +31,7 @@
     $testData ??= (object) [
         'page_title' => 'Math Section',
         'section_title' => 'Math Questions',
-        'username' => auth()->user()?->username ?? 'Guest',
+        'username' => auth()->user()?->name ?? (auth()->user()?->username ?? 'Guest'),
     ];
 
     $questions ??= collect();
@@ -72,7 +72,8 @@
                                 </ul>
                             </div>
                         @else
-                            <p class="text-slate-500 italic">Reference formulas or notes for this math question can be found
+                            <p class="text-slate-500 italic">Reference formulas or notes for this math question can be
+                                found
                                 here.</p>
                         @endif
                     </div>
@@ -125,8 +126,10 @@
                             @if ($q->question_type === 'student_produced_response')
                                 <div class="answer-input-container">
                                     <label class="block mb-2 font-bold">Enter your answer:</label>
-                                    <input type="text" class="w-full px-4 py-2 border border-slate-300 rounded focus:outline-hidden focus:ring-2 focus:ring-indigo-500 spr-input" name="q{{ $loop->iteration }}"
-                                        placeholder="______" maxlength="6" value="{{ $savedAnswer ?? '' }}">
+                                    <input type="text"
+                                        class="w-full px-4 py-2 border border-slate-300 rounded focus:outline-hidden focus:ring-2 focus:ring-indigo-500 spr-input"
+                                        name="q{{ $loop->iteration }}" placeholder="______" maxlength="6"
+                                        value="{{ $savedAnswer ?? '' }}">
                                     @if ($q->spr_hint)
                                         <div class="mt-1 italic text-slate-500 text-sm">{{ $q->spr_hint }}
                                         </div>
@@ -143,8 +146,7 @@
                                                 <input type="radio"
                                                     id="q{{ $loop->parent->iteration }}{{ $choice->label }}"
                                                     name="q{{ $loop->parent->iteration }}"
-                                                    value="{{ $choice->label }}"
-                                                    @checked($savedAnswer !== null && (string) $savedAnswer === (string) $choice->label)>
+                                                    value="{{ $choice->label }}" @checked($savedAnswer !== null && (string) $savedAnswer === (string) $choice->label)>
                                                 <label
                                                     for="q{{ $loop->parent->iteration }}{{ $choice->label }}">@markdown($choice->content)</label>
                                             </div>
