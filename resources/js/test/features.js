@@ -5,6 +5,197 @@ import { updateQuestionButtonStates } from './ui.js';
 // HIGHLIGHT FUNCTIONALITY
 // ============================================================================
 
+const HIGHLIGHTABLE_CONTENT_SELECTOR = '.passage-container:not(.hidden), .stem-text, .answer-option label';
+const EDITABLE_SELECTOR = 'input, textarea, select, [contenteditable="true"], [contenteditable=""]';
+const HIGHLIGHT_DRAG_EXCLUDED_SELECTOR = [
+  EDITABLE_SELECTOR,
+  'button',
+  'a',
+  '.bookmark',
+  '.cross-out-toggle-btn',
+  '.strike-btn',
+  '.resizer',
+  '#calculatorModal'
+].join(', ');
+
+const highlightDrag = {
+  active: false,
+  pointerId: null,
+  root: null,
+  anchorRange: null
+};
+
+function elementFromNode(node) {
+  if (!node) return null;
+  return node.nodeType === Node.ELEMENT_NODE ? node : node.parentElement;
+}
+
+function isEditableTarget(target) {
+  const element = elementFromNode(target);
+  return Boolean(element && element.closest(EDITABLE_SELECTOR));
+}
+
+function isExcludedHighlightDragTarget(target) {
+  const element = elementFromNode(target);
+  return Boolean(element && element.closest(HIGHLIGHT_DRAG_EXCLUDED_SELECTOR));
+}
+
+function highlightRootForNode(node) {
+  const element = elementFromNode(node);
+  if (!element) return null;
+
+  const root = element.closest(HIGHLIGHTABLE_CONTENT_SELECTOR);
+  if (root && !root.closest('.hidden, .question.hidden')) return root;
+
+  const answerOption = element.closest('.answer-option');
+  const answerLabel = answerOption?.querySelector('label');
+  if (answerLabel && !answerLabel.closest('.hidden, .question.hidden')) return answerLabel;
+
+  const leftPanel = element.closest('.left-panel.highlight-mode');
+  const activePassage = leftPanel?.querySelector('.passage-container:not(.hidden)');
+  if (activePassage && !activePassage.closest('.hidden, .question.hidden')) return activePassage;
+
+  return null;
+}
+
+function isNodeInsideRoot(root, node) {
+  if (!root || !node) return false;
+  return node === root || root.contains(node);
+}
+
+function textNodesInRoot(root) {
+  const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, {
+    acceptNode(node) {
+      if (!node.nodeValue.trim()) return NodeFilter.FILTER_REJECT;
+      if (elementFromNode(node)?.closest('.highlighted-text')) return NodeFilter.FILTER_REJECT;
+      return NodeFilter.FILTER_ACCEPT;
+    }
+  });
+
+  const nodes = [];
+  let node = walker.nextNode();
+  while (node) {
+    nodes.push(node);
+    node = walker.nextNode();
+  }
+
+  return nodes;
+}
+
+function collapsedRangeAt(node, offset) {
+  const range = document.createRange();
+  range.setStart(node, offset);
+  range.collapse(true);
+  return range;
+}
+
+function nearestTextRangeInRoot(root, x, y) {
+  let best = null;
+  let bestDistance = Infinity;
+
+  textNodesInRoot(root).forEach(node => {
+    for (let offset = 0; offset < node.nodeValue.length; offset += 1) {
+      const charRange = document.createRange();
+      charRange.setStart(node, offset);
+      charRange.setEnd(node, offset + 1);
+
+      Array.from(charRange.getClientRects()).forEach(rect => {
+        const clampedX = Math.max(rect.left, Math.min(x, rect.right));
+        const clampedY = Math.max(rect.top, Math.min(y, rect.bottom));
+        const distance = Math.hypot(x - clampedX, y - clampedY);
+
+        if (distance < bestDistance) {
+          bestDistance = distance;
+          best = collapsedRangeAt(node, x > rect.left + rect.width / 2 ? offset + 1 : offset);
+        }
+      });
+    }
+  });
+
+  return best;
+}
+
+function caretRangeFromPointInRoot(root, x, y) {
+  let range = null;
+
+  if (document.caretPositionFromPoint) {
+    const position = document.caretPositionFromPoint(x, y);
+    if (position && position.offsetNode?.nodeType === Node.TEXT_NODE && isNodeInsideRoot(root, position.offsetNode)) {
+      range = collapsedRangeAt(position.offsetNode, position.offset);
+    }
+  } else if (document.caretRangeFromPoint) {
+    const pointRange = document.caretRangeFromPoint(x, y);
+    if (pointRange?.startContainer?.nodeType === Node.TEXT_NODE && isNodeInsideRoot(root, pointRange.startContainer)) {
+      range = pointRange;
+    }
+  }
+
+  return range || nearestTextRangeInRoot(root, x, y);
+}
+
+function applyHighlightDragSelection(anchorRange, focusRange) {
+  if (!anchorRange || !focusRange) return;
+
+  const selection = window.getSelection();
+  if (!selection) return;
+
+  selection.removeAllRanges();
+
+  if (selection.setBaseAndExtent) {
+    selection.setBaseAndExtent(
+      anchorRange.startContainer,
+      anchorRange.startOffset,
+      focusRange.startContainer,
+      focusRange.startOffset
+    );
+    return;
+  }
+
+  const range = document.createRange();
+  range.setStart(anchorRange.startContainer, anchorRange.startOffset);
+  range.setEnd(focusRange.startContainer, focusRange.startOffset);
+  selection.addRange(range);
+}
+
+function resetHighlightDrag() {
+  highlightDrag.active = false;
+  highlightDrag.pointerId = null;
+  highlightDrag.root = null;
+  highlightDrag.anchorRange = null;
+}
+
+function selectedHighlightRoot(range) {
+  const startRoot = highlightRootForNode(range.startContainer);
+  const endRoot = highlightRootForNode(range.endContainer);
+
+  if (!startRoot || startRoot !== endRoot) return null;
+
+  return startRoot;
+}
+
+function selectedTextNodes(root, range) {
+  return textNodesInRoot(root).filter(node => range.intersectsNode(node));
+}
+
+function wrapSelectedTextNode(node, range) {
+  if (!node.parentNode) return;
+
+  let startOffset = 0;
+  let endOffset = node.nodeValue.length;
+
+  if (node === range.startContainer) startOffset = range.startOffset;
+  if (node === range.endContainer) endOffset = range.endOffset;
+  if (startOffset >= endOffset) return;
+
+  const selectedText = node.splitText(startOffset);
+  selectedText.splitText(endOffset - startOffset);
+
+  const highlightSpan = document.createElement('span');
+  highlightSpan.className = 'highlighted-text';
+  selectedText.parentNode.insertBefore(highlightSpan, selectedText);
+  highlightSpan.appendChild(selectedText);
+}
+
 export function toggleHighlightMode() {
   state.highlightMode = !state.highlightMode;
   const highlightBtn = document.getElementById('highlightNotesBtn');
@@ -26,22 +217,60 @@ export function highlightSelection() {
   if (!selection.rangeCount || selection.isCollapsed) return;
   const range = selection.getRangeAt(0);
 
-  const contentAreas = document.querySelectorAll('.resizable-panel');
-  const isValidArea = Array.from(contentAreas).some(area => area.contains(range.commonAncestorContainer));
-  if (!isValidArea) return;
+  const root = selectedHighlightRoot(range);
+  if (!root) {
+    selection.removeAllRanges();
+    return;
+  }
 
-  const parentElement = range.commonAncestorContainer.parentElement;
-  if (parentElement && parentElement.classList.contains('highlighted-text')) return;
+  if (elementFromNode(range.commonAncestorContainer)?.closest('.highlighted-text')) return;
 
   try {
-    const highlightSpan = document.createElement('span');
-    highlightSpan.className = 'highlighted-text';
-    highlightSpan.appendChild(range.extractContents());
-    range.insertNode(highlightSpan);
+    selectedTextNodes(root, range).forEach(node => wrapSelectedTextNode(node, range));
+    root.normalize();
     selection.removeAllRanges();
   } catch (e) {
     console.error('Error highlighting text:', e);
   }
+}
+
+function beginHighlightDrag(event) {
+  if (!state.highlightMode || event.button !== 0 || isExcludedHighlightDragTarget(event.target)) return;
+
+  const root = highlightRootForNode(event.target);
+  if (!root) return;
+
+  const anchorRange = caretRangeFromPointInRoot(root, event.clientX, event.clientY);
+  if (!anchorRange) return;
+
+  highlightDrag.active = true;
+  highlightDrag.pointerId = event.pointerId;
+  highlightDrag.root = root;
+  highlightDrag.anchorRange = anchorRange;
+
+  applyHighlightDragSelection(anchorRange, anchorRange);
+  event.preventDefault();
+  event.stopPropagation();
+}
+
+function updateHighlightDrag(event) {
+  if (!highlightDrag.active || event.pointerId !== highlightDrag.pointerId) return;
+
+  const focusRange = caretRangeFromPointInRoot(highlightDrag.root, event.clientX, event.clientY);
+  if (!focusRange) return;
+
+  applyHighlightDragSelection(highlightDrag.anchorRange, focusRange);
+  event.preventDefault();
+  event.stopPropagation();
+}
+
+function finishHighlightDrag(event) {
+  if (!highlightDrag.active || event.pointerId !== highlightDrag.pointerId) return;
+
+  event.preventDefault();
+  event.stopPropagation();
+  setTimeout(highlightSelection, 0);
+  resetHighlightDrag();
 }
 
 let highlightInitialized = false;
@@ -56,15 +285,23 @@ export function initializeHighlightFeature() {
   if (highlightInitialized) return;
   highlightInitialized = true;
 
+  document.addEventListener('pointerdown', beginHighlightDrag, true);
+  document.addEventListener('pointermove', updateHighlightDrag, true);
+  document.addEventListener('pointerup', finishHighlightDrag, true);
+  document.addEventListener('pointercancel', resetHighlightDrag, true);
+
   document.addEventListener('mouseup', () => {
     if (state.highlightMode) setTimeout(highlightSelection, 10);
   });
 
   document.addEventListener('dblclick', (e) => {
-    if (e.target.classList.contains('highlighted-text')) {
-      const parent = e.target.parentNode;
-      while (e.target.firstChild) parent.insertBefore(e.target.firstChild, e.target);
-      parent.removeChild(e.target);
+    const highlight = elementFromNode(e.target)?.closest('.highlighted-text');
+    if (highlight) {
+      const parent = highlight.parentNode;
+      while (highlight.firstChild) parent.insertBefore(highlight.firstChild, highlight);
+      parent.removeChild(highlight);
+      parent.normalize();
+      window.getSelection()?.removeAllRanges();
     }
   });
 }
@@ -291,8 +528,44 @@ export function preventNormalCursorBehavior() {
   cursorBehaviorPrevented = true;
 
   document.addEventListener('contextmenu', (e) => e.preventDefault());
+  document.addEventListener('selectstart', (e) => {
+    if (isEditableTarget(e.target)) return;
+    if (state.highlightMode && highlightRootForNode(e.target)) return;
+
+    e.preventDefault();
+    window.getSelection()?.removeAllRanges();
+    return false;
+  }, true);
+  document.addEventListener('copy', (e) => {
+    if (isEditableTarget(e.target)) return;
+
+    e.preventDefault();
+    e.clipboardData?.setData('text/plain', '');
+    window.getSelection()?.removeAllRanges();
+    return false;
+  }, true);
+  document.addEventListener('cut', (e) => {
+    if (isEditableTarget(e.target)) return;
+
+    e.preventDefault();
+    e.clipboardData?.setData('text/plain', '');
+    window.getSelection()?.removeAllRanges();
+    return false;
+  }, true);
+  document.addEventListener('dragstart', (e) => {
+    if (isEditableTarget(e.target)) return;
+
+    e.preventDefault();
+    return false;
+  }, true);
+  document.addEventListener('drop', (e) => {
+    if (isEditableTarget(e.target)) return;
+
+    e.preventDefault();
+    return false;
+  }, true);
   document.addEventListener('keydown', (e) => {
-    if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return true;
+    if (isEditableTarget(e.target)) return true;
     if ((e.ctrlKey || e.metaKey) && ['c', 'v', 'x', 'a'].includes(e.key.toLowerCase())) {
       e.preventDefault();
       return false;
@@ -484,4 +757,3 @@ export function initializeSimpleFullscreen() {
 
   document.addEventListener('click', fullscreenListener);
 }
-

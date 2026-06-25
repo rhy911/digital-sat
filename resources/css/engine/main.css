@@ -102,6 +102,21 @@ header {
     word-wrap: break-word;
     overflow-wrap: break-word;
     overflow: auto;
+    -webkit-user-select: none;
+    user-select: none;
+}
+
+.resizable-panel *,
+header,
+header *,
+footer,
+footer * {
+    -webkit-user-select: none;
+    user-select: none;
+}
+
+.resizable-panel img {
+    -webkit-user-drag: none;
 }
 
 .left-panel {
@@ -561,6 +576,21 @@ header {
 
 .highlight-mode * {
     cursor: crosshair !important;
+}
+
+.highlight-mode .passage-container:not(.hidden),
+.highlight-mode .passage-container:not(.hidden) *,
+.highlight-mode .stem-text,
+.highlight-mode .stem-text *,
+.highlight-mode .answer-option label,
+.highlight-mode .answer-option label * {
+    -webkit-user-select: text;
+    user-select: text;
+}
+
+.spr-input {
+    -webkit-user-select: text;
+    user-select: text;
 }
 
 /* Selection color in highlight mode */
