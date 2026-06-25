@@ -2,6 +2,8 @@
 
 namespace Tests\Feature;
 
+use App\Models\Assignment;
+use App\Models\Classroom;
 use App\Models\Module;
 use App\Models\Section;
 use App\Models\Test;
@@ -210,5 +212,101 @@ class OwnershipAccessControlTest extends TestCase
 
         $response->assertStatus(200);
         $this->assertSoftDeleted('tests', ['id' => $test->id]);
+    }
+
+    public function test_owner_can_share_test_with_approved_teacher(): void
+    {
+        $test = Test::create([
+            'title' => 'Private Shared Test',
+            'test_type' => 'full_length',
+            'break_duration_minutes' => 10,
+            'status' => 'active',
+            'created_by' => $this->teacher1->id,
+            'is_public' => false,
+        ]);
+
+        $response = $this->actingAs($this->teacher1)->postJson(
+            route('home-dashboard.tests.shares.store', $test),
+            ['teacher_id' => $this->teacher2->id]
+        );
+
+        $response->assertCreated();
+        $this->assertDatabaseHas('test_shares', [
+            'test_id' => $test->id,
+            'user_id' => $this->teacher2->id,
+            'shared_by' => $this->teacher1->id,
+        ]);
+        $this->assertContains($test->id, Test::visibleTo($this->teacher2)->pluck('id')->all());
+    }
+
+    public function test_shared_teacher_can_clone_but_cannot_edit_original(): void
+    {
+        $test = Test::create([
+            'title' => 'Collaborative Source',
+            'test_type' => 'full_length',
+            'break_duration_minutes' => 10,
+            'status' => 'draft',
+            'created_by' => $this->teacher1->id,
+            'is_public' => false,
+        ]);
+        $test->shares()->create(['user_id' => $this->teacher2->id, 'shared_by' => $this->teacher1->id]);
+
+        $this->actingAs($this->teacher2)
+            ->putJson(route('home-dashboard.tests.update', ['id' => $test->id]), ['title' => 'Bad Edit'])
+            ->assertForbidden();
+
+        $this->actingAs($this->teacher2)
+            ->postJson(route('home-dashboard.tests.clone', ['id' => $test->id]))
+            ->assertCreated();
+
+        $this->assertEquals('Collaborative Source', $test->fresh()->title);
+        $this->assertDatabaseHas('tests', [
+            'title' => 'Collaborative Source (Clone)',
+            'created_by' => $this->teacher2->id,
+        ]);
+    }
+
+    public function test_shared_teacher_can_assign_active_shared_test_to_own_class(): void
+    {
+        $test = Test::create([
+            'title' => 'Shared Active Test',
+            'test_type' => 'full_length',
+            'break_duration_minutes' => 10,
+            'status' => 'active',
+            'created_by' => $this->teacher1->id,
+            'is_public' => false,
+        ]);
+        $test->shares()->create(['user_id' => $this->teacher2->id, 'shared_by' => $this->teacher1->id]);
+        $classroom = Classroom::create(['owner_id' => $this->teacher2->id, 'name' => 'Shared Test Class']);
+
+        $response = $this->actingAs($this->teacher2)->post(route('teacher.assignments.store', $classroom), [
+            'test_id' => $test->id,
+            'title' => 'Shared homework',
+            'attempt_limit' => 1,
+        ]);
+
+        $response->assertRedirect();
+        $this->assertDatabaseHas('assignments', [
+            'classroom_id' => $classroom->id,
+            'teacher_id' => $this->teacher2->id,
+            'test_id' => $test->id,
+            'title' => 'Shared homework',
+        ]);
+    }
+
+    public function test_non_owner_cannot_manage_test_sharing(): void
+    {
+        $test = Test::create([
+            'title' => 'Private Test',
+            'test_type' => 'full_length',
+            'break_duration_minutes' => 10,
+            'status' => 'draft',
+            'created_by' => $this->teacher1->id,
+            'is_public' => false,
+        ]);
+
+        $this->actingAs($this->teacher2)
+            ->postJson(route('home-dashboard.tests.shares.store', $test), ['teacher_id' => $this->teacher1->id])
+            ->assertForbidden();
     }
 }

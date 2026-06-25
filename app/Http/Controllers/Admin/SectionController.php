@@ -11,6 +11,7 @@ use App\Http\Requests\Admin\UpdateSectionRequest;
 use App\Models\Module;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Validation\ValidationException;
 
 class SectionController extends Controller
 {
@@ -80,6 +81,12 @@ class SectionController extends Controller
         try {
             $this->testManagement->deleteSection((int) $id, $request->boolean('delete_children'));
             return response()->json(['status' => 'success', 'message' => 'Section deleted.']);
+        } catch (ValidationException $e) {
+            return response()->json([
+                'status' => 'error',
+                'message' => collect($e->errors())->flatten()->first() ?: $e->getMessage(),
+                'errors' => $e->errors(),
+            ], 422);
         } catch (\Exception $e) {
             Log::error('Failed to delete section', ['exception' => $e]);
             return response()->json(['status' => 'error', 'message' => 'Failed to delete section. Please try again or contact support.'], 500);

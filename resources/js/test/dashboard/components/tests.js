@@ -1,9 +1,12 @@
-import { BASE_URL } from '../core/config.js';
+import { BASE_URL, TEACHERS_SEARCH_URL } from '../core/config.js';
 import { showAlert, escapeHtml, humanizeUnderscores, showTableLoader, hideTableLoader, formatDateToShort } from '../utils/helpers.js';
 
 let localAllTests = [];
 let currentFilteredTests = [];
 let currentTestsRenderId = 0;
+let activeSharingTest = null;
+let selectedShareTeacher = null;
+let shareSearchTimeout = null;
 
 function testTypeLabel(type) {
     const labels = {
@@ -27,13 +30,20 @@ if (typeof window.__tdTestsPerPage === 'undefined') {
 
 function renderTestRowHtml(t) {
     const isOwner = t.is_owner;
+    const isShared = t.is_shared;
     const creatorName = t.created_by_name || 'Admin';
     const createdByHtml = `<span class="text-xs font-medium text-slate-600 truncate max-w-[110px] block" title="${escapeHtml(creatorName)}">${escapeHtml(creatorName)}</span>`;
+    const sharedBadge = t.shares_count > 0 && isOwner
+        ? `<span class="ml-2 rounded-full bg-indigo-50 px-2 py-0.5 text-[10px] font-bold text-indigo-700 ring-1 ring-inset ring-indigo-100">${escapeHtml(t.shares_count)} shared</span>`
+        : '';
+    const accessBadge = isShared
+        ? `<span class="ml-2 rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-bold text-slate-600 ring-1 ring-inset ring-slate-200">Shared with you</span>`
+        : '';
 
     // Title input/span
     const titleHtml = isOwner
         ? `<input type="text" class="test-title-input w-full bg-transparent border-0 hover:bg-slate-100 focus:bg-white focus:ring-2 focus:ring-indigo-500/20 focus:outline-none rounded-lg px-2 py-1 font-semibold text-slate-800 transition-all" value="${escapeHtml(t.title)}" data-id="${t.id}">`
-        : `<span class="px-2 py-1 font-semibold text-slate-800">${escapeHtml(t.title)}</span>`;
+        : `<span class="px-2 py-1 font-semibold text-slate-800">${escapeHtml(t.title)}${accessBadge}</span>`;
 
     // Public toggle checkbox
     const publicHtml = isOwner
@@ -58,11 +68,22 @@ function renderTestRowHtml(t) {
                 ${t.status !== 'archived' ? `<button type="button" class="dropdown-item change-test-status-btn" data-id="${t.id}" data-status="archived"><i class="bi bi-archive mr-2"></i> Archive</button>` : ''}
                 ${t.raw_type === 'full_length' ? `<button type="button" class="dropdown-item score-conversion-btn" data-id="${t.id}" data-title="${escapeHtml(t.title)}"><i class="bi bi-graph-up-arrow mr-2"></i> Score conversion</button>` : ''}
                 ${t.can_convert_to_normal ? `<button type="button" class="dropdown-item convert-to-normal-btn" data-id="${t.id}"><i class="bi bi-arrow-left-right mr-2"></i> Convert to Normal Full</button>` : ''}
+                <button type="button" class="dropdown-item manage-test-sharing-btn" data-id="${t.id}"><i class="bi bi-people mr-2"></i> Manage sharing${sharedBadge}</button>
                 <button type="button" class="dropdown-item clone-test-btn" data-id="${t.id}"><i class="bi bi-copy mr-2"></i> Clone</button>
                 <button type="button" class="dropdown-item text-danger delete-test-btn" data-id="${t.id}"><i class="bi bi-trash mr-2"></i> Delete</button>
             </div>
           </div>`
-        : `<span class="status-chip status-chip-readonly">Read-Only</span>`;
+        : isShared
+            ? `<div class="actions-dropdown">
+                <button type="button" class="px-2.5 py-1.5 text-xs font-bold rounded-lg border border-slate-200 bg-white text-slate-700 cursor-pointer hover:bg-slate-50 flex items-center gap-1" data-dropdown-trigger="true" aria-expanded="false" aria-label="Toggle actions menu">
+                    Actions <i class="bi bi-chevron-down text-[10px]"></i>
+                </button>
+                <div class="dropdown-menu hidden">
+                    <button type="button" class="dropdown-item clone-test-btn" data-id="${t.id}"><i class="bi bi-copy mr-2"></i> Clone</button>
+                    ${t.status === 'active' ? `<a class="dropdown-item" href="/teacher/classes"><i class="bi bi-send mr-2"></i> Assign in class</a>` : ''}
+                </div>
+              </div>`
+            : `<span class="status-chip status-chip-readonly">Read-Only</span>`;
 
     const rowClass = isOwner ? '' : 'row-shared';
 
@@ -230,6 +251,13 @@ export function renderTestsTable(tests) {
             created_by_name: t.created_by_name || (t.creator ? (t.creator.username || t.creator.email) : 'Admin'),
             created_at: formatDateToShort(t.created_at),
             is_public: t.is_public,
+            is_shared: t.is_shared !== undefined
+                ? Boolean(t.is_shared)
+                : (window.__currentUserRole === 'teacher'
+                    && t.created_by !== window.__currentUserId
+                    && Array.isArray(t.shares)
+                    && t.shares.some(share => Number(share.user_id) === Number(window.__currentUserId))),
+            shares_count: t.shares_count !== undefined ? Number(t.shares_count) : (Array.isArray(t.shares) ? t.shares.length : 0),
             can_convert_to_normal: canConvertToNormal,
             is_owner: t.is_owner !== undefined ? t.is_owner : (t.created_by === window.__currentUserId || window.__currentUserRole === 'admin')
         };
@@ -287,6 +315,8 @@ function initTestsEvents() {
         }, 300);
     });
 
+    initTestSharingModal();
+
     const tbody = document.getElementById('testsTableBody');
     if (tbody) {
         tbody.addEventListener('click', function(e) {
@@ -303,6 +333,14 @@ function initTestsEvents() {
             const behavior = window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth';
             panel.scrollIntoView({ behavior, block: 'nearest' });
             document.getElementById('scoreConversionSource').focus({ preventScroll: true });
+        });
+
+        tbody.addEventListener('click', async function(e) {
+            const button = e.target.closest('.manage-test-sharing-btn');
+            if (!button) return;
+            const test = localAllTests.find(item => String(item.id) === String(button.dataset.id));
+            if (!test) return;
+            await openTestSharingModal(test);
         });
 
         // Toggle Public visibility
@@ -375,6 +413,292 @@ function initTestsEvents() {
     }
 
     initScoreConversionPanel();
+}
+
+function initTestSharingModal() {
+    const modal = document.querySelector('[data-test-sharing-modal]');
+    const search = document.getElementById('shareTeacherSearch');
+    const addButton = document.getElementById('shareTeacherAdd');
+    if (!modal || modal.dataset.bound === '1' || !search || !addButton) return;
+    modal.dataset.bound = '1';
+
+    search.addEventListener('input', () => {
+        selectedShareTeacher = null;
+        addButton.disabled = true;
+        if (shareSearchTimeout) clearTimeout(shareSearchTimeout);
+        shareSearchTimeout = setTimeout(() => searchShareTeachers(search.value), 250);
+    });
+
+    document.getElementById('shareTeacherResults')?.addEventListener('click', event => {
+        const option = event.target.closest('[data-share-teacher-id]');
+        if (!option) return;
+        selectedShareTeacher = {
+            id: option.dataset.shareTeacherId,
+            name: option.dataset.shareTeacherName,
+            email: option.dataset.shareTeacherEmail,
+        };
+        search.value = `${selectedShareTeacher.name} (${selectedShareTeacher.email})`;
+        document.getElementById('shareTeacherResults').classList.add('hidden');
+        addButton.disabled = false;
+        search.focus();
+    });
+
+    addButton.addEventListener('click', addSharedTeacher);
+}
+
+async function openTestSharingModal(test) {
+    activeSharingTest = test;
+    selectedShareTeacher = null;
+    document.getElementById('shareTestId').value = test.id;
+    document.getElementById('testSharingSubtitle').textContent = `${test.title} can be shared with approved teachers for viewing, cloning, and assignment.`;
+    document.getElementById('shareTeacherSearch').value = '';
+    document.getElementById('shareTeacherAdd').disabled = true;
+    document.getElementById('shareTeacherResults').classList.add('hidden');
+    renderShareList([], true);
+    window.dispatchEvent(new CustomEvent('open-modal', { detail: 'testSharingModal' }));
+    await loadShares(test.id);
+}
+
+async function loadShares(testId) {
+    try {
+        const response = await fetch(`${BASE_URL}/tests/${testId}/shares`, {
+            headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
+            credentials: 'same-origin'
+        });
+        const data = await response.json();
+        if (!response.ok) throw new Error(responseMessage(data));
+        renderShareList(data.data || []);
+        if (activeSharingTest) activeSharingTest.shares_count = (data.data || []).length;
+    } catch (error) {
+        renderShareList([]);
+        showShareModalAlert('error', error.message || 'Could not load shared teachers.');
+    }
+}
+
+async function searchShareTeachers(query) {
+    const results = document.getElementById('shareTeacherResults');
+    if (!results) return;
+    if (!query || query.trim().length < 2) {
+        results.classList.add('hidden');
+        results.innerHTML = '';
+        return;
+    }
+
+    try {
+        const url = `${TEACHERS_SEARCH_URL}?q=${encodeURIComponent(query.trim())}`;
+        const response = await fetch(url, {
+            headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
+            credentials: 'same-origin'
+        });
+        const data = await response.json();
+        if (!response.ok) throw new Error(responseMessage(data));
+        const teachers = data.data || [];
+        results.innerHTML = teachers.length
+            ? teachers.map(teacher => `<button type="button" class="test-sharing-result" data-share-teacher-id="${teacher.id}" data-share-teacher-name="${escapeAttr(teacher.name)}" data-share-teacher-email="${escapeAttr(teacher.email)}">
+                <span>${escapeHtml(teacher.name)}</span>
+                <small>${escapeHtml(teacher.email)}</small>
+              </button>`).join('')
+            : '<div class="px-3 py-3 text-sm font-semibold text-slate-600">No approved teachers found.</div>';
+        results.classList.remove('hidden');
+    } catch (error) {
+        results.innerHTML = `<div class="px-3 py-3 text-sm font-semibold text-rose-700">${escapeHtml(error.message || 'Search failed.')}</div>`;
+        results.classList.remove('hidden');
+    }
+}
+
+async function addSharedTeacher() {
+    if (!activeSharingTest || !selectedShareTeacher) return;
+    const addButton = document.getElementById('shareTeacherAdd');
+    addButton.disabled = true;
+
+    try {
+        const response = await fetch(`${BASE_URL}/tests/${activeSharingTest.id}/shares`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Accept': 'application/json',
+                'X-Requested-With': 'XMLHttpRequest',
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+            },
+            credentials: 'same-origin',
+            body: JSON.stringify({ teacher_id: selectedShareTeacher.id })
+        });
+        const data = await response.json();
+        if (!response.ok) throw new Error(responseMessage(data));
+        showShareModalAlert('success', data.message || 'Teacher shared.');
+        document.getElementById('shareTeacherSearch').value = '';
+        selectedShareTeacher = null;
+        await loadShares(activeSharingTest.id);
+    } catch (error) {
+        showShareModalAlert('error', error.message || 'Could not share test.');
+    } finally {
+        addButton.disabled = true;
+    }
+}
+
+function renderShareList(shares, loading = false) {
+    const list = document.getElementById('shareList');
+    const empty = document.getElementById('shareEmptyState');
+    const badge = document.getElementById('shareCountBadge');
+    if (!list || !empty || !badge) return;
+
+    if (loading) {
+        if (!list.children.length) {
+            list.innerHTML = '<div class="p-4 text-sm font-semibold text-slate-600" id="shareLoadingState">Loading shared teachers...</div>';
+            empty.classList.add('hidden');
+        }
+        badge.textContent = 'Loading';
+        return;
+    }
+
+    const loadingEl = document.getElementById('shareLoadingState');
+    if (loadingEl) loadingEl.remove();
+
+    badge.textContent = `${shares.length} teacher${shares.length === 1 ? '' : 's'}`;
+    
+    // Animate empty state
+    if (!shares.length) {
+        if (empty.classList.contains('hidden')) {
+            empty.classList.remove('hidden');
+            empty.classList.add('opacity-0');
+            empty.style.display = 'block';
+            requestAnimationFrame(() => {
+                empty.classList.remove('opacity-0');
+                empty.classList.add('transition-opacity', 'duration-300', 'opacity-100');
+            });
+        }
+    } else {
+        if (!empty.classList.contains('hidden')) {
+            empty.classList.remove('opacity-100');
+            empty.classList.add('opacity-0');
+            setTimeout(() => {
+                empty.classList.add('hidden');
+                empty.style.display = '';
+            }, 300);
+        }
+    }
+
+    // Diff the list
+    const existingIds = new Set();
+    Array.from(list.children).forEach(child => {
+        const id = child.dataset.shareRowId;
+        if (!id) return;
+        if (!shares.find(s => String(s.user_id) === String(id))) {
+            // Remove
+            child.classList.remove('grid-rows-[1fr]');
+            child.classList.add('grid-rows-[0fr]');
+            const inner = child.firstElementChild;
+            if (inner) inner.classList.add('opacity-0');
+            setTimeout(() => child.remove(), 300);
+        } else {
+            existingIds.add(String(id));
+        }
+    });
+
+    shares.forEach(share => {
+        if (!existingIds.has(String(share.user_id))) {
+            // Add
+            const wrapper = document.createElement('div');
+            wrapper.className = 'grid grid-rows-[0fr] transition-[grid-template-rows] duration-300 ease-[var(--ease-out-quart,cubic-bezier(0.25,1,0.5,1))]';
+            wrapper.dataset.shareRowId = share.user_id;
+            
+            const inner = document.createElement('div');
+            inner.className = 'overflow-hidden transition-opacity duration-300 opacity-0';
+            
+            inner.innerHTML = `
+                <div class="test-sharing-row">
+                    <div class="min-w-0">
+                        <strong>${escapeHtml(share.name || share.email || 'Teacher')}</strong>
+                        <span>${escapeHtml(share.email || '')}</span>
+                    </div>
+                    <button type="button" class="test-sharing-remove" data-share-remove-id="${share.user_id}">
+                        <i class="bi bi-x-lg" aria-hidden="true"></i><span>Remove</span>
+                    </button>
+                </div>
+            `;
+            
+            wrapper.appendChild(inner);
+            list.appendChild(wrapper);
+            
+            // Setup remove handler
+            const removeBtn = inner.querySelector('.test-sharing-remove');
+            removeBtn.addEventListener('click', () => removeSharedTeacher(share.user_id));
+            
+            requestAnimationFrame(() => {
+                wrapper.classList.remove('grid-rows-[0fr]');
+                wrapper.classList.add('grid-rows-[1fr]');
+                inner.classList.remove('opacity-0');
+                inner.classList.add('opacity-100');
+            });
+        }
+    });
+}
+
+async function removeSharedTeacher(teacherId) {
+    if (!activeSharingTest || !teacherId) return;
+
+    try {
+        const response = await fetch(`${BASE_URL}/tests/${activeSharingTest.id}/shares/${teacherId}`, {
+            method: 'DELETE',
+            headers: {
+                'Accept': 'application/json',
+                'X-Requested-With': 'XMLHttpRequest',
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+            },
+            credentials: 'same-origin',
+        });
+        const data = await response.json();
+        if (!response.ok) throw new Error(responseMessage(data));
+        showShareModalAlert('success', data.message || 'Teacher removed from sharing.');
+        await loadShares(activeSharingTest.id);
+    } catch (error) {
+        showShareModalAlert('error', error.message || 'Could not remove teacher.');
+    }
+}
+
+function showShareModalAlert(type, message) {
+    const alertWrapper = document.getElementById('shareAlertWrapper');
+    const alertEl = document.getElementById('shareAlertContainer');
+    if (!alertWrapper || !alertEl) return;
+    
+    alertEl.className = 'rounded-lg p-3 text-sm font-medium mb-3 opacity-0 transition-opacity duration-300';
+    if (type === 'success') {
+        alertEl.classList.add('bg-emerald-50', 'text-emerald-700', 'border', 'border-emerald-200');
+        alertEl.innerHTML = `<i class="bi bi-check-circle-fill mr-2"></i>${escapeHtml(message)}`;
+    } else {
+        alertEl.classList.add('bg-rose-50', 'text-rose-700', 'border', 'border-rose-200');
+        alertEl.innerHTML = `<i class="bi bi-exclamation-circle-fill mr-2"></i>${escapeHtml(message)}`;
+    }
+    
+    // Expand height
+    alertWrapper.classList.remove('grid-rows-[0fr]');
+    alertWrapper.classList.add('grid-rows-[1fr]');
+    
+    // Fade in text slightly after height starts expanding
+    requestAnimationFrame(() => {
+        alertEl.classList.remove('opacity-0');
+        alertEl.classList.add('opacity-100');
+    });
+
+    setTimeout(() => {
+        // Fade out text
+        alertEl.classList.remove('opacity-100');
+        alertEl.classList.add('opacity-0');
+        
+        setTimeout(() => {
+            // Collapse height
+            alertWrapper.classList.remove('grid-rows-[1fr]');
+            alertWrapper.classList.add('grid-rows-[0fr]');
+        }, 300);
+    }, 4000);
+}
+
+function responseMessage(data) {
+    return data?.errors ? Object.values(data.errors).flat()[0] : (data?.message || 'Request failed.');
+}
+
+function escapeAttr(str) {
+    return escapeHtml(str).replace(/"/g, '&quot;');
 }
 
 function initScoreConversionPanel() {

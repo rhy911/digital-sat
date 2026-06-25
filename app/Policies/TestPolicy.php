@@ -25,6 +25,15 @@ class TestPolicy
         return $this->update($user, $test);
     }
 
+    public function manageSharing(User $user, Test $test): bool
+    {
+        if ($user->role === 'admin') {
+            return true;
+        }
+
+        return $user->role === 'teacher' && $user->id === $test->created_by;
+    }
+
     public function clone(User $user, Test $test): bool
     {
         // For clone, maybe anyone can clone a visible test?

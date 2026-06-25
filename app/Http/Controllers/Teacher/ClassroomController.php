@@ -43,8 +43,11 @@ class ClassroomController extends Controller
     public function show(Classroom $classroom)
     {
         $this->authorize('view', $classroom);
-        $classroom->load(['memberships.student', 'assignments.test'])->loadCount('activeMemberships');
-        $tests = Test::where('created_by', $classroom->owner_id)->where('status', 'active')->latest()->get(['id', 'title', 'content_locked_at']);
+        $classroom->load(['owner', 'memberships.student', 'assignments.test'])->loadCount('activeMemberships');
+        $tests = Test::assignableTo($classroom->owner)
+            ->with('shares')
+            ->latest()
+            ->get(['id', 'title', 'content_locked_at', 'created_by']);
         return view('teacher.classes.show', compact('classroom', 'tests'));
     }
 

@@ -207,6 +207,7 @@
                 SECTIONS_STORE_URL: "{{ route('home-dashboard.sections.store') }}",
                 MODULES_STORE_URL: "{{ route('home-dashboard.modules.store') }}",
                 QUESTIONS_ATTACH_URL: "{{ route('home-dashboard.questions.attach') }}",
+                TEACHERS_SEARCH_URL: "{{ route('home-dashboard.teachers.search') }}",
                 BASE_URL: "/admin",
                 QUESTIONS_PER_PAGE: 30
             };

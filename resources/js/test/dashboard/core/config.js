@@ -28,6 +28,7 @@ export const {
     SECTIONS_STORE_URL,
     MODULES_STORE_URL,
     QUESTIONS_ATTACH_URL,
+    TEACHERS_SEARCH_URL,
     BASE_URL,
 } = config;
 

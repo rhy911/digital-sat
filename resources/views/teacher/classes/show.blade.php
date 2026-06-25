@@ -87,7 +87,7 @@
             <div class="section-heading">
                 <div>
                     <h2>Assignments</h2>
-                    <p>Publish an owned active test to everyone in this class.</p>
+                    <p>Publish an owned or shared active test to everyone in this class.</p>
                 </div>
             </div>
             @if ($classroom->status === 'active')
@@ -96,10 +96,11 @@
                     <form method="POST" action="{{ route('teacher.assignments.store', $classroom) }}"
                         class="form-grid">@csrf
                         <label>Test<select name="test_id" required>
-                                <option value="">Select an owned test</option>
+                                <option value="">Select an active test</option>
                                 @foreach ($tests as $test)
+                                    @php($isShared = $test->created_by !== $classroom->owner_id)
                                     <option value="{{ $test->id }}">
-                                        {{ $test->title }}{{ $test->isContentLocked() ? ' (locked)' : '' }}</option>
+                                        {{ $test->title }}{{ $isShared ? ' (shared)' : '' }}{{ $test->isContentLocked() ? ' (locked)' : '' }}</option>
                                 @endforeach
                             </select>
                         </label>
@@ -107,12 +108,39 @@
                         <label class="span-2">Instructions
                             <textarea name="instructions" rows="3"></textarea>
                         </label>
-                        <label>Available from (Asia/Ho_Chi_Minh)<input type="datetime-local"
-                                name="available_at"></label><label>Due at (Asia/Ho_Chi_Minh)<input type="datetime-local"
-                                name="due_at"></label>
+                        <fieldset class="assignment-window span-2">
+                            <legend>Assignment window</legend>
+                            <p class="form-hint" id="assignment-window-help">
+                                Times use Asia/Ho_Chi_Minh. Leave available empty to open now, or due empty for no deadline.
+                            </p>
+                            <div class="assignment-window__grid">
+                                <label class="time-field" for="assignment_available_at">
+                                    <span class="time-field__label">Available from</span>
+                                    <span class="time-field__control">
+                                        <input id="assignment_available_at" type="text"
+                                            class="datetime-picker time-field__input" name="available_at"
+                                            placeholder="Open immediately" autocomplete="off"
+                                            aria-describedby="assignment-window-help assignment_available_hint"
+                                            data-window-role="start" data-window-pair="assignment_due_at">
+                                    </span>
+                                    <span class="time-field__hint" id="assignment_available_hint">Students can start after this time.</span>
+                                </label>
+                                <label class="time-field" for="assignment_due_at">
+                                    <span class="time-field__label">Due at</span>
+                                    <span class="time-field__control">
+                                        <input id="assignment_due_at" type="text"
+                                            class="datetime-picker time-field__input" name="due_at"
+                                            placeholder="No deadline" autocomplete="off"
+                                            aria-describedby="assignment-window-help assignment_due_hint"
+                                            data-window-role="end" data-window-pair="assignment_available_at">
+                                    </span>
+                                    <span class="time-field__hint" id="assignment_due_hint">Due time must be after availability.</span>
+                                </label>
+                            </div>
+                        </fieldset>
                         <label>Attempt limit<input type="number" name="attempt_limit" min="1" max="10"
                                 value="1" required></label>
-                        <div class="form-action"><button class="class-button class-button--primary">Save draft</button>
+                        <div class="form-action"><button class="class-button class-button--primary">Create assignment</button>
                         </div>
                     </form>
                 </details>

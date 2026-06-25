@@ -44,7 +44,8 @@ class Section extends Model
               ->orWhere('is_public', true)
               ->orWhereHas('test', function ($t) use ($user) {
                   $t->where('created_by', $user->id)
-                    ->orWhere('is_public', true);
+                    ->orWhere('is_public', true)
+                    ->orWhereHas('shares', fn ($shares) => $shares->where('user_id', $user->id));
               });
         });
     }

@@ -415,6 +415,10 @@ input[type="radio"] {
     transition: background-color 0.15s ease;
 }
 
+.actions-dropdown a.dropdown-item {
+    text-decoration: none;
+}
+
 .actions-dropdown .dropdown-item:hover {
     background-color: #f1f5f9;
     color: var(--text-primary);
@@ -892,6 +896,97 @@ select.ts-hidden-accessible {
     font-weight: 650;
     letter-spacing: 0;
     text-transform: none;
+}
+
+.test-sharing-modal {
+    color: var(--text-primary);
+}
+
+.test-sharing-results {
+    position: absolute;
+    right: 0;
+    left: 0;
+    top: calc(100% + 6px);
+    z-index: 20;
+    overflow: hidden;
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius);
+    background: #ffffff;
+    box-shadow: 0 8px 14px rgb(15 23 42 / 0.08);
+}
+
+.test-sharing-result {
+    display: flex;
+    width: 100%;
+    flex-direction: column;
+    gap: 2px;
+    padding: 10px 12px;
+    border: 0;
+    border-bottom: 1px solid #eef2f7;
+    background: #ffffff;
+    text-align: left;
+    cursor: pointer;
+}
+
+.test-sharing-result:last-child {
+    border-bottom: 0;
+}
+
+.test-sharing-result:hover,
+.test-sharing-result:focus-visible {
+    background: #f2f5ff;
+}
+
+.test-sharing-result span,
+.test-sharing-row strong {
+    color: #172033;
+    font-size: 13px;
+    font-weight: 700;
+}
+
+.test-sharing-result small,
+.test-sharing-row span {
+    display: block;
+    overflow: hidden;
+    color: #475569;
+    font-size: 12px;
+    font-weight: 500;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.test-sharing-row {
+    display: flex;
+    min-height: 58px;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    padding: 12px 14px;
+}
+
+.test-sharing-row:hover {
+    background: #f8fafc;
+}
+
+.test-sharing-remove {
+    display: inline-flex;
+    min-height: 34px;
+    flex-shrink: 0;
+    align-items: center;
+    gap: 6px;
+    border: 1px solid #fecaca;
+    border-radius: var(--radius);
+    background: #fff5f5;
+    color: #b91c1c;
+    padding: 0 10px;
+    font-size: 12px;
+    font-weight: 700;
+    cursor: pointer;
+}
+
+.test-sharing-remove:hover {
+    background: #fee2e2;
+    color: #991b1b;
 }
 
 /* ==================== 5. EASYMDE EDITOR COMPONENT SKIN ==================== */

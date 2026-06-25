@@ -159,6 +159,10 @@ Route::middleware(['auth', 'verified', 'role:admin,teacher', 'teacher.approved']
     Route::post('/tests', [\App\Http\Controllers\Admin\TestController::class, 'store'])->name('tests.store');
     Route::put('/tests/{id}', [\App\Http\Controllers\Admin\TestController::class, 'update'])->name('tests.update');
     Route::delete('/tests/{id}', [\App\Http\Controllers\Admin\TestController::class, 'destroy'])->name('tests.delete');
+    Route::get('/teachers/search', [\App\Http\Controllers\Admin\TestShareController::class, 'searchTeachers'])->name('teachers.search');
+    Route::get('/tests/{test}/shares', [\App\Http\Controllers\Admin\TestShareController::class, 'index'])->name('tests.shares.index');
+    Route::post('/tests/{test}/shares', [\App\Http\Controllers\Admin\TestShareController::class, 'store'])->name('tests.shares.store');
+    Route::delete('/tests/{test}/shares/{teacher}', [\App\Http\Controllers\Admin\TestShareController::class, 'destroy'])->name('tests.shares.destroy');
     Route::post('/tests/generate-full', [\App\Http\Controllers\Admin\TestStructureController::class, 'generateFullSat'])->name('tests.generate-full');
     Route::post('/tests/generate-configured', [\App\Http\Controllers\Admin\TestStructureController::class, 'generateConfigured'])->name('tests.generate-configured');
     Route::post('/tests/{id}/clone', [\App\Http\Controllers\Admin\TestStructureController::class, 'cloneTest'])->name('tests.clone');

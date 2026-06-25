@@ -237,6 +237,40 @@ class TeacherClassManagementTest extends TestCase
         $this->assertDatabaseHas('assignment_recipients', ['assignment_id' => $assignment->id, 'student_id' => $late->id, 'status' => 'active']);
     }
 
+    public function test_creating_assignment_publishes_immediately(): void
+    {
+        Notification::fake();
+        $teacher = $this->teacher(); $student = $this->student(); $classroom = $this->classroom($teacher); $test = $this->testFor($teacher);
+        $this->complete($test);
+        ClassroomMembership::create(['classroom_id' => $classroom->id, 'student_id' => $student->id, 'status' => 'active']);
+
+        $this->actingAs($teacher)->post(route('teacher.assignments.store', $classroom), [
+            'test_id' => $test->id,
+            'title' => 'Direct Publish Assignment',
+            'instructions' => 'Complete this test.',
+            'attempt_limit' => 2,
+        ])->assertRedirect()->assertSessionHas('success', 'Assignment created. Students were notified.');
+
+        $assignment = Assignment::where('title', 'Direct Publish Assignment')->firstOrFail();
+        $this->assertSame('published', $assignment->status);
+        $this->assertNotNull($assignment->published_at);
+        $this->assertDatabaseHas('assignment_recipients', ['assignment_id' => $assignment->id, 'student_id' => $student->id, 'status' => 'active']);
+        Notification::assertSentTo($student, AssignmentPublishedNotification::class);
+    }
+
+    public function test_creating_assignment_with_incomplete_test_does_not_leave_draft(): void
+    {
+        $teacher = $this->teacher(); $classroom = $this->classroom($teacher); $test = $this->testFor($teacher);
+
+        $this->actingAs($teacher)->post(route('teacher.assignments.store', $classroom), [
+            'test_id' => $test->id,
+            'title' => 'Incomplete Direct Publish',
+            'attempt_limit' => 1,
+        ])->assertSessionHasErrors('assignment');
+
+        $this->assertDatabaseMissing('assignments', ['title' => 'Incomplete Direct Publish']);
+    }
+
     public function test_publishing_assignment_locks_private_test_and_attempt_limit_is_enforced(): void
     {
         $teacher = $this->teacher(); $student = $this->student(); $classroom = $this->classroom($teacher); $test = $this->testFor($teacher);

@@ -12,8 +12,106 @@ if (!window.Alpine) {
 initTruncatedTooltips();
 initDialogManager();
 initAttemptMonitorPolling();
+initAutoDismissAlerts();
 
+import flatpickr from 'flatpickr';
+import 'flatpickr/dist/flatpickr.min.css';
 
+export function initDatePickers() {
+    document.querySelectorAll('.datetime-picker').forEach((input) => {
+        if (input._flatpickr) {
+            return;
+        }
+
+        flatpickr(input, {
+            enableTime: true,
+            dateFormat: "Y-m-d\\TH:i",
+            altInput: true,
+            altFormat: "d/m/Y h:i K",
+            time_24hr: false,
+            minDate: "today",
+            minuteIncrement: 5,
+            allowInput: true,
+            onChange: () => syncAssignmentWindow(input),
+            onClose: () => syncAssignmentWindow(input)
+        });
+    });
+
+    syncAssignmentWindows();
+}
+window.initDatePickers = initDatePickers;
+
+function syncAssignmentWindows() {
+    document.querySelectorAll('.datetime-picker[data-window-role]').forEach((input) => {
+        syncAssignmentWindow(input);
+    });
+}
+
+function syncAssignmentWindow(input) {
+    const pairId = input.dataset.windowPair;
+    if (!pairId || !input._flatpickr) {
+        return;
+    }
+
+    const pairInput = document.getElementById(pairId);
+    if (!pairInput?._flatpickr) {
+        return;
+    }
+
+    const startInput = input.dataset.windowRole === 'start' ? input : pairInput;
+    const endInput = input.dataset.windowRole === 'end' ? input : pairInput;
+    const startDate = startInput._flatpickr.selectedDates[0] ?? null;
+    const endDate = endInput._flatpickr.selectedDates[0] ?? null;
+
+    endInput._flatpickr.set('minDate', startDate || 'today');
+
+    const hasInvalidWindow = Boolean(startDate && endDate && endDate <= startDate);
+
+    if (hasInvalidWindow) {
+        endInput._flatpickr.clear();
+    }
+
+    setWindowError(endInput, hasInvalidWindow);
+}
+
+function setWindowError(input, hasError) {
+    input.closest('.time-field')?.classList.toggle('has-window-error', hasError);
+
+    [input, input._flatpickr?.altInput].filter(Boolean).forEach((field) => {
+        if (hasError) {
+            field.setAttribute('aria-invalid', 'true');
+        } else {
+            field.removeAttribute('aria-invalid');
+        }
+    });
+}
+
+// Auto-initialize on load and Livewire navigation
+document.addEventListener('DOMContentLoaded', () => {
+    initDatePickers();
+    initAutoDismissAlerts();
+});
+document.addEventListener('livewire:navigated', () => {
+    initDatePickers();
+    initAutoDismissAlerts();
+});
+
+export function initAutoDismissAlerts() {
+    document.querySelectorAll('.class-alert--success').forEach((alert) => {
+        if (alert.dataset.dismissInitialized === 'true') {
+            return;
+        }
+
+        alert.dataset.dismissInitialized = 'true';
+        const parsedDelay = Number.parseInt(alert.dataset.dismissTimeout || '4500', 10);
+        const delay = Number.isFinite(parsedDelay) ? parsedDelay : 4500;
+
+        window.setTimeout(() => {
+            alert.classList.add('is-dismissing');
+            window.setTimeout(() => alert.remove(), 260);
+        }, delay);
+    });
+}
 
 export function initDropdownToggle({
     triggerId = 'userDropdown',

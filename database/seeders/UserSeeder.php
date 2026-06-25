@@ -12,15 +12,17 @@ class UserSeeder extends Seeder
      */
     public function run(): void
     {
-        \App\Models\User::forceCreate([
-            'name' => 'Admin User',
-            'username' => 'admin',
-            'email' => 'admin@gmail.com',
-            'password' => \Illuminate\Support\Facades\Hash::make('password'),
-            'role' => 'admin',
-            'is_active' => true,
-            'email_verified_at' => now(),
-        ]);
+        \App\Models\User::updateOrCreate(
+            ['email' => 'admin@gmail.com'],
+            [
+                'name' => 'Admin User',
+                'username' => 'admin',
+                'password' => \Illuminate\Support\Facades\Hash::make('password'),
+                'role' => 'admin',
+                'is_active' => true,
+                'email_verified_at' => now(),
+            ]
+        );
 
         \App\Models\User::factory(10)->create();
     }

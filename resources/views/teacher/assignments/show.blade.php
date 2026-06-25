@@ -68,10 +68,10 @@
                     <label class="span-2">Instructions
                         <textarea name="instructions" rows="3">{{ $assignment->instructions }}</textarea>
                     </label>
-                    <label>Available from (Asia/Ho_Chi_Minh)<input type="datetime-local" name="available_at"
-                            value="{{ $assignment->available_at?->format('Y-m-d\TH:i') }}"></label>
-                    <label>Due at (Asia/Ho_Chi_Minh)<input type="datetime-local" name="due_at"
-                            value="{{ $assignment->due_at?->format('Y-m-d\TH:i') }}"></label>
+                    <label>Available from (Asia/Ho_Chi_Minh)<input type="text" class="datetime-picker" name="available_at"
+                            value="{{ $assignment->available_at?->format('Y-m-d\\TH:i') }}" placeholder="Select date and time..."></label>
+                    <label>Due at (Asia/Ho_Chi_Minh)<input type="text" class="datetime-picker" name="due_at"
+                            value="{{ $assignment->due_at?->format('Y-m-d\\TH:i') }}" placeholder="Select date and time..."></label>
                     <div class="form-action span-2">
                         <button class="class-button class-button--primary">Save settings</button>
                     </div>

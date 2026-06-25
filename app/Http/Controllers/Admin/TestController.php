@@ -11,6 +11,7 @@ use App\Services\TestStructureService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Validation\ValidationException;
 
 class TestController extends Controller
 {
@@ -78,6 +79,12 @@ class TestController extends Controller
             $this->testManagement->deleteTest((int) $id, $request->boolean('delete_children'));
 
             return response()->json(['status' => 'success', 'message' => 'Test deleted.']);
+        } catch (ValidationException $e) {
+            return response()->json([
+                'status' => 'error',
+                'message' => collect($e->errors())->flatten()->first() ?: $e->getMessage(),
+                'errors' => $e->errors(),
+            ], 422);
         } catch (\Exception $e) {
             Log::error('Failed to delete test', ['exception' => $e]);
 

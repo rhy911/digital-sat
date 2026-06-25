@@ -20,8 +20,8 @@ class TestBuilderController extends Controller
         try {
             $tests = Test::visibleTo(auth()->user())
                 ->where('title', '!=', 'Test Preview')
-                ->with(['creator', 'sections.creator', 'sections.modules.creator'])
-                ->withCount('userTests')
+                ->with(['creator', 'shares.teacher', 'sections.creator', 'sections.modules.creator'])
+                ->withCount(['userTests', 'shares'])
                 ->latest()
                 ->paginate(30);
         } catch (\Exception $e) {
@@ -73,8 +73,8 @@ class TestBuilderController extends Controller
     {
         $tests = Test::visibleTo(auth()->user())
             ->where('title', '!=', 'Test Preview')
-            ->with(['creator', 'sections.creator', 'sections.modules.creator'])
-            ->withCount('userTests')
+            ->with(['creator', 'shares.teacher', 'sections.creator', 'sections.modules.creator'])
+            ->withCount(['userTests', 'shares'])
             ->latest()
             ->paginate(30);
         $passages = Passage::latest()->paginate(30);

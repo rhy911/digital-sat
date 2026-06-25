@@ -11,6 +11,7 @@ use App\Http\Requests\Admin\StoreModuleRequest;
 use App\Http\Requests\Admin\UpdateModuleRequest;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
+use Illuminate\Validation\ValidationException;
 
 class ModuleController extends Controller
 {
@@ -115,6 +116,12 @@ class ModuleController extends Controller
         try {
             $this->testManagement->deleteModule((int) $id, $request->boolean('delete_children'));
             return response()->json(['status' => 'success', 'message' => 'Module deleted.']);
+        } catch (ValidationException $e) {
+            return response()->json([
+                'status' => 'error',
+                'message' => collect($e->errors())->flatten()->first() ?: $e->getMessage(),
+                'errors' => $e->errors(),
+            ], 422);
         } catch (\Exception $e) {
             return response()->json(['status' => 'error', 'message' => $e->getMessage()], 500);
         }

@@ -12,6 +12,7 @@ use App\Notifications\AssignmentPublishedNotification;
 use App\Services\AssignmentReportService;
 use App\Services\AssignmentService;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 
 class AssignmentController extends Controller
@@ -24,14 +25,19 @@ class AssignmentController extends Controller
         return redirect()->route('home');
     }
 
-    public function store(StoreAssignmentRequest $request, Classroom $classroom)
+    public function store(StoreAssignmentRequest $request, Classroom $classroom, AssignmentService $service)
     {
         $this->authorize('manage', $classroom);
         abort_if($classroom->status === 'archived', 409, 'Archived classes are read-only.');
-        $test = Test::whereKey($request->integer('test_id'))->where('created_by', $classroom->owner_id)->where('status', 'active')->first();
-        if (!$test) throw ValidationException::withMessages(['test_id' => 'Select one of your active tests. Clone shared tests before assigning them.']);
-        Assignment::create($request->validated() + ['classroom_id' => $classroom->id, 'teacher_id' => $classroom->owner_id]);
-        return back()->with('success', 'Assignment saved as draft.');
+        $test = Test::assignableTo($classroom->owner)->whereKey($request->integer('test_id'))->first();
+        if (!$test) throw ValidationException::withMessages(['test_id' => 'Select one of your active or shared active tests.']);
+        $assignment = DB::transaction(function () use ($request, $classroom, $service) {
+            $assignment = Assignment::create($request->validated() + ['classroom_id' => $classroom->id, 'teacher_id' => $classroom->owner_id]);
+
+            return $service->publish($assignment);
+        });
+        $assignment->recipients->each(fn ($recipient) => $recipient->student->notify(new AssignmentPublishedNotification($assignment)));
+        return back()->with('success', 'Assignment created. Students were notified.');
     }
 
     public function show(Assignment $assignment, AssignmentReportService $reports)
@@ -67,8 +73,8 @@ class AssignmentController extends Controller
     {
         $this->authorize('manage', $assignment);
         abort_if($assignment->classroom->status === 'archived', 409, 'Archived classes are read-only.');
-        $test = Test::whereKey($request->integer('test_id'))->where('created_by', $assignment->teacher_id)->where('status', 'active')->first();
-        if (!$test) throw ValidationException::withMessages(['test_id' => 'Select one of the teacher owner\'s active tests.']);
+        $test = Test::assignableTo($assignment->teacher)->whereKey($request->integer('test_id'))->first();
+        if (!$test) throw ValidationException::withMessages(['test_id' => 'Select one of the teacher owner\'s active or shared active tests.']);
         if ($assignment->attempts()->exists() && $request->integer('test_id') !== $assignment->test_id) {
             throw ValidationException::withMessages(['test_id' => 'Test cannot change after an attempt starts.']);
         }

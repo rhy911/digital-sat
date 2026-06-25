@@ -169,6 +169,29 @@ class HistoricalDataIntegrityTest extends TestCase
         $service->deleteTest($this->test->id, true);
     }
 
+    public function test_admin_delete_test_with_attempts_returns_validation_error()
+    {
+        UserTest::create([
+            'user_id' => $this->student->id,
+            'test_id' => $this->test->id,
+            'status' => 'in_progress',
+            'current_module_id' => $this->module->id,
+            'current_module_started_at' => now(),
+        ]);
+
+        $admin = User::factory()->create([
+            'role' => 'admin',
+            'email_verified_at' => now(),
+        ]);
+
+        $response = $this->actingAs($admin)
+            ->deleteJson(route('home-dashboard.tests.delete', ['id' => $this->test->id]));
+
+        $response->assertStatus(422);
+        $response->assertJsonFragment(['message' => 'Cannot delete test with existing student attempts.']);
+        $this->assertDatabaseHas('tests', ['id' => $this->test->id, 'deleted_at' => null]);
+    }
+
     public function test_deleting_question_with_answers_is_blocked()
     {
         $userTest = UserTest::create([

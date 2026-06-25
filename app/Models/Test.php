@@ -56,8 +56,18 @@ class Test extends Model
 
         return $query->where(function ($q) use ($user) {
             $q->where('created_by', $user->id)
-                ->orWhere('is_public', true);
+                ->orWhere('is_public', true)
+                ->orWhereHas('shares', fn ($shares) => $shares->where('user_id', $user->id));
         });
+    }
+
+    public function scopeAssignableTo($query, User $user)
+    {
+        return $query->where('status', 'active')
+            ->where(function ($q) use ($user) {
+                $q->where('created_by', $user->id)
+                    ->orWhereHas('shares', fn ($shares) => $shares->where('user_id', $user->id));
+            });
     }
 
     public function sections()
@@ -73,6 +83,18 @@ class Test extends Model
     public function assignments()
     {
         return $this->hasMany(Assignment::class);
+    }
+
+    public function shares()
+    {
+        return $this->hasMany(TestShare::class);
+    }
+
+    public function sharedTeachers()
+    {
+        return $this->belongsToMany(User::class, 'test_shares')
+            ->withPivot('shared_by')
+            ->withTimestamps();
     }
 
     public function isContentLocked(): bool
