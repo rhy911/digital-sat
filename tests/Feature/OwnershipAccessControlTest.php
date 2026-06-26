@@ -5,6 +5,7 @@ namespace Tests\Feature;
 use App\Models\Assignment;
 use App\Models\Classroom;
 use App\Models\Module;
+use App\Models\Question;
 use App\Models\Section;
 use App\Models\Test;
 use App\Models\User;
@@ -40,6 +41,14 @@ class OwnershipAccessControlTest extends TestCase
             'email' => 'admin@bluebook.com',
             'email_verified_at' => now(),
         ]);
+    }
+
+    private function complete(Test $test): void
+    {
+        $section = Section::create(['test_id' => $test->id, 'name' => 'Math', 'type' => 'math', 'order' => 1, 'created_by' => $test->created_by]);
+        $module = Module::create(['section_id' => $section->id, 'module_number' => 1, 'difficulty_level' => 'standard', 'duration_minutes' => 35, 'total_questions' => 1, 'order' => 1, 'created_by' => $test->created_by]);
+        $question = Question::create(['stem' => 'What is 1 + 1?', 'question_type' => 'student_produced_response', 'difficulty' => 'easy', 'section_type' => 'math', 'skill_domain' => 'algebra', 'calculator_allowed' => true, 'is_complete' => true, 'created_by' => $test->created_by]);
+        $module->questions()->attach($question->id, ['position' => 1]);
     }
 
     /**
@@ -270,13 +279,14 @@ class OwnershipAccessControlTest extends TestCase
     {
         $test = Test::create([
             'title' => 'Shared Active Test',
-            'test_type' => 'full_length',
+            'test_type' => 'custom_test',
             'break_duration_minutes' => 10,
             'status' => 'active',
             'created_by' => $this->teacher1->id,
             'is_public' => false,
         ]);
         $test->shares()->create(['user_id' => $this->teacher2->id, 'shared_by' => $this->teacher1->id]);
+        $this->complete($test);
         $classroom = Classroom::create(['owner_id' => $this->teacher2->id, 'name' => 'Shared Test Class']);
 
         $response = $this->actingAs($this->teacher2)->post(route('teacher.assignments.store', $classroom), [

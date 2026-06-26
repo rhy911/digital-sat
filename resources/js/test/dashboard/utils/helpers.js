@@ -216,12 +216,12 @@ export function getOrCreateAlertModal() {
             .custom-alert-modal {
                 position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; z-index: 10000;
                 display: flex; align-items: center; justify-content: center; opacity: 1; transition: opacity 0.2s ease;
-                will-change: opacity;
+                will-change: opacity; pointer-events: auto;
             }
             .custom-alert-modal.hidden { display: none !important; opacity: 0; }
             .custom-alert-backdrop {
                 position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-                background: rgba(8, 12, 21, 0.7);
+                background: rgba(8, 12, 21, 0.7); pointer-events: auto;
             }
             .custom-alert-box {
                 position: relative; background: #ffffff; border-radius: 12px;
@@ -229,7 +229,7 @@ export function getOrCreateAlertModal() {
                 width: 90%; max-width: 440px; padding: 28px;
                 display: flex; flex-direction: column; align-items: center; text-align: center;
                 transform: scale(1); transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1); z-index: 1;
-                will-change: transform;
+                will-change: transform; pointer-events: auto;
                 transform-gpu: translate3d(0,0,0);
             }
             .custom-alert-modal.hidden .custom-alert-box { transform: scale(0.95); }
@@ -264,6 +264,17 @@ export function getOrCreateAlertModal() {
 
     document.body.appendChild(modal);
     return modal;
+}
+
+function prepareAlertModal(modal) {
+    modal.inert = false;
+    modal.setAttribute('aria-hidden', 'false');
+    modal.style.pointerEvents = 'auto';
+}
+
+function hideAlertModal(modal) {
+    modal.classList.add('hidden');
+    modal.setAttribute('aria-hidden', 'true');
 }
 
 export function showCustomAlert(message, type = 'info', title = 'Notification') {
@@ -316,19 +327,33 @@ export function showCustomAlert(message, type = 'info', title = 'Notification') 
             `;
         }
 
+        const opener = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+        prepareAlertModal(modal);
         modal.classList.remove('hidden');
+        requestAnimationFrame(() => confirmBtn.focus({ preventScroll: true }));
 
         const handleConfirm = () => {
             cleanup();
             resolve(true);
         };
 
+        const handleKeydown = event => {
+            if (event.key === 'Escape' || event.key === 'Enter') {
+                event.preventDefault();
+                event.stopPropagation();
+                handleConfirm();
+            }
+        };
+
         const cleanup = () => {
-            modal.classList.add('hidden');
+            hideAlertModal(modal);
             confirmBtn.removeEventListener('click', handleConfirm);
+            modal.removeEventListener('keydown', handleKeydown);
+            if (opener?.isConnected) opener.focus({ preventScroll: true });
         };
 
         confirmBtn.addEventListener('click', handleConfirm);
+        modal.addEventListener('keydown', handleKeydown);
     });
 }
 
@@ -370,6 +395,7 @@ export function showCustomConfirm(message, type = 'warning', title = 'Confirm Ac
 
         const opener = document.activeElement instanceof HTMLElement ? document.activeElement : null;
         const appShell = document.querySelector('[data-test-builder-shell]');
+        prepareAlertModal(modal);
         modal.classList.remove('hidden');
         if (appShell) appShell.inert = true;
         requestAnimationFrame(() => cancelBtn.focus({ preventScroll: true }));
@@ -387,10 +413,12 @@ export function showCustomConfirm(message, type = 'warning', title = 'Confirm Ac
         const handleKeydown = event => {
             if (event.key === 'Escape') {
                 event.preventDefault();
+                event.stopPropagation();
                 handleCancel();
                 return;
             }
             if (event.key !== 'Tab') return;
+            event.stopPropagation();
             if (event.shiftKey && document.activeElement === cancelBtn) {
                 event.preventDefault();
                 confirmBtn.focus();
@@ -401,7 +429,7 @@ export function showCustomConfirm(message, type = 'warning', title = 'Confirm Ac
         };
 
         const cleanup = () => {
-            modal.classList.add('hidden');
+            hideAlertModal(modal);
             if (appShell) appShell.inert = false;
             confirmBtn.removeEventListener('click', handleConfirm);
             cancelBtn.removeEventListener('click', handleCancel);
@@ -443,6 +471,7 @@ export function showCustomPrompt(message, defaultValue = '', title = 'Input Requ
             </svg>
         `;
 
+        prepareAlertModal(modal);
         modal.classList.remove('hidden');
 
         setTimeout(() => {
@@ -468,7 +497,7 @@ export function showCustomPrompt(message, defaultValue = '', title = 'Input Requ
         };
 
         const cleanup = () => {
-            modal.classList.add('hidden');
+            hideAlertModal(modal);
             inputEl.classList.add('hidden');
             confirmBtn.removeEventListener('click', handleConfirm);
             cancelBtn.removeEventListener('click', handleCancel);
@@ -765,4 +794,3 @@ export function formatDateToShort(dateStr) {
     const year = String(date.getFullYear()).slice(-2);
     return `${day}/${month}/${year}`;
 }
-

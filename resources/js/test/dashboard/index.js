@@ -322,6 +322,65 @@ document.addEventListener('DOMContentLoaded', async function () {
         });
     }
 
+    let editQuestionInitialState = null;
+    let allowEditQuestionCloseOnce = false;
+
+    function serializeEditQuestionForm() {
+        const stemEditor = getEditStemEditor();
+        const passageEditor = getEditPassageEditor();
+        const explanationEditor = getEditExplanationEditor();
+        const state = {
+            question_type: document.getElementById('editQuestionType')?.value || '',
+            difficulty: document.getElementById('editDifficulty')?.value || '',
+            skill_domain: document.getElementById('editSkillDomain')?.value || '',
+            skill_subdomain: (document.getElementById('editSkillSubdomain')?.value || '').trim(),
+            spr_hint: (document.getElementById('editSprHint')?.value || '').trim(),
+            stem: (stemEditor ? stemEditor.value() : (document.getElementById('editQuestionStem')?.value || '')).trim(),
+            passage_content: (passageEditor ? passageEditor.value() : (document.getElementById('editPassageContent')?.value || '')).trim(),
+            explanation: (explanationEditor ? explanationEditor.value() : (document.getElementById('editExplanation')?.value || '')).trim(),
+            is_pretest: !!document.getElementById('editIsPretest')?.checked,
+            calculator_allowed: !!document.getElementById('editCalculatorAllowed')?.checked,
+            spr_answers: (document.getElementById('editSprAnswers')?.value || '').trim(),
+            rationales: ['A', 'B', 'C', 'D'].map(label => (document.getElementById(`editRationale${label}`)?.value || '').trim()),
+            choices: ['A', 'B', 'C', 'D'].map(label => ({
+                label,
+                content: (document.getElementById(`editChoice${label}Content`)?.value || '').trim(),
+                is_correct: !!document.getElementById(`editChoice${label}Correct`)?.checked,
+            })),
+        };
+
+        return JSON.stringify(state);
+    }
+
+    function editQuestionHasUnsavedChanges() {
+        const question = window.__editingQuestion;
+        const isOwner = question && (question.created_by === window.__currentUserId || window.__currentUserRole === 'admin');
+        return isOwner && editQuestionInitialState !== null && serializeEditQuestionForm() !== editQuestionInitialState;
+    }
+
+    window.addEventListener('close-modal', function (event) {
+        if (event.detail !== 'editQuestionModal') return;
+        if (allowEditQuestionCloseOnce) {
+            allowEditQuestionCloseOnce = false;
+            editQuestionInitialState = null;
+            return;
+        }
+        if (!editQuestionHasUnsavedChanges()) {
+            editQuestionInitialState = null;
+            return;
+        }
+
+        event.preventDefault();
+        event.stopImmediatePropagation();
+
+        showCustomConfirm('You have unsaved changes. Close without updating this question?', 'warning', 'Unsaved Changes')
+            .then(confirmed => {
+                if (!confirmed) return;
+                allowEditQuestionCloseOnce = true;
+                window.dispatchEvent(new CustomEvent('close-modal', { detail: 'editQuestionModal' }));
+            });
+    }, true);
+
     // Modal listeners
     window.addEventListener('open-modal', function (e) {
         if (e.detail !== 'editQuestionModal') return;
@@ -391,6 +450,8 @@ document.addEventListener('DOMContentLoaded', async function () {
                     tb.style.opacity = isOwner ? '1' : '0.5';
                 });
 
+                editQuestionInitialState = serializeEditQuestionForm();
+
                 setTimeout(() => {
                     if (stemEditor) stemEditor.codemirror.refresh();
                     if (passageEditor) passageEditor.codemirror.refresh();
@@ -453,6 +514,8 @@ document.addEventListener('DOMContentLoaded', async function () {
 
             if (response.ok) {
                 showAlert('success', 'Question updated successfully!');
+                editQuestionInitialState = serializeEditQuestionForm();
+                allowEditQuestionCloseOnce = true;
                 window.dispatchEvent(new CustomEvent('close-modal', { detail: 'editQuestionModal' }));
                 await refreshQuestionsTableOnly();
             } else {

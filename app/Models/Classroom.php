@@ -33,7 +33,15 @@ class Classroom extends Model
 
     public function getRouteKeyName(): string { return 'ulid'; }
     public function owner() { return $this->belongsTo(User::class, 'owner_id'); }
+    public function coTeachers() { return $this->belongsToMany(User::class, 'classroom_teachers', 'classroom_id', 'teacher_id')->withPivot('added_by')->withTimestamps(); }
     public function memberships() { return $this->hasMany(ClassroomMembership::class); }
     public function activeMemberships() { return $this->memberships()->where('status', 'active'); }
     public function assignments() { return $this->hasMany(Assignment::class); }
+    public function documents() { return $this->hasMany(ClassroomDocument::class); }
+
+    public function hasTeacher(User $user): bool
+    {
+        return (int) $this->owner_id === (int) $user->id
+            || $this->coTeachers()->whereKey($user->id)->exists();
+    }
 }

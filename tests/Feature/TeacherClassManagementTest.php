@@ -6,6 +6,7 @@ use App\Livewire\Teacher\Workspace;
 use App\Models\Assignment;
 use App\Models\AssignmentRecipient;
 use App\Models\Classroom;
+use App\Models\ClassroomDocument;
 use App\Models\ClassroomMembership;
 use App\Models\Module;
 use App\Models\Question;
@@ -18,7 +19,9 @@ use App\Notifications\AssignmentPublishedNotification;
 use App\Notifications\MembershipDecisionNotification;
 use App\Notifications\TeacherApprovalDecisionNotification;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Notification;
+use Illuminate\Support\Facades\Storage;
 use Livewire\Livewire;
 use Tests\TestCase;
 
@@ -201,6 +204,13 @@ class TeacherClassManagementTest extends TestCase
             ->assertOk()
             ->assertSee('class="ds-topbar"', false)
             ->assertSee('class="ds-teacher-workspace teacher-detail"', false)
+            ->assertSee('class="class-command"', false)
+            ->assertSee('Student join code')
+            ->assertSee('role="tablist"', false)
+            ->assertSee('class="class-tabs class-tabs--segmented"', false)
+            ->assertSee('Study documents')
+            ->assertSee('Add resource')
+            ->assertSee('Create assignment')
             ->assertSee('href="'.route('teacher.classes.index').'"', false)
             ->assertDontSee('class="teacher-nav"', false);
     }
@@ -635,6 +645,135 @@ class TeacherClassManagementTest extends TestCase
             ->assertRedirect();
 
         $this->assertSame('removed', $membership->fresh()->status);
+    }
+
+    public function test_owner_manages_co_teachers_and_co_teacher_can_manage_class(): void
+    {
+        $owner = $this->teacher();
+        $coTeacher = $this->teacher();
+        $student = $this->student();
+        $classroom = $this->classroom($owner);
+
+        $this->actingAs($owner)->post(route('teacher.classes.co-teachers.store', $classroom), [
+            'email' => $coTeacher->email,
+        ])->assertRedirect()->assertSessionHas('success', 'Co-teacher added.');
+
+        $this->assertDatabaseHas('classroom_teachers', [
+            'classroom_id' => $classroom->id,
+            'teacher_id' => $coTeacher->id,
+            'added_by' => $owner->id,
+        ]);
+
+        Livewire::actingAs($coTeacher)
+            ->test(Workspace::class)
+            ->assertSee($classroom->name);
+
+        $this->actingAs($coTeacher)
+            ->put(route('teacher.classes.update', $classroom), [
+                'name' => 'Co-taught SAT Cohort',
+                'description' => 'Updated by co-teacher',
+            ])->assertRedirect();
+
+        $membership = ClassroomMembership::create([
+            'classroom_id' => $classroom->id,
+            'student_id' => $student->id,
+            'status' => 'pending',
+            'requested_at' => now(),
+        ]);
+
+        $this->actingAs($coTeacher)->post(route('teacher.memberships.approve', $membership))->assertRedirect();
+        $this->assertSame('active', $membership->fresh()->status);
+
+        $this->actingAs($coTeacher)->post(route('teacher.classes.archive', $classroom))->assertForbidden();
+
+        $this->actingAs($owner)
+            ->delete(route('teacher.classes.co-teachers.destroy', [$classroom, $coTeacher]))
+            ->assertRedirect();
+
+        $this->actingAs($coTeacher)->get(route('teacher.classes.show', $classroom))->assertForbidden();
+    }
+
+    public function test_co_teacher_assigns_only_tests_they_can_access(): void
+    {
+        Notification::fake();
+        $owner = $this->teacher();
+        $coTeacher = $this->teacher();
+        $classroom = $this->classroom($owner);
+        $classroom->coTeachers()->attach($coTeacher->id, ['added_by' => $owner->id]);
+
+        $ownerPrivateTest = $this->testFor($owner);
+        $this->complete($ownerPrivateTest);
+
+        $coTeacherTest = $this->testFor($coTeacher);
+        $this->complete($coTeacherTest);
+
+        $this->actingAs($coTeacher)->post(route('teacher.assignments.store', $classroom), [
+            'test_id' => $ownerPrivateTest->id,
+            'title' => 'Owner private assignment',
+            'attempt_limit' => 1,
+        ])->assertSessionHasErrors('test_id');
+
+        $this->assertDatabaseMissing('assignments', ['title' => 'Owner private assignment']);
+
+        $this->actingAs($coTeacher)->post(route('teacher.assignments.store', $classroom), [
+            'test_id' => $coTeacherTest->id,
+            'title' => 'Co-teacher assignment',
+            'attempt_limit' => 1,
+        ])->assertRedirect();
+
+        $this->assertDatabaseHas('assignments', [
+            'classroom_id' => $classroom->id,
+            'teacher_id' => $coTeacher->id,
+            'test_id' => $coTeacherTest->id,
+            'title' => 'Co-teacher assignment',
+            'status' => 'published',
+        ]);
+    }
+
+    public function test_class_document_library_serves_active_students_only(): void
+    {
+        Storage::fake('local');
+        $teacher = $this->teacher();
+        $activeStudent = $this->student();
+        $pendingStudent = $this->student();
+        $outsider = $this->student();
+        $classroom = $this->classroom($teacher);
+
+        ClassroomMembership::create(['classroom_id' => $classroom->id, 'student_id' => $activeStudent->id, 'status' => 'active']);
+        ClassroomMembership::create(['classroom_id' => $classroom->id, 'student_id' => $pendingStudent->id, 'status' => 'pending']);
+
+        $this->actingAs($teacher)->post(route('teacher.classes.documents.store', $classroom), [
+            'source_type' => 'file',
+            'title' => 'Reading drills',
+            'description' => 'Use before next class.',
+            'document_file' => UploadedFile::fake()->create('reading-drills.pdf', 512, 'application/pdf'),
+        ])->assertRedirect();
+
+        $this->actingAs($teacher)->post(route('teacher.classes.documents.store', $classroom), [
+            'source_type' => 'link',
+            'title' => 'Vocabulary archive',
+            'external_url' => 'https://example.com/vocab',
+        ])->assertRedirect();
+
+        $fileDocument = ClassroomDocument::where('source_type', 'file')->firstOrFail();
+        Storage::disk('local')->assertExists($fileDocument->path);
+
+        $this->actingAs($activeStudent)
+            ->get(route('student.classes.show', $classroom))
+            ->assertOk()
+            ->assertSee('Reading drills')
+            ->assertSee('Vocabulary archive');
+
+        $this->actingAs($pendingStudent)->get(route('student.classes.show', $classroom))->assertForbidden();
+        $this->actingAs($outsider)->get(route('class-documents.open', $fileDocument))->assertForbidden();
+        $this->actingAs($activeStudent)->get(route('class-documents.open', $fileDocument))->assertOk();
+
+        $classroom->update(['status' => 'archived']);
+        $this->actingAs($teacher)->post(route('teacher.classes.documents.store', $classroom), [
+            'source_type' => 'link',
+            'title' => 'Archived link',
+            'external_url' => 'https://example.com/archived',
+        ])->assertStatus(409);
     }
 
     public function test_assignment_report_is_scalable_with_many_attempts(): void

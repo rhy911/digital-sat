@@ -43,8 +43,21 @@ class ClassroomController extends Controller
     public function show(Classroom $classroom)
     {
         $this->authorize('view', $classroom);
-        $classroom->load(['owner', 'memberships.student', 'assignments.test'])->loadCount('activeMemberships');
-        $tests = Test::assignableTo($classroom->owner)
+        $classroom->load([
+            'owner',
+            'coTeachers',
+            'memberships.student',
+            'assignments.test',
+            'documents.creator',
+        ])->loadCount([
+            'activeMemberships',
+            'coTeachers',
+            'documents',
+            'assignments',
+            'memberships as pending_memberships_count' => fn ($query) => $query->where('status', 'pending'),
+        ]);
+        $assignableTeacher = auth()->user()->role === 'admin' ? $classroom->owner : auth()->user();
+        $tests = Test::assignableTo($assignableTeacher)
             ->with('shares')
             ->latest()
             ->get(['id', 'title', 'content_locked_at', 'created_by']);
@@ -69,14 +82,14 @@ class ClassroomController extends Controller
 
     public function archive(Classroom $classroom, ClassroomService $service)
     {
-        $this->authorize('manage', $classroom);
+        $this->authorize('manageTeam', $classroom);
         $service->archive($classroom);
         return redirect()->route('teacher.classes.index')->with('success', 'Class archived. History remains available.');
     }
 
     public function restore(Classroom $classroom)
     {
-        $this->authorize('manage', $classroom);
+        $this->authorize('manageTeam', $classroom);
         $classroom->update(['status' => 'active']);
         return back()->with('success', 'Class restored. Closed assignments remain closed.');
     }

@@ -32,10 +32,16 @@
                     <div><span
                             class="status-chip status-chip--{{ $membership->status }}">{{ ucfirst($membership->status) }}</span>
                         <h3>{{ $membership->classroom->name }}</h3>
-                        <p>Teacher: {{ $membership->classroom->owner->name }}</p>
+                        <p>Teacher: {{ $membership->classroom->owner->name }}@if ($membership->classroom->coTeachers->isNotEmpty())
+                                · {{ $membership->classroom->coTeachers->count() }} co-teacher{{ $membership->classroom->coTeachers->count() === 1 ? '' : 's' }}
+                            @endif
+                        </p>
                     </div>
                     <div class="row-actions">
                         @if ($membership->status === 'active')
+                            <a class="class-button" wire:navigate
+                                href="{{ route('student.classes.show', $membership->classroom) }}">Open
+                                class</a>
                             <a class="class-button" wire:navigate
                                 href="{{ route('student.assignments.index', ['classroom' => $membership->classroom_id]) }}">View
                                 assignments</a>

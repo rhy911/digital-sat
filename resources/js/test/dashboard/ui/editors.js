@@ -56,6 +56,7 @@ export function debouncedEditQuestionPreview() {
     if (editPreviewDebouncer) clearTimeout(editPreviewDebouncer);
     editPreviewDebouncer = setTimeout(() => {
         updateEditQuestionPreview();
+        refreshEditMediaList();
     }, 200);
 }
 

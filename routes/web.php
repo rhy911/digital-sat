@@ -56,6 +56,11 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::post('/profile', [\App\Http\Controllers\ProfileController::class, 'update'])->name('profile.update');
 });
 
+Route::middleware(['auth', 'verified'])->group(function () {
+    Route::get('/class-documents/{document}/open', [\App\Http\Controllers\ClassroomDocumentAccessController::class, 'open'])->name('class-documents.open');
+    Route::get('/class-documents/{document}/download', [\App\Http\Controllers\ClassroomDocumentAccessController::class, 'download'])->name('class-documents.download');
+});
+
 Route::middleware(['auth', 'verified'])->get('/dashboard', function () {
     $user = auth()->user();
     return match ($user->role) {
@@ -78,6 +83,7 @@ Route::middleware(['auth', 'verified'])->prefix('student')->group(function () {
     Route::get('/scores/{userTest:ulid}', [\App\Http\Controllers\Student\ScoreController::class, 'show'])->name('my-practice.score');
     Route::middleware('role:student')->group(function () {
         Route::get('/classes', [\App\Http\Controllers\Student\ClassroomController::class, 'index'])->name('student.classes.index');
+        Route::get('/classes/{classroom}', [\App\Http\Controllers\Student\ClassroomController::class, 'show'])->name('student.classes.show');
         Route::post('/classes/join', [\App\Http\Controllers\Student\ClassroomController::class, 'join'])->middleware('throttle:10,1')->name('student.classes.join');
         Route::post('/classes/memberships/{membership}/leave', [\App\Http\Controllers\Student\ClassroomController::class, 'leave'])->name('student.classes.leave');
         Route::get('/assignments', [\App\Http\Controllers\Student\AssignmentController::class, 'index'])->name('student.assignments.index');
@@ -104,6 +110,10 @@ Route::middleware(['auth', 'verified', 'role:admin,teacher'])->prefix('teacher')
         Route::post('/classes/{classroom}/rotate-code', [\App\Http\Controllers\Teacher\ClassroomController::class, 'rotateCode'])->name('classes.rotate-code');
         Route::post('/classes/{classroom}/archive', [\App\Http\Controllers\Teacher\ClassroomController::class, 'archive'])->name('classes.archive');
         Route::post('/classes/{classroom}/restore', [\App\Http\Controllers\Teacher\ClassroomController::class, 'restore'])->name('classes.restore');
+        Route::post('/classes/{classroom}/co-teachers', [\App\Http\Controllers\Teacher\CoTeacherController::class, 'store'])->name('classes.co-teachers.store');
+        Route::delete('/classes/{classroom}/co-teachers/{teacher}', [\App\Http\Controllers\Teacher\CoTeacherController::class, 'destroy'])->name('classes.co-teachers.destroy');
+        Route::post('/classes/{classroom}/documents', [\App\Http\Controllers\Teacher\ClassroomDocumentController::class, 'store'])->name('classes.documents.store');
+        Route::delete('/classes/{classroom}/documents/{document}', [\App\Http\Controllers\Teacher\ClassroomDocumentController::class, 'destroy'])->name('classes.documents.destroy');
         Route::post('/memberships/{membership}/approve', [\App\Http\Controllers\Teacher\MembershipController::class, 'approve'])->name('memberships.approve');
         Route::post('/memberships/{membership}/reject', [\App\Http\Controllers\Teacher\MembershipController::class, 'reject'])->name('memberships.reject');
         Route::post('/memberships/{membership}/remove', [\App\Http\Controllers\Teacher\MembershipController::class, 'remove'])->name('memberships.remove');

@@ -29,10 +29,12 @@ class AssignmentController extends Controller
     {
         $this->authorize('manage', $classroom);
         abort_if($classroom->status === 'archived', 409, 'Archived classes are read-only.');
-        $test = Test::assignableTo($classroom->owner)->whereKey($request->integer('test_id'))->first();
+        $assignableTeacher = $request->user()->role === 'admin' ? $classroom->owner : $request->user();
+        $test = Test::assignableTo($assignableTeacher)->whereKey($request->integer('test_id'))->first();
         if (!$test) throw ValidationException::withMessages(['test_id' => 'Select one of your active or shared active tests.']);
-        $assignment = DB::transaction(function () use ($request, $classroom, $service) {
-            $assignment = Assignment::create($request->validated() + ['classroom_id' => $classroom->id, 'teacher_id' => $classroom->owner_id]);
+        $teacherId = $request->user()->role === 'admin' ? $classroom->owner_id : $request->user()->id;
+        $assignment = DB::transaction(function () use ($request, $classroom, $service, $teacherId) {
+            $assignment = Assignment::create($request->validated() + ['classroom_id' => $classroom->id, 'teacher_id' => $teacherId]);
 
             return $service->publish($assignment);
         });
@@ -73,9 +75,11 @@ class AssignmentController extends Controller
     {
         $this->authorize('manage', $assignment);
         abort_if($assignment->classroom->status === 'archived', 409, 'Archived classes are read-only.');
-        $test = Test::assignableTo($assignment->teacher)->whereKey($request->integer('test_id'))->first();
-        if (!$test) throw ValidationException::withMessages(['test_id' => 'Select one of the teacher owner\'s active or shared active tests.']);
-        if ($assignment->attempts()->exists() && $request->integer('test_id') !== $assignment->test_id) {
+        $testChanged = $request->integer('test_id') !== (int) $assignment->test_id;
+        $assignableTeacher = $request->user()->role === 'admin' ? $assignment->teacher : $request->user();
+        $test = Test::assignableTo($assignableTeacher)->whereKey($request->integer('test_id'))->first();
+        if ($testChanged && ! $test) throw ValidationException::withMessages(['test_id' => 'Select one of your active or shared active tests.']);
+        if ($assignment->attempts()->exists() && $testChanged) {
             throw ValidationException::withMessages(['test_id' => 'Test cannot change after an attempt starts.']);
         }
         $used = (int) $assignment->attempts()->max('attempt_number');

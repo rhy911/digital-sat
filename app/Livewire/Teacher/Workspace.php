@@ -74,19 +74,24 @@ class Workspace extends Component
 
         if ($this->section === 'classes') {
             $classes = Classroom::query()
-                ->when($user->role !== 'admin', fn ($query) => $query->where('owner_id', $user->id))
+                ->when($user->role !== 'admin', fn ($query) => $query->where(fn ($scope) => $scope
+                    ->where('owner_id', $user->id)
+                    ->orWhereHas('coTeachers', fn ($teachers) => $teachers->whereKey($user->id))))
                 ->where('status', $this->classStatus)
                 ->with('owner')
                 ->withCount([
                     'activeMemberships',
                     'assignments',
+                    'coTeachers',
                     'memberships as pending_memberships_count' => fn ($query) => $query->where('status', 'pending'),
                 ])
                 ->latest()
                 ->paginate(12, pageName: 'classesPage');
         } else {
             $assignments = Assignment::query()
-                ->when($user->role !== 'admin', fn ($query) => $query->where('teacher_id', $user->id))
+                ->when($user->role !== 'admin', fn ($query) => $query->whereHas('classroom', fn ($scope) => $scope
+                    ->where('owner_id', $user->id)
+                    ->orWhereHas('coTeachers', fn ($teachers) => $teachers->whereKey($user->id))))
                 ->with(['classroom', 'test'])
                 ->withCount(['recipients', 'attempts'])
                 ->latest()

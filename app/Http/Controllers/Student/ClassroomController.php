@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Student;
 
 use App\Http\Controllers\Controller;
+use App\Models\Classroom;
 use App\Models\ClassroomMembership;
 use App\Services\ClassroomService;
 use Illuminate\Http\Request;
@@ -11,9 +12,29 @@ class ClassroomController extends Controller
 {
     public function index(Request $request)
     {
-        $memberships = $request->user()->classroomMemberships()->with(['classroom.owner', 'classroom.assignments'])->latest()->get();
+        $memberships = $request->user()->classroomMemberships()->with(['classroom.owner', 'classroom.coTeachers', 'classroom.assignments'])->latest()->get();
         return view('student.classes.index', ['user' => $request->user(), 'memberships' => $memberships]);
     }
+
+    public function show(Request $request, Classroom $classroom)
+    {
+        abort_unless($classroom->memberships()
+            ->where('student_id', $request->user()->id)
+            ->where('status', 'active')
+            ->exists(), 403);
+
+        $classroom->load([
+            'owner',
+            'coTeachers',
+            'documents' => fn ($query) => $query->with('creator')->latest(),
+        ])->loadCount([
+            'documents',
+            'assignments' => fn ($query) => $query->whereIn('status', ['published', 'closed']),
+        ]);
+
+        return view('student.classes.show', ['user' => $request->user(), 'classroom' => $classroom]);
+    }
+
     public function join(Request $request, ClassroomService $service)
     {
         $data = $request->validate(['join_code' => 'required|string|size:8']);
