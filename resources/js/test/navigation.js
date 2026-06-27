@@ -143,7 +143,12 @@ export function showQuestion(index) {
     
     const originalHTML = area.innerHTML;
     const newHTML = originalHTML.replace(/(?<!\!)\[Media:([^\]]+)\]/gi, (match, filename) => {
-      return `<img src="/storage/media/${filename}" alt="${filename}" class="question-media img-fluid">`;
+      const safeFilename = filename.trim();
+      if (!/^[A-Za-z0-9]{20}\.(jpe?g|png|gif|webp|svg)$/i.test(safeFilename)) {
+        return match;
+      }
+
+      return `<img src="/media/${safeFilename}" alt="${safeFilename}" class="question-media img-fluid">`;
     });
     
     if (newHTML !== originalHTML) {

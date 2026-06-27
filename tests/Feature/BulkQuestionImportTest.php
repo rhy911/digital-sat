@@ -133,7 +133,7 @@ class BulkQuestionImportTest extends TestCase
         $choiceA = AnswerChoice::where('question_id', $question->id)->where('label', 'A')->first();
         $this->assertNotNull($choiceA);
         $this->assertStringContainsString('![](', $choiceA->content);
-        $this->assertStringContainsString('/storage/media/', $choiceA->content);
+        $this->assertStringContainsString('/media/', $choiceA->content);
 
         // Verify choice B does not have media
         $choiceB = AnswerChoice::where('question_id', $question->id)->where('label', 'B')->first();
@@ -142,7 +142,7 @@ class BulkQuestionImportTest extends TestCase
 
         // Assert file was stored on public disk
         $matches = [];
-        preg_match('/\/storage\/media\/([a-zA-Z0-9]+\.png)/', $choiceA->content, $matches);
+        preg_match('/\/media\/([a-zA-Z0-9]+\.png)/', $choiceA->content, $matches);
         $this->assertNotEmpty($matches);
         $storedFilename = $matches[1];
         Storage::disk('public')->assertExists('media/' . $storedFilename);

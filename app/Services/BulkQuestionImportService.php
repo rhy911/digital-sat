@@ -244,7 +244,7 @@ class BulkQuestionImportService
                     }
 
                     Storage::disk('public')->put('media/' . $newName, $content);
-                    $url = asset('storage/media/' . $newName);
+                    $url = '/media/' . $newName;
                     
                     \Illuminate\Support\Facades\Log::info("Media imported: $filename -> media/$newName");
                     

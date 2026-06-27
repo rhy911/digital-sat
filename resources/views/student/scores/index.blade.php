@@ -171,12 +171,12 @@
                     'moduleNumber' => $moduleNumber,
                     'correctAnswer' => $correctAnswer,
                     'questionData' => [
-                        'stem' => \Illuminate\Support\Str::markdown($answer->question->stem ?? '', [
+                        'stem' => \Illuminate\Support\Str::markdown(\App\Support\QuestionMediaUrl::normalizeMarkdown($answer->question->stem ?? ''), [
                             'html_input' => 'strip',
                             'allow_unsafe_links' => false,
                         ]),
                         'explanation' => \Illuminate\Support\Str::markdown(
-                            $answer->question->explanation?->explanation ?? 'No explanation available.',
+                            \App\Support\QuestionMediaUrl::normalizeMarkdown($answer->question->explanation?->explanation ?? 'No explanation available.'),
                             ['html_input' => 'strip', 'allow_unsafe_links' => false],
                         ),
                         'correct_answer' => $correctAnswer,
@@ -187,7 +187,7 @@
                             ->map(function ($c) {
                                 return [
                                     'label' => $c->label,
-                                    'content' => \Illuminate\Support\Str::markdown($c->content ?? '', [
+                                    'content' => \Illuminate\Support\Str::markdown(\App\Support\QuestionMediaUrl::normalizeMarkdown($c->content ?? ''), [
                                         'html_input' => 'strip',
                                         'allow_unsafe_links' => false,
                                     ]),

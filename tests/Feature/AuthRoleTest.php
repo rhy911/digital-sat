@@ -4,6 +4,7 @@ namespace Tests\Feature;
 
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Auth;
 use Tests\TestCase;
 
 class AuthRoleTest extends TestCase
@@ -45,6 +46,34 @@ class AuthRoleTest extends TestCase
         $response->assertJsonFragment([
             'message' => 'Đăng nhập thành công.',
         ]);
+        $this->assertAuthenticatedAs($this->student);
+    }
+
+    public function test_student_login_accepts_checked_remember_box(): void
+    {
+        $response = $this->postJson(route('signin'), [
+            'email' => 'student@bluebook.com',
+            'password' => 'password',
+            'role' => 'student',
+            'remember' => '1',
+        ]);
+
+        $response->assertStatus(200);
+        $response->assertCookie(Auth::getRecallerName());
+        $this->assertAuthenticatedAs($this->student);
+    }
+
+    public function test_student_login_accepts_browser_default_remember_value(): void
+    {
+        $response = $this->postJson(route('signin'), [
+            'email' => 'student@bluebook.com',
+            'password' => 'password',
+            'role' => 'student',
+            'remember' => 'on',
+        ]);
+
+        $response->assertStatus(200);
+        $response->assertCookie(Auth::getRecallerName());
         $this->assertAuthenticatedAs($this->student);
     }
 

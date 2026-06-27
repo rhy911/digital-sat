@@ -13,6 +13,7 @@ use App\Http\Controllers\Engine\AttemptController;
 use App\Http\Controllers\Engine\SessionController;
 use App\Http\Controllers\Engine\AnswerController;
 use App\Http\Controllers\Engine\SubmissionController;
+use App\Http\Controllers\Admin\MediaController;
 use Illuminate\Support\Facades\Route;
 
 // Public routes
@@ -20,6 +21,9 @@ Route::get('/', LandingController::class)->name('landing');
 Route::get('/landing-new', function () {
     return view('public.landing');
 });
+Route::get('/media/{filename}', [MediaController::class, 'show'])
+    ->where('filename', '[A-Za-z0-9]{20}\.(?:jpe?g|png|gif|webp|svg)')
+    ->name('media.show');
 Route::redirect('/home', '/student/progress');
 
 // Guest auth routes

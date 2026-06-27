@@ -75,12 +75,62 @@ export function compileMarkdownToHtml(text) {
     return text.replace(/\n/g, '<br>');
 }
 
+export function normalizeQuestionMediaUrl(url) {
+    if (!url || typeof url !== 'string') return url;
+
+    const value = url.trim();
+    const mediaPathPrefix = '/storage/media/';
+    const targetPathPrefix = '/media/';
+
+    if (value.startsWith(targetPathPrefix)) {
+        return value;
+    }
+
+    const toMediaUrl = (pathname) => {
+        if (!pathname.startsWith(mediaPathPrefix)) return null;
+
+        const filename = pathname.slice(mediaPathPrefix.length).split(/[?#]/)[0];
+        if (!/^[A-Za-z0-9]{20}\.(jpe?g|png|gif|webp|svg)$/i.test(filename)) {
+            return null;
+        }
+
+        return `${targetPathPrefix}${filename}`;
+    };
+
+    const relativeMediaUrl = toMediaUrl(value);
+    if (relativeMediaUrl) {
+        return relativeMediaUrl;
+    }
+
+    try {
+        const parsed = new URL(value, window.location.origin);
+        const isAppMediaHost = parsed.origin === window.location.origin || parsed.hostname === 'dsat.bkse.vn';
+        const absoluteMediaUrl = toMediaUrl(parsed.pathname);
+
+        if (isAppMediaHost && absoluteMediaUrl) {
+            return absoluteMediaUrl;
+        }
+    } catch (e) {
+        return value;
+    }
+
+    return value;
+}
+
 export function processMedia(text) {
     if (!text || typeof text !== 'string') return text;
     // Convert backslash delimiters to $$ for consistent preview rendering
     text = text.replace(/\\\(/g, '$$').replace(/\\\)/g, '$$');
+    text = text.replace(/!\[([^\]]*)\]\(([^)]+)\)/g, (match, alt, url) => {
+        return `![${alt}](${normalizeQuestionMediaUrl(url)})`;
+    });
     return text.replace(/(?<!\!)\[Media:([^\]]+)\]/gi, (match, filename) => {
-        return `<img src="/storage/media/${filename}" alt="${filename}" class="question-media img-fluid mb-2 d-block mx-auto" style="max-height: 300px;">`;
+        const safeFilename = filename.trim();
+        if (!/^[A-Za-z0-9]{20}\.(jpe?g|png|gif|webp|svg)$/i.test(safeFilename)) {
+            return match;
+        }
+
+        return `<img src="/media/${safeFilename}" alt="${safeFilename}" class="question-media img-fluid mb-2 d-block mx-auto" style="max-height: 300px;">`;
     });
 }
 

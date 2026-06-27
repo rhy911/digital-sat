@@ -54,7 +54,7 @@
 
         <div class="auth-form-links flex justify-between items-center w-full">
             <label class="flex items-center gap-2 cursor-pointer text-sm font-semibold text-slate-600 select-none">
-                <input type="checkbox" name="remember" id="remember"
+                <input type="checkbox" name="remember" id="remember" value="1"
                     class="w-4 h-4 rounded border-slate-300 accent-[#4361EE] cursor-pointer">
                 <span>Remember me</span>
             </label>

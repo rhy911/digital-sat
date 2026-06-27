@@ -1,4 +1,4 @@
-import { getPremiumToolbar, compileMarkdownToHtml, processMedia, showAlert, showCustomConfirm, escapeHtml } from '../utils/helpers.js';
+import { getPremiumToolbar, compileMarkdownToHtml, processMedia, showAlert, showCustomConfirm, escapeHtml, normalizeQuestionMediaUrl } from '../utils/helpers.js';
 import { MEDIA_UPLOAD_URL, SKILL_DOMAINS, BASE_URL } from '../core/config.js';
 
 let editPassageEditor, editStemEditor, editExplanationEditor;
@@ -185,11 +185,12 @@ export function refreshEditMediaList() {
     } else {
         foundUrls.forEach(url => {
             const col = document.createElement('div');
+            const previewUrl = normalizeQuestionMediaUrl(url);
             col.className = 'relative group border border-slate-200 rounded-lg p-2 bg-white flex items-center justify-center h-28 transition-all hover:border-indigo-300';
             col.innerHTML = `
-                <img src="${url}" class="max-h-24 rounded-lg object-contain w-full h-full" onerror="this.src='https://placehold.co/100x100?text=Error'">
+                <img src="${escapeHtml(previewUrl)}" class="max-h-24 rounded-lg object-contain w-full h-full" onerror="this.src='https://placehold.co/100x100?text=Error'">
                 <button type="button" class="absolute -top-2 -right-2 w-6 h-6 bg-rose-600 hover:bg-rose-700 text-white rounded-full shadow-sm flex items-center justify-center text-xs font-black transition-all cursor-pointer" 
-                        data-action="remove-media" data-url="${url}" data-is-url="true" title="Remove from all fields" aria-label="Remove media from all fields">
+                        data-action="remove-media" data-url="${escapeHtml(url)}" data-is-url="true" title="Remove from all fields" aria-label="Remove media from all fields">
                     &times;
                 </button>
             `;
@@ -199,9 +200,9 @@ export function refreshEditMediaList() {
         foundPlaceholders.forEach(filename => {
             const col = document.createElement('div');
             col.className = 'relative group border border-slate-200 rounded-lg p-2 bg-white flex flex-col items-center justify-center h-28 transition-all hover:border-indigo-300';
-            const predictedUrl = `/storage/media/${filename}`;
+            const predictedUrl = normalizeQuestionMediaUrl(`/storage/media/${filename}`);
             col.innerHTML = `
-                <img src="${predictedUrl}" class="max-h-16 rounded-lg object-contain w-full mb-1" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex'">
+                <img src="${escapeHtml(predictedUrl)}" class="max-h-16 rounded-lg object-contain w-full mb-1" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex'">
                 <div class="flex flex-col items-center justify-center" style="display:none;">
                     <i class="bi bi-file-earmark-image text-slate-500" style="font-size: 1.5rem;"></i>
                     <div class="text-[9px] text-slate-400 text-truncate px-1 max-w-[80px] font-mono" title="${escapeHtml(filename)}">${filename}</div>
