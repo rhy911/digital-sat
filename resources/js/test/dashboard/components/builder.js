@@ -1,4 +1,12 @@
-import { SKILL_DOMAINS, BULK_STORE_URL, BASE_URL, QUESTIONS_LIST_URL } from '../core/config.js';
+import {
+    SKILL_DOMAINS,
+    BULK_STORE_URL,
+    BASE_URL,
+    QUESTIONS_LIST_URL,
+    QUESTION_UPDATE_URL_TEMPLATE,
+    dashboardJsonResponse,
+    dashboardResourceUrl,
+} from '../core/config.js';
 import { 
     getPremiumToolbar, compileMarkdownToHtml, getTomSelectValue, showAlert, showCustomConfirm,
     stripTags, humanizeUnderscores, escapeHtml
@@ -1098,19 +1106,21 @@ export async function submitBuilderQuestions() {
 
         // 1. Save / Update existing questions
         for (const eq of existingQuestionsToUpdate) {
-            const response = await fetch(`${BASE_URL}/questions/${eq.id}`, {
+            const response = await fetch(dashboardResourceUrl(QUESTION_UPDATE_URL_TEMPLATE, 'questions', eq.id), {
                 method: 'PUT',
                 headers: {
                     'Content-Type': 'application/json',
                     'Accept': 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest',
                     'X-CSRF-TOKEN': csrfToken
                 },
+                credentials: 'same-origin',
                 body: JSON.stringify(eq)
             });
 
             if (!response.ok) {
-                const result = await response.json();
-                throw new Error(`Failed to update existing question ID ${eq.id}: ${result.message || response.statusText}`);
+                const message = await dashboardJsonResponse(response, 'PUT').catch(error => error.message);
+                throw new Error(`Failed to update existing question ID ${eq.id}: ${message}`);
             }
         }
 

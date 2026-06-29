@@ -1,7 +1,8 @@
 import {
     SKILL_DOMAINS, TEST_DASHBOARD_TAB_KEY, SNAPSHOT_URL, SECTIONS_STORE_URL,
     MODULES_STORE_URL, BASE_URL, BULK_STORE_URL,
-    CSV_BULK_URL, MEDIA_UPLOAD_URL
+    CSV_BULK_URL, MEDIA_UPLOAD_URL, QUESTION_UPDATE_URL_TEMPLATE,
+    dashboardJsonResponse, dashboardResourceUrl
 } from './core/config.js';
 import './core/examples.js';
 import {
@@ -506,22 +507,19 @@ document.addEventListener('DOMContentLoaded', async function () {
             data.is_pretest = document.getElementById('editIsPretest').checked ? 1 : 0;
             data.calculator_allowed = document.getElementById('editCalculatorAllowed').checked ? 1 : 0;
 
-            const response = await fetch(`${BASE_URL}/questions/${id}`, {
+            const response = await fetch(dashboardResourceUrl(QUESTION_UPDATE_URL_TEMPLATE, 'questions', id), {
                 method: 'PUT',
-                headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content, 'Accept': 'application/json' },
+                headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content, 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
+                credentials: 'same-origin',
                 body: JSON.stringify(data)
             });
 
-            if (response.ok) {
-                showAlert('success', 'Question updated successfully!');
-                editQuestionInitialState = serializeEditQuestionForm();
-                allowEditQuestionCloseOnce = true;
-                window.dispatchEvent(new CustomEvent('close-modal', { detail: 'editQuestionModal' }));
-                await refreshQuestionsTableOnly();
-            } else {
-                const result = await response.json();
-                showAlert('danger', result.message || 'Update failed');
-            }
+            await dashboardJsonResponse(response, 'PUT');
+            showAlert('success', 'Question updated successfully!');
+            editQuestionInitialState = serializeEditQuestionForm();
+            allowEditQuestionCloseOnce = true;
+            window.dispatchEvent(new CustomEvent('close-modal', { detail: 'editQuestionModal' }));
+            await refreshQuestionsTableOnly();
         } catch (error) { showAlert('danger', 'Submission error: ' + error.message); }
     });
 

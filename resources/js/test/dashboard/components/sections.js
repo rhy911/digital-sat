@@ -1,4 +1,8 @@
-import { BASE_URL } from '../core/config.js';
+import {
+    SECTION_UPDATE_URL_TEMPLATE,
+    dashboardJsonResponse,
+    dashboardResourceUrl,
+} from '../core/config.js';
 import { humanizeUnderscores, showTableLoader, hideTableLoader, escapeHtml, showAlert, formatDateToShort } from '../utils/helpers.js';
 
 let localAllSections = [];
@@ -10,6 +14,10 @@ if (typeof window.__tdSectionsPage === 'undefined') {
 }
 if (typeof window.__tdSectionsPerPage === 'undefined') {
     window.__tdSectionsPerPage = 30;
+}
+
+function sectionUpdateUrl(sectionId) {
+    return dashboardResourceUrl(SECTION_UPDATE_URL_TEMPLATE, 'sections', sectionId);
 }
 
 function renderSectionRowHtml(s) {
@@ -261,15 +269,17 @@ function initSectionsEvents() {
             const sectionId = checkbox.dataset.id;
             const checked = checkbox.checked;
             
-            fetch(`${BASE_URL}/sections/${sectionId}`, {
+            fetch(sectionUpdateUrl(sectionId), {
                 method: 'PUT',
                 headers: {
                     'Content-Type': 'application/json',
                     'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
-                    'Accept': 'application/json'
+                    'Accept': 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest'
                 },
+                credentials: 'same-origin',
                 body: JSON.stringify({ is_public: checked })
-            }).then(res => res.json()).then(res => {
+            }).then(res => dashboardJsonResponse(res, 'PUT')).then(res => {
                 if (res.status === 'success') {
                     showAlert('success', 'Section visibility updated!');
                     const s = localAllSections.find(item => String(item.id) === String(sectionId));
@@ -278,8 +288,8 @@ function initSectionsEvents() {
                     showAlert('danger', res.message || 'Failed to update visibility');
                     checkbox.checked = !checked;
                 }
-            }).catch(() => {
-                showAlert('danger', 'Error updating section visibility');
+            }).catch(error => {
+                showAlert('danger', error.message || 'Error updating section visibility');
                 checkbox.checked = !checked;
             });
         });
@@ -297,15 +307,17 @@ function initSectionsEvents() {
                 return;
             }
 
-            fetch(`${BASE_URL}/sections/${sectionId}`, {
+            fetch(sectionUpdateUrl(sectionId), {
                 method: 'PUT',
                 headers: { 
                     'Content-Type': 'application/json', 
                     'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content, 
-                    'Accept': 'application/json' 
+                    'Accept': 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest'
                 },
+                credentials: 'same-origin',
                 body: JSON.stringify({ name: newName })
-            }).then(res => res.json()).then(res => {
+            }).then(res => dashboardJsonResponse(res, 'PUT')).then(res => {
                 if (res.status === 'success') {
                     showAlert('success', 'Section name updated successfully!');
                     input.defaultValue = newName;
@@ -315,8 +327,8 @@ function initSectionsEvents() {
                     showAlert('danger', res.message || 'Failed to update section name');
                     input.value = input.defaultValue || '';
                 }
-            }).catch(() => {
-                showAlert('danger', 'Error updating section name');
+            }).catch(error => {
+                showAlert('danger', error.message || 'Error updating section name');
                 input.value = input.defaultValue || '';
             });
         });

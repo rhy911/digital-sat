@@ -208,6 +208,10 @@
                 MODULES_STORE_URL: "{{ route('home-dashboard.modules.store') }}",
                 QUESTIONS_ATTACH_URL: "{{ route('home-dashboard.questions.attach') }}",
                 TEACHERS_SEARCH_URL: "{{ route('home-dashboard.teachers.search') }}",
+                TEST_UPDATE_URL_TEMPLATE: "{{ route('home-dashboard.tests.update', ['id' => '__ID__'], false) }}",
+                SECTION_UPDATE_URL_TEMPLATE: "{{ route('home-dashboard.sections.update', ['id' => '__ID__'], false) }}",
+                MODULE_UPDATE_URL_TEMPLATE: "{{ route('home-dashboard.modules.update', ['id' => '__ID__'], false) }}",
+                QUESTION_UPDATE_URL_TEMPLATE: "{{ route('home-dashboard.questions.update', ['id' => '__ID__'], false) }}",
                 BASE_URL: "/admin",
                 QUESTIONS_PER_PAGE: 30
             };

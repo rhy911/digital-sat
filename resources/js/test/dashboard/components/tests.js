@@ -1,4 +1,10 @@
-import { BASE_URL, TEACHERS_SEARCH_URL } from '../core/config.js';
+import {
+    BASE_URL,
+    TEACHERS_SEARCH_URL,
+    TEST_UPDATE_URL_TEMPLATE,
+    dashboardJsonResponse,
+    dashboardResourceUrl,
+} from '../core/config.js';
 import { showAlert, escapeHtml, humanizeUnderscores, showTableLoader, hideTableLoader, formatDateToShort } from '../utils/helpers.js';
 
 let localAllTests = [];
@@ -26,6 +32,10 @@ if (typeof window.__tdTestsPage === 'undefined') {
 }
 if (typeof window.__tdTestsPerPage === 'undefined') {
     window.__tdTestsPerPage = 30;
+}
+
+function testUpdateUrl(testId) {
+    return dashboardResourceUrl(TEST_UPDATE_URL_TEMPLATE, 'tests', testId);
 }
 
 function renderTestRowHtml(t) {
@@ -351,15 +361,17 @@ function initTestsEvents() {
             const testId = checkbox.dataset.id;
             const checked = checkbox.checked;
             
-            fetch(`${BASE_URL}/tests/${testId}`, {
+            fetch(testUpdateUrl(testId), {
                 method: 'PUT',
                 headers: {
                     'Content-Type': 'application/json',
                     'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
-                    'Accept': 'application/json'
+                    'Accept': 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest'
                 },
+                credentials: 'same-origin',
                 body: JSON.stringify({ is_public: checked })
-            }).then(res => res.json()).then(res => {
+            }).then(res => dashboardJsonResponse(res, 'PUT')).then(res => {
                 if (res.status === 'success') {
                     showAlert('success', 'Test visibility updated!');
                     const t = localAllTests.find(item => String(item.id) === String(testId));
@@ -368,8 +380,8 @@ function initTestsEvents() {
                     showAlert('danger', res.message || 'Failed to update visibility');
                     checkbox.checked = !checked;
                 }
-            }).catch(() => {
-                showAlert('danger', 'Error updating test visibility');
+            }).catch(error => {
+                showAlert('danger', error.message || 'Error updating test visibility');
                 checkbox.checked = !checked;
             });
         });
@@ -387,15 +399,17 @@ function initTestsEvents() {
                 return;
             }
 
-            fetch(`${BASE_URL}/tests/${testId}`, {
+            fetch(testUpdateUrl(testId), {
                 method: 'PUT',
                 headers: { 
                     'Content-Type': 'application/json', 
                     'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content, 
-                    'Accept': 'application/json' 
+                    'Accept': 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest'
                 },
+                credentials: 'same-origin',
                 body: JSON.stringify({ title: newTitle })
-            }).then(res => res.json()).then(res => {
+            }).then(res => dashboardJsonResponse(res, 'PUT')).then(res => {
                 if (res.status === 'success') {
                     showAlert('success', 'Test title updated successfully!');
                     input.defaultValue = newTitle;
@@ -405,8 +419,8 @@ function initTestsEvents() {
                     showAlert('danger', res.message || 'Failed to update title');
                     input.value = input.defaultValue || '';
                 }
-            }).catch(() => {
-                showAlert('danger', 'Error updating test title');
+            }).catch(error => {
+                showAlert('danger', error.message || 'Error updating test title');
                 input.value = input.defaultValue || '';
             });
         });
@@ -788,23 +802,22 @@ function initScoreConversionPanel() {
 
 export async function updateTestStatus(testId, status, refreshCallback) {
     try {
-        const response = await fetch(`${BASE_URL}/tests/${testId}`, {
+        const response = await fetch(testUpdateUrl(testId), {
             method: 'PUT',
             headers: {
                 'Content-Type': 'application/json',
+                'Accept': 'application/json',
+                'X-Requested-With': 'XMLHttpRequest',
                 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
             },
+            credentials: 'same-origin',
             body: JSON.stringify({ status: status })
         });
 
-        if (response.ok) {
-            showAlert('success', 'Status updated!');
-            if (refreshCallback) await refreshCallback();
-        } else {
-            const res = await response.json();
-            showAlert('danger', res.message || 'Failed to update status');
-        }
+        await dashboardJsonResponse(response, 'PUT');
+        showAlert('success', 'Status updated!');
+        if (refreshCallback) await refreshCallback();
     } catch (error) {
-        showAlert('danger', 'Error: ' + error.message);
+        showAlert('danger', 'Error: ' + (error.message || 'Failed to update status'));
     }
 }

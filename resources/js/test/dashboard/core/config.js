@@ -29,10 +29,55 @@ export const {
     MODULES_STORE_URL,
     QUESTIONS_ATTACH_URL,
     TEACHERS_SEARCH_URL,
+    TEST_UPDATE_URL_TEMPLATE,
+    SECTION_UPDATE_URL_TEMPLATE,
+    MODULE_UPDATE_URL_TEMPLATE,
+    QUESTION_UPDATE_URL_TEMPLATE,
     BASE_URL,
 } = config;
 
 export const TEST_DASHBOARD_TAB_KEY = 'testDashboardActiveTab';
+
+export function dashboardResourceUrl(template, resource, id) {
+    const encodedId = encodeURIComponent(String(id));
+    if (template && template.includes('__ID__')) {
+        return template.replace('__ID__', encodedId);
+    }
+
+    const baseUrl = BASE_URL || '/admin';
+    return `${baseUrl}/${resource}/${encodedId}`;
+}
+
+export async function dashboardRequestErrorMessage(response, method = 'GET') {
+    const contentType = response.headers.get('content-type') || '';
+    if (contentType.includes('application/json')) {
+        try {
+            const data = await response.json();
+            if (data?.errors) return Object.values(data.errors).flat().join(' ');
+            if (data?.message) return data.message;
+        } catch (error) {
+            // Fall through to generic message when the response advertises JSON but is malformed.
+        }
+    }
+
+    const url = response.url
+        ? new URL(response.url, window.location.origin).pathname
+        : 'request';
+    return `Request failed (${response.status}): ${method} ${url}`;
+}
+
+export async function dashboardJsonResponse(response, method = 'GET') {
+    if (!response.ok) {
+        throw new Error(await dashboardRequestErrorMessage(response, method));
+    }
+
+    const contentType = response.headers.get('content-type') || '';
+    if (contentType.includes('application/json')) {
+        return response.json();
+    }
+
+    return {};
+}
 
 // Shared state that was previously on window
 if (typeof window.__tdQuestionsPage === 'undefined') {

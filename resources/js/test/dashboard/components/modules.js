@@ -1,5 +1,13 @@
 import { escapeHtml, capitalizeFirstLetter, showTableLoader, hideTableLoader, showAlert } from '../utils/helpers.js';
-import { BASE_URL } from '../core/config.js';
+import {
+    MODULE_UPDATE_URL_TEMPLATE,
+    dashboardJsonResponse,
+    dashboardResourceUrl,
+} from '../core/config.js';
+
+function moduleUpdateUrl(moduleId) {
+    return dashboardResourceUrl(MODULE_UPDATE_URL_TEMPLATE, 'modules', moduleId);
+}
 
 export function moduleDifficultyBadgeClass(level) {
     if (level === 'hard') {
@@ -282,15 +290,17 @@ export function initModulesSearch() {
         const moduleId = checkbox.dataset.id;
         const checked = checkbox.checked;
         
-        fetch(`${BASE_URL}/modules/${moduleId}`, {
+        fetch(moduleUpdateUrl(moduleId), {
             method: 'PUT',
             headers: {
                 'Content-Type': 'application/json',
                 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
-                'Accept': 'application/json'
+                'Accept': 'application/json',
+                'X-Requested-With': 'XMLHttpRequest'
             },
+            credentials: 'same-origin',
             body: JSON.stringify({ is_public: checked })
-        }).then(res => res.json()).then(res => {
+        }).then(res => dashboardJsonResponse(res, 'PUT')).then(res => {
             if (res.status === 'success') {
                 showAlert('success', 'Module visibility updated!');
                 const mod = localAllModules.find(m => String(m.id) === String(moduleId));
@@ -299,8 +309,8 @@ export function initModulesSearch() {
                 showAlert('danger', res.message || 'Failed to update visibility');
                 checkbox.checked = !checked;
             }
-        }).catch(() => {
-            showAlert('danger', 'Error updating module visibility');
+        }).catch(error => {
+            showAlert('danger', error.message || 'Error updating module visibility');
             checkbox.checked = !checked;
         });
     });
