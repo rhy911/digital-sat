@@ -1,4 +1,5 @@
 import { state } from './state.js';
+import { getTimerElapsedSeconds, syncTimer } from './timer.js';
 import { 
   updateQuestionButtonStates,
   showLoadingScreen,
@@ -42,6 +43,10 @@ export function initSecurity() {
     showCustomAlert('You cannot use the Back button during a test.');
   });
 }
+
+document.addEventListener('test-timer-expired', () => {
+  submitModule({ skipConfirm: true, timedOut: true });
+});
 
 // Ensure initSecurity is called when app starts
 document.addEventListener('DOMContentLoaded', () => {
@@ -239,6 +244,14 @@ export function initializeAutosave() {
       autosaveAnswers();
     }
   }, 15000);
+
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState !== 'hidden') return;
+    if (state.isSubmitting || window.isPreview || !window.userTestId || !window.currentModuleId) return;
+
+    syncTimer();
+    autosaveAnswers();
+  });
 }
 
 function scheduleAutosave() {
@@ -253,7 +266,7 @@ function scheduleAutosave() {
 async function autosaveAnswers() {
   if (window.isPreview || !window.userTestId || !window.currentModuleId) return;
 
-  const elapsed = (window.initialElapsedSeconds || 0) + Math.round((window.durationMinutes || 0) * 60 - state.timeLeft);
+  const elapsed = (window.initialElapsedSeconds || 0) + getTimerElapsedSeconds();
   const elapsed_seconds = Math.max(0, elapsed);
 
   const answers = collectAnswers();

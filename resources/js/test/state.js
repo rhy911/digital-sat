@@ -25,6 +25,9 @@ export const state = {
   timerInterval: null,
   timerStartedAtMs: null,
   timerInitialSeconds: 0,
+  timerPausedMs: 0,
+  timerPausedStartedAtMs: null,
+  timerWakeHandlersInitialized: false,
   isUntimed: false,
   isPaused: false,
   isSubmitting: false

@@ -20,7 +20,7 @@ class AppServiceProvider extends ServiceProvider
     public function boot(): void
     {
         \Illuminate\Support\Facades\Blade::directive('markdown', function ($expression) {
-            return "<?php echo \Illuminate\Support\Str::markdown(\App\Support\QuestionMediaUrl::normalizeMarkdown(str_replace(['\(', '\)'], ['$$', '$$'], $expression)), ['html_input' => 'strip', 'allow_unsafe_links' => false]); ?>";
+            return "<?php echo \App\Support\QuestionContentRenderer::markdown($expression); ?>";
         });
 
         $locks = app(\App\Services\TestContentLockService::class);

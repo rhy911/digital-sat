@@ -1,10 +1,11 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" translate="no" class="notranslate">
 
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="csrf-token" content="{{ csrf_token() }}">
+    <meta name="google" content="notranslate">
     <title>{{ $pageTitle ?? 'Test' }}</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -31,7 +32,7 @@
     @stack('styles')
 </head>
 
-<body>
+<body translate="no" class="notranslate">
     <!-- Secure Test Loading Screen -->
     <div id="loadingScreen" class="loading-screen flex flex-col items-center justify-center">
         <div class="loading-container text-center">
@@ -50,7 +51,7 @@
         </div>
     </div>
 
-    <header>
+    <header translate="no" class="notranslate">
         <div class="flex flex-col justify-start">
             <h1 class="text-xl md:text-2xl font-medium">Section {{ $sectionNumber ?? '1' }}, Module
                 {{ $moduleNumber ?? '1' }}:
@@ -152,10 +153,10 @@
             </div>
         </div>
     </header>
-    <main>
+    <main translate="no" class="notranslate">
         {{ $slot }}
     </main>
-    <footer>
+    <footer translate="no" class="notranslate">
         <div class="flex justify-start">
             <div>
                 <h1 class="text-xl md:text-2xl font-medium">{{ $username ?? 'No Name Available' }}</h1>

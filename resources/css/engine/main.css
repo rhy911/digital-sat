@@ -186,6 +186,56 @@ footer * {
     white-space: pre-wrap;
 }
 
+.stem-text table,
+.passage-container table,
+.answer-option label table {
+    width: auto;
+    max-width: 100%;
+    margin: 1rem 0;
+    border-collapse: collapse;
+    border: 1px solid #6b7280;
+    font-family: "Noto Serif", Georgia, serif;
+    font-size: 0.95rem;
+    line-height: 1.45;
+    color: #111827;
+    background: #fff;
+}
+
+.stem-text table caption,
+.passage-container table caption,
+.answer-option label table caption {
+    caption-side: top;
+    padding: 0 0 0.45rem;
+    font-weight: 700;
+    text-align: left;
+    color: #111827;
+}
+
+.stem-text th,
+.stem-text td,
+.passage-container th,
+.passage-container td,
+.answer-option label th,
+.answer-option label td {
+    border: 1px solid #6b7280;
+    padding: 0.45rem 0.65rem;
+    vertical-align: top;
+    text-align: left;
+}
+
+.stem-text th,
+.passage-container th,
+.answer-option label th {
+    font-weight: 700;
+    background: #f3f4f6;
+}
+
+.stem-text thead th,
+.passage-container thead th,
+.answer-option label thead th {
+    border-bottom-width: 2px;
+}
+
 .stem-text img,
 .passage-container img,
 .question-media {

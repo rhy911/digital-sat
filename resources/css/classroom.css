@@ -1391,51 +1391,78 @@
     align-self: center;
     display: inline-flex;
     align-items: center;
-    gap: 6px;
-    padding: 4px;
+    gap: 4px;
+    padding: 3px;
     border: 1px solid var(--cw-line);
     border-radius: var(--cw-radius-sm);
     background: var(--cw-surface);
     box-shadow: 0 1px 2px oklch(0% 0 0 / 0.03);
 }
-.document-row__actions :is(a, button) {
+.document-action {
     min-height: 38px;
-    border-radius: calc(var(--cw-radius-sm) - 0.18rem);
-    white-space: nowrap;
-}
-.document-row__actions .class-button {
-    min-width: 78px;
-    border-color: var(--cw-accent);
-    background: var(--cw-accent);
-    color: #fff;
-    box-shadow: 0 1px 2px oklch(0% 0 0 / 0.05);
-}
-.document-row__actions .class-button:hover {
-    border-color: var(--cw-accent-dark);
-    background: var(--cw-accent-dark);
-}
-.document-row__actions .text-button {
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    padding: 8px 12px;
+    gap: 7px;
+    border: 0;
+    border-radius: calc(var(--cw-radius-sm) - 0.18rem);
+    background: transparent;
     color: var(--cw-muted-strong);
+    font: inherit;
+    font-size: 0.9rem;
+    font-weight: 850;
+    line-height: 1;
     text-decoration: none;
+    white-space: nowrap;
+    cursor: pointer;
+    transition:
+        color 180ms var(--cw-ease),
+        background-color 180ms var(--cw-ease),
+        box-shadow 180ms var(--cw-ease),
+        transform 100ms ease-out;
 }
-.document-row__actions .text-button:hover {
+.document-action svg {
+    width: 16px;
+    height: 16px;
+    flex: 0 0 auto;
+}
+.document-action:hover {
     background: var(--cw-surface-soft);
     color: var(--cw-accent-dark);
     text-decoration: none;
 }
-.document-row__actions form {
-    margin: 0;
+.document-action:focus-visible {
+    outline: none;
+    box-shadow: 0 0 0 3px var(--cw-focus);
 }
-.document-row__actions .text-button--danger {
+.document-action:active {
+    transform: translateY(1px);
+}
+.document-action--primary {
+    min-width: 84px;
+    padding: 0 13px;
+    background: var(--cw-accent);
+    color: #fff;
+    box-shadow: 0 1px 2px oklch(0% 0 0 / 0.05);
+}
+.document-action--primary:hover {
+    background: var(--cw-accent-dark);
+    color: #fff;
+}
+.document-action--icon {
+    width: 38px;
+    min-width: 38px;
+    padding: 0;
+}
+.document-action--danger {
     color: var(--cw-danger);
 }
-.document-row__actions .text-button--danger:hover {
+.document-action--danger:hover {
     background: oklch(96% 0.025 24);
     color: var(--cw-danger-dark);
+}
+.document-row__actions form {
+    margin: 0;
 }
 .document-actions {
     grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -2233,10 +2260,10 @@
         justify-content: flex-start;
     }
     .document-row__actions {
-        align-self: stretch;
-        flex-direction: column;
+        align-self: flex-start;
+        flex-direction: row;
+        width: auto;
     }
-    .document-row .row-actions :is(a, form, button),
     .teacher-team-row .row-actions :is(form, button) {
         width: 100%;
     }

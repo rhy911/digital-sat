@@ -296,20 +296,54 @@
                                     </div>
                                 </div>
                             </div>
-                            <div class="row-actions document-row__actions">
+                            <div class="row-actions document-row__actions" role="group" aria-label="Document actions">
                                 @if ($document->isFile())
-                                    <a class="class-button" href="{{ route('class-documents.open', $document) }}" target="_blank"
-                                        rel="noopener">Open</a>
-                                    <a class="text-button" href="{{ route('class-documents.download', $document) }}">Download</a>
+                                    <a class="document-action document-action--primary" href="{{ route('class-documents.open', $document) }}" target="_blank"
+                                        rel="noopener">
+                                        <svg aria-hidden="true" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none"
+                                            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                            <path d="M15 3h6v6" />
+                                            <path d="M10 14 21 3" />
+                                            <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
+                                        </svg>
+                                        <span>Open</span>
+                                    </a>
+                                    <a class="document-action document-action--icon" href="{{ route('class-documents.download', $document) }}"
+                                        aria-label="Download {{ $document->title }}" title="Download">
+                                        <svg aria-hidden="true" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none"
+                                            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                                            <path d="M7 10l5 5 5-5" />
+                                            <path d="M12 15V3" />
+                                        </svg>
+                                    </a>
                                 @else
-                                    <a class="class-button" href="{{ $document->external_url }}" target="_blank"
-                                        rel="noopener noreferrer">Open</a>
+                                    <a class="document-action document-action--primary" href="{{ $document->external_url }}" target="_blank"
+                                        rel="noopener noreferrer">
+                                        <svg aria-hidden="true" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none"
+                                            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                            <path d="M15 3h6v6" />
+                                            <path d="M10 14 21 3" />
+                                            <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
+                                        </svg>
+                                        <span>Open</span>
+                                    </a>
                                 @endif
                                 @if ($classroom->status === 'active')
                                     <form method="POST" action="{{ route('teacher.classes.documents.destroy', [$classroom, $document]) }}"
                                         data-confirm="Remove this study document?">
                                         @csrf @method('DELETE')
-                                        <button class="text-button text-button--danger">Remove</button>
+                                        <button class="document-action document-action--icon document-action--danger"
+                                            aria-label="Remove {{ $document->title }}" title="Remove">
+                                            <svg aria-hidden="true" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none"
+                                                stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                                <path d="M3 6h18" />
+                                                <path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+                                                <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6" />
+                                                <path d="M10 11v6" />
+                                                <path d="M14 11v6" />
+                                            </svg>
+                                        </button>
                                     </form>
                                 @endif
                             </div>
