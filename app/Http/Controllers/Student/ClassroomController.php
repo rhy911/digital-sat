@@ -18,10 +18,12 @@ class ClassroomController extends Controller
 
     public function show(Request $request, Classroom $classroom)
     {
-        abort_unless($classroom->memberships()
+        $membership = $classroom->memberships()
             ->where('student_id', $request->user()->id)
             ->where('status', 'active')
-            ->exists(), 403);
+            ->first();
+
+        abort_unless($membership, 403);
 
         $classroom->load([
             'owner',
@@ -32,7 +34,11 @@ class ClassroomController extends Controller
             'assignments' => fn ($query) => $query->whereIn('status', ['published', 'closed']),
         ]);
 
-        return view('student.classes.show', ['user' => $request->user(), 'classroom' => $classroom]);
+        return view('student.classes.show', [
+            'user' => $request->user(),
+            'classroom' => $classroom,
+            'membership' => $membership,
+        ]);
     }
 
     public function join(Request $request, ClassroomService $service)
@@ -45,6 +51,6 @@ class ClassroomController extends Controller
     {
         abort_unless((int) $membership->student_id === (int) auth()->id() && $membership->status === 'active', 403);
         $service->endMembership($membership, auth()->user(), 'left');
-        return back()->with('success', 'You left the class. Previous results remain recorded.');
+        return redirect()->route('student.classes.index')->with('success', 'You left the class. Previous results remain recorded.');
     }
 }

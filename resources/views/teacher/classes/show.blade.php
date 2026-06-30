@@ -195,10 +195,12 @@
                             @if ($classroom->status === 'active')
                                 <div class="row-actions">
                                     <form method="POST"
-                                        action="{{ route('teacher.memberships.approve', $membership) }}">@csrf<button
+                                        action="{{ route('teacher.memberships.approve', $membership) }}"
+                                        onsubmit="const btn = this.querySelector('button'); btn.disabled = true; btn.innerText = 'Approving...';">@csrf<button
                                             class="class-button class-button--primary">Approve</button></form>
                                     <form method="POST"
-                                        action="{{ route('teacher.memberships.reject', $membership) }}">@csrf<button
+                                        action="{{ route('teacher.memberships.reject', $membership) }}"
+                                        onsubmit="const btn = this.querySelector('button'); btn.disabled = true; btn.innerText = 'Rejecting...';">@csrf<button
                                             class="class-button">Reject</button></form>
                                 </div>
                             @endif
@@ -383,7 +385,8 @@
                         <!-- Upload File form -->
                         <div x-show="activeForm === 'file'" class="fade-enter">
                             <form method="POST" action="{{ route('teacher.classes.documents.store', $classroom) }}"
-                                class="resource-form" enctype="multipart/form-data">
+                                class="resource-form" enctype="multipart/form-data"
+                                onsubmit="const btn = this.querySelector('button[type=submit]'); btn.disabled = true; btn.innerText = 'Uploading...';">
                                 @csrf
                                 <input type="hidden" name="source_type" value="file">
                                 
@@ -418,7 +421,8 @@
                         <!-- Add Link form -->
                         <div x-show="activeForm === 'link'" class="fade-enter" x-cloak>
                             <form method="POST" action="{{ route('teacher.classes.documents.store', $classroom) }}"
-                                class="resource-form">
+                                class="resource-form"
+                                onsubmit="const btn = this.querySelector('button[type=submit]'); btn.disabled = true; btn.innerText = 'Adding...';">
                                 @csrf
                                 <input type="hidden" name="source_type" value="link">
                                 

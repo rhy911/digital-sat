@@ -15,6 +15,13 @@
             <div class="class-heading-actions">
                 <a class="class-button class-button--primary" wire:navigate
                     href="{{ route('student.assignments.index', ['classroom' => $classroom->id]) }}">Assignments</a>
+                @if ($membership)
+                    <form method="POST" action="{{ route('student.classes.leave', $membership) }}"
+                        onsubmit="return confirm('Are you sure you want to leave this class? All assignment histories will remain, but you will lose access to class materials.')">
+                        @csrf
+                        <button type="submit" class="class-button class-button--danger">Leave class</button>
+                    </form>
+                @endif
             </div>
         </div>
 

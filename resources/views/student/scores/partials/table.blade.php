@@ -3,24 +3,6 @@
        $answers  — array of row data (all rows, pre-filtered if needed)
        $tableId  — unique HTML id for the <table>
 --}}
-@php
-    // SAT domain label map: maps both database variants to the full SAT domain name
-    $domainLabels = [
-        // Reading & Writing
-        'craft_and_structure'           => 'Craft and Structure',
-        'information_and_ideas'         => 'Information and Ideas',
-        'standard_english_conventions'  => 'Standard English Conventions',
-        'expression_of_ideas'           => 'Expression of Ideas',
-        // Math
-        'algebra'                             => 'Algebra',
-        'advanced_math'                       => 'Advanced Math',
-        'problem_solving'                     => 'Problem-Solving and Data Analysis',
-        'problem_solving_and_data_analysis'   => 'Problem-Solving and Data Analysis',
-        'geometry'                            => 'Geometry and Trigonometry',
-        'geometry_and_trigonometry'           => 'Geometry and Trigonometry',
-    ];
-@endphp
-
 <div class="sd-table-wrap">
     <div class="sd-table-toolbar">
         <label class="sd-toggle-row">
@@ -101,13 +83,7 @@
                             @endif
                         </td>
                         <td>
-                            @php
-                                $rawDomain = $row['answer']->question->skill_domain ?? 'other';
-                                $formattedDomain =
-                                    $domainLabels[$rawDomain] ?? ucwords(str_replace('_', ' ', $rawDomain));
-                            @endphp
-
-                            <span class="sd-domain-tag" title="{{ $formattedDomain }}">{{ $formattedDomain }}</span>
+                            <span class="sd-domain-tag" title="{{ $row['domainLabel'] }}">{{ $row['domainLabel'] }}</span>
                         </td>
                         <td>
                             <button class="sd-review-btn js-review-btn"

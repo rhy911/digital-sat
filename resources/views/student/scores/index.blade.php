@@ -6,13 +6,6 @@
         <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/auto-render.min.js"></script>
     </x-slot>
 
-    @php
-        $isScaledSatResult = in_array($userTest->test->test_type, ['full_length', 'adaptive_full_length'], true) && $userTest->total_score !== null;
-        $accuracyPercent = $stats['total']['questions'] > 0
-            ? (int) round(($stats['total']['correct'] / $stats['total']['questions']) * 100)
-            : 0;
-    @endphp
-
     {{-- ══════════════════════════════════════════════
          HERO BANNER
     ══════════════════════════════════════════════ --}}
@@ -72,7 +65,7 @@
                     </svg>
                     Practice Weak Areas
                 </button>
-                <button class="sd-hero-pill">
+                <a class="sd-hero-pill" href="{{ route('my-practice.score.export-pdf', $userTest) }}">
                     <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor"
                         stroke-width="2.5">
                         <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
@@ -80,7 +73,7 @@
                         <line x1="12" y1="15" x2="12" y2="3" />
                     </svg>
                     Download Report
-                </button>
+                </a>
             </div>
         </div>
     </div>
@@ -122,102 +115,6 @@
          MAIN CONTENT
     ══════════════════════════════════════════════ --}}
     <div class="sd-container">
-
-        {{-- Pre-compute all answer sets grouped by section --}}
-        @php
-            $totalQ = $stats['total']['questions'];
-            $correct = $stats['total']['correct'];
-            $wrong = $stats['total']['incorrect'];
-            $omitted = $stats['total']['omitted'];
-
-            $rwTotal = $stats['sections']['reading_and_writing']['total'];
-            $rwCorrect = $stats['sections']['reading_and_writing']['correct'];
-            $rwWrong = 0;
-            $rwOmitted = 0;
-
-            $mTotal = $stats['sections']['math']['total'];
-            $mCorrect = $stats['sections']['math']['correct'];
-            $mWrong = 0;
-            $mOmitted = 0;
-
-            // Collect answers split by section, preserving display index
-            $allAnswers = [];
-            $rwAnswers = [];
-            $mathAnswers = [];
-            $displayIdx = 0;
-
-            foreach ($userTest->userAnswers as $answer) {
-                if (!$answer->question || $answer->question->is_pretest) {
-                    continue;
-                }
-                $displayIdx++;
-
-                $isOmitted = $answer->selected_answer === null || $answer->selected_answer === '';
-                $statusKey = $isOmitted ? 'omitted' : ($answer->is_correct ? 'correct' : 'wrong');
-                $sectionType = $answer->question->section_type === 'math' ? 'math' : 'rw';
-                $sectionName = $sectionType === 'math' ? 'Math' : 'Reading & Writing';
-                $moduleNumber = $answer->module?->module_number;
-                $questionNumber = $questionPositions->get("{$answer->module_id}:{$answer->question_id}", $displayIdx);
-                $correctAnswer =
-                    $answer->question->sprCorrectAnswers->pluck('answer')->implode(', ') ?:
-                    $answer->question->answerChoices->where('is_correct', true)->first()?->label ?? 'N/A';
-
-                $row = [
-                    'idx' => $questionNumber,
-                    'answer' => $answer,
-                    'statusKey' => $statusKey,
-                    'sectionType' => $sectionType,
-                    'sectionName' => $sectionName,
-                    'moduleNumber' => $moduleNumber,
-                    'correctAnswer' => $correctAnswer,
-                    'questionData' => [
-                        'stem' => \Illuminate\Support\Str::markdown(\App\Support\QuestionMediaUrl::normalizeMarkdown($answer->question->stem ?? ''), [
-                            'html_input' => 'strip',
-                            'allow_unsafe_links' => false,
-                        ]),
-                        'explanation' => \Illuminate\Support\Str::markdown(
-                            \App\Support\QuestionMediaUrl::normalizeMarkdown($answer->question->explanation?->explanation ?? 'No explanation available.'),
-                            ['html_input' => 'strip', 'allow_unsafe_links' => false],
-                        ),
-                        'correct_answer' => $correctAnswer,
-                        'your_answer' => $answer->selected_answer ?? 'Omitted',
-                        'status' => $statusKey,
-                        'question_type' => $answer->question->question_type,
-                        'choices' => $answer->question->answerChoices
-                            ->map(function ($c) {
-                                return [
-                                    'label' => $c->label,
-                                    'content' => \Illuminate\Support\Str::markdown(\App\Support\QuestionMediaUrl::normalizeMarkdown($c->content ?? ''), [
-                                        'html_input' => 'strip',
-                                        'allow_unsafe_links' => false,
-                                    ]),
-                                    'is_correct' => (bool) $c->is_correct,
-                                ];
-                            })
-                            ->toArray(),
-                    ],
-                ];
-
-                $allAnswers[] = $row;
-                if ($sectionType === 'rw') {
-                    $rwAnswers[] = $row;
-                    if ($statusKey === 'wrong') {
-                        $rwWrong++;
-                    }
-                    if ($statusKey === 'omitted') {
-                        $rwOmitted++;
-                    }
-                } else {
-                    $mathAnswers[] = $row;
-                    if ($statusKey === 'wrong') {
-                        $mWrong++;
-                    }
-                    if ($statusKey === 'omitted') {
-                        $mOmitted++;
-                    }
-                }
-            }
-        @endphp
 
         {{-- ── KNOWLEDGE & SKILLS HEADING ── --}}
         <h2 class="text-3xl font-bold">Knowledge &amp; Skills</h2>
