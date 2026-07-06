@@ -151,6 +151,7 @@ class QuestionController extends Controller
                 'spr_hint' => $validated['spr_hint'] ?? $question->spr_hint,
                 'is_pretest' => $validated['is_pretest'] ?? $question->is_pretest,
                 'calculator_allowed' => $validated['calculator_allowed'] ?? $question->calculator_allowed,
+                'expected_time' => array_key_exists('expected_time', $validated) ? $validated['expected_time'] : $question->expected_time,
                 'is_complete' => $isComplete,
             ]);
 

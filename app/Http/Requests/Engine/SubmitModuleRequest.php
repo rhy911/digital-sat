@@ -18,6 +18,8 @@ class SubmitModuleRequest extends FormRequest
             'module_id' => 'required|exists:modules,id',
             'answers' => 'present|array|max:100',
             'answers.*' => 'nullable|string|max:100',
+            'question_times' => 'nullable|array|max:100',
+            'question_times.*' => 'nullable|integer|min:0',
         ];
     }
 }

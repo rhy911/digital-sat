@@ -23,6 +23,8 @@ class AnswerController extends Controller
             'module_id' => 'required|exists:modules,id',
             'answers' => 'present|array|max:100',
             'answers.*' => 'nullable|string|max:100',
+            'question_times' => 'nullable|array|max:100',
+            'question_times.*' => 'nullable|integer|min:0',
             'elapsed_seconds' => 'nullable|integer|min:0',
         ]);
 
@@ -40,9 +42,11 @@ class AnswerController extends Controller
                     $userTest->save();
                 }
 
+                $questionTimes = $validated['question_times'] ?? [];
+
                 return [
                     'expired' => false,
-                    'saved_count' => $this->saveModuleAnswers($userTest, $module, $validated['answers']),
+                    'saved_count' => $this->saveModuleAnswers($userTest, $module, $validated['answers'], $questionTimes),
                 ];
             });
 

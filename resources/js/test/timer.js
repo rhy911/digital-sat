@@ -55,6 +55,7 @@ export function pauseTimer() {
   state.isPaused = true;
   state.timerPausedStartedAtMs = Date.now();
   syncTimer();
+  document.dispatchEvent(new CustomEvent('test-timer-paused'));
 }
 
 export function resumeTimer() {
@@ -66,6 +67,7 @@ export function resumeTimer() {
   state.timerPausedStartedAtMs = null;
   state.isPaused = false;
   syncTimer();
+  document.dispatchEvent(new CustomEvent('test-timer-resumed'));
 }
 
 /**

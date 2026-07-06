@@ -116,5 +116,6 @@
         window.canTakeBreak = @json(!($testData->is_preview ?? false) && !empty($userTestId));
         window.durationMinutes = @json($testData->duration_minutes ?? 32);
         window.initialElapsedSeconds = @json($userTest ? $userTest->current_module_elapsed_seconds : 0);
+        window.savedQuestionTimes = Object.assign({}, @json($savedQuestionTimes ?? []));
     </script>
 </x-layouts.test>

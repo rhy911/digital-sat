@@ -110,10 +110,15 @@ class SessionController extends Controller
                 $serverRemainingSeconds = $timing['remaining_seconds'];
             }
 
-            $savedAnswers = UserTestAnswer::where('user_test_id', $userTest->id)
+            $savedAnswersData = UserTestAnswer::where('user_test_id', $userTest->id)
                 ->where('module_id', $module->id)
                 ->whereIn('question_id', $questions->pluck('id'))
-                ->pluck('selected_answer', 'question_id');
+                ->get(['question_id', 'selected_answer', 'time_spent']);
+
+            $savedAnswers = $savedAnswersData->pluck('selected_answer', 'question_id');
+            $savedQuestionTimes = $savedAnswersData->pluck('time_spent', 'question_id');
+        } else {
+            $savedQuestionTimes = collect();
         }
 
         $testData = (object) [
@@ -143,6 +148,7 @@ class SessionController extends Controller
             'userTestUlid' => $userTest ? $userTest->ulid : null,
             'userTest' => $userTest,
             'savedAnswers' => $savedAnswers,
+            'savedQuestionTimes' => $savedQuestionTimes,
             'isAssignmentAttempt' => $isAssignmentAttempt,
             'serverRemainingSeconds' => $serverRemainingSeconds,
         ]);
@@ -220,6 +226,7 @@ class SessionController extends Controller
             'userTestUlid' => null,
             'userTest' => null,
             'savedAnswers' => collect(),
+            'savedQuestionTimes' => collect(),
             'isAssignmentAttempt' => false,
             'serverRemainingSeconds' => null,
         ]);

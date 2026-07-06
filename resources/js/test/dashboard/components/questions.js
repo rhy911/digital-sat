@@ -217,6 +217,9 @@ export async function openEditQuestionModal(id) {
         document.getElementById('editSprHint').value = question.spr_hint || '';
         document.getElementById('editIsPretest').checked = !!question.is_pretest;
         document.getElementById('editCalculatorAllowed').checked = !!question.calculator_allowed;
+        if (document.getElementById('editExpectedTime')) {
+            document.getElementById('editExpectedTime').value = question.expected_time || '';
+        }
 
         const sprHintContainer = document.getElementById('editSprHintContainer');
         const sectionType = question.section_type || (question.section?.type) || '';

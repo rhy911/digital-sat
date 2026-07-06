@@ -40,6 +40,7 @@ class UpdateQuestionRequest extends FormRequest
             'is_pretest' => 'boolean',
             'calculator_allowed' => 'boolean',
             'passage_content' => 'nullable|string',
+            'expected_time' => 'nullable|integer|min:0',
             
             // Choices & SPR & Explanation
             'correct_choice' => 'required_if:question_type,multiple_choice|string|max:1',

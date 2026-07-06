@@ -30,5 +30,9 @@ export const state = {
   timerWakeHandlersInitialized: false,
   isUntimed: false,
   isPaused: false,
-  isSubmitting: false
+  isSubmitting: false,
+
+  // Question timing
+  questionActiveStartedAtMs: null,
+  questionTimings: {}
 };

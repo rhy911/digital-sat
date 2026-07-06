@@ -52,7 +52,40 @@ document.addEventListener('test-timer-expired', () => {
 document.addEventListener('DOMContentLoaded', () => {
   if(document.getElementById('timerDisplay')) {
     initSecurity();
+    initQuestionTiming();
   }
+});
+
+export function initQuestionTiming() {
+  state.questionTimings = window.savedQuestionTimes || {};
+  state.questionActiveStartedAtMs = Date.now();
+}
+
+export function updateActiveQuestionTime() {
+  if (state.questionActiveStartedAtMs && !state.isPaused && !state.isSubmitting) {
+    const elapsedMs = Date.now() - state.questionActiveStartedAtMs;
+    const elapsedSeconds = Math.floor(elapsedMs / 1000);
+    if (elapsedSeconds > 0) {
+      const qEl = state.questionElements[state.currentQuestionIndex];
+      if (qEl) {
+        const qId = qEl.dataset.questionId;
+        if (qId) {
+          state.questionTimings[qId] = (state.questionTimings[qId] || 0) + elapsedSeconds;
+        }
+      }
+      // Reset startedAtMs to account for the time just added, minus remainder
+      state.questionActiveStartedAtMs = Date.now() - (elapsedMs % 1000);
+    }
+  }
+}
+
+document.addEventListener('test-timer-paused', () => {
+  updateActiveQuestionTime();
+  state.questionActiveStartedAtMs = null;
+});
+
+document.addEventListener('test-timer-resumed', () => {
+  state.questionActiveStartedAtMs = Date.now();
 });
 
 export function isReviewSectionVisible() {
@@ -68,6 +101,8 @@ export function updateNavigationButtons() {
 }
 
 export function showQuestion(index) {
+  updateActiveQuestionTime();
+
   const reviewSection = document.getElementById("review-section");
   const resizableContainer = document.querySelector(".resizable-container");
 
@@ -172,6 +207,8 @@ export function showQuestion(index) {
 }
 
 export function showReviewSection() {
+  updateActiveQuestionTime();
+
   state.questionElements.forEach(el => el.classList.add("hidden"));
   state.passageElements.forEach(el => el.classList.add("hidden"));
   state.currentQuestionIndex = state.totalQuestions;
@@ -246,6 +283,14 @@ export function initializeAutosave() {
   }, 15000);
 
   document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'hidden') {
+      updateActiveQuestionTime();
+    } else {
+      if (!state.isPaused && !state.isSubmitting) {
+        state.questionActiveStartedAtMs = Date.now();
+      }
+    }
+
     if (document.visibilityState !== 'hidden') return;
     if (state.isSubmitting || window.isPreview || !window.userTestId || !window.currentModuleId) return;
 
@@ -269,11 +314,13 @@ async function autosaveAnswers() {
   const elapsed = (window.initialElapsedSeconds || 0) + getTimerElapsedSeconds();
   const elapsed_seconds = Math.max(0, elapsed);
 
+  updateActiveQuestionTime();
   const answers = collectAnswers();
   const payload = JSON.stringify({
     user_test_id: window.userTestId,
     module_id: window.currentModuleId,
     answers: answers,
+    question_times: state.questionTimings,
     elapsed_seconds: elapsed_seconds
   });
 
@@ -358,7 +405,8 @@ export async function submitModule(options = {}) {
       body: JSON.stringify({
         user_test_id: window.userTestId,
         module_id: window.currentModuleId,
-        answers: answers
+        answers: answers,
+        question_times: state.questionTimings
       })
     });
 
@@ -656,6 +704,7 @@ export async function navigateModule(url) {
     initializeSimpleFullscreen();
     initializeBreakControls();
     initializeAutosave();
+    initQuestionTiming();
 
     // Start new timer
     const duration = window.durationMinutes ?? 32;

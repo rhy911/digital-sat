@@ -115,17 +115,32 @@
                                     <div>
                                         <p>{{ \Illuminate\Support\Str::limit(strip_tags($answer->question?->stem), 120) }}
                                         </p>
-                                        @if ($isInProgress)
-                                            <strong
-                                                class="{{ filled($answer->selected_answer) ? 'response-saved' : 'response-omitted' }}">{{ filled($answer->selected_answer) ? 'Answered: ' . $answer->selected_answer : 'Omitted' }}</strong>
-                                        @else
-                                            <strong
-                                                class="{{ $answer->is_correct ? 'answer-correct' : 'answer-wrong' }}">Student:
-                                                {{ $answer->selected_answer ?: 'Omitted' }} &middot; Correct:
-                                                {{ $correct ?: 'N/A' }}</strong>
-                                            @if ($answer->question?->explanation?->explanation)
-                                                <small>{{ \Illuminate\Support\Str::limit(strip_tags($answer->question->explanation->explanation), 180) }}</small>
+                                        <div class="flex items-center gap-2 flex-wrap mt-1">
+                                            @if ($isInProgress)
+                                                <strong
+                                                    class="{{ filled($answer->selected_answer) ? 'response-saved' : 'response-omitted' }}">{{ filled($answer->selected_answer) ? 'Answered: ' . $answer->selected_answer : 'Omitted' }}</strong>
+                                            @else
+                                                <strong
+                                                    class="{{ $answer->is_correct ? 'answer-correct' : 'answer-wrong' }}">Student:
+                                                    {{ $answer->selected_answer ?: 'Omitted' }} &middot; Correct:
+                                                    {{ $correct ?: 'N/A' }}</strong>
                                             @endif
+
+                                            @php($expectedTime = $answer->question_snapshot['expected_time'] ?? $answer->question?->expected_time ?? 0)
+                                            @php($timeSpent = $answer->time_spent ?? 0)
+                                            @if($expectedTime > 0)
+                                                @php($timeWarning = $timeSpent > ($expectedTime * 1.2))
+                                                <span class="text-[10px] font-bold px-1.5 py-0.5 rounded border {{ $timeWarning ? 'bg-rose-50 text-rose-700 border-rose-200' : 'bg-slate-50 text-slate-600 border-slate-200' }}">
+                                                    ⏱️ {{ $timeSpent }}s / {{ $expectedTime }}s
+                                                </span>
+                                            @elseif($timeSpent > 0)
+                                                <span class="text-[10px] font-bold px-1.5 py-0.5 rounded border bg-slate-50 text-slate-600 border-slate-200">
+                                                    ⏱️ {{ $timeSpent }}s
+                                                </span>
+                                            @endif
+                                        </div>
+                                        @if (!$isInProgress && $answer->question?->explanation?->explanation)
+                                            <small class="mt-1 block">{{ \Illuminate\Support\Str::limit(strip_tags($answer->question->explanation->explanation), 180) }}</small>
                                         @endif
                                     </div>
                                 </li>

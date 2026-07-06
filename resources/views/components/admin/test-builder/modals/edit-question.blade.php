@@ -80,7 +80,7 @@
                         </div>
                     </div>
                     <div class="grid grid-cols-1 md:grid-cols-12 gap-4 items-end">
-                        <div class="md:col-span-6" id="editSprHintContainer">
+                        <div class="md:col-span-4" id="editSprHintContainer">
                             <label for="editSprHint" class="block text-xs font-bold text-slate-700 mb-1.5">SPR
                                 Hint</label>
                             <input type="text"
@@ -88,6 +88,12 @@
                                 id="editSprHint" name="spr_hint">
                         </div>
                         <div class="md:col-span-3 pb-2">
+                            <label for="editExpectedTime" class="block text-xs font-bold text-slate-700 mb-1.5">Expected Time (s)</label>
+                            <input type="number"
+                                class="w-full px-3 py-2 text-sm text-slate-900 bg-white border border-slate-300 rounded-lg placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-600"
+                                id="editExpectedTime" name="expected_time" min="0" placeholder="e.g. 60">
+                        </div>
+                        <div class="md:col-span-2 pb-2">
                             <label class="flex items-center gap-2 cursor-pointer text-sm font-medium text-slate-600">
                                 <input type="checkbox"
                                     class="w-4 h-4 text-indigo-600 border-slate-300 bg-white rounded focus:ring-indigo-500 focus:ring-2"

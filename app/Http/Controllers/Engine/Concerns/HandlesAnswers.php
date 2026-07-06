@@ -135,7 +135,7 @@ trait HandlesAnswers
         return [$userTest, $module];
     }
 
-    protected function saveModuleAnswers(UserTest $userTest, Module $module, array $submittedAnswers, bool $onlyMissing = false): int
+    protected function saveModuleAnswers(UserTest $userTest, Module $module, array $submittedAnswers, array $submittedTimes = [], bool $onlyMissing = false): int
     {
         $questions = $module->questions()
             ->with(['answerChoices', 'sprCorrectAnswers', 'passage', 'explanation'])
@@ -176,6 +176,7 @@ trait HandlesAnswers
                 'skill_subdomain' => $question->skill_subdomain,
                 'spr_hint' => $question->spr_hint,
                 'calculator_allowed' => (bool) $question->calculator_allowed,
+                'expected_time' => $question->expected_time,
                 'irt_a' => (float) $question->irt_a,
                 'irt_b' => (float) $question->irt_b,
                 'irt_c' => (float) $question->irt_c,
@@ -211,6 +212,7 @@ trait HandlesAnswers
                 'question_id' => (int) $questionId,
                 'selected_answer' => $normalizedAnswer,
                 'is_correct' => $isCorrect,
+                'time_spent' => (int) ($submittedTimes[$questionId] ?? 0),
                 'question_snapshot' => json_encode($snapshot),
                 'created_at' => now(),
                 'updated_at' => now(),
@@ -226,7 +228,7 @@ trait HandlesAnswers
             UserTestAnswer::upsert(
                 $upsertData,
                 $uniqueBy,
-                ['selected_answer', 'is_correct', 'updated_at', 'question_snapshot']
+                ['selected_answer', 'is_correct', 'time_spent', 'updated_at', 'question_snapshot']
             );
         }
 

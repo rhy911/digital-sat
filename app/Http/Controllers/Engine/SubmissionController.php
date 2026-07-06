@@ -81,11 +81,13 @@ class SubmissionController extends Controller
                 }
 
                 // Assignment answers arriving after the server deadline are not accepted.
+                $questionTimes = $validated['question_times'] ?? [];
+                
                 if (!$timedOut) {
-                    $this->saveModuleAnswers($userTest, $module, $validated['answers']);
+                    $this->saveModuleAnswers($userTest, $module, $validated['answers'], $questionTimes);
                 } else {
                     // Preserve autosaved work and materialize every unanswered item as omitted.
-                    $this->saveModuleAnswers($userTest, $module, [], true);
+                    $this->saveModuleAnswers($userTest, $module, [], [], true);
                 }
 
                 // 2. Logic for Routing or Finalizing - Run synchronously
