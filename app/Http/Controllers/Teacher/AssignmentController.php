@@ -71,6 +71,26 @@ class AssignmentController extends Controller
         ]);
     }
 
+    public function questionPreview(Request $request, Assignment $assignment, \App\Models\UserTestAnswer $userAnswer)
+    {
+        $this->authorize('view', $assignment);
+        abort_unless($userAnswer->userTest->assignment_id === $assignment->id, 403);
+
+        $userAnswer->loadMissing([
+            'userTest',
+            'question.passage',
+            'question.answerChoices',
+            'question.sprCorrectAnswers',
+            'question.explanation',
+        ]);
+
+        $isInProgress = $userAnswer->userTest->status === 'in_progress';
+        $correct = $userAnswer->question?->sprCorrectAnswers->pluck('answer')->implode(', ') 
+            ?: $userAnswer->question?->answerChoices->firstWhere('is_correct', true)?->label;
+
+        return view('teacher.assignments.partials.question-preview', compact('userAnswer', 'isInProgress', 'correct'));
+    }
+
     public function update(StoreAssignmentRequest $request, Assignment $assignment)
     {
         $this->authorize('manage', $assignment);

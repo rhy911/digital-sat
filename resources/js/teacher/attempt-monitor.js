@@ -23,6 +23,20 @@ async function refreshMonitor(modalId, state) {
         return;
     }
 
+    // Attach scroll listener to current if not already attached
+    if (!current.dataset.scrollListenerAttached) {
+        current.addEventListener('scroll', () => {
+            state.lastScrollTime = Date.now();
+        }, { passive: true, capture: true });
+        current.dataset.scrollListenerAttached = 'true';
+    }
+
+    // Skip polling if the user scrolled in the last 2 seconds
+    const isScrolling = (Date.now() - (state.lastScrollTime || 0)) < 2000;
+    if (isScrolling) {
+        return;
+    }
+
     state.fetching = true;
     state.controller = new AbortController();
     current.classList.add('is-updating');
@@ -49,27 +63,43 @@ async function refreshMonitor(modalId, state) {
         if (!response.ok) throw new Error(`Attempt monitor refresh failed with status ${response.status}`);
 
         const payload = await response.json();
+
         const template = document.createElement('template');
         template.innerHTML = payload.html.trim();
         const next = template.content.firstElementChild;
         if (!next) throw new Error('Attempt monitor refresh returned empty HTML');
 
-        window.Alpine?.destroyTree?.(current);
-        current.replaceWith(next);
-        window.Alpine?.initTree?.(next);
+        // Check if the user is scrolling or selecting text right before DOM swap
+        const isScrollingNow = (Date.now() - (state.lastScrollTime || 0)) < 1500;
+        const selection = window.getSelection();
+        const hasSelection = selection && selection.toString().length > 0 && selection.anchorNode && current.contains(selection.anchorNode);
+        
+        if (isScrollingNow || hasSelection) {
+            state.fetching = false;
+            current.classList.remove('is-updating');
+            return;
+        }
 
-        const restoreUiState = () => {
-            if (!next.isConnected) return;
-            next.scrollTop = scrollState.monitor;
-            if (dialog) dialog.scrollTop = scrollState.dialog;
-            window.scrollTo(scrollState.windowX, scrollState.windowY);
-            if (focusedAttemptId) {
-                next.querySelector(`[data-attempt-id="${CSS.escape(focusedAttemptId)}"]`)
-                    ?.focus({ preventScroll: true });
-            }
-        };
-        restoreUiState();
-        window.requestAnimationFrame(restoreUiState);
+        if (window.Alpine && typeof window.Alpine.morph === 'function') {
+            window.Alpine.morph(current, next, {
+                updating(el, toEl, childrenOnly, skip) {
+                    if (el.hasAttribute && el.hasAttribute('data-morph-skip')) {
+                        skip();
+                    }
+                    // Preserve active classes and styles for Alpine-toggled elements
+                    if (el.hasAttribute && (el.hasAttribute(':class') || el.hasAttribute('x-show') || el.hasAttribute('x-bind:class'))) {
+                        toEl.setAttribute('class', el.getAttribute('class') || '');
+                    }
+                    if (el.hasAttribute && (el.hasAttribute(':style') || el.hasAttribute('x-show') || el.hasAttribute('x-bind:style'))) {
+                        if (el.hasAttribute('style')) {
+                            toEl.setAttribute('style', el.getAttribute('style') || '');
+                        }
+                    }
+                }
+            });
+        } else {
+            current.replaceWith(next);
+        }
     } catch (error) {
         if (error.name !== 'AbortError') {
             current.classList.remove('is-updating');

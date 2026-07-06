@@ -124,6 +124,7 @@ Route::middleware(['auth', 'verified', 'role:admin,teacher'])->prefix('teacher')
         Route::post('/memberships/{membership}/remove', [\App\Http\Controllers\Teacher\MembershipController::class, 'remove'])->name('memberships.remove');
         Route::post('/classes/{classroom}/assignments', [\App\Http\Controllers\Teacher\AssignmentController::class, 'store'])->name('assignments.store');
         Route::get('/assignments/{assignment}/students/{student}/attempts', [\App\Http\Controllers\Teacher\AssignmentController::class, 'attemptMonitor'])->name('assignments.attempt-monitor');
+        Route::get('/assignments/{assignment}/attempts/answers/{userAnswer}/preview', [\App\Http\Controllers\Teacher\AssignmentController::class, 'questionPreview'])->name('assignments.attempt-question-preview');
         Route::get('/assignments/{assignment}', [\App\Http\Controllers\Teacher\AssignmentController::class, 'show'])->name('assignments.show');
         Route::put('/assignments/{assignment}', [\App\Http\Controllers\Teacher\AssignmentController::class, 'update'])->name('assignments.update');
         Route::post('/assignments/{assignment}/publish', [\App\Http\Controllers\Teacher\AssignmentController::class, 'publish'])->name('assignments.publish');

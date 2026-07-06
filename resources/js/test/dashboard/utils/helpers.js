@@ -714,7 +714,7 @@ export function rebuildQuestionModuleTomSelect(tests, preserved, selectId) {
     tests.forEach(function (test) {
         (test.sections || []).forEach(function (section) {
             (section.modules || []).forEach(function (mod) {
-                if (window.__currentUserRole === 'teacher' && mod.created_by !== window.__currentUserId) {
+                if (window.__currentUserRole === 'teacher' && mod.created_by !== window.__currentUserId && selectId !== 'questionsTableModuleFilter') {
                     return;
                 }
                 hasData = true;

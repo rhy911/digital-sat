@@ -32,6 +32,7 @@
                     <th class="correct-col" style="display:none;">Correct Answer</th>
                     <th>Result</th>
                     <th>Domain</th>
+                    <th>Difficulty</th>
                     <th>Review</th>
                 </tr>
             </thead>
@@ -86,6 +87,17 @@
                             <span class="sd-domain-tag" title="{{ $row['domainLabel'] }}">{{ $row['domainLabel'] }}</span>
                         </td>
                         <td>
+                            @if(strtolower($row['difficulty'] ?? '') === 'easy')
+                                <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">Easy</span>
+                            @elseif(strtolower($row['difficulty'] ?? '') === 'medium')
+                                <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-semibold bg-amber-50 text-amber-700 border border-amber-200">Medium</span>
+                            @elseif(strtolower($row['difficulty'] ?? '') === 'hard')
+                                <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-semibold bg-rose-50 text-rose-700 border border-rose-200">Hard</span>
+                            @else
+                                <span class="text-slate-400 font-semibold text-xs">—</span>
+                            @endif
+                        </td>
+                        <td>
                             <button class="sd-review-btn js-review-btn"
                                 data-question="{{ json_encode($row['questionData']) }}">
                                 <svg width="12" height="12" viewBox="0 0 24 24" fill="none"
@@ -99,13 +111,13 @@
                     </tr>
                 @empty
                     <tr>
-                        <td colspan="7" style="text-align:center;padding:2rem;color:#94a3b8;font-style:italic;">No
+                        <td colspan="8" style="text-align:center;padding:2rem;color:#94a3b8;font-style:italic;">No
                             questions found.</td>
                     </tr>
                 @endforelse
                 @if (count($answers) > 0)
                     <tr class="sd-no-results-row" hidden>
-                        <td colspan="7" style="text-align:center;padding:2rem;color:#94a3b8;font-style:italic;">No
+                        <td colspan="8" style="text-align:center;padding:2rem;color:#94a3b8;font-style:italic;">No
                             questions match this filter.</td>
                     </tr>
                 @endif

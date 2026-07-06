@@ -54,7 +54,7 @@
                         foreach ($tests as $test) {
                             foreach ($test->sections as $section) {
                                 foreach ($section->modules as $module) {
-                                    if (auth()->user()->role !== 'teacher' || $module->created_by === auth()->id()) {
+                                    if (auth()->user()->role !== 'teacher' || true) {
                                         $hasModules = true;
                                         break 3;
                                     }
@@ -68,7 +68,7 @@
                     @foreach ($tests as $test)
                         @foreach ($test->sections as $section)
                             @foreach ($section->modules as $module)
-                                @if (auth()->user()->role !== 'teacher' || $module->created_by === auth()->id())
+                                @if (auth()->user()->role !== 'teacher' || true)
                                     <option value="{{ $module->id }}">
                                         {{ $test->title }} |
                                         {{ $section->type === 'reading_writing' ? 'R&W' : 'Math' }} - Mod

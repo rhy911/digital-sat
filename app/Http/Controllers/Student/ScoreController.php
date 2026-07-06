@@ -153,6 +153,7 @@ class ScoreController extends Controller
                 'moduleNumber' => $answer->module?->module_number,
                 'correctAnswer' => $correctAnswer,
                 'domainLabel' => $formattedDomain,
+                'difficulty' => $question->difficulty ?? 'N/A',
                 'questionData' => [
                     'stem' => $this->markdown($question->stem ?? ''),
                     'explanation' => $this->markdown($question->explanation?->explanation ?? 'No explanation available.'),

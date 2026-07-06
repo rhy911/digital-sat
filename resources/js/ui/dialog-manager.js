@@ -27,10 +27,12 @@ function syncPageState() {
     });
 
     if (!activeDialog) {
+        document.documentElement.classList.remove('overflow-hidden');
         document.body.classList.remove('overflow-hidden');
         return;
     }
 
+    document.documentElement.classList.add('overflow-hidden');
     document.body.classList.add('overflow-hidden');
     Array.from(document.body.children).forEach(element => {
         if (element === activeDialog || element.tagName === 'SCRIPT' || element.tagName === 'STYLE') return;

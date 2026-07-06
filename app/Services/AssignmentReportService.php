@@ -16,9 +16,11 @@ class AssignmentReportService
             ->with([
                 'user',
                 'currentModule.section',
+                'userAnswers.module.section',
                 'userAnswers.question.answerChoices',
                 'userAnswers.question.sprCorrectAnswers',
                 'userAnswers.question.explanation',
+                'moduleSubmissions',
             ])
             ->orderBy('attempt_number')
             ->get();

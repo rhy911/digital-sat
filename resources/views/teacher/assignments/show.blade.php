@@ -119,7 +119,7 @@
                                             aria-haspopup="dialog">
                                             View attempts
                                         </button>
-                                        <x-ui.modal :id="$attemptModalId" :title="'Attempts for ' . $row['recipient']->student->name" max-width="4xl">
+                                        <x-ui.modal :id="$attemptModalId" :title="'Attempts for ' . $row['recipient']->student->name" max-width="7xl">
                                             <div class="attempt-monitor" data-attempt-monitor
                                                 data-poll-url="{{ route('teacher.assignments.attempt-monitor', [$assignment, $row['recipient']->student]) }}"
                                                 data-active-attempt="{{ $initialAttempt?->id }}">

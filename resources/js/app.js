@@ -1,11 +1,13 @@
 import './bootstrap';
 import Alpine from 'alpinejs';
+import morph from '@alpinejs/morph';
 import { initTruncatedTooltips } from './ui/truncated-tooltip.js';
 import { initDialogManager } from './ui/dialog-manager.js';
 import { initAttemptMonitorPolling } from './teacher/attempt-monitor.js';
 
 if (!window.Alpine) {
     window.Alpine = Alpine;
+    Alpine.plugin(morph);
     Alpine.start();
 }
 

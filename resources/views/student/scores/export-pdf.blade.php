@@ -179,6 +179,7 @@
                     <th>Section</th>
                     <th>Result</th>
                     <th>Domain</th>
+                    <th>Difficulty</th>
                     <th>Your Answer</th>
                     <th>Correct Answer</th>
                 </tr>
@@ -202,6 +203,17 @@
                             @endif
                         </td>
                         <td>{{ $row['domainLabel'] }}</td>
+                        <td>
+                            @if(strtolower($row['difficulty'] ?? '') === 'easy')
+                                <span class="badge" style="background:#ecfdf5;color:#065f46;border:1px solid #a7f3d0;">Easy</span>
+                            @elseif(strtolower($row['difficulty'] ?? '') === 'medium')
+                                <span class="badge" style="background:#fffbeb;color:#92400e;border:1px solid #fde68a;">Medium</span>
+                            @elseif(strtolower($row['difficulty'] ?? '') === 'hard')
+                                <span class="badge" style="background:#fef2f2;color:#991b1b;border:1px solid #fecaca;">Hard</span>
+                            @else
+                                <span class="muted">—</span>
+                            @endif
+                        </td>
                         <td>{{ $row['answer']->selected_answer ?: 'Omitted' }}</td>
                         <td>{{ $row['correctAnswer'] }}</td>
                     </tr>
