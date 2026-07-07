@@ -248,14 +248,46 @@ class TestManagementService
 
         DB::transaction(function () use ($test, $deleteChildren, $forceDeleteAttempts) {
             if ($forceDeleteAttempts) {
-                // Delete all assignments referencing this test
+                // Get all component IDs to delete dependencies
+                $sectionIds = DB::table('sections')->where('test_id', $test->id)->pluck('id');
+                $moduleIds = DB::table('modules')->whereIn('section_id', $sectionIds)->pluck('id');
+                
+                $questionIds = collect();
+                if ($moduleIds->isNotEmpty()) {
+                    $questionIds = DB::table('module_questions')->whereIn('module_id', $moduleIds)->pluck('question_id');
+                }
+
+                $userTestIds = DB::table('user_tests')->where('test_id', $test->id)->pluck('id');
+
+                // 1. Explicitly delete user test answers pointing to this test's questions
+                if ($questionIds->isNotEmpty()) {
+                    DB::table('user_test_answers')->whereIn('question_id', $questionIds)->delete();
+                }
+
+                // 2. Explicitly delete related answers, submissions, and score revisions by attempt ID
+                if ($userTestIds->isNotEmpty()) {
+                    DB::table('user_test_answers')->whereIn('user_test_id', $userTestIds)->delete();
+                    DB::table('user_test_module_submissions')->whereIn('user_test_id', $userTestIds)->delete();
+                    DB::table('user_test_score_revisions')->whereIn('user_test_id', $userTestIds)->delete();
+                }
+
+                // 3. Explicitly delete submissions pointing to this test's modules (as module_id or next_module_id)
+                if ($moduleIds->isNotEmpty()) {
+                    DB::table('user_test_module_submissions')->whereIn('module_id', $moduleIds)->delete();
+                    DB::table('user_test_module_submissions')->whereIn('issued_next_module_id', $moduleIds)->delete();
+                }
+
+                // 4. Delete user tests
+                if ($userTestIds->isNotEmpty()) {
+                    DB::table('user_tests')->whereIn('id', $userTestIds)->delete();
+                }
+
+                // 5. Delete all assignments referencing this test
                 $assignmentIds = DB::table('assignments')->where('test_id', $test->id)->pluck('id');
                 if ($assignmentIds->isNotEmpty()) {
                     DB::table('assignment_recipients')->whereIn('assignment_id', $assignmentIds)->delete();
                     DB::table('assignments')->where('test_id', $test->id)->delete();
                 }
-                // Delete user tests (which cascade deletes answers, submissions, revisions)
-                DB::table('user_tests')->where('test_id', $test->id)->delete();
 
                 if ($deleteChildren) {
                     foreach ($test->sections as $section) {
