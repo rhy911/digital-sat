@@ -73,6 +73,7 @@ function renderTestRowHtml(t) {
                 Actions <i class="bi bi-chevron-down text-[10px]"></i>
             </button>
             <div class="dropdown-menu hidden">
+                <a class="dropdown-item" href="/engine/session/${t.ulid}/teacher-preview" target="_blank"><i class="bi bi-eye mr-2"></i> Preview Test</a>
                 ${t.status !== 'active' ? `<button type="button" class="dropdown-item change-test-status-btn" data-id="${t.id}" data-status="active"><i class="bi bi-send-check mr-2"></i> Publish</button>` : ''}
                 ${t.status !== 'draft' ? `<button type="button" class="dropdown-item change-test-status-btn" data-id="${t.id}" data-status="draft"><i class="bi bi-pencil mr-2"></i> Return to draft</button>` : ''}
                 ${t.status !== 'archived' ? `<button type="button" class="dropdown-item change-test-status-btn" data-id="${t.id}" data-status="archived"><i class="bi bi-archive mr-2"></i> Archive</button>` : ''}
@@ -89,6 +90,7 @@ function renderTestRowHtml(t) {
                     Actions <i class="bi bi-chevron-down text-[10px]"></i>
                 </button>
                 <div class="dropdown-menu hidden">
+                    <a class="dropdown-item" href="/engine/session/${t.ulid}/teacher-preview" target="_blank"><i class="bi bi-eye mr-2"></i> Preview Test</a>
                     <button type="button" class="dropdown-item clone-test-btn" data-id="${t.id}"><i class="bi bi-copy mr-2"></i> Clone</button>
                     ${t.status === 'active' ? `<a class="dropdown-item" href="/teacher/classes"><i class="bi bi-send mr-2"></i> Assign in class</a>` : ''}
                 </div>
@@ -252,6 +254,7 @@ export function renderTestsTable(tests) {
 
         return {
             id: t.id,
+            ulid: t.ulid,
             title: t.title,
             raw_type: rawType,
             type: testTypeLabel(rawType),
@@ -268,6 +271,7 @@ export function renderTestsTable(tests) {
                     && Array.isArray(t.shares)
                     && t.shares.some(share => Number(share.user_id) === Number(window.__currentUserId))),
             shares_count: t.shares_count !== undefined ? Number(t.shares_count) : (Array.isArray(t.shares) ? t.shares.length : 0),
+            user_tests_count: Number(t.user_tests_count || 0),
             can_convert_to_normal: canConvertToNormal,
             is_owner: t.is_owner !== undefined ? t.is_owner : (t.created_by === window.__currentUserId || window.__currentUserRole === 'admin')
         };
@@ -291,6 +295,10 @@ export function renderTestsTable(tests) {
     window.__tdTestsPage = 1;
     renderTestsPage();
     initTestsEvents();
+}
+
+export function getLocalTestById(id) {
+    return localAllTests.find(item => String(item.id) === String(id));
 }
 
 let eventsBound = false;
@@ -458,6 +466,15 @@ function initTestSharingModal() {
     });
 
     addButton.addEventListener('click', addSharedTeacher);
+
+    const classSelect = document.getElementById('shareClassSelect');
+    const classAddButton = document.getElementById('shareClassAdd');
+    if (classSelect && classAddButton) {
+        classSelect.addEventListener('change', () => {
+            classAddButton.disabled = !classSelect.value;
+        });
+        classAddButton.addEventListener('click', addSharedClassroom);
+    }
 }
 
 async function openTestSharingModal(test) {
@@ -468,9 +485,23 @@ async function openTestSharingModal(test) {
     document.getElementById('shareTeacherSearch').value = '';
     document.getElementById('shareTeacherAdd').disabled = true;
     document.getElementById('shareTeacherResults').classList.add('hidden');
+
+    const classSelect = document.getElementById('shareClassSelect');
+    const classAddButton = document.getElementById('shareClassAdd');
+    if (classSelect) {
+        classSelect.innerHTML = '<option value="">Loading classrooms...</option>';
+        classSelect.disabled = true;
+    }
+    if (classAddButton) {
+        classAddButton.disabled = true;
+    }
+
     renderShareList([], true);
     window.dispatchEvent(new CustomEvent('open-modal', { detail: 'testSharingModal' }));
-    await loadShares(test.id);
+    await Promise.all([
+        loadShares(test.id),
+        loadShareableClassrooms(test.id)
+    ]);
 }
 
 async function loadShares(testId) {
@@ -547,6 +578,60 @@ async function addSharedTeacher() {
         showShareModalAlert('error', error.message || 'Could not share test.');
     } finally {
         addButton.disabled = true;
+    }
+}
+
+async function loadShareableClassrooms(testId) {
+    const classSelect = document.getElementById('shareClassSelect');
+    if (!classSelect) return;
+    try {
+        const response = await fetch(`${BASE_URL}/tests/${testId}/shareable-classes`, {
+            headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
+            credentials: 'same-origin'
+        });
+        const data = await response.json();
+        if (!response.ok) throw new Error(responseMessage(data));
+        const classrooms = data.data || [];
+        classSelect.innerHTML = '<option value="">Select a classroom...</option>' +
+            classrooms.map(c => `<option value="${c.id}">${escapeHtml(c.name)}</option>`).join('');
+        classSelect.disabled = false;
+    } catch (error) {
+        classSelect.innerHTML = '<option value="">Failed to load classrooms</option>';
+        showShareModalAlert('error', error.message || 'Could not load classrooms.');
+    }
+}
+
+async function addSharedClassroom() {
+    if (!activeSharingTest) return;
+    const classSelect = document.getElementById('shareClassSelect');
+    const classAddButton = document.getElementById('shareClassAdd');
+    if (!classSelect || !classAddButton || !classSelect.value) return;
+
+    classAddButton.disabled = true;
+    classSelect.disabled = true;
+
+    try {
+        const response = await fetch(`${BASE_URL}/tests/${activeSharingTest.id}/shares/class`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Accept': 'application/json',
+                'X-Requested-With': 'XMLHttpRequest',
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+            },
+            credentials: 'same-origin',
+            body: JSON.stringify({ classroom_id: classSelect.value })
+        });
+        const data = await response.json();
+        if (!response.ok) throw new Error(responseMessage(data));
+        showShareModalAlert('success', data.message || 'Shared with classroom.');
+        classSelect.value = '';
+        await loadShares(activeSharingTest.id);
+    } catch (error) {
+        showShareModalAlert('error', error.message || 'Could not share with classroom.');
+    } finally {
+        classAddButton.disabled = true;
+        classSelect.disabled = false;
     }
 }
 

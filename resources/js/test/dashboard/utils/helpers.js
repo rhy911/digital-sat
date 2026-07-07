@@ -417,12 +417,32 @@ export function showCustomConfirm(message, type = 'warning', title = 'Confirm Ac
         const cancelBtn = modal.querySelector('#customAlertCancelBtn');
 
         titleEl.textContent = title;
-        msgEl.textContent = message;
+        if (typeof message === 'string' && message.trim().startsWith('<')) {
+            msgEl.innerHTML = message;
+        } else {
+            msgEl.textContent = message;
+        }
 
         cancelBtn.classList.remove('hidden');
         cancelBtn.textContent = 'Cancel';
         confirmBtn.className = 'custom-alert-btn btn-primary';
         confirmBtn.textContent = 'Confirm';
+        confirmBtn.disabled = false;
+        confirmBtn.classList.remove('opacity-40', 'cursor-not-allowed');
+
+        const forceCheckbox = msgEl.querySelector('#forceDeleteIrreversibleCheckbox');
+        if (forceCheckbox) {
+            confirmBtn.disabled = true;
+            confirmBtn.classList.add('opacity-40', 'cursor-not-allowed');
+            forceCheckbox.addEventListener('change', () => {
+                confirmBtn.disabled = !forceCheckbox.checked;
+                if (forceCheckbox.checked) {
+                    confirmBtn.classList.remove('opacity-40', 'cursor-not-allowed');
+                } else {
+                    confirmBtn.classList.add('opacity-40', 'cursor-not-allowed');
+                }
+            });
+        }
 
         iconEl.className = 'custom-alert-icon ' + type;
         if (type === 'warning') {

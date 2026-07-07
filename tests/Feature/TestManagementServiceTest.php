@@ -87,4 +87,42 @@ class TestManagementServiceTest extends TestCase
         $this->assertSoftDeleted('tests', ['id' => $test->id]);
         $this->assertSoftDeleted('sections', ['id' => $sectionId]);
     }
+
+    public function test_cascade_delete_test_with_attempts_fails()
+    {
+        $test = $this->service->generateFullSatStructure('Test to Delete With Attempts', 'full_length');
+        $user = \App\Models\User::factory()->create(['role' => 'student']);
+        
+        \App\Models\UserTest::create([
+            'user_id' => $user->id,
+            'test_id' => $test->id,
+            'status' => 'completed',
+        ]);
+
+        $this->expectException(\Illuminate\Validation\ValidationException::class);
+        $this->service->deleteTest($test->id, true);
+    }
+
+    public function test_admin_force_cascade_delete_test_with_attempts_succeeds()
+    {
+        $admin = \App\Models\User::factory()->create(['role' => 'admin']);
+        $this->actingAs($admin);
+
+        $test = $this->service->generateFullSatStructure('Test to Force Delete', 'full_length');
+        $sectionId = $test->sections->first()->id;
+        $user = \App\Models\User::factory()->create(['role' => 'student']);
+        
+        $userTest = \App\Models\UserTest::create([
+            'user_id' => $user->id,
+            'test_id' => $test->id,
+            'status' => 'completed',
+        ]);
+
+        $this->service->deleteTest($test->id, true, true);
+
+        // Verify hard deletion of test, sections, and user tests
+        $this->assertDatabaseMissing('tests', ['id' => $test->id]);
+        $this->assertDatabaseMissing('sections', ['id' => $sectionId]);
+        $this->assertDatabaseMissing('user_tests', ['id' => $userTest->id]);
+    }
 }

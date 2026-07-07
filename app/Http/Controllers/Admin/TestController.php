@@ -73,10 +73,19 @@ class TestController extends Controller
     {
         $test = Test::findOrFail($id);
         $this->authorize('delete', $test);
-        app(\App\Services\TestContentLockService::class)->ensureUnlocked($test);
+
+        $force = $request->boolean('force_delete_attempts', false);
+        if ($force) {
+            $user = $request->user();
+            if (!$user || $user->role !== 'admin') {
+                abort(403, 'Only administrators can force-delete tests.');
+            }
+        } else {
+            app(\App\Services\TestContentLockService::class)->ensureUnlocked($test);
+        }
 
         try {
-            $this->testManagement->deleteTest((int) $id, $request->boolean('delete_children'));
+            $this->testManagement->deleteTest((int) $id, $request->boolean('delete_children'), $force);
 
             return response()->json(['status' => 'success', 'message' => 'Test deleted.']);
         } catch (ValidationException $e) {

@@ -28,9 +28,9 @@ class AppServiceProvider extends ServiceProvider
             \App\Models\Section::{$event}(fn ($section) => $locks->ensureSectionUnlocked($section));
             \App\Models\Module::{$event}(fn ($module) => $locks->ensureModuleUnlocked($module));
             \App\Models\Question::{$event}(fn ($question) => $locks->ensureQuestionUnlocked($question));
-            \App\Models\AnswerChoice::{$event}(fn ($choice) => $choice->question && $locks->ensureQuestionUnlocked($choice->question));
-            \App\Models\QuestionExplanation::{$event}(fn ($explanation) => $explanation->question && $locks->ensureQuestionUnlocked($explanation->question));
-            \App\Models\SprCorrectAnswer::{$event}(fn ($answer) => $answer->question && $locks->ensureQuestionUnlocked($answer->question));
+            \App\Models\AnswerChoice::{$event}(function ($choice) use ($locks) { if ($choice->question) $locks->ensureQuestionUnlocked($choice->question); });
+            \App\Models\QuestionExplanation::{$event}(function ($explanation) use ($locks) { if ($explanation->question) $locks->ensureQuestionUnlocked($explanation->question); });
+            \App\Models\SprCorrectAnswer::{$event}(function ($answer) use ($locks) { if ($answer->question) $locks->ensureQuestionUnlocked($answer->question); });
             \App\Models\Passage::{$event}(function ($passage) {
                 if ($passage->questions()->whereHas('modules.sections.test.assignments', fn ($query) => $query->where('status', 'published'))->exists()) {
                     throw \Illuminate\Validation\ValidationException::withMessages(['passage' => 'This passage belongs to a test in an open assignment. Close or delete the assignment before editing it.']);

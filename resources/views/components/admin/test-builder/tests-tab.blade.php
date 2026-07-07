@@ -80,6 +80,7 @@
                 $testsData = $tests->map(function ($t) {
                     return [
                         'id' => $t->id,
+                        'ulid' => $t->ulid,
                         'title' => $t->title,
                         'type' => $t->test_type,
                         'raw_type' => $t->test_type,
@@ -92,6 +93,7 @@
                         'is_owner' => $t->created_by === auth()->id() || auth()->user()->role === 'admin',
                         'is_shared' => auth()->user()->role === 'teacher' && $t->created_by !== auth()->id() && $t->shares->contains('user_id', auth()->id()),
                         'shares_count' => $t->shares_count ?? $t->shares->count(),
+                        'user_tests_count' => (int) $t->user_tests_count,
                         'can_convert_to_normal' => $t->test_type === 'adaptive_full_length'
                             && $t->status === 'draft'
                             && $t->user_tests_count === 0

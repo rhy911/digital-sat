@@ -108,4 +108,17 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // Hide initial loading screen once fully initialized
   hideLoadingScreen();
+
+  // Prevent browser visual search and operations on exam images
+  preventImageSearchSettings();
 });
+
+function preventImageSearchSettings() {
+  document.querySelectorAll('.passage-container img, .question-body img, .stem-text img, .answer-row img').forEach(img => {
+    img.setAttribute('disablepictureinpicture', '');
+    img.setAttribute('msallowcapturethroughlens', 'false');
+    img.setAttribute('draggable', 'false');
+    img.addEventListener('contextmenu', e => e.preventDefault());
+    img.addEventListener('dragstart', e => e.preventDefault());
+  });
+}

@@ -802,3 +802,15 @@ footer * {
     color: #334155;
     transform: translateY(-1px);
 }
+
+/* Image Visual Search and Copy Prevention */
+.passage-container img,
+.question-body img,
+.stem-text img,
+.answer-row img {
+    pointer-events: none !important;
+    user-select: none !important;
+    -webkit-user-select: none !important;
+    -webkit-touch-callout: none !important;
+    draggable: false !important;
+}

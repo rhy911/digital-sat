@@ -77,6 +77,12 @@ function updateTimerDisplay() {
   const timerDisplay = document.getElementById("timerDisplay");
   if (!timerDisplay) return;
 
+  if (window.isTeacherPreview) {
+    timerDisplay.textContent = "PREVIEW";
+    timerDisplay.classList.remove('timer-warning');
+    return;
+  }
+
   const minutes = Math.floor(state.timeLeft / 60);
   const seconds = state.timeLeft % 60;
 

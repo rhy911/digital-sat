@@ -194,6 +194,95 @@ class SessionController extends Controller
         ]);
     }
 
+    public function teacherPreview(\Illuminate\Http\Request $request, string $testUlid)
+    {
+        $user = Auth::user();
+        abort_unless($user && in_array($user->role, ['admin', 'teacher'], true), 403, 'Unauthorized.');
+
+        $test = Test::where('ulid', $testUlid)->firstOrFail();
+
+        $testExists = Test::visibleTo($user)->where('id', $test->id)->exists();
+        abort_unless($testExists, 403, 'Unauthorized test access.');
+
+        $moduleUlid = $request->query('module');
+        if ($moduleUlid) {
+            $module = Module::where('ulid', $moduleUlid)
+                ->whereHas('sections', fn($q) => $q->where('test_id', $test->id))
+                ->firstOrFail();
+        } else {
+            $firstSection = $test->sections()->orderBy('order')->first();
+            if (!$firstSection) {
+                abort(404, 'This test has no sections.');
+            }
+            $module = $firstSection->modules()->orderBy('module_number')->orderBy('id')->first();
+            if (!$module) {
+                abort(404, 'This test has no modules.');
+            }
+        }
+
+        $section = $module->sections()->where('test_id', $test->id)->first();
+        if (!$section) {
+            abort(404, 'Module section not found.');
+        }
+
+        $this->loadCurrentModuleQuestions($module);
+        $questions = $module->questions;
+
+        $questions->each(function($question) {
+            $question->answerChoices->makeHidden('is_correct');
+        });
+
+        $testData = (object) [
+            'id' => $test->id,
+            'page_title' => "Teacher Preview - Section {$section->order}, Module {$module->module_number}: {$section->name}",
+            'section_title' => "{$section->name} - Module {$module->module_number}",
+            'section_number' => $section->order,
+            'module_number' => $module->module_number,
+            'module_id' => $module->id,
+            'username' => $user->name ?? $user->username ?? 'Teacher',
+            'is_preview' => true,
+            'duration_minutes' => 0,
+            'is_teacher_preview' => true,
+            'test_ulid' => $test->ulid,
+        ];
+
+        $testModules = [];
+        $test->loadMissing('sections.modules');
+        foreach ($test->sections as $sec) {
+            foreach ($sec->modules as $mod) {
+                $testModules[] = [
+                    'ulid' => $mod->ulid,
+                    'name' => "Section {$sec->order}: {$sec->name} - Module {$mod->module_number} ({$mod->difficulty_level})",
+                    'is_current' => $mod->id === $module->id,
+                ];
+            }
+        }
+
+        $viewName = $section->type === 'math' ? 'engine.module.math' : 'engine.module.reading';
+
+        return view($viewName, [
+            'testData' => $testData,
+            'questions' => $questions,
+            'currentQuestion' => 1,
+            'totalQuestions' => $questions->count(),
+            'sectionNumber' => $section->order,
+            'moduleNumber' => $module->module_number,
+            'sectionName' => $section->name,
+            'sectionType' => $section->type,
+            'nextModuleId' => null,
+            'nextModuleName' => null,
+            'userTestId' => null,
+            'userTestUlid' => null,
+            'userTest' => null,
+            'savedAnswers' => collect(),
+            'savedQuestionTimes' => collect(),
+            'isAssignmentAttempt' => false,
+            'serverRemainingSeconds' => null,
+            'isTeacherPreview' => true,
+            'testModules' => $testModules,
+        ]);
+    }
+
     private function showStaticPreview($type)
     {
         $testData = (object) [

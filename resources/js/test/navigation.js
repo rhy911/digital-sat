@@ -380,6 +380,14 @@ export async function submitModule(options = {}) {
   }
 
   if (window.isPreview) {
+    if (window.isTeacherPreview) {
+      hideLoadingScreen();
+      await showCustomAlert("Teacher Preview completed! Returning to Test Builder...", "success", "Preview Completed");
+      showLoadingScreen("Returning to Test Builder...");
+      window.isNavigatingLegitimately = true;
+      window.location.href = '/admin/teacher/test-builder';
+      return;
+    }
     if (window.nextModuleId) {
       navigateModule(`/engine/session/${window.nextModuleId}`);
     } else {

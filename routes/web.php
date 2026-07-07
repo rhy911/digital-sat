@@ -142,6 +142,7 @@ Route::middleware(['auth', 'verified', 'role:admin'])->prefix('admin')->name('ad
 // Verified Engine routes
 Route::middleware(['auth', 'verified'])->prefix('engine')->group(function () {
     Route::get('/session/{ulid?}', [SessionController::class, 'show'])->name('engine.session');
+    Route::get('/session/{test_ulid}/teacher-preview', [SessionController::class, 'teacherPreview'])->name('engine.teacher-preview');
     Route::get('/submit-status/{userTest:ulid}', [SubmissionController::class, 'checkStatus'])->name('engine.submit-status');
 
     Route::get('/test/{test_id}/attempt-options', [AttemptController::class, 'attemptOptions'])->name('engine.test.attempt-options');
@@ -177,7 +178,9 @@ Route::middleware(['auth', 'verified', 'role:admin,teacher', 'teacher.approved']
     Route::delete('/tests/{id}', [\App\Http\Controllers\Admin\TestController::class, 'destroy'])->name('tests.delete');
     Route::get('/teachers/search', [\App\Http\Controllers\Admin\TestShareController::class, 'searchTeachers'])->name('teachers.search');
     Route::get('/tests/{test}/shares', [\App\Http\Controllers\Admin\TestShareController::class, 'index'])->name('tests.shares.index');
+    Route::get('/tests/{test}/shareable-classes', [\App\Http\Controllers\Admin\TestShareController::class, 'shareableClasses'])->name('tests.shareable-classes');
     Route::post('/tests/{test}/shares', [\App\Http\Controllers\Admin\TestShareController::class, 'store'])->name('tests.shares.store');
+    Route::post('/tests/{test}/shares/class', [\App\Http\Controllers\Admin\TestShareController::class, 'storeForClass'])->name('tests.shares.class');
     Route::delete('/tests/{test}/shares/{teacher}', [\App\Http\Controllers\Admin\TestShareController::class, 'destroy'])->name('tests.shares.destroy');
     Route::post('/tests/generate-full', [\App\Http\Controllers\Admin\TestStructureController::class, 'generateFullSat'])->name('tests.generate-full');
     Route::post('/tests/generate-configured', [\App\Http\Controllers\Admin\TestStructureController::class, 'generateConfigured'])->name('tests.generate-configured');

@@ -33,6 +33,12 @@
 </head>
 
 <body translate="no" class="notranslate">
+    @if (!empty($testData->is_teacher_preview))
+        <div class="bg-indigo-600 text-white text-xs font-bold py-2 px-4 flex justify-between items-center w-full relative z-50">
+            <span>Teacher Preview Mode — Reviewing test questions. Timer and submission are disabled.</span>
+            <a href="{{ route('home-dashboard.index') }}" class="underline hover:text-indigo-100">Exit Preview</a>
+        </div>
+    @endif
     <!-- Secure Test Loading Screen -->
     <div id="loadingScreen" class="loading-screen flex flex-col items-center justify-center">
         <div class="loading-container text-center">
@@ -158,8 +164,21 @@
     </main>
     <footer translate="no" class="notranslate">
         <div class="flex justify-start">
-            <div>
-                <h1 class="text-xl md:text-2xl font-medium">{{ $username ?? 'No Name Available' }}</h1>
+            <div class="flex flex-col justify-start">
+                <div>
+                    <h1 class="text-xl md:text-2xl font-medium">{{ $username ?? 'No Name Available' }}</h1>
+                </div>
+                @if (!empty($isTeacherPreview) && !empty($testModules))
+                    <div class="flex items-center gap-2 mt-1">
+                        <label for="previewModuleSelect" class="text-xs font-bold text-slate-500 uppercase tracking-wider">Jump to Module:</label>
+                        <select id="previewModuleSelect" onchange="window.location.href = '/engine/session/' + '{{ $testData->test_ulid }}' + '/teacher-preview?module=' + this.value"
+                            class="rounded border border-slate-300 bg-white py-1 px-2 text-xs font-medium text-slate-700 focus:border-indigo-600 focus:ring-1 focus:ring-indigo-500/15 cursor-pointer">
+                            @foreach ($testModules as $m)
+                                <option value="{{ $m['ulid'] }}" @selected($m['is_current'])>{{ $m['name'] }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+                @endif
             </div>
         </div>
         <div class="flex justify-center relative" x-data="{ popoverOpen: false }" @click.outside="popoverOpen = false">

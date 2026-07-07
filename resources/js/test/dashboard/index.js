@@ -17,7 +17,7 @@ import {
     updateEditQuestionPreview, removeMediaFromEditModal,
     getEditStemEditor, getEditPassageEditor, getEditExplanationEditor
 } from './ui/editors.js';
-import { renderTestsTable, updateTestStatus } from './components/tests.js';
+import { renderTestsTable, updateTestStatus, getLocalTestById } from './components/tests.js';
 import { renderSectionsTable } from './components/sections.js';
 import { renderModulesTable, initModulesSearch } from './components/modules.js';
 import {
@@ -287,26 +287,58 @@ document.addEventListener('DOMContentLoaded', async function () {
                 return;
             }
 
-            if (!await showCustomConfirm('Permanently delete this item?', 'warning', 'Permanently Delete')) return;
-
             let deleteChildren = false;
+            let forceDeleteAttempts = false;
             let url;
+
             if (btn.classList.contains('delete-test-btn')) {
                 url = `${BASE_URL}/tests/${id}`;
+                const test = getLocalTestById(id);
+                if (test && test.user_tests_count > 0) {
+                    if (window.__currentUserRole === 'admin') {
+                        const confirmHtml = `<div>
+                            <p class="text-sm text-slate-600 mb-3"><strong>Warning:</strong> This test has <strong>${test.user_tests_count} student attempts</strong>. Hard-deleting will permanently remove all student answers and test history.</p>
+                            <label class="flex items-center gap-2 cursor-pointer mt-3 p-2.5 bg-slate-50 border border-slate-200 rounded-lg select-none">
+                                <input type="checkbox" id="forceDeleteIrreversibleCheckbox" class="w-4 h-4 text-rose-600 border-slate-300 rounded focus:ring-rose-500 cursor-pointer">
+                                <span class="text-xs font-bold text-rose-700">I understand this action is irreversible — delete all student data</span>
+                            </label>
+                        </div>`;
+                        if (!await showCustomConfirm(confirmHtml, 'warning', 'Force Delete Cascade')) {
+                            return;
+                        }
+                        forceDeleteAttempts = true;
+                    } else {
+                        showAlert('danger', `Cannot delete: this test has ${test.user_tests_count} student attempts.`);
+                        return;
+                    }
+                } else {
+                    if (!await showCustomConfirm('Permanently delete this test?', 'warning', 'Delete Test')) return;
+                }
                 if (await showCustomConfirm('Also delete all sections, modules, and questions inside this test?', 'warning', 'Delete Child Elements')) deleteChildren = true;
-            } else if (btn.classList.contains('delete-section-btn')) {
-                url = `${BASE_URL}/sections/${id}`;
-                if (await showCustomConfirm('Also delete all modules and questions inside this section?', 'warning', 'Delete Child Elements')) deleteChildren = true;
-            } else if (btn.classList.contains('delete-module-btn')) {
-                url = `${BASE_URL}/modules/${id}`;
-                if (await showCustomConfirm('Also delete all questions linked to this module?', 'warning', 'Delete Child Elements')) deleteChildren = true;
-            } else if (btn.classList.contains('delete-question-btn')) {
-                url = `${BASE_URL}/questions/${id}`;
-            } else return;
+            } else {
+                if (!await showCustomConfirm('Permanently delete this item?', 'warning', 'Permanently Delete')) return;
+
+                if (btn.classList.contains('delete-section-btn')) {
+                    url = `${BASE_URL}/sections/${id}`;
+                    if (await showCustomConfirm('Also delete all modules and questions inside this section?', 'warning', 'Delete Child Elements')) deleteChildren = true;
+                } else if (btn.classList.contains('delete-module-btn')) {
+                    url = `${BASE_URL}/modules/${id}`;
+                    if (await showCustomConfirm('Also delete all questions linked to this module?', 'warning', 'Delete Child Elements')) deleteChildren = true;
+                } else if (btn.classList.contains('delete-question-btn')) {
+                    url = `${BASE_URL}/questions/${id}`;
+                } else return;
+            }
 
             const preserve = captureTomSelectPreservation(null);
             try {
-                const response = await fetch(deleteChildren ? `${url}?delete_children=1` : url, {
+                let requestUrl = url;
+                const params = [];
+                if (deleteChildren) params.push('delete_children=1');
+                if (forceDeleteAttempts) params.push('force_delete_attempts=1');
+                if (params.length > 0) {
+                    requestUrl += '?' + params.join('&');
+                }
+                const response = await fetch(requestUrl, {
                     method: 'DELETE',
                     headers: { 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content, 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
                     credentials: 'same-origin'
@@ -502,6 +534,13 @@ document.addEventListener('DOMContentLoaded', async function () {
                         data.choices.push({ label, content: contentInput.value, is_correct: isCorrectRadio ? isCorrectRadio.checked : false, order: index + 1 });
                     }
                 });
+            }
+
+            // Remove flat choice fields to prevent server parsing conflicts
+            for (let key in data) {
+                if (key.startsWith('choices[')) {
+                    delete data[key];
+                }
             }
 
             data.is_pretest = document.getElementById('editIsPretest').checked ? 1 : 0;

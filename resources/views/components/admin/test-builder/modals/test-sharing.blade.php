@@ -32,6 +32,21 @@
             <p id="shareTeacherHint" class="mt-2 text-xs font-medium text-slate-600">Shared teachers cannot edit the original or change status.</p>
         </div>
 
+        <div class="rounded-xl border border-slate-200 bg-slate-50 p-4">
+            <label for="shareClassSelect" class="block text-sm font-bold text-slate-800">Share to Classroom</label>
+            <div class="mt-2 flex flex-col gap-2 sm:flex-row">
+                <select id="shareClassSelect" class="w-full rounded-lg border border-slate-300 bg-white py-3 px-3 text-sm font-medium text-slate-900 focus:border-indigo-600 focus:ring-4 focus:ring-indigo-500/15">
+                    <option value="">Select a classroom...</option>
+                </select>
+                <button type="button" id="shareClassAdd"
+                    class="inline-flex min-h-11 items-center justify-center gap-2 rounded-lg bg-indigo-600 px-4 py-2 text-sm font-bold text-white hover:bg-indigo-700 disabled:cursor-not-allowed disabled:opacity-60"
+                    disabled>
+                    <i class="bi bi-people" aria-hidden="true"></i>Share
+                </button>
+            </div>
+            <p class="mt-2 text-xs font-medium text-slate-600">This will share the test with all co-teachers and the owner of the selected class.</p>
+        </div>
+
         <section>
             <div class="mb-3 flex items-center justify-between gap-3">
                 <h5 class="text-sm font-extrabold text-slate-900">People with access</h5>

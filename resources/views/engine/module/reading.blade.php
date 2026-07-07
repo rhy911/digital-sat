@@ -19,7 +19,8 @@
 @endphp
 
 <x-layouts.test :pageTitle="$testData->page_title" :sectionTitle="$testData->section_title" :sectionNumber="$sectionNumber" :moduleNumber="$moduleNumber" :sectionName="$sectionName"
-    :sectionType="$sectionType" :sectionDirections="$testData->section_directions" :username="$testData->username" :currentQuestion="$currentQuestion" :totalQuestions="$totalQuestions">
+    :sectionType="$sectionType" :sectionDirections="$testData->section_directions" :username="$testData->username" :currentQuestion="$currentQuestion" :totalQuestions="$totalQuestions"
+    :isTeacherPreview="$isTeacherPreview ?? false" :testModules="$testModules ?? []" :testData="$testData">
 
     <div class="overlay" id="dropdownOverlay"></div>
     <div class="resizable-container">
@@ -111,6 +112,7 @@
         window.userTestUlid = @json($userTestUlid ?? null);
         window.currentModuleId = @json($testData->module_id ?? null);
         window.isPreview = @json($testData->is_preview ?? false);
+        window.isTeacherPreview = @json($isTeacherPreview ?? false);
         window.isAssignmentAttempt = @json($isAssignmentAttempt ?? false);
         window.serverRemainingSeconds = @json($serverRemainingSeconds ?? null);
         window.canTakeBreak = @json(!($testData->is_preview ?? false) && !empty($userTestId));

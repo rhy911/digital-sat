@@ -122,4 +122,77 @@ class TestShareController extends Controller
 
         return null;
     }
+
+    public function shareableClasses(Request $request, Test $test)
+    {
+        $this->authorize('manageSharing', $test);
+
+        $user = $request->user();
+        $classes = \App\Models\Classroom::query()
+            ->when($user->role !== 'admin', function ($query) use ($user) {
+                $query->where('owner_id', $user->id)
+                    ->orWhereHas('coTeachers', fn ($teachers) => $teachers->whereKey($user->id));
+            })
+            ->where('status', 'active')
+            ->orderBy('name')
+            ->get(['id', 'name', 'ulid']);
+
+        return response()->json([
+            'status' => 'success',
+            'data' => $classes,
+        ]);
+    }
+
+    public function storeForClass(Request $request, Test $test)
+    {
+        $this->authorize('manageSharing', $test);
+
+        $validated = $request->validate([
+            'classroom_id' => 'required|integer|exists:classrooms,id',
+        ]);
+
+        $classroom = \App\Models\Classroom::findOrFail($validated['classroom_id']);
+
+        if ($request->user()->role !== 'admin' && !$classroom->hasTeacher($request->user())) {
+            abort(403, 'Unauthorized classroom access.');
+        }
+
+        $owner = $classroom->owner;
+        $coTeachers = $classroom->coTeachers;
+        $teachers = collect([$owner])->concat($coTeachers)->filter()->unique('id');
+
+        $existingShares = $test->shares()->pluck('user_id')->toArray();
+        $addedCount = 0;
+        $skippedCount = 0;
+
+        foreach ($teachers as $teacher) {
+            if ((int) $teacher->id === (int) $test->created_by) {
+                $skippedCount++;
+                continue;
+            }
+            if (!$teacher->isApprovedTeacher()) {
+                $skippedCount++;
+                continue;
+            }
+            if (in_array((int) $teacher->id, $existingShares, true)) {
+                $skippedCount++;
+                continue;
+            }
+
+            $test->shares()->create([
+                'user_id' => $teacher->id,
+                'shared_by' => $request->user()->id,
+            ]);
+            $addedCount++;
+        }
+
+        return response()->json([
+            'status' => 'success',
+            'message' => "Shared with {$addedCount} teachers from {$classroom->name}.",
+            'data' => [
+                'added' => $addedCount,
+                'skipped' => $skippedCount,
+            ],
+        ], 201);
+    }
 }

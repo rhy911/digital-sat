@@ -230,28 +230,59 @@ class TestManagementService
     /**
      * Delete Test (with optional cascading deletion of children).
      */
-    public function deleteTest(int $id, bool $deleteChildren): void
+    public function deleteTest(int $id, bool $deleteChildren, bool $forceDeleteAttempts = false): void
     {
         $test = Test::with('sections.modules.questions')->findOrFail($id);
-        app(TestContentLockService::class)->ensureUnlocked($test);
-
-        if (DB::table('user_tests')->where('test_id', $test->id)->exists()) {
-            throw ValidationException::withMessages(['test' => 'Cannot delete test with existing student attempts.']);
+        
+        if ($forceDeleteAttempts) {
+            $user = auth()->user();
+            if (!$user || $user->role !== 'admin') {
+                abort(403, 'Only administrators can force-delete tests.');
+            }
+        } else {
+            app(TestContentLockService::class)->ensureUnlocked($test);
+            if (DB::table('user_tests')->where('test_id', $test->id)->exists()) {
+                throw ValidationException::withMessages(['test' => 'Cannot delete test with existing student attempts.']);
+            }
         }
 
-        DB::transaction(function () use ($test, $deleteChildren) {
-            if ($deleteChildren) {
-                foreach ($test->sections as $section) {
-                    foreach ($section->modules as $module) {
-                        foreach ($module->questions as $question) {
-                            $question->delete();
-                        }
-                        $module->delete();
-                    }
-                    $section->delete();
+        DB::transaction(function () use ($test, $deleteChildren, $forceDeleteAttempts) {
+            if ($forceDeleteAttempts) {
+                // Delete all assignments referencing this test
+                $assignmentIds = DB::table('assignments')->where('test_id', $test->id)->pluck('id');
+                if ($assignmentIds->isNotEmpty()) {
+                    DB::table('assignment_recipients')->whereIn('assignment_id', $assignmentIds)->delete();
+                    DB::table('assignments')->where('test_id', $test->id)->delete();
                 }
+                // Delete user tests (which cascade deletes answers, submissions, revisions)
+                DB::table('user_tests')->where('test_id', $test->id)->delete();
+
+                if ($deleteChildren) {
+                    foreach ($test->sections as $section) {
+                        foreach ($section->modules as $module) {
+                            foreach ($module->questions as $question) {
+                                $question->forceDelete();
+                            }
+                            $module->forceDelete();
+                        }
+                        $section->forceDelete();
+                    }
+                }
+                $test->forceDelete();
+            } else {
+                if ($deleteChildren) {
+                    foreach ($test->sections as $section) {
+                        foreach ($section->modules as $module) {
+                            foreach ($module->questions as $question) {
+                                $question->delete();
+                            }
+                            $module->delete();
+                        }
+                        $section->delete();
+                    }
+                }
+                $test->delete();
             }
-            $test->delete();
         });
     }
 
