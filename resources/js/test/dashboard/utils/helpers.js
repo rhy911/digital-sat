@@ -299,15 +299,15 @@ export function getOrCreateAlertModal() {
                 transition: all 0.2s ease; font-family: system-ui, -apple-system, sans-serif;
             }
             .custom-alert-input:focus {
-                border-color: #3347b9; box-shadow: 0 0 0 3px rgba(51, 71, 185, 0.16); background: #ffffff;
+                border-color: var(--color-brand); box-shadow: 0 0 0 3px rgba(50, 77, 199, 0.16); background: #ffffff;
             }
             .custom-alert-actions { display: flex; gap: 12px; width: 100%; justify-content: center; }
             .custom-alert-btn { flex: 1; max-width: 160px; padding: 10px 18px; border-radius: 8px; font-size: 0.95rem; font-weight: 600; cursor: pointer; transition: all 0.15s ease; border: none; outline: none; display: inline-flex; align-items: center; justify-content: center; }
-            .custom-alert-btn.btn-primary { background: #3347b9; color: #ffffff; }
-            .custom-alert-btn.btn-primary:hover { background: #27378f; }
+            .custom-alert-btn.btn-primary { background: var(--color-brand); color: #ffffff; }
+            .custom-alert-btn.btn-primary:hover { background: var(--color-brand-hover); }
             .custom-alert-btn.btn-secondary { background-color: #ffffff; color: #334155; border: 1px solid #cbd5e1; }
             .custom-alert-btn.btn-secondary:hover { background-color: #f8fafc; color: #0f172a; }
-            .custom-alert-btn:focus-visible { outline: 2px solid #3347b9; outline-offset: 2px; }
+            .custom-alert-btn:focus-visible { outline: 2px solid var(--color-brand); outline-offset: 2px; }
         `;
         document.head.appendChild(style);
     }

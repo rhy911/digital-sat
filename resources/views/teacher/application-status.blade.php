@@ -4,7 +4,7 @@
         @if ($user->teacher_approval_status === 'rejected')
             <p>Your request was not approved.</p>
             @if ($user->teacher_rejection_reason)
-                <div class="p-4 border border-red-200 bg-red-50 rounded-xl text-left">
+                <div class="p-4 border border-rose-200 bg-rose-50 rounded-xl text-left">
                     {{ $user->teacher_rejection_reason }}</div>
             @endif
         @else

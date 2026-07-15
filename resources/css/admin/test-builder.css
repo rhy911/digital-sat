@@ -5,8 +5,8 @@
     --bg-sidebar: #07111f;
     --text-primary: #0f172a;
     --text-muted: #475569;
-    --primary: #3347b9;
-    --primary-hover: #27378f;
+    --primary: var(--color-brand);
+    --primary-hover: var(--color-brand-hover);
     --border-color: #e2e8f0;
     --radius: 8px;
     --radius-lg: 12px;
@@ -367,7 +367,7 @@ input[type="radio"] {
 
 .status-chip-shared {
     background-color: #e0e7ff;
-    color: #4f46e5;
+    color: var(--color-brand);
 }
 
 .status-chip-readonly {
@@ -883,7 +883,7 @@ select.ts-hidden-accessible {
 .teacher-data-table [data-dropdown-trigger="true"]:hover {
     background: #eef2ff;
     border-color: #c7d2fe;
-    color: #3347b9;
+    color: var(--color-brand);
 }
 
 .teacher-data-table code {

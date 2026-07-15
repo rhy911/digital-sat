@@ -7,7 +7,7 @@
         <input type="radio" class="btn-check" name="btnradio2" id="btnradio4" autocomplete="off">
         <label class="btn" for="btnradio4">Past</label>
     </div>
-    <a href="#" class="text-lg ml-auto font-bold text-[#324dc7] hover:underline">
+    <a href="#" class="text-lg ml-auto font-bold text-brand hover:underline">
         Learn more about Bluebook practice
     </a>
 </div>

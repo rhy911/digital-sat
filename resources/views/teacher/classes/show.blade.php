@@ -476,11 +476,11 @@
                                 <legend>Assign Type</legend>
                                 <div style="display: flex; gap: 2rem; padding: 0.5rem 0;">
                                     <label style="display: flex !important; align-items: center; gap: 0.5rem; cursor: pointer; font-weight: 500; margin-bottom: 0; font-size: 0.9rem; color: var(--cw-ink-strong);">
-                                        <input type="radio" name="assign_type" value="full" x-model="assignType" style="width: 1.15rem; height: 1.15rem; min-height: 0; padding: 0; margin: 0; cursor: pointer; flex-shrink: 0; accent-color: var(--cw-accent, #4f46e5);">
+                                        <input type="radio" name="assign_type" value="full" x-model="assignType" style="width: 1.15rem; height: 1.15rem; min-height: 0; padding: 0; margin: 0; cursor: pointer; flex-shrink: 0; accent-color: var(--cw-accent, var(--color-brand));">
                                         Full Test
                                     </label>
                                     <label style="display: flex !important; align-items: center; gap: 0.5rem; cursor: pointer; font-weight: 500; margin-bottom: 0; font-size: 0.9rem; color: var(--cw-ink-strong);">
-                                        <input type="radio" name="assign_type" value="section" x-model="assignType" style="width: 1.15rem; height: 1.15rem; min-height: 0; padding: 0; margin: 0; cursor: pointer; flex-shrink: 0; accent-color: var(--cw-accent, #4f46e5);">
+                                        <input type="radio" name="assign_type" value="section" x-model="assignType" style="width: 1.15rem; height: 1.15rem; min-height: 0; padding: 0; margin: 0; cursor: pointer; flex-shrink: 0; accent-color: var(--cw-accent, var(--color-brand));">
                                         Specific Section Only
                                     </label>
                                 </div>

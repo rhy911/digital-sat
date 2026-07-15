@@ -95,7 +95,7 @@ header .user-dropdown .dropdown-menu .dropdown-item {
 
 header .user-dropdown .dropdown-menu .dropdown-item:hover {
     background-color: rgba(0, 0, 0, 0.05);
-    color: #324dc7;
+    color: var(--color-brand);
 }
 
 header .user-dropdown .dropdown-menu .dropdown-item.logout-btn:hover {
@@ -192,7 +192,7 @@ main section .option p {
 }
 
 .view-response {
-    color: #324dc7 !important;
+    color: var(--color-brand) !important;
 }
 
 .view-response:hover {

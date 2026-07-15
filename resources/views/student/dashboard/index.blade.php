@@ -4,7 +4,7 @@
     @endpush
     <div class="welcome">
         <div class="md:container md:mx-auto px-4 pb-6">
-            <h1 class="text-3xl md:text-4xl font-normal text-[#324dc7]">Welcome,
+            <h1 class="text-3xl md:text-4xl font-normal text-brand">Welcome,
                 {{ $user->name ?? ($user->username ?? 'User') }}! Good
                 luck on test day!</h1>
         </div>
@@ -14,7 +14,7 @@
             <x-student.dashboard.tests-toggle-header />
             <x-student.cards.empty-state-box title="You Have No Upcoming Tests" id="active-tests">
                 <p class="text-lg">Tests appear here a few weeks before test day. <strong>If you got a paper ticket from
-                        your school, <a class="text-[#324dc7] underline cursor-pointer"
+                        your school, <a class="text-brand underline cursor-pointer"
                             onclick="event.preventDefault(); const btn = document.querySelector('header form button[type=\'submit\']') || document.querySelector('form button[type=\'submit\']'); if(btn) btn.click(); else document.querySelector('form')?.submit();">sign
                             out</a> and sign in with
                         it.</strong></p>

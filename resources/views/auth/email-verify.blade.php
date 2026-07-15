@@ -30,7 +30,7 @@
     <form id="logoutForm" method="POST" action="{{ route('logout') }}" class="links text-center w-full">
         @csrf
         <button type="submit"
-            class="text-sm font-semibold text-[#324dc7] bg-transparent border-none p-0 cursor-pointer hover:underline">Logout</button>
+            class="text-sm font-semibold text-brand bg-transparent border-none p-0 cursor-pointer hover:underline">Logout</button>
     </form>
 
     @push('scripts')

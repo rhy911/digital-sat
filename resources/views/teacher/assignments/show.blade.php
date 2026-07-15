@@ -223,7 +223,7 @@
                                 <td>
                                     @if(count($analysis['incorrect_students']) > 0)
                                         <details class="action-disclosure" style="font-size: 0.85rem; margin: 0;">
-                                            <summary style="font-weight: 600; color: #4f46e5; cursor: pointer; padding: 0.25rem 0;">
+                                            <summary style="font-weight: 600; color: var(--color-brand); cursor: pointer; padding: 0.25rem 0;">
                                                 View list ({{ count($analysis['incorrect_students']) }})
                                             </summary>
                                             <ul style="list-style: none; padding-left: 0.25rem; margin-top: 0.5rem; margin-bottom: 0; display: flex; flex-direction: column; gap: 0.375rem;">

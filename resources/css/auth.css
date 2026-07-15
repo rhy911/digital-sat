@@ -1,6 +1,5 @@
 header {
-    background-color: #4361ee;
-    /* Softer trustworthy indigo/blue */
+    background-color: var(--color-brand);
     padding: 12px 30px;
     display: flex;
     justify-content: space-between;
@@ -24,13 +23,12 @@ header {
 
 .test-device-btn:hover {
     background-color: white;
-    color: #4361ee;
+    color: var(--color-brand);
     border-color: white;
 }
 
 main {
-    background-color: #4361ee;
-    /* Softer trustworthy indigo/blue */
+    background-color: var(--color-brand);
     flex: 1;
     display: flex;
     flex-direction: column;
@@ -159,8 +157,8 @@ main {
 }
 
 .form-control:focus {
-    border-color: #4361ee;
-    box-shadow: 0 0 0 3px rgba(67, 97, 238, 0.15);
+    border-color: var(--color-brand);
+    box-shadow: 0 0 0 3px rgba(50, 77, 199, 0.15);
     outline: none;
 }
 
@@ -246,7 +244,7 @@ main {
 /* ── Shared auth link styles ── */
 .links a {
     font-size: 1rem;
-    color: #324dc7;
+    color: var(--color-brand);
     text-decoration: none;
     font-weight: 500;
 }
@@ -341,7 +339,7 @@ main {
 }
 
 #errorMessage a {
-    color: #4361ee;
+    color: var(--color-brand);
     text-decoration: underline;
     font-weight: 600;
 }
@@ -415,9 +413,9 @@ main {
 }
 
 .role-option-card.selected {
-    border-color: #4361ee;
+    border-color: var(--color-brand);
     background: #f0f3ff;
-    box-shadow: 0 0 0 3px rgba(67, 97, 238, 0.15);
+    box-shadow: 0 0 0 3px rgba(50, 77, 199, 0.15);
 }
 
 .role-option-card.disabled {

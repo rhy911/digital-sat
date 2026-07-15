@@ -360,12 +360,12 @@ export function getOrCreateAlertModal() {
                 transition: all 0.2s ease; font-family: system-ui, -apple-system, sans-serif;
             }
             .custom-alert-input:focus {
-                border-color: #6366f1; box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.25); background: #1e293b;
+                border-color: var(--color-brand); box-shadow: 0 0 0 2px rgba(50, 77, 199, 0.25); background: #1e293b;
             }
             .custom-alert-actions { display: flex; gap: 12px; width: 100%; justify-content: center; }
             .custom-alert-btn { flex: 1; max-width: 160px; padding: 10px 18px; border-radius: 8px; font-size: 0.95rem; font-weight: 600; cursor: pointer; transition: all 0.15s ease; border: none; outline: none; display: inline-flex; align-items: center; justify-content: center; }
-            .custom-alert-btn.btn-primary { background: linear-gradient(135deg, #4f46e5 0%, #4338ca 100%); color: #ffffff; box-shadow: 0 4px 10px rgba(79, 70, 229, 0.3); }
-            .custom-alert-btn.btn-primary:hover { background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%); transform: translateY(-1px); box-shadow: 0 6px 12px rgba(79, 70, 229, 0.4); }
+            .custom-alert-btn.btn-primary { background: linear-gradient(135deg, var(--color-brand) 0%, var(--color-brand-hover) 100%); color: #ffffff; box-shadow: 0 4px 10px rgba(50, 77, 199, 0.3); }
+            .custom-alert-btn.btn-primary:hover { background: linear-gradient(135deg, var(--color-brand-hover) 0%, var(--color-brand) 100%); transform: translateY(-1px); box-shadow: 0 6px 12px rgba(50, 77, 199, 0.4); }
             .custom-alert-btn.btn-secondary { background-color: #1e293b; color: #e2e8f0; border: 1px solid rgba(255, 255, 255, 0.08); }
             .custom-alert-btn.btn-secondary:hover { background-color: #334155; color: #ffffff; transform: translateY(-1px); }
         `;

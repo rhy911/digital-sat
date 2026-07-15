@@ -810,8 +810,8 @@ function initScoreConversionPanel() {
     const approveButton = document.getElementById('scoreConversionApprove');
     const setStatus = (message, error = false) => {
         status.textContent = message;
-        status.classList.remove('hidden', 'bg-slate-100', 'text-slate-700', 'bg-red-50', 'text-red-800');
-        status.classList.add(error ? 'bg-red-50' : 'bg-slate-100', error ? 'text-red-800' : 'text-slate-700');
+        status.classList.remove('hidden', 'bg-slate-100', 'text-slate-700', 'bg-rose-50', 'text-rose-800');
+        status.classList.add(error ? 'bg-rose-50' : 'bg-slate-100', error ? 'text-rose-800' : 'text-slate-700');
     };
     const responseMessage = data => data.errors
         ? Object.values(data.errors).flat().join(' ')

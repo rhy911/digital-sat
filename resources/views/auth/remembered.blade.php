@@ -16,7 +16,7 @@
             <div class="text-[10px] text-gray-500 font-extrabold uppercase tracking-wider">Signed In Account</div>
             <div class="text-lg font-bold text-[#1e293b] leading-tight">{{ $user->username ?? $user->email }}</div>
             <div
-                class="inline-flex items-center justify-center gap-1.5 self-center mt-2 px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider text-[#4361EE] bg-[#f0f3ff] border-[1.5px] border-[#4361EE]/20">
+                class="inline-flex items-center justify-center gap-1.5 self-center mt-2 px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider text-brand bg-[#f0f3ff] border-[1.5px] border-brand/20">
                 <span>{{ $user->role ?? 'student' }}</span>
             </div>
         </div>

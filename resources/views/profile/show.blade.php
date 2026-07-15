@@ -31,7 +31,7 @@
 
         <div class="class-panel" style="display: flex; align-items: center; gap: 24px; padding: 24px;">
             <div
-                style="width: 80px; height: 80px; border-radius: 50%; background: linear-gradient(135deg, #4361EE, #7209B7); display: flex; align-items: center; justify-content: center; color: white; font-size: 2rem; font-weight: 800; text-transform: uppercase; box-shadow: 0 4px 12px rgba(67, 97, 238, 0.25);">
+                style="width: 80px; height: 80px; border-radius: 50%; background: linear-gradient(135deg, var(--color-brand), #7209B7); display: flex; align-items: center; justify-content: center; color: white; font-size: 2rem; font-weight: 800; text-transform: uppercase; box-shadow: 0 4px 12px rgba(50, 77, 199, 0.25);">
                 {{ substr($user->name ?: $user->username ?: 'U', 0, 2) }}
             </div>
             <div>

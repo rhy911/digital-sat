@@ -7,7 +7,7 @@
         <input type="radio" class="btn-check" name="btnradio" id="btnradio2" autocomplete="off">
         <label class="btn" for="btnradio2">Past</label>
     </div>
-    <a href="#" class="text-lg ml-auto font-bold text-[#324dc7] hover:underline">
+    <a href="#" class="text-lg ml-auto font-bold text-brand hover:underline">
         Don't see your test here?
     </a>
 </div>
