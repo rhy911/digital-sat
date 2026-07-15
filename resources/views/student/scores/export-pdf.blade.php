@@ -112,7 +112,24 @@
     </p>
 
     <section class="hero">
-        @if ($isScaledSatResult)
+        @if ($userTest->attempt_type === 'section')
+            <div class="score">
+                {{ $userTest->section_type === 'reading_writing' ? ($userTest->score_reading_writing ?? '—') : ($userTest->score_math ?? '—') }}
+                <span style="font-size:16px;color:#64748b;">/ 800</span>
+            </div>
+            <p class="score-label">
+                {{ $userTest->section_type === 'reading_writing' ? 'Reading & Writing Section Score' : 'Math Section Score' }}
+            </p>
+            <p class="disclosure">
+                @if($userTest->score_estimate_kind === 'adaptive_irt_provisional')
+                    Estimated range:
+                    {{ $userTest->section_type === 'reading_writing' ? ($userTest->score_reading_writing_lower . '-' . $userTest->score_reading_writing_upper) : ($userTest->score_math_lower . '-' . $userTest->score_math_upper) }}.
+                @else
+                    Route-neutral section estimate.
+                @endif
+                Not an official College Board score.
+            </p>
+        @elseif ($isScaledSatResult)
             <div class="score">{{ $userTest->total_score }} <span style="font-size:16px;color:#64748b;">/ 1600</span></div>
             <p class="score-label">
                 {{ $userTest->score_estimate_kind === 'adaptive_irt_provisional' ? 'Provisional IRT estimate' : 'Estimated practice score' }}
@@ -128,7 +145,7 @@
                 Not an official College Board score.
             </p>
         @else
-            <div class="score">{{ $accuracyPercent }}%</div>
+            <div class="score">{{ $correct }} / {{ $totalQ }}</div>
             <p class="score-label">Practice performance, not a calibrated SAT score.</p>
             <p class="disclosure">{{ $correct }} of {{ $totalQ }} scored questions correct.</p>
         @endif

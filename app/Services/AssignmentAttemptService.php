@@ -57,6 +57,8 @@ class AssignmentAttemptService
                 'assignment_id' => $assignment->id,
                 'attempt_number' => $attemptNumber,
                 'status' => 'in_progress',
+                'attempt_type' => $assignment->assign_type ?? 'full',
+                'section_type' => $assignment->section_type,
             ]);
 
             $this->progression->issueInitialModule($attempt, $assignment->test);

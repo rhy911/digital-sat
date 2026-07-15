@@ -9,7 +9,7 @@
             <div><span
                     class="status-chip status-chip--{{ $assignment->status }}">{{ ucfirst($assignment->status) }}</span>
                 <h1>{{ $assignment->title }}</h1>
-                <p>{{ $assignment->classroom->name }} · {{ $assignment->test->title }}</p>
+                <p>{{ $assignment->classroom->name }} · {{ $assignment->test->title }}{{ $assignment->assign_type === 'section' ? ($assignment->section_type === 'reading_writing' ? ' (Reading & Writing Only)' : ' (Math Only)') : '' }}</p>
             </div>
         </div>
         @if ($errors->any())
@@ -52,8 +52,14 @@
                         <div><strong>Attempt
                                 {{ $attempt->attempt_number }}</strong><span>{{ ucfirst(str_replace('_', ' ', $attempt->status)) }}</span>
                         </div>
-                        <div><strong>{{ $attempt->total_score ?? '—' }}</strong>
-                            @if($attempt->total_score !== null)
+                        <div><strong>
+                            @if($attempt->attempt_type === 'section')
+                                {{ $attempt->section_type === 'reading_writing' ? ($attempt->score_reading_writing ?? '—') : ($attempt->score_math ?? '—') }}
+                            @else
+                                {{ $attempt->total_score ?? '—' }}
+                            @endif
+                            </strong>
+                            @if(($attempt->attempt_type === 'section' && ($attempt->score_reading_writing !== null || $attempt->score_math !== null)) || ($attempt->attempt_type !== 'section' && $attempt->total_score !== null))
                                 <x-scoring.estimate-label compact />
                             @endif
                             @if ($attempt->status === 'completed')

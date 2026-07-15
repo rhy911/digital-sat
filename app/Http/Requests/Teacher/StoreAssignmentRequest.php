@@ -16,6 +16,8 @@ class StoreAssignmentRequest extends FormRequest
             'available_at' => 'nullable|date',
             'due_at' => 'nullable|date',
             'attempt_limit' => 'required|integer|min:1|max:10',
+            'assign_type' => 'nullable|string|in:full,section',
+            'section_type' => 'required_if:assign_type,section|nullable|string|in:reading_writing,math',
         ];
     }
 

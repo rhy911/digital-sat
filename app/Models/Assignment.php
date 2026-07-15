@@ -10,7 +10,7 @@ class Assignment extends Model
 {
     use SoftDeletes;
 
-    protected $fillable = ['classroom_id', 'teacher_id', 'test_id', 'title', 'instructions', 'available_at', 'due_at', 'attempt_limit', 'status', 'published_at', 'closed_at'];
+    protected $fillable = ['classroom_id', 'teacher_id', 'test_id', 'assign_type', 'section_type', 'title', 'instructions', 'available_at', 'due_at', 'attempt_limit', 'status', 'published_at', 'closed_at'];
 
     protected function casts(): array
     {

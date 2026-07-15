@@ -21,7 +21,7 @@
                 <a href="#" x-data x-on:click.prevent="$dispatch('open-modal', 'assignment-modal-{{ $assignment->id }}')" class="student-assignment">
                     <div><span class="status-chip status-chip--{{ strtolower(str_replace(' ', '-', $state)) }}">{{ $state }}</span>
                         <h2>{{ $assignment->title }}</h2>
-                        <p>{{ $assignment->classroom->name }} · {{ $assignment->test->title }}</p>
+                        <p>{{ $assignment->classroom->name }} · {{ $assignment->test->title }}{{ $assignment->assign_type === 'section' ? ($assignment->section_type === 'reading_writing' ? ' (Reading & Writing Only)' : ' (Math Only)') : '' }}</p>
                     </div>
                     <dl>
                         <div>
@@ -34,7 +34,13 @@
                         </div>
                         <div>
                             <dt>Best estimated score</dt>
-                            <dd>{{ $completed->max('total_score') ?: '—' }}</dd>
+                            <dd>
+                                @if($assignment->assign_type === 'section')
+                                    {{ $assignment->section_type === 'reading_writing' ? ($completed->max('score_reading_writing') ?: '—') : ($completed->max('score_math') ?: '—') }}
+                                @else
+                                    {{ $completed->max('total_score') ?: '—' }}
+                                @endif
+                            </dd>
                         </div>
                     </dl>
                 </a>
@@ -45,7 +51,7 @@
                         <div class="assignment-modal-summary">
                             <span class="status-chip status-chip--{{ strtolower(str_replace(' ', '-', $state)) }}">{{ $state }}</span>
                             <p>
-                                {{ $assignment->classroom->name }} · {{ $assignment->test->title }}
+                                {{ $assignment->classroom->name }} · {{ $assignment->test->title }}{{ $assignment->assign_type === 'section' ? ($assignment->section_type === 'reading_writing' ? ' (Reading & Writing Only)' : ' (Math Only)') : '' }}
                             </p>
                         </div>
 
@@ -83,8 +89,14 @@
                                                     <span class="status-chip status-chip--{{ $attempt->status }}">{{ ucfirst(str_replace('_', ' ', $attempt->status)) }}</span>
                                                 </div>
                                                 <div class="attempt-row__result">
-                                                    <strong class="attempt-row__score">{{ $attempt->total_score ?? '—' }}</strong>
-                                                    @if($attempt->total_score !== null)
+                                                    <strong class="attempt-row__score">
+                                                        @if($attempt->attempt_type === 'section')
+                                                            {{ $attempt->section_type === 'reading_writing' ? ($attempt->score_reading_writing ?? '—') : ($attempt->score_math ?? '—') }}
+                                                        @else
+                                                            {{ $attempt->total_score ?? '—' }}
+                                                        @endif
+                                                    </strong>
+                                                    @if(($attempt->attempt_type === 'section' && ($attempt->score_reading_writing !== null || $attempt->score_math !== null)) || ($attempt->attempt_type !== 'section' && $attempt->total_score !== null))
                                                         <x-scoring.estimate-label compact class="attempt-row__score-label" />
                                                     @endif
                                                     @if ($attempt->status === 'completed')

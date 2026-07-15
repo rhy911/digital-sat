@@ -442,9 +442,12 @@
                     <div>
                         <h3 id="completed-work-title" class="ds-card-title">Review score reports</h3>
                     </div>
-                    @if($completedTests->isNotEmpty())
-                        <a href="{{ route('my-practice', $completedTests->first()) }}" class="ds-link">See all</a>
-                    @endif
+                    <div style="display: flex; gap: 1rem; align-items: center;">
+                        <a href="{{ route('student.scores.merge') }}" class="ds-link" style="font-weight: 600; color: #2563eb;">Consolidate Sections</a>
+                        @if($completedTests->isNotEmpty())
+                            <a href="{{ route('my-practice', $completedTests->first()) }}" class="ds-link">See all</a>
+                        @endif
+                    </div>
                 </div>
 
                 @forelse($completedTests->take(4) as $attempt)

@@ -74,6 +74,18 @@ class TestProgressionService
 
     private function advanceSectionOrComplete(UserTest $attempt, Test $test, Section $section, $sections): array
     {
+        if ($attempt->attempt_type === 'section') {
+            $this->finalize($attempt, $test);
+
+            return [
+                'status' => 'success',
+                'test_completed' => true,
+                'redirect_url' => route('home'),
+                'results_url' => route('my-practice.score', $attempt),
+                'message' => 'Section completed.',
+            ];
+        }
+
         $nextSection = $sections->first(fn ($candidate) => (int) $candidate->order > (int) $section->order);
         if ($nextSection) {
             $next = $this->structures->orderedModules($nextSection)->first();
@@ -140,37 +152,48 @@ class TestProgressionService
     {
         $rw = $test->sections->firstWhere('type', Section::TYPE_RW);
         $math = $test->sections->firstWhere('type', Section::TYPE_MATH);
-        $rwScore = $this->scoreAdaptiveSection($attempt, $rw, $attempt->rw_m2_path);
-        $mathScore = $this->scoreAdaptiveSection($attempt, $math, $attempt->math_m2_path);
-        $rwConversion = $this->adaptiveConversions->convert($rwScore['theta'], $rwScore['theta_se']);
-        $mathConversion = $this->adaptiveConversions->convert($mathScore['theta'], $mathScore['theta_se']);
-        $total = $this->adaptiveConversions->totalRange($rwConversion, $mathConversion);
+
+        $isRw = $attempt->attempt_type !== 'section' || $attempt->section_type === 'reading_writing';
+        $isMath = $attempt->attempt_type !== 'section' || $attempt->section_type === 'math';
+
+        $rwScore = $isRw ? $this->scoreAdaptiveSection($attempt, $rw, $attempt->rw_m2_path) : null;
+        $mathScore = $isMath ? $this->scoreAdaptiveSection($attempt, $math, $attempt->math_m2_path) : null;
+
+        $rwConversion = $rwScore ? $this->adaptiveConversions->convert($rwScore['theta'], $rwScore['theta_se']) : null;
+        $mathConversion = $mathScore ? $this->adaptiveConversions->convert($mathScore['theta'], $mathScore['theta_se']) : null;
+
+        $total = ($rwConversion && $mathConversion) ? $this->adaptiveConversions->totalRange($rwConversion, $mathConversion) : null;
+
         $fields = $this->completionFields() + [
-            'score_reading_writing' => $rwConversion['scaled_score'],
-            'score_reading_writing_lower' => $rwConversion['lower'],
-            'score_reading_writing_upper' => $rwConversion['upper'],
-            'score_math' => $mathConversion['scaled_score'],
-            'score_math_lower' => $mathConversion['lower'],
-            'score_math_upper' => $mathConversion['upper'],
-            'rw_theta' => $rwScore['theta'],
-            'math_theta' => $mathScore['theta'],
-            'rw_theta_se' => $rwScore['theta_se'],
-            'math_theta_se' => $mathScore['theta_se'],
-            'scoring_method' => $rwScore['method'],
-            'total_score' => $total['score'],
-            'total_score_lower' => $total['lower'],
-            'total_score_upper' => $total['upper'],
+            'score_reading_writing' => $rwConversion ? $rwConversion['scaled_score'] : null,
+            'score_reading_writing_lower' => $rwConversion ? $rwConversion['lower'] : null,
+            'score_reading_writing_upper' => $rwConversion ? $rwConversion['upper'] : null,
+            'score_math' => $mathConversion ? $mathConversion['scaled_score'] : null,
+            'score_math_lower' => $mathConversion ? $mathConversion['lower'] : null,
+            'score_math_upper' => $mathConversion ? $mathConversion['upper'] : null,
+            'rw_theta' => $rwScore ? $rwScore['theta'] : null,
+            'math_theta' => $mathScore ? $mathScore['theta'] : null,
+            'rw_theta_se' => $rwScore ? $rwScore['theta_se'] : null,
+            'math_theta_se' => $mathScore ? $mathScore['theta_se'] : null,
+            'scoring_method' => $rwScore ? $rwScore['method'] : ($mathScore ? $mathScore['method'] : null),
+            'total_score' => $total ? $total['score'] : null,
+            'total_score_lower' => $total ? $total['lower'] : null,
+            'total_score_upper' => $total ? $total['upper'] : null,
             'score_conversion_set_id' => null,
-            'score_conversion_version' => $rwConversion['conversion_version'],
-            'score_estimate_kind' => $rwConversion['estimate_kind'],
+            'score_conversion_version' => $rwConversion ? $rwConversion['conversion_version'] : ($mathConversion ? $mathConversion['conversion_version'] : null),
+            'score_estimate_kind' => $rwConversion ? $rwConversion['estimate_kind'] : ($mathConversion ? $mathConversion['estimate_kind'] : null),
         ];
         $attempt->update($fields);
     }
 
     private function finalizeNormal(UserTest $attempt, Test $test): void
     {
-        $rw = $this->allResponsesForSection($attempt, $test->sections->firstWhere('type', Section::TYPE_RW));
-        $math = $this->allResponsesForSection($attempt, $test->sections->firstWhere('type', Section::TYPE_MATH));
+        $isRw = $attempt->attempt_type !== 'section' || $attempt->section_type === 'reading_writing';
+        $isMath = $attempt->attempt_type !== 'section' || $attempt->section_type === 'math';
+
+        $rw = $isRw ? $this->allResponsesForSection($attempt, $test->sections->firstWhere('type', Section::TYPE_RW)) : collect();
+        $math = $isMath ? $this->allResponsesForSection($attempt, $test->sections->firstWhere('type', Section::TYPE_MATH)) : collect();
+
         $fields = $this->completionFields() + [
             'score_reading_writing' => null, 'score_math' => null, 'total_score' => null,
             'rw_theta' => null, 'math_theta' => null, 'rw_theta_se' => null, 'math_theta_se' => null,
@@ -178,17 +201,31 @@ class TestProgressionService
             'score_conversion_version' => null, 'score_estimate_kind' => null,
         ];
         try {
-            $rwConversion = $this->conversions->convert($test, Section::TYPE_RW, $rw->where('is_correct', true)->count(), $rw->count());
-            $mathConversion = $this->conversions->convert($test, Section::TYPE_MATH, $math->where('is_correct', true)->count(), $math->count());
-            if ($rwConversion['conversion_set_id'] !== $mathConversion['conversion_set_id']) {
-                throw new \RuntimeException('Sections resolved against different conversion sets.');
+            $rwConversion = null;
+            $mathConversion = null;
+
+            if ($isRw && $rw->isNotEmpty()) {
+                $rwConversion = $this->conversions->convert($test, Section::TYPE_RW, $rw->where('is_correct', true)->count(), $rw->count());
+                $fields['score_reading_writing'] = $rwConversion['scaled_score'];
+                $fields['score_conversion_set_id'] = $rwConversion['conversion_set_id'];
+                $fields['score_conversion_version'] = $rwConversion['conversion_version'];
+                $fields['score_estimate_kind'] = $rwConversion['estimate_kind'];
             }
-            $fields['score_reading_writing'] = $rwConversion['scaled_score'];
-            $fields['score_math'] = $mathConversion['scaled_score'];
-            $fields['total_score'] = $rwConversion['scaled_score'] + $mathConversion['scaled_score'];
-            $fields['score_conversion_set_id'] = $rwConversion['conversion_set_id'];
-            $fields['score_conversion_version'] = $rwConversion['conversion_version'];
-            $fields['score_estimate_kind'] = $rwConversion['estimate_kind'];
+
+            if ($isMath && $math->isNotEmpty()) {
+                $mathConversion = $this->conversions->convert($test, Section::TYPE_MATH, $math->where('is_correct', true)->count(), $math->count());
+                $fields['score_math'] = $mathConversion['scaled_score'];
+                $fields['score_conversion_set_id'] = $mathConversion['conversion_set_id'];
+                $fields['score_conversion_version'] = $mathConversion['conversion_version'];
+                $fields['score_estimate_kind'] = $mathConversion['estimate_kind'];
+            }
+
+            if ($rwConversion && $mathConversion) {
+                if ($rwConversion['conversion_set_id'] !== $mathConversion['conversion_set_id']) {
+                    throw new \RuntimeException('Sections resolved against different conversion sets.');
+                }
+                $fields['total_score'] = $rwConversion['scaled_score'] + $mathConversion['scaled_score'];
+            }
         } catch (\RuntimeException) {
             // Invalid normal forms complete with accuracy data but no manufactured score.
         }

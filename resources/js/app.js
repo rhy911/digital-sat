@@ -20,9 +20,20 @@ import flatpickr from 'flatpickr';
 import 'flatpickr/dist/flatpickr.min.css';
 
 export function initDatePickers() {
-    document.querySelectorAll('.datetime-picker').forEach((input) => {
+    // Clean up any orphaned flatpickr calendar containers in body
+    document.querySelectorAll('.flatpickr-calendar').forEach(el => el.remove());
+
+    document.querySelectorAll('.datetime-picker[name]').forEach((input) => {
         if (input._flatpickr) {
-            return;
+            input._flatpickr.destroy();
+        }
+
+        // Clean up any orphaned flatpickr altInput elements
+        let sibling = input.nextElementSibling;
+        while (sibling && (sibling.classList.contains('flatpickr-input') || sibling.classList.contains('datetime-picker')) && !sibling.hasAttribute('name')) {
+            const next = sibling.nextElementSibling;
+            sibling.remove();
+            sibling = next;
         }
 
         flatpickr(input, {

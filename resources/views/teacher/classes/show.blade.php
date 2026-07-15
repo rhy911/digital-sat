@@ -461,7 +461,7 @@
                 <details class="create-disclosure create-disclosure--compact action-disclosure">
                     <summary>Create assignment</summary>
                     <form method="POST" action="{{ route('teacher.assignments.store', $classroom) }}"
-                        class="form-grid">@csrf
+                        class="form-grid" x-data="{ assignType: 'full' }">@csrf
                         <label>Test<select name="test_id" required>
                                 <option value="">Select an active test</option>
                                 @foreach ($tests as $test)
@@ -471,6 +471,29 @@
                                 @endforeach
                             </select>
                         </label>
+                        <div class="span-2" style="display: flex; flex-direction: column; gap: 0.5rem;">
+                            <fieldset class="assignment-window">
+                                <legend>Assign Type</legend>
+                                <div style="display: flex; gap: 2rem; padding: 0.5rem 0;">
+                                    <label style="display: flex !important; align-items: center; gap: 0.5rem; cursor: pointer; font-weight: 500; margin-bottom: 0; font-size: 0.9rem; color: var(--cw-ink-strong);">
+                                        <input type="radio" name="assign_type" value="full" x-model="assignType" style="width: 1.15rem; height: 1.15rem; min-height: 0; padding: 0; margin: 0; cursor: pointer; flex-shrink: 0; accent-color: var(--cw-accent, #4f46e5);">
+                                        Full Test
+                                    </label>
+                                    <label style="display: flex !important; align-items: center; gap: 0.5rem; cursor: pointer; font-weight: 500; margin-bottom: 0; font-size: 0.9rem; color: var(--cw-ink-strong);">
+                                        <input type="radio" name="assign_type" value="section" x-model="assignType" style="width: 1.15rem; height: 1.15rem; min-height: 0; padding: 0; margin: 0; cursor: pointer; flex-shrink: 0; accent-color: var(--cw-accent, #4f46e5);">
+                                        Specific Section Only
+                                    </label>
+                                </div>
+                            </fieldset>
+                            <div x-show="assignType === 'section'" x-cloak style="margin-top: 0.5rem;">
+                                <label style="display: block; width: 100%;">Select Section
+                                    <select name="section_type">
+                                        <option value="reading_writing">Reading & Writing</option>
+                                        <option value="math">Math</option>
+                                    </select>
+                                </label>
+                            </div>
+                        </div>
                         <label>Assignment title<input name="title" required maxlength="180"></label>
                         <label class="span-2">Instructions
                             <textarea name="instructions" rows="3"></textarea>
@@ -519,7 +542,7 @@
             @forelse($classroom->assignments->sortByDesc('created_at') as $assignment)
                 <a class="assignment-row" wire:navigate href="{{ route('teacher.assignments.show', $assignment) }}">
                     <div><span
-                            class="status-chip status-chip--{{ $assignment->status }}">{{ ucfirst($assignment->status) }}</span><strong>{{ $assignment->title }}</strong><span>{{ $assignment->test->title }}</span>
+                            class="status-chip status-chip--{{ $assignment->status }}">{{ ucfirst($assignment->status) }}</span><strong>{{ $assignment->title }}</strong><span>{{ $assignment->test->title }}{{ $assignment->assign_type === 'section' ? ($assignment->section_type === 'reading_writing' ? ' (Reading & Writing Only)' : ' (Math Only)') : '' }}</span>
                     </div>
                     <div><span>{{ $assignment->attempt_limit }}
                             attempt{{ $assignment->attempt_limit === 1 ? '' : 's' }}</span><span>{{ $assignment->due_at?->format('M j, g:i A') ?: 'No due time' }}</span>

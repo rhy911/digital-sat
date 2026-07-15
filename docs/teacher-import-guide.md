@@ -31,8 +31,19 @@ Tài liệu này hướng dẫn chi tiết các bước nhập liệu câu hỏi
 * **Bắt buộc**: Toàn bộ công thức toán, biến số ($$x$$, $$y$$), phép tính, đơn vị đo, góc phải được viết bằng định dạng LaTeX.
 * **Quy tắc bao bọc**: Phải bọc công thức trong ký hiệu **hai dấu đô-la** `$$...$$`, kể cả công thức viết nội dòng (inline math).
   * *Ví dụ đúng*: `Tìm giá trị của $$x$$ trong phương trình $$x^2 + 5x = 6$$.`
+* **Ràng buộc LaTeX quan trọng**:
+  * **Phân số (`\frac`)**: Bắt buộc phải thêm `\displaystyle` ở ngay đầu chuỗi LaTeX để phân số hiển thị to rõ ràng, không bị co nhỏ dòng.
+    * *Ví dụ đúng*: `$$\displaystyle \frac{a}{b}$$`
+    * *Ví dụ sai*: `$$\frac{a}{b}$$`
+  * **Ký hiệu toán học / chữ cái đặc biệt**: Mọi ký hiệu toán học, chữ cái Hy Lạp, hoặc đơn vị đặc biệt phải dùng định dạng LaTeX, không dùng ký tự thuần văn bản.
+    * Ký hiệu đô-la ($): Viết là `\\$` (Ví dụ: `$$ \\$5 $$` hoặc `$$ \\$x $$`).
+    * Ký hiệu phần trăm (%): Viết là `\\%` (Ví dụ: `$$ 50\\% $$`).
+    * Các ký hiệu Hy Lạp: `$$\pi$$` viết là `$$\pi$$`, `$$\omega$$` viết là `$$\omega$$`, `$$\theta$$` viết là `$$\theta$$`.
+    * Các ký hiệu so sánh: `$$\le$$` viết là `$$\le$$`, `$$\ge$$` viết là `$$\ge$$`.
+  * **Quy tắc Escape gạch chéo ngược (`\`) trong JSON**: Khi viết các ký hiệu chứa dấu gạch chéo ngược trong file JSON, bắt buộc phải viết đúp thành hai dấu gạch chéo ngược `\\` để parser lưu đúng vào Database.
+    * Ví dụ trong file JSON: `"$$ \\\\$5 $$"`, `"$$ 100\\\\% $$"`, `"$$ \\\\pi $$"`, `"$$ \\\\displaystyle \\\\frac{1}{2} $$"`.
   * *Các ký hiệu phổ biến*: 
-    * Phân số: `$$\frac{a}{b}$$`
+    * Phân số: `$$\displaystyle \frac{a}{b}$$`
     * Góc/Độ: $$18^\circ$$ viết là `$$18^\circ$$`
     * Số mũ: $$x^2$$ viết là `$$x^2$$`
     * Căn thức: `$$\sqrt{x}$$`
@@ -348,7 +359,14 @@ Field Rules:
 
 Formatting Rules:
 - Use LaTeX for all math formulas, variables, measurements, symbols, and expressions.
-- Always wrap math in $$...$$, even inline math. Example: $$x^2$$, $$\frac{1}{2}$$, $$18^\circ$$, $$y = mx + b$$.
+- Always wrap math in $$...$$, even inline math. Example: $$x^2$$, $$\displaystyle \frac{1}{2}$$, $$18^\circ$$, $$y = mx + b$$.
+- If a LaTeX formula contains a fraction (\frac), you MUST prepend it with \displaystyle inside the formula. Example: $$\displaystyle \frac{a}{b}$$ instead of $$\frac{a}{b}$$.
+- Never use plain text for math variables, greek letters, or special symbols (e.g., $, %, \pi, \omega, \theta, \le, \ge). They must be formatted as LaTeX.
+- In the JSON output, escape all backslashes as double backslashes (\\). For example:
+  * For a dollar sign $, write: $$ \\$5 $$ (renders in JSON string as "$$ \\\\$5 $$").
+  * For a percentage sign %, write: $$ 50\\% $$ (renders in JSON string as "$$ 50\\\\% $$").
+  * For a fraction, write: $$ \\displaystyle \\frac{a}{b} $$ (renders in JSON string as "$$ \\\\displaystyle \\\\frac{a}{b} $$").
+  * For greek letters, write: $$ \\pi $$ (renders in JSON string as "$$ \\\\pi $$").
 - Preserve original paragraph breaks using \n\n inside strings.
 - Preserve single line breaks using \n inside strings.
 - Use <u>...</u> for underlined text.

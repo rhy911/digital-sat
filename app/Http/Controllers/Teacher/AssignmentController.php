@@ -34,7 +34,15 @@ class AssignmentController extends Controller
         if (!$test) throw ValidationException::withMessages(['test_id' => 'Select one of your active or shared active tests.']);
         $teacherId = $request->user()->role === 'admin' ? $classroom->owner_id : $request->user()->id;
         $assignment = DB::transaction(function () use ($request, $classroom, $service, $teacherId) {
-            $assignment = Assignment::create($request->validated() + ['classroom_id' => $classroom->id, 'teacher_id' => $teacherId]);
+            $data = $request->validated();
+            $data['assign_type'] = $data['assign_type'] ?? 'full';
+            if ($data['assign_type'] === 'full') {
+                $data['section_type'] = null;
+            }
+            $assignment = Assignment::create($data + [
+                'classroom_id' => $classroom->id,
+                'teacher_id' => $teacherId,
+            ]);
 
             return $service->publish($assignment);
         });

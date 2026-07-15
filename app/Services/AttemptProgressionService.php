@@ -9,9 +9,14 @@ use Symfony\Component\HttpKernel\Exception\ConflictHttpException;
 
 class AttemptProgressionService
 {
-    public function firstModule(Test $test): ?Module
+    public function firstModule(Test $test, ?UserTest $attempt = null): ?Module
     {
-        $section = $test->sections()->orderBy('order')->first();
+        if ($attempt && $attempt->attempt_type === 'section' && $attempt->section_type) {
+            $sectionType = $attempt->section_type === 'reading_writing' ? \App\Models\Section::TYPE_RW : \App\Models\Section::TYPE_MATH;
+            $section = $test->sections()->where('type', $sectionType)->first();
+        } else {
+            $section = $test->sections()->orderBy('order')->first();
+        }
 
         return $section?->modules()
             ->reorder()
@@ -26,7 +31,7 @@ class AttemptProgressionService
             return $attempt->currentModule()->firstOrFail();
         }
 
-        $module = $this->firstModule($test);
+        $module = $this->firstModule($test, $attempt);
         abort_unless($module, 422, 'Test has no module.');
 
         $attempt->forceFill([

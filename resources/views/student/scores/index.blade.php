@@ -11,7 +11,25 @@
     ══════════════════════════════════════════════ --}}
     <div class="sd-hero">
         <div class="sd-hero-inner">
-            @if ($isScaledSatResult)
+            @if ($userTest->attempt_type === 'section')
+                <p class="sd-score-context">
+                    {{ $userTest->section_type === 'reading_writing' ? 'Reading & Writing Section Score' : 'Math Section Score' }}
+                </p>
+                <div>
+                    <span class="sd-hero-score">{{ $userTest->section_type === 'reading_writing' ? ($userTest->score_reading_writing ?? '—') : ($userTest->score_math ?? '—') }}</span>
+                    <span class="sd-hero-score-range">/ 800</span>
+                </div>
+                <p class="sd-score-disclosure">
+                    @if($userTest->score_estimate_kind === 'adaptive_irt_provisional')
+                        EAP 3PL ability estimate using your adaptive route.
+                        Estimated range:
+                        {{ $userTest->section_type === 'reading_writing' ? ($userTest->score_reading_writing_lower . '–' . $userTest->score_reading_writing_upper) : ($userTest->score_math_lower . '–' . $userTest->score_math_upper) }}.
+                    @else
+                        Route-neutral section estimate.
+                    @endif
+                    Not an official College Board score.
+                </p>
+            @elseif ($isScaledSatResult)
                 <p class="sd-score-context">
                     {{ $userTest->score_estimate_kind === 'adaptive_irt_provisional' ? 'Provisional IRT estimate' : 'Estimated practice score · Normal conversion' }}
                 </p>
@@ -35,8 +53,8 @@
                 </p>
             @else
                 <div class="flex flex-wrap items-baseline gap-x-3 gap-y-1">
-                    <span class="sd-hero-score">{{ $accuracyPercent }}%</span>
-                    <span class="sd-hero-score-range">correct</span>
+                    <span class="sd-hero-score">{{ $correct }}</span>
+                    <span class="sd-hero-score-range">/ {{ $totalQ }} correct</span>
                 </div>
                 <p class="mt-2 max-w-2xl text-sm font-semibold text-slate-700">
                     {{ $stats['total']['correct'] }} of {{ $stats['total']['questions'] }} scored questions correct.
@@ -65,7 +83,7 @@
                     </svg>
                     Practice Weak Areas
                 </button>
-                <a class="sd-hero-pill" href="{{ route('my-practice.score.export-pdf', $userTest) }}">
+                <a class="sd-hero-pill" href="{{ ($isMerged ?? false) ? route('student.scores.merged.export-pdf', [$rwAttempt->ulid, $mathAttempt->ulid]) : route('my-practice.score.export-pdf', $userTest) }}">
                     <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor"
                         stroke-width="2.5">
                         <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />

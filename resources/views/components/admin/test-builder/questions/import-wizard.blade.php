@@ -492,10 +492,18 @@
                             phân số đều phải được biểu diễn bằng LaTeX và bọc trong <strong>hai dấu đô-la</strong>
                             <code>$$...$$</code> (bao gồm cả dạng viết nội dòng).
                         </p>
+                        <p class="text-xs text-slate-700 leading-normal font-bold">
+                            Ràng buộc LaTeX quan trọng:
+                        </p>
+                        <ul class="list-disc pl-5 text-xs text-slate-600 space-y-1 mt-1">
+                            <li><strong>Phân số (\frac)</strong>: Bắt buộc phải thêm <code>\displaystyle</code> ở đầu công thức. Ví dụ: <code class="text-rose-600">$$\displaystyle \frac{1}{2}$$</code> thay vì <code class="text-rose-600">$$\frac{1}{2}$$</code>.</li>
+                            <li><strong>Ký hiệu Hy Lạp &amp; Đặc biệt</strong>: Mọi ký hiệu như đô-la ($), phần trăm (%), pi (\pi), omega (\omega), theta (\theta), lớn hơn hoặc bằng (\ge), nhỏ hơn hoặc bằng (\le) đều bắt buộc phải dùng LaTeX, không dùng text trần.</li>
+                            <li><strong>Escape dấu gạch chéo ngược (\) trong JSON</strong>: Khi viết trong JSON, bắt buộc phải viết đúp thành hai dấu gạch chéo ngược <code>\\</code> để tránh lỗi parser. Ví dụ: <code>"$$ \\\\$5 $$"</code>, <code>"$$ 50\\\\% $$"</code>, <code>"$$ \\\\pi $$"</code>, <code>"$$ \\\\displaystyle \\\\frac{1}{2} $$"</code>.</li>
+                        </ul>
                         <div
                             class="bg-white/95 rounded-lg p-2.5 font-mono text-xs border border-indigo-100/50 mt-1.5 text-slate-800">
                             Ví dụ thực tế:<br>
-                            - Phân số: <code class="text-rose-600">$$\frac{1}{2}$$</code><br>
+                            - Phân số hiển thị rộng: <code class="text-rose-600">$$\displaystyle \frac{1}{2}$$</code><br>
                             - Số mũ: <code class="text-rose-600">$$x^2 + 5x = 6$$</code><br>
                             - Độ: <code class="text-rose-600">$$180^\circ$$</code>
                         </div>
@@ -757,7 +765,14 @@ Field Rules:
 
 Formatting Rules:
 - Use LaTeX for all math formulas, variables, measurements, symbols, and expressions.
-- Always wrap math in $$...$$, even inline math. Example: $$x^2$$, $$\frac{1}{2}$$, $$18^\circ$$, $$y = mx + b$$.
+- Always wrap math in $$...$$, even inline math. Example: $$x^2$$, $$\displaystyle \frac{1}{2}$$, $$18^\circ$$, $$y = mx + b$$.
+- If a LaTeX formula contains a fraction (\frac), you MUST prepend it with \displaystyle inside the formula. Example: $$\displaystyle \frac{a}{b}$$ instead of $$\frac{a}{b}$$.
+- Never use plain text for math variables, greek letters, or special symbols (e.g., $, %, \pi, \omega, \theta, \le, \ge). They must be formatted as LaTeX.
+- In the JSON output, escape all backslashes as double backslashes (\\). For example:
+  * For a dollar sign $, write: $$ \\$5 $$ (renders in JSON string as "$$ \\\\$5 $$").
+  * For a percentage sign %, write: $$ 50\\% $$ (renders in JSON string as "$$ 50\\\\% $$").
+  * For a fraction, write: $$ \\displaystyle \\frac{a}{b} $$ (renders in JSON string as "$$ \\\\displaystyle \\\\frac{a}{b} $$").
+  * For greek letters, write: $$ \\pi $$ (renders in JSON string as "$$ \\\\pi $$").
 - Preserve original paragraph breaks using \n\n inside strings.
 - Preserve single line breaks using \n inside strings.
 - Use <u>...</u> for underlined text.

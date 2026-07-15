@@ -11,6 +11,8 @@ class UserTest extends Model
         'user_id',
         'test_id',
         'assignment_id',
+        'attempt_type',
+        'section_type',
         'attempt_number',
         'score_reading_writing',
         'score_reading_writing_lower',
