@@ -11,7 +11,18 @@
             <p>Your email is verified. An administrator still needs to approve teacher access.</p>
             <div class="p-4 border border-slate-200 rounded-xl">Status: <strong>Pending review</strong></div>
         @endif
-        <form action="{{ route('logout') }}" method="POST">@csrf<button class="secondary-btn w-full">Sign out</button>
+        <form id="app-status-logout-form" action="{{ route('logout') }}" method="POST">@csrf<button class="secondary-btn w-full">Sign out</button>
         </form>
     </div>
+
+    @push('scripts')
+        <script>
+            document.addEventListener('DOMContentLoaded', () => {
+                const logoutForm = document.getElementById('app-status-logout-form');
+                if (typeof window.initAjaxLogout === 'function') {
+                    window.initAjaxLogout({ formEl: logoutForm, redirectTo: '/signin' });
+                }
+            });
+        </script>
+    @endpush
 </x-layouts.auth>

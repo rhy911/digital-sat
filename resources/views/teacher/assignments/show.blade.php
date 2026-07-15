@@ -3,12 +3,16 @@
         @vite(['resources/css/student/analytics.css', 'resources/css/classroom.css'])
     @endpush
     <div class="ds-teacher-workspace teacher-detail">
-        @if (session('success'))
-            <div class="class-alert class-alert--success" role="status">{{ session('success') }}</div>
-        @endif
-        @if ($errors->any())
-            <div class="class-alert class-alert--error" role="alert">{{ $errors->first() }}</div>
-        @endif
+        @php
+            $statusBadgeVariant = fn ($status) => match ($status) {
+                'active', 'approved', 'published', 'completed', 'open' => 'success',
+                'pending', 'draft', 'in-progress', 'in_progress' => 'warning',
+                'overdue', 'archived', 'closed', 'rejected', 'removed', 'left' => 'danger',
+                default => 'neutral',
+            };
+        @endphp
+        <x-ui.alert type="success" :dismissible="false">{{ session('success') }}</x-ui.alert>
+        <x-ui.alert type="danger" :messages="$errors->all()" />
 
         @if ($origin === 'workspace')
             <a class="back-link" href="{{ route('teacher.assignments.index') }}">Back to assignments &amp; reports</a>
@@ -18,8 +22,7 @@
 
         <div class="page-heading">
             <div>
-                <span
-                    class="status-chip status-chip--{{ $assignment->status }}">{{ ucfirst($assignment->status) }}</span>
+                <x-ui.status-badge :status="$statusBadgeVariant($assignment->status)">{{ ucfirst($assignment->status) }}</x-ui.status-badge>
                 <h1>{{ $assignment->title }}</h1>
                 <p>{{ $assignment->test->title }} · {{ $assignment->attempt_limit }} allowed attempt(s)</p>
             </div>
@@ -28,17 +31,17 @@
                     @if ($assignment->status === 'draft')
                         <form method="POST" action="{{ route('teacher.assignments.publish', $assignment) }}">
                             @csrf
-                            <button class="class-button class-button--primary">Publish</button>
+                            <x-ui.button type="submit" variant="primary" size="sm">Publish</x-ui.button>
                         </form>
                     @elseif($assignment->status === 'published')
                         <form method="POST" action="{{ route('teacher.assignments.close', $assignment) }}">
                             @csrf
-                            <button class="class-button">Close</button>
+                            <x-ui.button type="submit" variant="secondary" size="sm">Close</x-ui.button>
                         </form>
                     @else
                         <form method="POST" action="{{ route('teacher.assignments.reopen', $assignment) }}">
                             @csrf
-                            <button class="class-button">Reopen</button>
+                            <x-ui.button type="submit" variant="secondary" size="sm">Reopen</x-ui.button>
                         </form>
                     @endif
                 </div>
@@ -83,7 +86,7 @@
                     <label>Due at (Asia/Ho_Chi_Minh)<input type="text" class="datetime-picker" name="due_at"
                             value="{{ $assignment->due_at?->format('Y-m-d\\TH:i') }}" placeholder="Select date and time..."></label>
                     <div class="form-action span-2">
-                        <button class="class-button class-button--primary">Save settings</button>
+                        <x-ui.button type="submit" variant="primary">Save settings</x-ui.button>
                     </div>
                 </form>
             </details>
@@ -94,6 +97,10 @@
                 <div>
                     <h2>Student results</h2>
                     <p>Best completed score represents each student; every attempt remains available.</p>
+                </div>
+                <div class="row-actions">
+                    <x-ui.button href="{{ route('teacher.assignments.export.csv', $assignment) }}" variant="secondary" size="sm">Export CSV</x-ui.button>
+                    <x-ui.button href="{{ route('teacher.assignments.export.print', $assignment) }}" variant="secondary" size="sm">Print</x-ui.button>
                 </div>
             </div>
             <div class="report-table-wrap">
@@ -139,22 +146,10 @@
                                 @endif
                                 <td>
                                     @if ($row['attempts']->isNotEmpty())
-                                        @php($attemptModalId = 'attempts-' . $assignment->id . '-' . $row['recipient']->student_id)
-                                        @php($initialAttempt = $row['attempts']->firstWhere('status', 'in_progress') ?? $row['attempts']->sortByDesc('attempt_number')->first())
-                                        <button type="button" class="attempt-detail-trigger" x-data
-                                            x-on:click.prevent="$dispatch('open-modal', '{{ $attemptModalId }}')"
-                                            aria-haspopup="dialog">
+                                        <x-ui.button href="{{ route('teacher.assignments.students.show', [$assignment, $row['recipient']->student]) }}"
+                                            variant="secondary" size="sm">
                                             View attempts
-                                        </button>
-                                        <x-ui.modal :id="$attemptModalId" :title="'Attempts for ' . $row['recipient']->student->name" max-width="7xl">
-                                            <div class="attempt-monitor" data-attempt-monitor
-                                                data-poll-url="{{ route('teacher.assignments.attempt-monitor', [$assignment, $row['recipient']->student]) }}"
-                                                data-active-attempt="{{ $initialAttempt?->id }}">
-                                                <div style="padding: 3rem; text-align: center; color: var(--color-gray-500);">
-                                                    Loading attempt details...
-                                                </div>
-                                            </div>
-                                        </x-ui.modal>
+                                        </x-ui.button>
                                     @else
                                         —
                                     @endif
@@ -208,9 +203,7 @@
                                     </small>
                                 </td>
                                 <td>
-                                    <span class="status-chip status-chip--draft" style="background-color: #f1f5f9; color: #475569; border: 1px solid #cbd5e1; font-size: 0.75rem;">
-                                        {{ $analysis['module_label'] }}
-                                    </span>
+                                    <x-ui.status-badge status="neutral">{{ $analysis['module_label'] }}</x-ui.status-badge>
                                 </td>
                                 <td>
                                     <strong style="color: {{ $analysis['incorrect_rate'] >= 60 ? 'var(--cw-danger)' : ($analysis['incorrect_rate'] >= 30 ? 'var(--cw-warning, #d97706)' : 'var(--cw-success, #16a34a)') }}; font-size: 1.1rem;">
@@ -230,9 +223,9 @@
                                                 @foreach($analysis['incorrect_students'] as $item)
                                                     <li style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--cw-line-soft, #f3f4f6); padding-bottom: 0.25rem;">
                                                         <span style="font-weight: 550; color: var(--cw-ink-strong);">{{ $item['student']->name }}</span>
-                                                        <span class="status-chip" style="font-size: 0.7rem; padding: 1px 6px; background-color: {{ $item['status'] === 'omitted' ? '#f1f5f9' : '#fee2e2' }}; color: {{ $item['status'] === 'omitted' ? '#475569' : '#b91c1c' }}; border: none;">
+                                                        <x-ui.status-badge :status="$item['status'] === 'omitted' ? 'neutral' : 'danger'">
                                                             {{ $item['status'] === 'omitted' ? 'Omit' : 'Wrong (' . $item['selected'] . ')' }}
-                                                        </span>
+                                                        </x-ui.status-badge>
                                                     </li>
                                                 @endforeach
                                             </ul>
@@ -258,7 +251,7 @@
                     data-confirm="Delete this assignment? All student attempt records for this assignment will be detached but preserved in the database.">
                     @csrf
                     @method('DELETE')
-                    <button type="submit" class="class-button class-button--danger">Delete assignment</button>
+                    <x-ui.button type="submit" variant="danger">Delete assignment</x-ui.button>
                 </form>
             </div>
         @endif

@@ -1,6 +1,6 @@
 @props(['test'])
 
-<div class="practice-card" tabindex="0">
+<div class="practice-card">
     <!-- Cohesive Unified Header -->
     <div class="practice-card-header-cohesive">
         <div class="header-left">
@@ -21,7 +21,7 @@
 
         <!-- Section Scores breakdown -->
         <div class="section-scores-panel">
-            <div class="section-score-item rw-item" tabindex="0">
+            <div class="section-score-item rw-item">
                 <div class="section-icon-wrapper-sm">
                     <svg class="section-icon-sm" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
                         stroke="currentColor" stroke-width="2.5" aria-hidden="true">
@@ -35,7 +35,7 @@
                 </div>
             </div>
 
-            <div class="section-score-item math-item" tabindex="0">
+            <div class="section-score-item math-item">
                 <div class="section-icon-wrapper-sm">
                     <svg class="section-icon-sm" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
                         stroke="currentColor" stroke-width="2.5" aria-hidden="true">
@@ -54,7 +54,7 @@
     <!-- Actions -->
     <div class="practice-card-actions">
         <a href="{{ route('my-practice.score', $test) }}" class="practice-card-btn-primary">Score Details</a>
-        <div class="practice-card-footer-link" role="button" tabindex="0">
+        <div class="practice-card-footer-link practice-card-footer-link--static">
             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5"
                 stroke="currentColor" class="w-3.5 h-3.5" aria-hidden="true"
                 style="width: 0.85rem; height: 0.85rem; display: inline-block;">

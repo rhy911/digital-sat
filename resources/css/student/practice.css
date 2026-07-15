@@ -321,6 +321,18 @@
     text-decoration: underline;
 }
 
+.practice-card-footer-link--static {
+    cursor: default;
+}
+
+.practice-card-footer-link--static:hover {
+    color: var(--ds-muted-strong);
+}
+
+.practice-card-footer-link--static span {
+    text-decoration: none;
+}
+
 /* Score Details Page */
 .sd-header-btn {
     padding: 0.5rem 1.25rem;

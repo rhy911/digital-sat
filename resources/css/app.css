@@ -13,11 +13,13 @@
 @theme {
     --font-sans: "Roboto", ui-sans-serif, system-ui, sans-serif;
     --font-geist: "Geist Sans", sans-serif;
-    --color-brand: #324dc7;
-    --color-brand-hover: #283d9f;
+    --color-brand: #2D439A;
+    --color-brand-hover: #24367B;
+    --color-brand-soft: color-mix(in oklab, var(--color-brand) 12%, white);
     --color-danger: var(--color-rose-600);
     --color-success: var(--color-emerald-600);
     --color-warning: var(--color-amber-600);
+    --color-neutral: var(--color-slate-500);
     --animate-float: float 3s ease-in-out infinite;
 
     @keyframes float {
@@ -303,44 +305,25 @@ header {
     background-color: #d9e3f0;
 }
 
-/* User Dropdown */
-header .user-dropdown .user {
+/* User Dropdown trigger (menu itself now handled by <x-ui.dropdown>) */
+header .user {
     transition: background-color 0.2s ease;
 }
 
-header .user-dropdown .user:hover {
+header .user:hover {
     background-color: rgba(0, 0, 0, 0.05);
 }
 
-header .user-dropdown .dropdown-menu {
-    background: white;
-    border-radius: 0.75rem;
-    box-shadow:
-        0 10px 25px -5px rgba(0, 0, 0, 0.1),
-        0 8px 10px -6px rgba(0, 0, 0, 0.1);
-    opacity: 0;
-    visibility: hidden;
-    transform: translateY(-10px);
-    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-    border: 1px solid rgba(0, 0, 0, 0.05);
-}
-
-header .user-dropdown .dropdown-menu.show {
-    opacity: 1;
-    visibility: visible;
-    transform: translateY(0);
-}
-
-header .user-dropdown .dropdown-menu .dropdown-item {
+header .dropdown-item {
     transition: background-color 0.2s ease;
 }
 
-header .user-dropdown .dropdown-menu .dropdown-item:hover {
+header .dropdown-item:hover {
     background-color: rgba(0, 0, 0, 0.05);
-    color: #324dc7;
+    color: var(--color-brand);
 }
 
-header .user-dropdown .dropdown-menu .dropdown-item.logout-btn:hover {
+header .dropdown-item.logout-btn:hover {
     background-color: rgba(239, 68, 68, 0.1);
     color: #ef4444;
 }

@@ -1,8 +1,30 @@
 <div id="teacher-workspace-content" class="teacher-workspace-panel">
-    <div class="workspace-loading" wire:loading.flex
-        wire:target="showSection,showClassStatus,gotoPage,previousPage,nextPage" role="status">
-        Updating workspace...
-    </div>
+    @if ($section === 'classes')
+        <div class="flex flex-col gap-3" wire:loading.flex
+            wire:target="showSection,showClassStatus,gotoPage,previousPage,nextPage" role="status"
+            aria-label="Updating workspace">
+            @for ($i = 0; $i < 3; $i++)
+                <div class="rounded-xl border border-slate-200 p-4 flex flex-col gap-3">
+                    <div class="flex items-center justify-between">
+                        <x-ui.skeleton class="h-5 w-1/3" />
+                        <x-ui.skeleton class="h-5 w-16 rounded-full" />
+                    </div>
+                    <div class="grid grid-cols-4 gap-3">
+                        <x-ui.skeleton class="h-8 w-full" />
+                        <x-ui.skeleton class="h-8 w-full" />
+                        <x-ui.skeleton class="h-8 w-full" />
+                        <x-ui.skeleton class="h-8 w-full" />
+                    </div>
+                </div>
+            @endfor
+        </div>
+    @else
+        <div class="flex flex-col gap-2" wire:loading.flex
+            wire:target="showSection,showClassStatus,gotoPage,previousPage,nextPage" role="status"
+            aria-label="Updating workspace">
+            <x-ui.skeleton count="5" class="h-14 w-full rounded-lg" />
+        </div>
+    @endif
 
     @if ($section === 'classes')
         <div class="page-heading">

@@ -1,4 +1,4 @@
-@props(['align' => 'right', 'width' => '48', 'contentClasses' => 'py-1 bg-white dark:bg-slate-800'])
+@props(['align' => 'right', 'width' => '48', 'contentClasses' => 'py-1 bg-white'])
 
 @php
     switch ($align) {
@@ -31,8 +31,9 @@
     }
 @endphp
 
-<div class="relative" x-data="{ open: false }" @click.outside="open = false" @close.stop="open = false">
-    <div @click="open = ! open">
+<div class="relative" x-data="{ open: false }" @click.outside="open = false" @close.stop="open = false"
+    @keydown.escape.window="open = false">
+    <div @click="open = ! open" aria-haspopup="true" :aria-expanded="open">
         {{ $trigger }}
     </div>
 

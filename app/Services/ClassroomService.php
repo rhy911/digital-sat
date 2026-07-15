@@ -67,6 +67,11 @@ class ClassroomService
         });
     }
 
+    public function bulkApprove(\Illuminate\Support\Collection $memberships, User $actor): \Illuminate\Support\Collection
+    {
+        return DB::transaction(fn () => $memberships->map(fn (ClassroomMembership $membership) => $this->decide($membership, $actor, true)));
+    }
+
     public function endMembership(ClassroomMembership $membership, User $actor, string $status): void
     {
         DB::transaction(function () use ($membership, $actor, $status) {

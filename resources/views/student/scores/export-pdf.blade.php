@@ -122,25 +122,25 @@
             </p>
             <p class="disclosure">
                 @if($userTest->score_estimate_kind === 'adaptive_irt_provisional')
-                    Estimated range:
-                    {{ $userTest->section_type === 'reading_writing' ? ($userTest->score_reading_writing_lower . '-' . $userTest->score_reading_writing_upper) : ($userTest->score_math_lower . '-' . $userTest->score_math_upper) }}.
+                    This is an estimate based on the questions you saw. Your score is likely between
+                    {{ $userTest->section_type === 'reading_writing' ? ($userTest->score_reading_writing_lower . ' and ' . $userTest->score_reading_writing_upper) : ($userTest->score_math_lower . ' and ' . $userTest->score_math_upper) }}.
                 @else
-                    Route-neutral section estimate.
+                    This estimate uses all the questions you answered in this section.
                 @endif
                 Not an official College Board score.
             </p>
         @elseif ($isScaledSatResult)
             <div class="score">{{ $userTest->total_score }} <span style="font-size:16px;color:#64748b;">/ 1600</span></div>
             <p class="score-label">
-                {{ $userTest->score_estimate_kind === 'adaptive_irt_provisional' ? 'Provisional IRT estimate' : 'Estimated practice score' }}
+                {{ $userTest->score_estimate_kind === 'adaptive_irt_provisional' ? 'Estimated practice score' : 'Estimated practice score · Normal conversion' }}
             </p>
             <p class="disclosure">
                 @if($userTest->score_estimate_kind === 'adaptive_irt_provisional')
-                    Estimated range {{ $userTest->total_score_lower }}-{{ $userTest->total_score_upper }}. Item parameters and scaled mapping remain provisional.
+                    This is an estimate based on the questions you saw. Your score is likely between {{ $userTest->total_score_lower }} and {{ $userTest->total_score_upper }}.
                 @elseif($userTest->score_estimate_kind === 'normal_generic')
-                    Route-neutral estimate using built-in conversion {{ $userTest->score_conversion_version }}. A form-specific table may improve accuracy.
+                    This estimate uses all the questions you answered, converted with our standard scoring table (v{{ $userTest->score_conversion_version }}).
                 @else
-                    Route-neutral estimate using approved conversion v{{ $userTest->scoreConversionSet?->version ?? 'legacy' }}.
+                    This estimate uses all the questions you answered, converted with the official scoring table for this test form (v{{ $userTest->scoreConversionSet?->version ?? 'legacy' }}).
                 @endif
                 Not an official College Board score.
             </p>

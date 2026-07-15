@@ -21,17 +21,26 @@
                 </div>
                 <p class="sd-score-disclosure">
                     @if($userTest->score_estimate_kind === 'adaptive_irt_provisional')
-                        EAP 3PL ability estimate using your adaptive route.
-                        Estimated range:
-                        {{ $userTest->section_type === 'reading_writing' ? ($userTest->score_reading_writing_lower . '–' . $userTest->score_reading_writing_upper) : ($userTest->score_math_lower . '–' . $userTest->score_math_upper) }}.
+                        This is an estimate based on the questions you saw. Your score is likely between
+                        {{ $userTest->section_type === 'reading_writing' ? ($userTest->score_reading_writing_lower . ' and ' . $userTest->score_reading_writing_upper) : ($userTest->score_math_lower . ' and ' . $userTest->score_math_upper) }}.
                     @else
-                        Route-neutral section estimate.
+                        This estimate uses all the questions you answered in this section.
                     @endif
                     Not an official College Board score.
                 </p>
+                <details class="sd-score-explainer">
+                    <summary>How is this calculated?</summary>
+                    <p>
+                        @if($userTest->score_estimate_kind === 'adaptive_irt_provisional')
+                            This section used an adaptive route, so question difficulty adjusted based on your answers. We use a statistical model (EAP 3PL) to estimate your ability from the questions you actually saw, which is why the result is shown as a range rather than one exact number.
+                        @else
+                            This section was scored using all the questions you answered, without adjusting for adaptive difficulty.
+                        @endif
+                    </p>
+                </details>
             @elseif ($isScaledSatResult)
                 <p class="sd-score-context">
-                    {{ $userTest->score_estimate_kind === 'adaptive_irt_provisional' ? 'Provisional IRT estimate' : 'Estimated practice score · Normal conversion' }}
+                    {{ $userTest->score_estimate_kind === 'adaptive_irt_provisional' ? 'Estimated practice score' : 'Estimated practice score · Normal conversion' }}
                 </p>
                 <div>
                     <span class="sd-hero-score">{{ $userTest->total_score }}</span>
@@ -39,18 +48,27 @@
                 </div>
                 <p class="sd-score-disclosure">
                     @if($userTest->score_estimate_kind === 'adaptive_irt_provisional')
-                        EAP 3PL ability estimate using your adaptive route. Estimated range
-                        {{ $userTest->total_score_lower }}–{{ $userTest->total_score_upper }}.
-                        Item parameters and scaled mapping remain provisional.
+                        This is an estimate based on the questions you saw. Your score is likely between
+                        {{ $userTest->total_score_lower }} and {{ $userTest->total_score_upper }}.
                     @elseif($userTest->score_estimate_kind === 'normal_generic')
-                        Route-neutral estimate using all presented questions and built-in conversion
-                        {{ $userTest->score_conversion_version }}. A form-specific table may improve accuracy.
+                        This estimate uses all the questions you answered, converted with our standard scoring table.
                     @else
-                        Route-neutral estimate using all presented questions and approved conversion
-                        v{{ $userTest->scoreConversionSet?->version ?? 'legacy' }}.
+                        This estimate uses all the questions you answered, converted with the official scoring table for this test.
                     @endif
                     Not an official College Board score.
                 </p>
+                <details class="sd-score-explainer">
+                    <summary>How is this calculated?</summary>
+                    <p>
+                        @if($userTest->score_estimate_kind === 'adaptive_irt_provisional')
+                            This test used an adaptive route, so question difficulty adjusted based on your answers. We use a statistical model (EAP 3PL) to estimate your ability from the questions you actually saw. The scaled score mapping for this route is still provisional, which is why the result is shown as a range.
+                        @elseif($userTest->score_estimate_kind === 'normal_generic')
+                            Your raw score was converted to a 400–1600 scale using our standard conversion table (v{{ $userTest->score_conversion_version }}). A form-specific conversion table, once available, may give a slightly more precise result.
+                        @else
+                            Your raw score was converted to a 400–1600 scale using the official conversion table for this test form (v{{ $userTest->scoreConversionSet?->version ?? 'legacy' }}).
+                        @endif
+                    </p>
+                </details>
             @else
                 <div class="flex flex-wrap items-baseline gap-x-3 gap-y-1">
                     <span class="sd-hero-score">{{ $correct }}</span>
@@ -139,6 +157,10 @@
         <p class="sd-section-sub">View your performance across the 8 content domains measured on the SAT.</p>
 
         {{-- ── DOMAIN GROUPS — rendered once, filtered by JS ── --}}
+        @if (! count($stats['sections']['reading_and_writing']['domains']) && ! count($stats['sections']['math']['domains']))
+            <p class="sd-section-sub">No scored domains available for this attempt.</p>
+        @endif
+
         @if (count($stats['sections']['reading_and_writing']['domains']))
             <div class="sd-domain-group" data-section="rw">
                 <h4 class="sd-domain-section-label !font-bold">Reading and Writing</h4>

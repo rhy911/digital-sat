@@ -15,9 +15,9 @@
             </div>
 
             <div class="ds-workspace-actions">
-                <a href="{{ route('test.preview') }}" class="ds-button ds-button--secondary">
+                <x-ui.button href="{{ route('test.preview') }}" variant="secondary">
                     Preview test format
-                </a>
+                </x-ui.button>
             </div>
         </section>
 
@@ -81,8 +81,8 @@
 
                                 <div class="ds-resume-card__action-wrapper">
                                     @if ($moduleUlid)
-                                        <a href="{{ route('engine.session', ['ulid' => $moduleUlid]) }}?attempt={{ $attempt->ulid }}"
-                                            class="ds-button ds-button--primary ds-resume-card__button">
+                                        <x-ui.button href="{{ route('engine.session', ['ulid' => $moduleUlid]) }}?attempt={{ $attempt->ulid }}"
+                                            variant="primary" class="ds-resume-card__button">
                                             Resume Practice
                                             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
                                                 stroke-width="2.5" stroke="currentColor" class="w-4 h-4 ml-2"
@@ -91,11 +91,11 @@
                                                 <path stroke-linecap="round" stroke-linejoin="round"
                                                     d="M13.5 4.5 21 12m0 0-7.5 7.5M21 12H3" />
                                             </svg>
-                                        </a>
+                                        </x-ui.button>
                                     @else
-                                        <button class="ds-button ds-button--secondary" disabled>
+                                        <x-ui.button variant="secondary" disabled>
                                             Unavailable
-                                        </button>
+                                        </x-ui.button>
                                     @endif
                                 </div>
                             </div>
@@ -140,15 +140,15 @@
                                     <div class="ds-test-card__topline">
                                         <span>{{ $test->test_type ? \Illuminate\Support\Str::headline($test->test_type) : 'Full-length' }}</span>
                                         @if ($inProgressAttempt)
-                                            <span class="ds-badge ds-badge--in-progress">In Progress</span>
+                                            <x-ui.status-badge status="brand">In Progress</x-ui.status-badge>
                                         @elseif($latestCompletedAttempt)
-                                            <span class="ds-badge ds-badge--completed">Completed
+                                            <x-ui.status-badge status="success">Completed
                                                 @if($latestCompletedAttempt->total_score !== null)
                                                     &bull; Estimated {{ $latestCompletedAttempt->total_score }}
                                                 @endif
-                                            </span>
+                                            </x-ui.status-badge>
                                         @else
-                                            <span class="ds-badge ds-badge--new">New</span>
+                                            <x-ui.status-badge status="warning">New</x-ui.status-badge>
                                         @endif
                                     </div>
                                     <h3 id="test-card-{{ $test->id }}-title">{{ $test->title }}</h3>
@@ -168,7 +168,7 @@
                                     <span>{{ $modules->count() ?: '--' }} modules</span>
                                 </div>
 
-                                <button type="button" class="ds-button ds-button--primary ds-test-card__action"
+                                <x-ui.button type="button" variant="primary" class="ds-test-card__action"
                                     data-test-id="{{ $test->id }}">
                                     @if ($inProgressAttempt)
                                         Resume practice
@@ -177,7 +177,7 @@
                                     @else
                                         Start practice
                                     @endif
-                                </button>
+                                </x-ui.button>
                             </article>
                         @endforeach
                     </div>
@@ -211,16 +211,16 @@
             </div>
 
             <div class="ds-modal__actions">
-                <button id="btnContinueAttempt" type="button" class="ds-button ds-button--primary">
+                <x-ui.button id="btnContinueAttempt" type="button" variant="primary">
                     Continue in progress
-                </button>
-                <button id="btnFreshAttempt" type="button" class="ds-button ds-button--secondary">
+                </x-ui.button>
+                <x-ui.button id="btnFreshAttempt" type="button" variant="secondary">
                     Start fresh
-                </button>
-                <button id="btnCancelAttempt" type="button" class="ds-button ds-button--secondary"
+                </x-ui.button>
+                <x-ui.button id="btnCancelAttempt" type="button" variant="secondary"
                     style="border-color: transparent; background: transparent;">
                     Cancel
-                </button>
+                </x-ui.button>
             </div>
         </div>
     </div>

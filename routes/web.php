@@ -126,8 +126,12 @@ Route::middleware(['auth', 'verified', 'role:admin,teacher'])->prefix('teacher')
         Route::post('/memberships/{membership}/approve', [\App\Http\Controllers\Teacher\MembershipController::class, 'approve'])->name('memberships.approve');
         Route::post('/memberships/{membership}/reject', [\App\Http\Controllers\Teacher\MembershipController::class, 'reject'])->name('memberships.reject');
         Route::post('/memberships/{membership}/remove', [\App\Http\Controllers\Teacher\MembershipController::class, 'remove'])->name('memberships.remove');
+        Route::post('/classes/{classroom}/memberships/bulk-approve', [\App\Http\Controllers\Teacher\MembershipController::class, 'bulkApprove'])->name('memberships.bulk-approve');
         Route::post('/classes/{classroom}/assignments', [\App\Http\Controllers\Teacher\AssignmentController::class, 'store'])->name('assignments.store');
         Route::get('/assignments/{assignment}/students/{student}/attempts', [\App\Http\Controllers\Teacher\AssignmentController::class, 'attemptMonitor'])->name('assignments.attempt-monitor');
+        Route::get('/assignments/{assignment}/students/{student}', [\App\Http\Controllers\Teacher\AssignmentController::class, 'studentAttempt'])->name('assignments.students.show');
+        Route::get('/assignments/{assignment}/export.csv', [\App\Http\Controllers\Teacher\AssignmentController::class, 'exportCsv'])->name('assignments.export.csv');
+        Route::get('/assignments/{assignment}/export/print', [\App\Http\Controllers\Teacher\AssignmentController::class, 'exportPrint'])->name('assignments.export.print');
         Route::get('/assignments/{assignment}/attempts/answers/{userAnswer}/preview', [\App\Http\Controllers\Teacher\AssignmentController::class, 'questionPreview'])->name('assignments.attempt-question-preview');
         Route::get('/assignments/{assignment}', [\App\Http\Controllers\Teacher\AssignmentController::class, 'show'])->name('assignments.show');
         Route::put('/assignments/{assignment}', [\App\Http\Controllers\Teacher\AssignmentController::class, 'update'])->name('assignments.update');
@@ -212,3 +216,7 @@ Route::middleware(['auth', 'verified', 'role:admin,teacher', 'teacher.approved']
     // Media
     Route::post('/media/upload', [\App\Http\Controllers\Admin\MediaController::class, 'upload'])->name('media.upload');
 });
+
+if (app()->environment('local')) {
+    Route::get('/dev/ui-kit', fn () => view('dev.ui-kit'))->name('dev.ui-kit');
+}

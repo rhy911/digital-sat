@@ -131,24 +131,24 @@
 
             <div class="ds-workspace-actions" aria-label="Primary progress actions">
                 @if($latestCompleted)
-                    <a href="{{ route('my-practice.score', $latestCompleted) }}" class="ds-button ds-button--primary">
+                    <x-ui.button href="{{ route('my-practice.score', $latestCompleted) }}" variant="primary">
                         Review latest score
-                    </a>
+                    </x-ui.button>
                 @else
-                    <a href="{{ route('test.preview') }}" class="ds-button ds-button--primary">
+                    <x-ui.button href="{{ route('test.preview') }}" variant="primary">
                         Preview test format
-                    </a>
+                    </x-ui.button>
                 @endif
 
                 @if($primaryInProgress && $resumeModuleUlid)
-                    <a href="{{ route('engine.session', ['ulid' => $resumeModuleUlid]) }}?attempt={{ $primaryInProgress->ulid }}"
-                        class="ds-button ds-button--secondary">
+                    <x-ui.button href="{{ route('engine.session', ['ulid' => $resumeModuleUlid]) }}?attempt={{ $primaryInProgress->ulid }}"
+                        variant="secondary">
                         Resume practice
-                    </a>
+                    </x-ui.button>
                 @else
-                    <a href="{{ route('home.practice') }}" class="ds-button ds-button--secondary">
+                    <x-ui.button href="{{ route('home.practice') }}" variant="secondary">
                         Choose practice
-                    </a>
+                    </x-ui.button>
                 @endif
             </div>
         </section>
@@ -161,16 +161,16 @@
                 @if($hasSectionScores)
                     <p>{{ $lowerSection }} is {{ $sectionGap }} points lower on your latest test. Review missed questions
                         there before your next full practice.</p>
-                    <a href="{{ route('home.practice') }}" class="ds-button ds-button--secondary">Choose practice</a>
+                    <x-ui.button href="{{ route('home.practice') }}" variant="secondary">Choose practice</x-ui.button>
                 @elseif($latestCompleted)
                     <p>Your latest score is ready. Review missed questions before choosing the next practice block.</p>
-                    <a href="{{ route('my-practice', $latestCompleted) }}" class="ds-button ds-button--secondary">Open score
-                        report</a>
+                    <x-ui.button href="{{ route('my-practice', $latestCompleted) }}" variant="secondary">Open score
+                        report</x-ui.button>
                 @else
                     <p>Take a quick look at the digital test interface first, then start your first full-length baseline.
                     </p>
                     <div class="ds-card-actions">
-                        <a href="{{ route('test.preview') }}" class="ds-button ds-button--secondary">Open test preview</a>
+                        <x-ui.button href="{{ route('test.preview') }}" variant="secondary">Open test preview</x-ui.button>
                         <a href="{{ route('home.practice') }}" class="ds-link">Start baseline test</a>
                     </div>
                 @endif
@@ -399,7 +399,7 @@
                     <div class="ds-empty">
                         <h4>No completed practice yet</h4>
                         <p>Finish a full-length practice test and your score trend will appear here.</p>
-                        <a href="{{ route('home.practice') }}" class="ds-button ds-button--primary">Start first practice</a>
+                        <x-ui.button href="{{ route('home.practice') }}" variant="primary">Start first practice</x-ui.button>
                     </div>
                 @endif
             </article>

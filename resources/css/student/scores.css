@@ -45,6 +45,27 @@
     font-size: 0.875rem;
     line-height: 1.5;
 }
+.sd-score-explainer {
+    max-width: 68ch;
+    margin: 0.5rem 0 0;
+}
+.sd-score-explainer summary {
+    color: rgba(255, 255, 255, 0.75);
+    font-size: 0.8rem;
+    font-weight: 700;
+    cursor: pointer;
+    text-decoration: underline;
+    text-underline-offset: 3px;
+}
+.sd-score-explainer summary:hover {
+    color: #fff;
+}
+.sd-score-explainer p {
+    margin: 0.5rem 0 0;
+    color: rgba(255, 255, 255, 0.78);
+    font-size: 0.82rem;
+    line-height: 1.55;
+}
 .sd-hero-score-range {
     font-size: 1.1rem;
     color: rgba(255, 255, 255, 0.7);
@@ -794,8 +815,7 @@ table.sd-table td {
 .sd-modal-expl-box {
     background: #fafbff;
     border: 1px solid #e2e8f0;
-    border-left: 4px solid #0077c8;
-    border-radius: 0 12px 12px 0;
+    border-radius: 12px;
     padding: 1.25rem 1.5rem;
     color: #334155;
     line-height: 1.7;

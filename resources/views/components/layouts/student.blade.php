@@ -47,40 +47,13 @@
     {{ $scripts ?? '' }}
     <script>
         function initStudentHeader() {
-            const triggerId = "{{ $headerType === 'progress' ? 'progressUserDropdown' : 'userDropdown' }}";
-            const menuId = "{{ $headerType === 'progress' ? 'progressDropdownMenu' : 'dropdownMenu' }}";
-            const trigger = document.getElementById(triggerId);
-
-            if (!trigger || trigger.dataset.menuReady === 'true') return;
-            trigger.dataset.menuReady = 'true';
-
-            if (typeof window.initDropdownToggle === 'function') {
-                const {
-                    menuEl
-                } = window.initDropdownToggle({
-                    triggerId: triggerId,
-                    menuId: menuId,
-                    openClass: 'show',
+            const logoutForm = document.getElementById('header-logout-form');
+            if (typeof window.initAjaxLogout === 'function') {
+                window.initAjaxLogout({
+                    formEl: logoutForm,
+                    redirectTo: '/signin',
+                    tokenStorageKey: 'api_token'
                 });
-
-                @if ($headerType === 'progress')
-                    const accountButton = document.getElementById(triggerId);
-                    const syncAccountState = () => {
-                        accountButton?.setAttribute('aria-expanded', menuEl?.classList.contains('show') ? 'true' :
-                            'false');
-                    };
-                    accountButton?.addEventListener('click', () => window.setTimeout(syncAccountState, 0));
-                    document.addEventListener('click', () => window.setTimeout(syncAccountState, 0));
-                @endif
-
-                const logoutForm = menuEl?.querySelector?.('form');
-                if (typeof window.initAjaxLogout === 'function') {
-                    window.initAjaxLogout({
-                        formEl: logoutForm,
-                        redirectTo: '/signin',
-                        tokenStorageKey: 'api_token'
-                    });
-                }
             }
         }
 

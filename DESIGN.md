@@ -4,8 +4,9 @@ Token quyết định cho redesign (xem `docs/redesign-roadmap.md` Phase 1). Dù
 
 ## Accent color
 
-- Nguồn duy nhất: `--color-brand: #324dc7` (`resources/css/app.css` `@theme`).
-- Hover variant: `--color-brand-hover: #283d9f`.
+- Nguồn duy nhất: `--color-brand: #2D439A` (`resources/css/app.css` `@theme`) — đổi từ `#324dc7` ở Phase 2 sau khi đánh giá: hue cũ (~229°, cobalt) đúng hướng nhưng saturation/lightness (~60%/49%) rơi vào vùng "xanh vivid trung bình" phổ biến ở hàng loạt SaaS/ed-tech khác, dễ đọc thành "generic LMS look". `#2D439A` giữ cùng họ hue (~228°), giảm saturation/lightness (~55%/39%) → cảm giác institutional/premium hơn, contrast trên nền trắng ~8.8:1 (AAA). Vì Phase 1 đã tokenize hết qua `var(--color-brand)`/`bg-brand`/`text-brand`, đổi giá trị chỉ cần sửa 1 dòng token, không cần sửa lại 41 file đã dùng.
+- Hover variant: `--color-brand-hover: #24367B`.
+- Soft tint (badge/background nhạt): `--color-brand-soft: color-mix(in oklab, var(--color-brand) 12%, white)`.
 - Đã gộp vào brand: `indigo-600` (qua override token ở admin, qua rename `text-brand`/`bg-brand` ở nơi khác), `#4f46e5`, `#4361EE`/`#4361ee`, `#3347b9` (admin/test-builder cục bộ cũ).
 - **Ngoại lệ (không đụng)**: landing page (`components/layouts/landing.blade.php`, `.landing-*` trong `app.css`) — marketing register, ngoài scope "product". Test Engine (`resources/css/engine/**`, `resources/views/engine/**`, và layout dùng riêng `components/layouts/test.blade.php`) — giữ nguyên tuyệt đối, giống thi thật Bluebook.
 
@@ -14,8 +15,19 @@ Token quyết định cho redesign (xem `docs/redesign-roadmap.md` Phase 1). Dù
 - Danger = `rose` (Tailwind), alias `--color-danger: var(--color-rose-600)`.
 - Success = `emerald` (Tailwind), alias `--color-success: var(--color-emerald-600)`.
 - Warning = `amber` (Tailwind), alias `--color-warning: var(--color-amber-600)`.
+- Neutral = `slate` (Tailwind), alias `--color-neutral: var(--color-slate-500)` — thêm ở Phase 2 cho badge/button "archived/readonly/secondary" (không có token trước đó, hardcode hex rời rạc).
 - Minority `red`/`green`/`yellow` đã gộp về rose/emerald/amber (9 chỗ, ngoài Test Engine layout).
-- Token `--color-danger/success/warning` mới đặt tên cho Phase 2 dùng (`<x-ui.status-badge>`), **chưa** rename toàn bộ 136 chỗ rose/emerald/amber hiện có sang class `danger-*`/`success-*`/`warning-*` — việc đó để Phase 2/3 làm cùng lúc build component, tránh sửa 2 lần.
+- Token `--color-danger/success/warning/neutral` dùng trong `<x-ui.status-badge>` (Phase 2), **chưa** rename toàn bộ 136 chỗ rose/emerald/amber hiện có sang class `danger-*`/`success-*`/`warning-*` — việc đó để Phase 3+ làm cùng lúc migrate view, tránh sửa 2 lần.
+
+## Component API (`resources/views/components/ui/`, Phase 2)
+
+- `<x-ui.button variant="primary|secondary|danger|ghost-on-dark" size="sm|md" loading href type>` — đủ state default/hover/focus-visible/active/disabled/loading. `href` → render `<a>`, không thì `<button>`. `ghost-on-dark` dành cho nền tối (thay `.sd-hero-pill` scores hero khi migrate).
+- `<x-ui.status-badge status="success|danger|warning|brand|neutral">` — slot mặc định = label, slot `icon` tùy chọn.
+- `<x-ui.card padded shadow="sm|none">` — slot `header`/mặc định/`footer`, đều tùy chọn trừ mặc định.
+- `<x-ui.dropdown align="left|right|top" width trigger content>` — đã có sẵn từ trước, Phase 2 chỉ vá (bỏ tàn dư `dark:` mode, thêm `aria-haspopup`/`aria-expanded`/Escape-to-close). Chưa gắn vào header thật nào (Phase 3).
+- `<x-ui.alert type="success|danger|warning" :messages="$errors->all()" dismissible>` — `messages` là mảng thì hiện list nếu >1 phần tử; không truyền `messages` thì dùng slot mặc định (custom message đơn). Không tự render nếu rỗng cả hai.
+- `<x-ui.skeleton count class>` — `class` truyền width/height (vd `h-4 w-1/3`), `count` > 1 lặp nhiều dòng.
+- Dev preview: `/dev/ui-kit` (route guard `app()->environment('local')`, `routes/web.php`) — show hết variant/state, dùng để test trước khi migrate view thật ở Phase 3+.
 
 ## Font
 

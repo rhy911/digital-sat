@@ -94,19 +94,22 @@
         </nav>
 
         <div class="ds-account">
-            <button type="button" class="ds-account__button" id="progressUserDropdown" aria-haspopup="menu" aria-expanded="false">
-                <span class="ds-account__name">{{ $user->name ?? $user->username ?? 'Guest' }}</span>
-                <img src="{{ asset('images/default_avt.jpg') }}" alt="" class="ds-account__avatar">
-            </button>
-
-            <div class="ds-account__menu" id="progressDropdownMenu" role="menu">
-                <a href="{{ route('profile') }}" class="dropdown-item" role="menuitem" style="display: block; width: 100%; text-align: left; padding: 10px 16px; color: var(--cw-ink); text-decoration: none; font-weight: 700;">My Profile</a>
-                <div style="border-top: 1px solid var(--cw-line); margin: 4px 0;"></div>
-                <form action="{{ route('logout') }}" method="POST" class="m-0">
-                    @csrf
-                    <button type="submit" class="dropdown-item logout-btn" role="menuitem">Sign Out</button>
-                </form>
-            </div>
+            <x-ui.dropdown align="right" width="56">
+                <x-slot:trigger>
+                    <button type="button" class="ds-account__button">
+                        <span class="ds-account__name">{{ $user->name ?? $user->username ?? 'Guest' }}</span>
+                        <img src="{{ asset('images/default_avt.jpg') }}" alt="" class="ds-account__avatar">
+                    </button>
+                </x-slot:trigger>
+                <x-slot:content>
+                    <a href="{{ route('profile') }}" class="dropdown-item" role="menuitem" style="display: block; width: 100%; text-align: left; padding: 10px 16px; color: var(--cw-ink); text-decoration: none; font-weight: 700;">My Profile</a>
+                    <div style="border-top: 1px solid var(--cw-line); margin: 4px 0;"></div>
+                    <form id="header-logout-form" action="{{ route('logout') }}" method="POST" class="m-0">
+                        @csrf
+                        <button type="submit" class="dropdown-item logout-btn" role="menuitem">Sign Out</button>
+                    </form>
+                </x-slot:content>
+            </x-ui.dropdown>
         </div>
     </div>
 

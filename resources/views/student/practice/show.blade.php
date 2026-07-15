@@ -17,14 +17,14 @@
             </div>
 
             <div class="ds-workspace-actions">
-                <a href="{{ route('home') }}" class="ds-button ds-button--secondary">
+                <x-ui.button href="{{ route('home') }}" variant="secondary">
                     <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5"
                         stroke="currentColor" class="w-4 h-4 mr-2" aria-hidden="true"
                         style="margin-right: 0.5rem; display: inline-block; width: 1rem; height: 1rem; vertical-align: text-bottom;">
                         <path stroke-linecap="round" stroke-linejoin="round" d="M10.5 19.5 3 12m0 0 7.5-7.5M3 12h18" />
                     </svg>
                     Back to progress
-                </a>
+                </x-ui.button>
             </div>
         </section>
 
@@ -53,24 +53,14 @@
                         <p>Complete a full-length practice test to see your score report, domain breakdown, and correct
                             answers.</p>
                         <div style="margin-top: 1.25rem;">
-                            <a href="{{ route('home.practice') }}" class="ds-button ds-button--primary"
+                            <x-ui.button href="{{ route('home.practice') }}" variant="primary"
                                 style="display: inline-flex;">
                                 Start a Practice Test
-                            </a>
+                            </x-ui.button>
                         </div>
                     </div>
                 @endif
             </article>
         </section>
     </div>
-
-    <x-slot name="scripts">
-        <script>
-            document.addEventListener('DOMContentLoaded', () => {
-                if (typeof window.initPracticeDashboardPage === 'function') {
-                    window.initPracticeDashboardPage();
-                }
-            });
-        </script>
-    </x-slot>
 </x-layouts.student>

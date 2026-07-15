@@ -16,12 +16,12 @@
             </div>
 
             <div class="ds-workspace-actions">
-                <a href="{{ route('home.practice') }}" class="ds-button ds-button--secondary">
+                <x-ui.button href="{{ route('home.practice') }}" variant="secondary">
                     Choose practice
-                </a>
-                <a href="{{ route('engine.session') }}" class="ds-button ds-button--primary">
+                </x-ui.button>
+                <x-ui.button href="{{ route('engine.session') }}" variant="primary">
                     Open preview
-                </a>
+                </x-ui.button>
             </div>
         </section>
 

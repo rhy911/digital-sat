@@ -13,10 +13,11 @@
         <section class="your-tests">
             <x-student.dashboard.tests-toggle-header />
             <x-student.cards.empty-state-box title="You Have No Upcoming Tests" id="active-tests">
+                <form id="dashboard-empty-state-logout" method="POST" action="{{ route('logout') }}" class="hidden">@csrf</form>
                 <p class="text-lg">Tests appear here a few weeks before test day. <strong>If you got a paper ticket from
-                        your school, <a class="text-brand underline cursor-pointer"
-                            onclick="event.preventDefault(); const btn = document.querySelector('header form button[type=\'submit\']') || document.querySelector('form button[type=\'submit\']'); if(btn) btn.click(); else document.querySelector('form')?.submit();">sign
-                            out</a> and sign in with
+                        your school, <button type="submit" form="dashboard-empty-state-logout"
+                            class="text-brand underline cursor-pointer bg-transparent border-none p-0 font-inherit align-baseline">sign
+                            out</button> and sign in with
                         it.</strong></p>
             </x-student.cards.empty-state-box>
             <x-student.cards.empty-state-box title="You Haven't Taken Any Digital Tests Yet" class="hidden"

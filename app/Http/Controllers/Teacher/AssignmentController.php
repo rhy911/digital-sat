@@ -58,6 +58,61 @@ class AssignmentController extends Controller
         return view('teacher.assignments.show', compact('assignment', 'report', 'origin'));
     }
 
+    public function exportCsv(Assignment $assignment, AssignmentReportService $reports)
+    {
+        $this->authorize('view', $assignment);
+        $report = $reports->build($assignment, perPage: null);
+        $filename = sprintf('assignment-results-%s.csv', \Illuminate\Support\Str::slug($assignment->title ?: 'assignment'));
+
+        return response()->streamDownload(function () use ($report, $assignment) {
+            $handle = fopen('php://output', 'w');
+            $headers = ['Student', 'Email', 'Status', 'Attempts', 'Best estimate'];
+            if ($assignment->assign_type !== 'section') {
+                $headers[] = 'Est. R&W';
+                $headers[] = 'Est. Math';
+            }
+            fputcsv($handle, $headers);
+
+            foreach ($report['rows'] as $row) {
+                $status = $row['recipient']->status === 'withdrawn'
+                    ? 'Withdrawn'
+                    : ($row['in_progress'] ? 'In progress' : ($row['best'] ? ($row['late'] ? 'Completed late' : 'Completed') : 'Not started'));
+                $best = $row['best'];
+                $bestScore = $best
+                    ? ($assignment->assign_type === 'section'
+                        ? ($assignment->section_type === 'reading_writing' ? $best->score_reading_writing : $best->score_math)
+                        : $best->total_score)
+                    : null;
+
+                $line = [
+                    $row['recipient']->student->name,
+                    $row['recipient']->student->email,
+                    $status,
+                    $row['completed_count'].' / '.$assignment->attempt_limit,
+                    $bestScore ?? '—',
+                ];
+                if ($assignment->assign_type !== 'section') {
+                    $line[] = $best?->score_reading_writing ?? '—';
+                    $line[] = $best?->score_math ?? '—';
+                }
+                fputcsv($handle, $line);
+            }
+
+            fclose($handle);
+        }, $filename, ['Content-Type' => 'text/csv']);
+    }
+
+    public function exportPrint(Assignment $assignment, AssignmentReportService $reports)
+    {
+        $this->authorize('view', $assignment);
+        $report = $reports->build($assignment, perPage: null);
+        $filename = sprintf('assignment-results-%s.pdf', \Illuminate\Support\Str::slug($assignment->title ?: 'assignment'));
+
+        return \Barryvdh\DomPDF\Facade\Pdf::loadView('teacher.assignments.export-print', compact('assignment', 'report'))
+            ->setPaper('letter', 'landscape')
+            ->stream($filename);
+    }
+
     public function attemptMonitor(Request $request, Assignment $assignment, User $student, AssignmentReportService $reports)
     {
         $this->authorize('view', $assignment);
@@ -77,6 +132,29 @@ class AssignmentController extends Controller
             ))->render(),
             'updated_at' => now()->toIso8601String(),
         ]);
+    }
+
+    public function studentAttempt(Request $request, Assignment $assignment, User $student, AssignmentReportService $reports)
+    {
+        $this->authorize('view', $assignment);
+        $recipient = $assignment->recipients()->where('student_id', $student->id)->firstOrFail();
+        $row = $reports->buildRecipient($assignment, $recipient);
+        abort_if($row['attempts']->isEmpty(), 404);
+
+        $requestedAttemptId = $request->integer('active_attempt');
+        $initialAttempt = $row['attempts']->firstWhere('id', $requestedAttemptId)
+            ?? $row['attempts']->firstWhere('status', 'in_progress')
+            ?? $row['attempts']->sortByDesc('attempt_number')->first();
+        $attemptModalId = 'attempts-'.$assignment->id.'-'.$student->id;
+
+        $orderedStudentIds = $assignment->recipients()->orderBy('id')->pluck('student_id')->values();
+        $currentIndex = $orderedStudentIds->search($student->id);
+        $prevStudentId = $currentIndex !== false && $currentIndex > 0 ? $orderedStudentIds[$currentIndex - 1] : null;
+        $nextStudentId = $currentIndex !== false && $currentIndex < $orderedStudentIds->count() - 1 ? $orderedStudentIds[$currentIndex + 1] : null;
+
+        return view('teacher.assignments.student-attempt', compact(
+            'assignment', 'row', 'initialAttempt', 'attemptModalId', 'student', 'prevStudentId', 'nextStudentId'
+        ));
     }
 
     public function questionPreview(Request $request, Assignment $assignment, \App\Models\UserTestAnswer $userAnswer)

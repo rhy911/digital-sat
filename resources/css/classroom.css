@@ -601,8 +601,7 @@
     gap: 10px;
 }
 
-.class-row,
-.student-assignment {
+.class-row {
     display: flex;
     align-items: center;
     justify-content: space-between;
@@ -616,6 +615,28 @@
     transition:
         border-color 180ms var(--cw-ease),
         background-color 180ms var(--cw-ease);
+}
+
+.student-assignment {
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 16px;
+    padding: 22px 24px;
+    border: 1px solid var(--cw-line);
+    border-radius: var(--cw-radius-md);
+    background: var(--cw-surface);
+    color: inherit;
+    transition:
+        border-color 180ms var(--cw-ease),
+        background-color 180ms var(--cw-ease);
+}
+
+.student-assignment__row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 32px;
 }
 
 .class-row:hover,
@@ -1354,22 +1375,6 @@
     margin-bottom: 12px;
 }
 
-.workspace-loading {
-    position: fixed;
-    right: 24px;
-    bottom: 24px;
-    z-index: 30;
-    align-items: center;
-    min-height: 40px;
-    padding: 9px 13px;
-    border: 1px solid var(--cw-line-strong);
-    border-radius: var(--cw-radius-sm);
-    background: var(--cw-surface);
-    color: var(--cw-muted-strong);
-    font-size: 0.84rem;
-    font-weight: 750;
-}
-
 .pending-block {
     margin: 18px 0;
     padding: 16px;
@@ -1379,6 +1384,17 @@
 
 .pending-block h3 {
     margin: 0 0 8px;
+}
+
+.roster-select-all {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-bottom: 4px;
+    color: var(--cw-muted-strong);
+    font-size: 0.84rem;
+    font-weight: 650;
+    cursor: pointer;
 }
 
 .roster-row,
@@ -2726,8 +2742,12 @@
         grid-template-columns: 1fr;
     }
 
-    .class-row,
-    .student-assignment {
+    .class-row {
+        align-items: flex-start;
+        flex-direction: column;
+    }
+
+    .student-assignment__row {
         align-items: flex-start;
         flex-direction: column;
     }

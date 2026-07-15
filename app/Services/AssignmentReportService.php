@@ -38,7 +38,7 @@ class AssignmentReportService
         ];
     }
 
-    public function build(Assignment $assignment): array
+    public function build(Assignment $assignment, ?int $perPage = 15): array
     {
         $assignment->load(['classroom', 'test']);
 
@@ -63,10 +63,8 @@ class AssignmentReportService
             ->distinct('user_id')
             ->count('user_id');
 
-        $recipientsPaginator = $assignment->recipients()
-            ->with('student')
-            ->orderBy('id')
-            ->paginate(15);
+        $recipientsQuery = $assignment->recipients()->with('student')->orderBy('id');
+        $recipientsPaginator = $perPage !== null ? $recipientsQuery->paginate($perPage) : $recipientsQuery->get();
 
         $attempts = \App\Models\UserTest::where('assignment_id', $assignment->id)
             ->whereIn('user_id', $recipientsPaginator->pluck('student_id'))
@@ -194,7 +192,7 @@ class AssignmentReportService
             ->all();
 
         return [
-            'paginator' => $recipientsPaginator,
+            'paginator' => $perPage !== null ? $recipientsPaginator : null,
             'rows' => $rows,
             'questionAnalysis' => $questionAnalysis,
             'metrics' => [

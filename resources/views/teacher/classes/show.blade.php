@@ -21,25 +21,27 @@
             this.$nextTick(() => this.$refs[`${this.activeTab}Tab`]?.focus());
         }
     }">
-        @if (session('success'))
-            <div class="class-alert class-alert--success" role="status">{{ session('success') }}</div>
-        @endif
-        @if ($errors->any())
-            <div class="class-alert class-alert--error" role="alert">{{ $errors->first() }}</div>
-        @endif
+        <x-ui.alert type="success" :dismissible="false">{{ session('success') }}</x-ui.alert>
+        <x-ui.alert type="danger" :messages="$errors->all()" />
         @php
             $activeStudents = $classroom->active_memberships_count;
             $pendingStudents = $classroom->pending_memberships_count;
             $teacherCount = 1 + $classroom->co_teachers_count;
             $documentCount = $classroom->documents_count;
             $assignmentCount = $classroom->assignments_count;
+            $statusBadgeVariant = fn ($status) => match ($status) {
+                'active', 'approved', 'published', 'completed', 'open' => 'success',
+                'pending', 'draft', 'in-progress', 'in_progress' => 'warning',
+                'overdue', 'archived', 'closed', 'rejected', 'removed', 'left' => 'danger',
+                default => 'neutral',
+            };
         @endphp
 
         <a class="back-link" href="{{ route('teacher.classes.index') }}">Back to classes</a>
         <div class="class-command">
             <div class="class-command__main">
                 <div class="class-title-row">
-                    <span class="status-chip status-chip--{{ $classroom->status }}">{{ ucfirst($classroom->status) }}</span>
+                    <x-ui.status-badge :status="$statusBadgeVariant($classroom->status)">{{ ucfirst($classroom->status) }}</x-ui.status-badge>
                     <h1>{{ $classroom->name }}</h1>
                 </div>
                 <p>{{ $classroom->description ?: 'Manage roster, resources, assignments, and class access.' }}</p>
@@ -65,7 +67,7 @@
                     @if ($classroom->status === 'active')
                         <form method="POST" action="{{ route('teacher.classes.rotate-code', $classroom) }}">
                             @csrf
-                            <button class="class-button">Rotate code</button>
+                            <x-ui.button type="submit" variant="secondary" size="sm">Rotate code</x-ui.button>
                         </form>
                     @endif
                     @can('manageTeam', $classroom)
@@ -73,12 +75,12 @@
                             <form method="POST" action="{{ route('teacher.classes.archive', $classroom) }}"
                                 data-confirm="Archive class and close published assignments?">
                                 @csrf
-                                <button class="class-button class-button--danger">Archive</button>
+                                <x-ui.button type="submit" variant="danger" size="sm">Archive</x-ui.button>
                             </form>
                         @else
                             <form method="POST" action="{{ route('teacher.classes.restore', $classroom) }}">
                                 @csrf
-                                <button class="class-button">Restore</button>
+                                <x-ui.button type="submit" variant="secondary" size="sm">Restore</x-ui.button>
                             </form>
                         @endif
                     @endcan
@@ -91,8 +93,8 @@
                 <form method="POST" action="{{ route('teacher.classes.update', $classroom) }}" class="inline-form">
                     @csrf @method('PUT')<label>Class name<input name="name" value="{{ $classroom->name }}"
                             required maxlength="150"></label><label>Description<input name="description"
-                            value="{{ $classroom->description }}" maxlength="2000"></label><button
-                        class="class-button class-button--primary">Save</button></form>
+                            value="{{ $classroom->description }}" maxlength="2000"></label><x-ui.button
+                        type="submit" variant="primary" size="sm">Save</x-ui.button></form>
             </details>
         @endif
         <div class="class-tabs class-tabs--segmented" role="tablist" aria-label="Class sections"
@@ -130,7 +132,7 @@
                     <div>
                         <strong>{{ $classroom->owner->name }}</strong><span>{{ $classroom->owner->email }}</span>
                     </div>
-                    <span class="status-chip">Owner</span>
+                    <x-ui.status-badge status="neutral">Owner</x-ui.status-badge>
                 </div>
                 @foreach ($classroom->coTeachers as $teacher)
                     <div class="teacher-team-row">
@@ -138,7 +140,7 @@
                             <strong>{{ $teacher->name }}</strong><span>{{ $teacher->email }}</span>
                         </div>
                         <div class="row-actions">
-                            <span class="status-chip">Co-teacher</span>
+                            <x-ui.status-badge status="neutral">Co-teacher</x-ui.status-badge>
                             @can('manageTeam', $classroom)
                                 @if ($classroom->status === 'active')
                                     <form method="POST"
@@ -166,7 +168,7 @@
                                 <input id="coTeacherId" type="hidden" name="teacher_id">
                                 <div id="coTeacherSearchResults" class="teacher-search-results" role="listbox" hidden></div>
                             </label>
-                            <button class="class-button class-button--primary">Add co-teacher</button>
+                            <x-ui.button type="submit" variant="primary" size="sm">Add co-teacher</x-ui.button>
                         </form>
                     </details>
                 @endif
@@ -185,10 +187,35 @@
                 $pending = $classroom->memberships->where('status', 'pending');
             @endphp
             @if ($pending->isNotEmpty())
-                <div class="pending-block pending-block--priority">
-                    <h3>Pending requests <span>{{ $pending->count() }}</span></h3>
+                <div class="pending-block pending-block--priority" x-data="{ selected: [] }">
+                    <div class="section-heading section-heading--tight">
+                        <h3>Pending requests <span>{{ $pending->count() }}</span></h3>
+                        @if ($classroom->status === 'active')
+                            <form method="POST" action="{{ route('teacher.memberships.bulk-approve', $classroom) }}"
+                                onsubmit="const btn = this.querySelector('button'); btn.disabled = true; btn.innerText = 'Approving...';">
+                                @csrf
+                                <template x-for="id in selected" :key="id">
+                                    <input type="hidden" name="membership_ids[]" :value="id">
+                                </template>
+                                <x-ui.button type="submit" variant="primary" size="sm" x-bind:disabled="selected.length === 0">
+                                    Approve selected (<span x-text="selected.length"></span>)
+                                </x-ui.button>
+                            </form>
+                        @endif
+                    </div>
+                    @if ($classroom->status === 'active')
+                        <label class="roster-select-all">
+                            <input type="checkbox"
+                                x-bind:checked="selected.length === {{ $pending->count() }} && selected.length > 0"
+                                x-on:change="selected = $event.target.checked ? [{{ $pending->pluck('id')->implode(',') }}] : []">
+                            Select all
+                        </label>
+                    @endif
                     @foreach ($pending as $membership)
                         <div class="roster-row">
+                            @if ($classroom->status === 'active')
+                                <input type="checkbox" x-model.number="selected" value="{{ $membership->id }}">
+                            @endif
                             <div>
                                 <strong>{{ $membership->student->name }}</strong><span>{{ $membership->student->email }}</span>
                             </div>
@@ -196,12 +223,16 @@
                                 <div class="row-actions">
                                     <form method="POST"
                                         action="{{ route('teacher.memberships.approve', $membership) }}"
-                                        onsubmit="const btn = this.querySelector('button'); btn.disabled = true; btn.innerText = 'Approving...';">@csrf<button
-                                            class="class-button class-button--primary">Approve</button></form>
+                                        onsubmit="const btn = this.querySelector('button'); btn.disabled = true; btn.innerText = 'Approving...';">
+                                        @csrf
+                                        <x-ui.button type="submit" variant="primary" size="sm">Approve</x-ui.button>
+                                    </form>
                                     <form method="POST"
                                         action="{{ route('teacher.memberships.reject', $membership) }}"
-                                        onsubmit="const btn = this.querySelector('button'); btn.disabled = true; btn.innerText = 'Rejecting...';">@csrf<button
-                                            class="class-button">Reject</button></form>
+                                        onsubmit="const btn = this.querySelector('button'); btn.disabled = true; btn.innerText = 'Rejecting...';">
+                                        @csrf
+                                        <x-ui.button type="submit" variant="secondary" size="sm">Reject</x-ui.button>
+                                    </form>
                                 </div>
                             @endif
                         </div>
@@ -275,9 +306,9 @@
                                     <div class="document-row__header">
                                         <strong class="document-row__title">{{ $document->title }}</strong>
                                         @if ($document->isFile())
-                                            <span class="document-row__badge document-row__badge--file">{{ strtoupper($ext ?: 'file') }}</span>
+                                            <x-ui.status-badge status="neutral">{{ strtoupper($ext ?: 'file') }}</x-ui.status-badge>
                                         @else
-                                            <span class="document-row__badge document-row__badge--link">LINK</span>
+                                            <x-ui.status-badge status="brand">LINK</x-ui.status-badge>
                                         @endif
                                     </div>
                                     @if ($document->description)
@@ -414,7 +445,7 @@
                                     <textarea id="doc-desc-file" name="description" rows="2" maxlength="2000" placeholder="A short description of this document (optional)"></textarea>
                                 </div>
                                 
-                                <button type="submit" class="class-button class-button--primary resource-submit-btn">Upload Resource</button>
+                                <x-ui.button type="submit" variant="primary" class="resource-submit-btn">Upload Resource</x-ui.button>
                             </form>
                         </div>
 
@@ -441,7 +472,7 @@
                                     <textarea id="doc-desc-link" name="description" rows="2" maxlength="2000" placeholder="A short description of this link (optional)"></textarea>
                                 </div>
                                 
-                                <button type="submit" class="class-button class-button--primary resource-submit-btn">Add Link</button>
+                                <x-ui.button type="submit" variant="primary" class="resource-submit-btn">Add Link</x-ui.button>
                             </form>
                         </div>
                     </aside>
@@ -530,7 +561,7 @@
                         </fieldset>
                         <label>Attempt limit<input type="number" name="attempt_limit" min="1" max="10"
                                 value="1" required></label>
-                        <div class="form-action"><button class="class-button class-button--primary">Create assignment</button>
+                        <div class="form-action"><x-ui.button type="submit" variant="primary">Create assignment</x-ui.button>
                         </div>
                     </form>
                 </details>
@@ -541,8 +572,7 @@
             </div>
             @forelse($classroom->assignments->sortByDesc('created_at') as $assignment)
                 <a class="assignment-row" wire:navigate href="{{ route('teacher.assignments.show', $assignment) }}">
-                    <div><span
-                            class="status-chip status-chip--{{ $assignment->status }}">{{ ucfirst($assignment->status) }}</span><strong>{{ $assignment->title }}</strong><span>{{ $assignment->test->title }}{{ $assignment->assign_type === 'section' ? ($assignment->section_type === 'reading_writing' ? ' (Reading & Writing Only)' : ' (Math Only)') : '' }}</span>
+                    <div><x-ui.status-badge :status="$statusBadgeVariant($assignment->status)">{{ ucfirst($assignment->status) }}</x-ui.status-badge><strong>{{ $assignment->title }}</strong><span>{{ $assignment->test->title }}{{ $assignment->assign_type === 'section' ? ($assignment->section_type === 'reading_writing' ? ' (Reading & Writing Only)' : ' (Math Only)') : '' }}</span>
                     </div>
                     <div><span>{{ $assignment->attempt_limit }}
                             attempt{{ $assignment->attempt_limit === 1 ? '' : 's' }}</span><span>{{ $assignment->due_at?->format('M j, g:i A') ?: 'No due time' }}</span>

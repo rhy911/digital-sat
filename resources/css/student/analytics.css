@@ -204,51 +204,6 @@
     object-fit: cover;
 }
 
-.ds-account__menu {
-    position: absolute;
-    top: calc(100% + 0.5rem);
-    right: 0;
-    z-index: 50;
-    min-width: 13rem;
-    padding: 0.4rem;
-    border: 1px solid var(--ds-border);
-    border-radius: 0.75rem;
-    background: var(--ds-surface, #fff);
-    box-shadow: 0 4px 12px oklch(24% 0.045 255 / 0.1);
-    opacity: 0;
-    visibility: hidden;
-    transform: translateY(-0.25rem);
-    transition:
-        opacity 150ms ease,
-        transform 150ms ease,
-        visibility 150ms ease;
-}
-
-.ds-account__menu.show {
-    opacity: 1;
-    visibility: visible;
-    transform: none;
-}
-
-.ds-account__menu .dropdown-item {
-    width: 100%;
-    display: flex;
-    border: 0;
-    border-radius: 0.5rem;
-    background: transparent;
-    padding: 0.65rem 0.8rem;
-    color: var(--ds-ink);
-    font-weight: 650;
-    text-align: left;
-    text-decoration: none;
-    cursor: pointer;
-}
-
-.ds-account__menu .dropdown-item:hover {
-    background: var(--ds-primary-soft);
-    color: var(--ds-primary);
-}
-
 .ds-home-main {
     flex: 1;
 }
@@ -319,59 +274,6 @@
     font-size: 0.98rem;
     line-height: 1.45;
     text-wrap: pretty;
-}
-
-.ds-button {
-    min-height: 2.75rem;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    border-radius: 0.55rem;
-    padding: 0 1.2rem;
-    font-weight: 750;
-    text-decoration: none;
-    transition:
-        background-color 150ms ease,
-        border-color 150ms ease,
-        color 150ms ease,
-        transform 150ms ease;
-}
-
-.ds-button:hover {
-    transform: translateY(-1px);
-}
-
-.ds-button:active {
-    transform: translateY(0);
-}
-
-.ds-button:disabled,
-.ds-button[aria-disabled="true"] {
-    cursor: not-allowed;
-    opacity: 0.55;
-    transform: none;
-}
-
-.ds-button--primary {
-    background: var(--ds-primary);
-    color: var(--ds-surface);
-}
-
-.ds-button--primary:hover {
-    background: var(--ds-primary-hover);
-    color: var(--ds-surface);
-}
-
-.ds-button--secondary {
-    border: 1px solid var(--ds-border-strong);
-    background: var(--ds-surface);
-    color: var(--ds-ink);
-}
-
-.ds-button--secondary:hover {
-    border-color: var(--ds-primary-line);
-    background: var(--ds-primary-soft);
-    color: var(--ds-ink-strong);
 }
 
 .ds-card {
@@ -1372,16 +1274,6 @@
     }
 }
 
-@media (prefers-reduced-motion: reduce) {
-    .ds-button,
-    .ds-account__menu {
-        transition: none;
-    }
-
-    .ds-button:hover {
-        transform: none;
-    }
-}
 
 /* Custom test card hover and design system alignment */
 .ds-test-card {
@@ -1416,32 +1308,6 @@
 }
 
 /* Badges */
-.ds-badge {
-    display: inline-flex;
-    align-items: center;
-    border-radius: 999px;
-    padding: 0.2rem 0.6rem;
-    font-size: 0.72rem;
-    font-weight: 800;
-    text-transform: uppercase;
-    letter-spacing: 0.04em;
-}
-
-.ds-badge--in-progress {
-    background: var(--ds-primary-soft);
-    color: var(--ds-primary);
-}
-
-.ds-badge--completed {
-    background: var(--ds-progress-soft);
-    color: var(--ds-progress-strong);
-}
-
-.ds-badge--new {
-    background: oklch(98% 0.015 73);
-    color: var(--ds-warning-strong);
-}
-
 /* Custom premium modal styles (zero tailwind custom values, purely semantic class naming) */
 .ds-modal {
     position: fixed;

@@ -126,44 +126,6 @@ export function initAutoDismissAlerts() {
     });
 }
 
-export function initDropdownToggle({
-    triggerId = 'userDropdown',
-    menuId = 'dropdownMenu',
-    openClass = 'show',
-} = {}) {
-    const triggerEl = document.getElementById(triggerId);
-    const menuEl = document.getElementById(menuId);
-
-    if (!triggerEl || !menuEl) return { triggerEl: null, menuEl: null };
-    if (triggerEl.dataset.dropdownInitialized === 'true') {
-        return { triggerEl, menuEl, destroy() {} };
-    }
-    triggerEl.dataset.dropdownInitialized = 'true';
-
-    const onTriggerClick = (e) => {
-        e.stopPropagation();
-        menuEl.classList.toggle(openClass);
-    };
-
-    const onDocumentClick = (e) => {
-        if (!triggerEl.contains(e.target)) {
-            menuEl.classList.remove(openClass);
-        }
-    };
-
-    triggerEl.addEventListener('click', onTriggerClick);
-    document.addEventListener('click', onDocumentClick);
-
-    return {
-        triggerEl,
-        menuEl,
-        destroy() {
-            triggerEl.removeEventListener('click', onTriggerClick);
-            document.removeEventListener('click', onDocumentClick);
-        }
-    };
-}
-
 export function initRadioToggleSection({
     activeRadioId,
     pastRadioId,
@@ -241,15 +203,6 @@ export function initAjaxLogout({
 }
 
 export function initHomeDashboardPage() {
-    const { menuEl } = initDropdownToggle({
-        triggerId: 'userDropdown',
-        menuId: 'dropdownMenu',
-        openClass: 'show',
-    });
-
-    const logoutForm = menuEl?.querySelector?.('form');
-    initAjaxLogout({ formEl: logoutForm, redirectTo: '/signin', tokenStorageKey: 'api_token' });
-
     // Teacher-assigned tests toggle
     initRadioToggleSection({
         activeRadioId: 'btnradio1',
@@ -265,17 +218,6 @@ export function initHomeDashboardPage() {
         activeContainerId: 'practice-active',
         pastContainerId: 'practice-past',
     });
-}
-
-export function initPracticeDashboardPage() {
-    const { menuEl } = initDropdownToggle({
-        triggerId: 'userDropdown',
-        menuId: 'dropdownMenu',
-        openClass: 'show',
-    });
-
-    const logoutForm = menuEl?.querySelector?.('form');
-    initAjaxLogout({ formEl: logoutForm, redirectTo: '/signin', tokenStorageKey: 'api_token' });
 }
 
 export function smartRenderMath(element, options = {}) {
@@ -435,11 +377,9 @@ export function showCustomConfirm(message, type = 'warning', title = 'Confirm Ac
     });
 }
 
-window.initDropdownToggle = initDropdownToggle;
 window.initRadioToggleSection = initRadioToggleSection;
 window.initAjaxLogout = initAjaxLogout;
 window.initHomeDashboardPage = initHomeDashboardPage;
-window.initPracticeDashboardPage = initPracticeDashboardPage;
 window.smartRenderMath = smartRenderMath;
 window.showCustomConfirm = showCustomConfirm;
 
