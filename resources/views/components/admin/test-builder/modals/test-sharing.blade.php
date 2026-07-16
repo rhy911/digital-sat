@@ -17,16 +17,16 @@
             <label for="shareTeacherSearch" class="block text-sm font-bold text-slate-800">Approved teacher</label>
             <div class="mt-2 flex flex-col gap-2 sm:flex-row">
                 <div class="relative flex-1">
-                    <i class="bi bi-search absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" aria-hidden="true"></i>
+                    <x-ui.icon name="search" class="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" aria-hidden="true" />
                     <input id="shareTeacherSearch" type="search" autocomplete="off"
-                        class="w-full rounded-lg border border-slate-300 bg-white py-3 pl-9 pr-3 text-sm font-medium text-slate-900 placeholder-slate-500 focus:border-indigo-600 focus:ring-4 focus:ring-indigo-500/15"
+                        class="w-full rounded-lg border border-slate-300 bg-white py-3 pl-9 pr-3 text-sm font-medium text-slate-900 placeholder-slate-500 focus:border-brand focus:ring-4 focus:ring-brand/15"
                         placeholder="Search name or email">
                     <div id="shareTeacherResults" class="test-sharing-results hidden" role="listbox"></div>
                 </div>
                 <button type="button" id="shareTeacherAdd"
-                    class="inline-flex min-h-11 items-center justify-center gap-2 rounded-lg bg-indigo-600 px-4 py-2 text-sm font-bold text-white hover:bg-indigo-700 disabled:cursor-not-allowed disabled:opacity-60"
+                    class="inline-flex min-h-11 items-center justify-center gap-2 rounded-lg bg-brand px-4 py-2 text-sm font-bold text-white hover:bg-brand-hover disabled:cursor-not-allowed disabled:opacity-60"
                     disabled>
-                    <i class="bi bi-person-plus" aria-hidden="true"></i>Add
+                    <x-ui.icon name="person-plus" class="w-4 h-4" aria-hidden="true" />Add
                 </button>
             </div>
             <p id="shareTeacherHint" class="mt-2 text-xs font-medium text-slate-600">Shared teachers cannot edit the original or change status.</p>
@@ -35,13 +35,13 @@
         <div class="rounded-xl border border-slate-200 bg-slate-50 p-4">
             <label for="shareClassSelect" class="block text-sm font-bold text-slate-800">Share to Classroom</label>
             <div class="mt-2 flex flex-col gap-2 sm:flex-row">
-                <select id="shareClassSelect" class="w-full rounded-lg border border-slate-300 bg-white py-3 px-3 text-sm font-medium text-slate-900 focus:border-indigo-600 focus:ring-4 focus:ring-indigo-500/15">
+                <select id="shareClassSelect" class="w-full rounded-lg border border-slate-300 bg-white py-3 px-3 text-sm font-medium text-slate-900 focus:border-brand focus:ring-4 focus:ring-brand/15">
                     <option value="">Select a classroom...</option>
                 </select>
                 <button type="button" id="shareClassAdd"
-                    class="inline-flex min-h-11 items-center justify-center gap-2 rounded-lg bg-indigo-600 px-4 py-2 text-sm font-bold text-white hover:bg-indigo-700 disabled:cursor-not-allowed disabled:opacity-60"
+                    class="inline-flex min-h-11 items-center justify-center gap-2 rounded-lg bg-brand px-4 py-2 text-sm font-bold text-white hover:bg-brand-hover disabled:cursor-not-allowed disabled:opacity-60"
                     disabled>
-                    <i class="bi bi-people" aria-hidden="true"></i>Share
+                    <x-ui.icon name="people" class="w-4 h-4" aria-hidden="true" />Share
                 </button>
             </div>
             <p class="mt-2 text-xs font-medium text-slate-600">This will share the test with all co-teachers and the owner of the selected class.</p>

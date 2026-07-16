@@ -2,7 +2,7 @@
     <h2 class="mb-0 text-2xl md:text-3xl font-bold">Practice and Prepare</h2>
     <div class="btn-group" role="group" aria-label="Practice toggle">
         <input type="radio" class="btn-check" name="btnradio2" id="btnradio3" autocomplete="off" checked>
-        <label class="btn" for="btnradio3">✓ Active</label>
+        <label class="btn" for="btnradio3"><x-ui.icon name="check-lg" class="w-3 h-3 inline" /> Active</label>
 
         <input type="radio" class="btn-check" name="btnradio2" id="btnradio4" autocomplete="off">
         <label class="btn" for="btnradio4">Past</label>

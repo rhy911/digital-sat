@@ -6,6 +6,7 @@ import {
     dashboardResourceUrl,
 } from '../core/config.js';
 import { showAlert, escapeHtml, humanizeUnderscores, showTableLoader, hideTableLoader, formatDateToShort } from '../utils/helpers.js';
+import { icon } from '../../../shared/icons.js';
 
 let localAllTests = [];
 let currentFilteredTests = [];
@@ -44,7 +45,7 @@ function renderTestRowHtml(t) {
     const creatorName = t.created_by_name || 'Admin';
     const createdByHtml = `<span class="text-xs font-medium text-slate-600 truncate max-w-[110px] block" title="${escapeHtml(creatorName)}">${escapeHtml(creatorName)}</span>`;
     const sharedBadge = t.shares_count > 0 && isOwner
-        ? `<span class="ml-2 rounded-full bg-indigo-50 px-2 py-0.5 text-[10px] font-bold text-indigo-700 ring-1 ring-inset ring-indigo-100">${escapeHtml(t.shares_count)} shared</span>`
+        ? `<span class="ml-2 rounded-full bg-[var(--color-brand-soft)] px-2 py-0.5 text-[10px] font-bold text-brand ring-1 ring-inset ring-brand/20">${escapeHtml(t.shares_count)} shared</span>`
         : '';
     const accessBadge = isShared
         ? `<span class="ml-2 rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-bold text-slate-600 ring-1 ring-inset ring-slate-200">Shared with you</span>`
@@ -52,12 +53,12 @@ function renderTestRowHtml(t) {
 
     // Title input/span
     const titleHtml = isOwner
-        ? `<input type="text" class="test-title-input w-full bg-transparent border-0 hover:bg-slate-100 focus:bg-white focus:ring-2 focus:ring-indigo-500/20 focus:outline-none rounded-lg px-2 py-1 font-semibold text-slate-800 transition-all" value="${escapeHtml(t.title)}" data-id="${t.id}">`
+        ? `<input type="text" class="test-title-input w-full bg-transparent border-0 hover:bg-slate-100 focus:bg-white focus:ring-2 focus:ring-brand/20 focus:outline-none rounded-lg px-2 py-1 font-semibold text-slate-800 transition-all" value="${escapeHtml(t.title)}" data-id="${t.id}">`
         : `<span class="px-2 py-1 font-semibold text-slate-800">${escapeHtml(t.title)}${accessBadge}</span>`;
 
     // Public toggle checkbox
     const publicHtml = isOwner
-        ? `<div class="flex items-center justify-center"><input type="checkbox" data-id="${t.id}" class="w-4 h-4 text-indigo-600 border-slate-300 bg-white rounded cursor-pointer test-public-checkbox" ${t.is_public ? 'checked' : ''} title="${t.is_public ? 'Public (Click to make Private)' : 'Private (Click to make Public)'}" aria-label="Toggle public visibility"></div>`
+        ? `<div class="flex items-center justify-center"><input type="checkbox" data-id="${t.id}" class="w-4 h-4 text-brand border-slate-300 bg-white rounded cursor-pointer test-public-checkbox" ${t.is_public ? 'checked' : ''} title="${t.is_public ? 'Public (Click to make Private)' : 'Private (Click to make Public)'}" aria-label="Toggle public visibility"></div>`
         : `<div class="flex items-center justify-center"><input type="checkbox" checked disabled class="w-4 h-4 text-slate-400 border-slate-200 bg-slate-100 rounded cursor-not-allowed opacity-60" title="Shared (View only)" aria-label="Shared resource"></div>`;
 
     let chipClass = 'status-chip status-chip-readonly';
@@ -70,29 +71,29 @@ function renderTestRowHtml(t) {
     const actionsHtml = isOwner
         ? `<div class="actions-dropdown">
             <button type="button" class="px-2.5 py-1.5 text-xs font-bold rounded-lg border border-slate-200 bg-white text-slate-700 cursor-pointer hover:bg-slate-50 flex items-center gap-1" data-dropdown-trigger="true" aria-expanded="false" aria-label="Toggle actions menu">
-                Actions <i class="bi bi-chevron-down text-[10px]"></i>
+                Actions ${icon('chevron-down', 'w-2.5 h-2.5')}
             </button>
             <div class="dropdown-menu hidden">
-                <a class="dropdown-item" href="/engine/session/${t.ulid}/teacher-preview" target="_blank"><i class="bi bi-eye mr-2"></i> Preview Test</a>
-                ${t.status !== 'active' ? `<button type="button" class="dropdown-item change-test-status-btn" data-id="${t.id}" data-status="active"><i class="bi bi-send-check mr-2"></i> Publish</button>` : ''}
-                ${t.status !== 'draft' ? `<button type="button" class="dropdown-item change-test-status-btn" data-id="${t.id}" data-status="draft"><i class="bi bi-pencil mr-2"></i> Return to draft</button>` : ''}
-                ${t.status !== 'archived' ? `<button type="button" class="dropdown-item change-test-status-btn" data-id="${t.id}" data-status="archived"><i class="bi bi-archive mr-2"></i> Archive</button>` : ''}
-                ${t.raw_type === 'full_length' ? `<button type="button" class="dropdown-item score-conversion-btn" data-id="${t.id}" data-title="${escapeHtml(t.title)}"><i class="bi bi-graph-up-arrow mr-2"></i> Score conversion</button>` : ''}
-                ${t.can_convert_to_normal ? `<button type="button" class="dropdown-item convert-to-normal-btn" data-id="${t.id}"><i class="bi bi-arrow-left-right mr-2"></i> Convert to Normal Full</button>` : ''}
-                <button type="button" class="dropdown-item manage-test-sharing-btn" data-id="${t.id}"><i class="bi bi-people mr-2"></i> Manage sharing${sharedBadge}</button>
-                <button type="button" class="dropdown-item clone-test-btn" data-id="${t.id}"><i class="bi bi-copy mr-2"></i> Clone</button>
-                <button type="button" class="dropdown-item text-danger delete-test-btn" data-id="${t.id}"><i class="bi bi-trash mr-2"></i> Delete</button>
+                <a class="dropdown-item" href="/engine/session/${t.ulid}/teacher-preview" target="_blank">${icon('eye', 'w-4 h-4 mr-2')} Preview Test</a>
+                ${t.status !== 'active' ? `<button type="button" class="dropdown-item change-test-status-btn" data-id="${t.id}" data-status="active">${icon('send-check', 'w-4 h-4 mr-2')} Publish</button>` : ''}
+                ${t.status !== 'draft' ? `<button type="button" class="dropdown-item change-test-status-btn" data-id="${t.id}" data-status="draft">${icon('pencil', 'w-4 h-4 mr-2')} Return to draft</button>` : ''}
+                ${t.status !== 'archived' ? `<button type="button" class="dropdown-item change-test-status-btn" data-id="${t.id}" data-status="archived">${icon('archive', 'w-4 h-4 mr-2')} Archive</button>` : ''}
+                ${t.raw_type === 'full_length' ? `<button type="button" class="dropdown-item score-conversion-btn" data-id="${t.id}" data-title="${escapeHtml(t.title)}">${icon('graph-up-arrow', 'w-4 h-4 mr-2')} Score conversion</button>` : ''}
+                ${t.can_convert_to_normal ? `<button type="button" class="dropdown-item convert-to-normal-btn" data-id="${t.id}">${icon('arrow-left-right', 'w-4 h-4 mr-2')} Convert to Normal Full</button>` : ''}
+                <button type="button" class="dropdown-item manage-test-sharing-btn" data-id="${t.id}">${icon('people', 'w-4 h-4 mr-2')} Manage sharing${sharedBadge}</button>
+                <button type="button" class="dropdown-item clone-test-btn" data-id="${t.id}">${icon('copy', 'w-4 h-4 mr-2')} Clone</button>
+                <button type="button" class="dropdown-item text-danger delete-test-btn" data-id="${t.id}">${icon('trash', 'w-4 h-4 mr-2')} Delete</button>
             </div>
           </div>`
         : isShared
             ? `<div class="actions-dropdown">
                 <button type="button" class="px-2.5 py-1.5 text-xs font-bold rounded-lg border border-slate-200 bg-white text-slate-700 cursor-pointer hover:bg-slate-50 flex items-center gap-1" data-dropdown-trigger="true" aria-expanded="false" aria-label="Toggle actions menu">
-                    Actions <i class="bi bi-chevron-down text-[10px]"></i>
+                    Actions ${icon('chevron-down', 'w-2.5 h-2.5')}
                 </button>
                 <div class="dropdown-menu hidden">
-                    <a class="dropdown-item" href="/engine/session/${t.ulid}/teacher-preview" target="_blank"><i class="bi bi-eye mr-2"></i> Preview Test</a>
-                    <button type="button" class="dropdown-item clone-test-btn" data-id="${t.id}"><i class="bi bi-copy mr-2"></i> Clone</button>
-                    ${t.status === 'active' ? `<a class="dropdown-item" href="/teacher/classes"><i class="bi bi-send mr-2"></i> Assign in class</a>` : ''}
+                    <a class="dropdown-item" href="/engine/session/${t.ulid}/teacher-preview" target="_blank">${icon('eye', 'w-4 h-4 mr-2')} Preview Test</a>
+                    <button type="button" class="dropdown-item clone-test-btn" data-id="${t.id}">${icon('copy', 'w-4 h-4 mr-2')} Clone</button>
+                    ${t.status === 'active' ? `<a class="dropdown-item" href="/teacher/classes">${icon('send', 'w-4 h-4 mr-2')} Assign in class</a>` : ''}
                 </div>
               </div>`
             : `<span class="status-chip status-chip-readonly">Read-Only</span>`;
@@ -157,7 +158,7 @@ function renderTestsPage() {
         + '<td colspan="9" class="px-6 py-20 text-center">'
         + '<div class="flex flex-col items-center justify-center">'
         + '<div class="w-20 h-20 rounded-full bg-slate-50 border border-slate-200 flex items-center justify-center mb-6">'
-        + '<i class="bi bi-inbox text-4xl text-slate-400"></i>'
+        + icon('inbox', 'w-10 h-10 text-slate-400')
         + '</div>'
         + '<h4 class="text-lg font-bold text-slate-800">No tests found</h4>'
         + '<p class="text-sm text-slate-500 mt-1 max-w-xs mx-auto">Create one practice test to get started.</p>'
@@ -711,7 +712,7 @@ function renderShareList(shares, loading = false) {
                         <span>${escapeHtml(share.email || '')}</span>
                     </div>
                     <button type="button" class="test-sharing-remove" data-share-remove-id="${share.user_id}">
-                        <i class="bi bi-x-lg" aria-hidden="true"></i><span>Remove</span>
+                        ${icon('x-lg', 'w-4 h-4')}<span>Remove</span>
                     </button>
                 </div>
             `;
@@ -763,10 +764,10 @@ function showShareModalAlert(type, message) {
     alertEl.className = 'rounded-lg p-3 text-sm font-medium mb-3 opacity-0 transition-opacity duration-300';
     if (type === 'success') {
         alertEl.classList.add('bg-emerald-50', 'text-emerald-700', 'border', 'border-emerald-200');
-        alertEl.innerHTML = `<i class="bi bi-check-circle-fill mr-2"></i>${escapeHtml(message)}`;
+        alertEl.innerHTML = `${icon('check-circle-fill', 'w-4 h-4 mr-2')}${escapeHtml(message)}`;
     } else {
         alertEl.classList.add('bg-rose-50', 'text-rose-700', 'border', 'border-rose-200');
-        alertEl.innerHTML = `<i class="bi bi-exclamation-circle-fill mr-2"></i>${escapeHtml(message)}`;
+        alertEl.innerHTML = `${icon('exclamation-circle-fill', 'w-4 h-4 mr-2')}${escapeHtml(message)}`;
     }
     
     // Expand height

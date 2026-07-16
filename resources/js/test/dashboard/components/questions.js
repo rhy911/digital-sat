@@ -11,6 +11,7 @@ import {
     initEditModalEditors, debouncedEditQuestionPreview, updateEditQuestionPreview,
     refreshEditMediaList, getEditStemEditor, getEditPassageEditor, getEditExplanationEditor
 } from '../ui/editors.js';
+import { icon } from '../../../shared/icons.js';
 
 export function questionsListFetchUrl() {
     let u;
@@ -59,7 +60,7 @@ export function renderQuestionsTable(questions) {
             + '<td colspan="8" class="px-5 py-12 text-center text-slate-500">'
             + '<div class="flex flex-col items-center justify-center">'
             + '<div class="w-12 h-12 rounded-full bg-slate-900/40 border border-slate-800/80 flex items-center justify-center mb-3">'
-            + '<i class="bi bi-database-fill-x text-2xl text-slate-400"></i>'
+            + icon('database-fill-x', 'w-6 h-6 text-slate-400')
             + '</div>'
             + '<p class="text-sm font-semibold text-slate-400">No questions found</p>'
             + '<p class="text-xs text-slate-500 mt-1">Populate your bank by importing items above!</p>'
@@ -90,7 +91,7 @@ export function renderQuestionsTable(questions) {
 
             const status = q.is_complete
                 ? ''
-                : ' <span class="inline-flex items-center px-2 py-0.5 rounded-md text-[9px] font-bold bg-rose-50 text-rose-700 border border-rose-100 uppercase tracking-wide" title="Missing Domain or Difficulty"><i class="bi bi-exclamation-triangle-fill mr-1 text-[9px]"></i> Incomplete</span>';
+                : ' <span class="inline-flex items-center px-2 py-0.5 rounded-md text-[9px] font-bold bg-rose-50 text-rose-700 border border-rose-100 uppercase tracking-wide" title="Missing Domain or Difficulty">' + icon('exclamation-triangle-fill', 'w-2.5 h-2.5 mr-1') + ' Incomplete</span>';
 
             const stem = stripTags(q.stem || '');
             const snippet = stem.length <= 300 ? stem : stem.slice(0, 300) + '…';
@@ -111,16 +112,16 @@ export function renderQuestionsTable(questions) {
             if (isOwner) {
                 actionButtons = '<div class="actions-dropdown">'
                     + '<button type="button" class="px-2.5 py-1.5 text-xs font-bold rounded-lg border border-slate-200 bg-white text-slate-700 cursor-pointer hover:bg-slate-50 flex items-center gap-1" data-dropdown-trigger="true" aria-expanded="false" aria-label="Toggle actions menu">'
-                    + 'Actions <i class="bi bi-chevron-down text-[10px]"></i>'
+                    + 'Actions ' + icon('chevron-down', 'w-2.5 h-2.5')
                     + '</button>'
                     + '<div class="dropdown-menu hidden">'
-                    + '<button type="button" class="dropdown-item edit-question-btn" data-id="' + escapeHtml(q.id) + '"><i class="bi bi-pencil mr-2"></i> Edit</button>'
-                    + '<button type="button" class="dropdown-item text-danger delete-question-btn" data-id="' + escapeHtml(q.id) + '"><i class="bi bi-trash mr-2"></i> Delete</button>'
+                    + '<button type="button" class="dropdown-item edit-question-btn" data-id="' + escapeHtml(q.id) + '">' + icon('pencil', 'w-4 h-4 mr-2') + ' Edit</button>'
+                    + '<button type="button" class="dropdown-item text-danger delete-question-btn" data-id="' + escapeHtml(q.id) + '">' + icon('trash', 'w-4 h-4 mr-2') + ' Delete</button>'
                     + '</div>'
                     + '</div>';
             } else {
                 actionButtons = '<button type="button" class="px-2.5 py-1.5 border border-slate-200 text-slate-600 bg-white hover:bg-slate-50 rounded-lg text-xs font-bold flex items-center gap-1 edit-question-btn cursor-pointer" data-id="' + escapeHtml(q.id) + '" aria-label="View question details">'
-                    + '<i class="bi bi-eye text-xs leading-none"></i> View'
+                    + icon('eye', 'w-3 h-3 leading-none') + ' View'
                     + '</button>';
             }
 

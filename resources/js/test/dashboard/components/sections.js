@@ -4,6 +4,7 @@ import {
     dashboardResourceUrl,
 } from '../core/config.js';
 import { humanizeUnderscores, showTableLoader, hideTableLoader, escapeHtml, showAlert, formatDateToShort } from '../utils/helpers.js';
+import { icon } from '../../../shared/icons.js';
 
 let localAllSections = [];
 let currentFilteredSections = [];
@@ -27,23 +28,23 @@ function renderSectionRowHtml(s) {
 
     // Section Name input/span
     const nameHtml = isOwner
-        ? `<input type="text" class="section-name-input w-full bg-transparent border-0 hover:bg-slate-100 focus:bg-white focus:ring-2 focus:ring-indigo-500/20 focus:outline-none rounded-lg px-2 py-1 font-semibold text-slate-800 transition-all" value="${escapeHtml(s.name)}" data-id="${s.id}">`
+        ? `<input type="text" class="section-name-input w-full bg-transparent border-0 hover:bg-slate-100 focus:bg-white focus:ring-2 focus:ring-brand/20 focus:outline-none rounded-lg px-2 py-1 font-semibold text-slate-800 transition-all" value="${escapeHtml(s.name)}" data-id="${s.id}">`
         : `<span class="px-2 py-1 font-semibold text-slate-800">${escapeHtml(s.name)}</span>`;
 
     // Public toggle checkbox
     const publicHtml = isOwner
-        ? `<div class="flex items-center justify-center"><input type="checkbox" data-id="${s.id}" class="w-4 h-4 text-indigo-600 border-slate-300 bg-white rounded cursor-pointer section-public-checkbox" ${s.is_public ? 'checked' : ''} title="${s.is_public ? 'Public (Click to make Private)' : 'Private (Click to make Public)'}" aria-label="Toggle public visibility"></div>`
+        ? `<div class="flex items-center justify-center"><input type="checkbox" data-id="${s.id}" class="w-4 h-4 text-brand border-slate-300 bg-white rounded cursor-pointer section-public-checkbox" ${s.is_public ? 'checked' : ''} title="${s.is_public ? 'Public (Click to make Private)' : 'Private (Click to make Public)'}" aria-label="Toggle public visibility"></div>`
         : `<div class="flex items-center justify-center"><input type="checkbox" checked disabled class="w-4 h-4 text-slate-400 border-slate-200 bg-slate-100 rounded cursor-not-allowed opacity-60" title="Shared (View only)" aria-label="Shared resource"></div>`;
 
     // Actions dropdown
     const actionsHtml = isOwner
         ? `<div class="actions-dropdown">
             <button type="button" class="px-2.5 py-1.5 text-xs font-bold rounded-lg border border-slate-200 bg-white text-slate-700 cursor-pointer hover:bg-slate-50 flex items-center gap-1" data-dropdown-trigger="true" aria-expanded="false" aria-label="Toggle actions menu">
-                Actions <i class="bi bi-chevron-down text-[10px]"></i>
+                Actions ${icon('chevron-down', 'w-2.5 h-2.5')}
             </button>
             <div class="dropdown-menu hidden">
-                <button type="button" class="dropdown-item reuse-section-btn" data-id="${s.id}"><i class="bi bi-copy mr-2"></i>Reuse in test</button>
-                <button type="button" class="dropdown-item text-danger delete-section-btn" data-id="${s.id}"><i class="bi bi-trash mr-2"></i> Delete</button>
+                <button type="button" class="dropdown-item reuse-section-btn" data-id="${s.id}">${icon('copy', 'w-4 h-4 mr-2')}Reuse in test</button>
+                <button type="button" class="dropdown-item text-danger delete-section-btn" data-id="${s.id}">${icon('trash', 'w-4 h-4 mr-2')} Delete</button>
             </div>
           </div>`
         : `<button type="button" class="min-h-9 rounded-lg border border-slate-300 bg-white px-3 text-xs font-bold text-slate-700 hover:bg-slate-50 reuse-section-btn" data-id="${s.id}">Reuse</button>`;
@@ -107,7 +108,7 @@ function renderSectionsPage() {
         + '<td colspan="9" class="px-6 py-20 text-center">'
         + '<div class="flex flex-col items-center justify-center">'
         + '<div class="w-20 h-20 rounded-full bg-slate-50 border border-slate-200 flex items-center justify-center mb-6">'
-        + '<i class="bi bi-inbox text-4xl text-slate-400"></i>'
+        + icon('inbox', 'w-10 h-10 text-slate-400')
         + '</div>'
         + '<h4 class="text-lg font-bold text-slate-800">No sections found</h4>'
         + '<p class="text-sm text-slate-500 mt-1 max-w-xs mx-auto">Create one section to assign modules.</p>'

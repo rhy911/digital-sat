@@ -1,4 +1,5 @@
 import { escapeHtml, capitalizeFirstLetter, showTableLoader, hideTableLoader, showAlert } from '../utils/helpers.js';
+import { icon } from '../../../shared/icons.js';
 import {
     MODULE_UPDATE_URL_TEMPLATE,
     dashboardJsonResponse,
@@ -16,7 +17,7 @@ export function moduleDifficultyBadgeClass(level) {
     if (level === 'easy') {
         return 'status-chip-active text-emerald-700 bg-emerald-50 border-emerald-100';
     }
-    return 'status-chip-shared text-indigo-700 bg-indigo-50 border-indigo-100';
+    return 'status-chip-shared text-brand bg-[var(--color-brand-soft)] border-brand/20';
 }
 
 let localAllModules = [];
@@ -28,14 +29,14 @@ function renderModuleRowHtml(mod) {
     const sections = mod.sections || [];
     if (sections.length === 0) {
         linkedHtml = '<span class="status-chip status-chip-readonly">'
-            + '<i class="bi bi-unlock mr-1.5"></i> Standalone'
+            + icon('unlock', 'w-4 h-4 mr-1.5') + ' Standalone'
             + '</span>';
     } else {
         linkedHtml = '<div class="flex flex-col gap-1.5">' + sections.map(function (sec) {
             const testTitle = (sec.test && sec.test.title) ? sec.test.title : 'Test';
             return '<div>'
                 + '<span class="status-chip status-chip-shared">'
-                + '<i class="bi bi-tag mr-1.5"></i> ' + escapeHtml(testTitle) + ' &raquo; <span class="ml-1 opacity-90 text-slate-800 font-medium normal-case">' + escapeHtml(sec.name) + '</span>'
+                + icon('tag', 'w-4 h-4 mr-1.5') + ' ' + escapeHtml(testTitle) + ' &raquo; <span class="ml-1 opacity-90 text-slate-800 font-medium normal-case">' + escapeHtml(sec.name) + '</span>'
                 + '</span>'
                 + '</div>';
         }).join('') + '</div>';
@@ -47,18 +48,18 @@ function renderModuleRowHtml(mod) {
     const createdByHtml = '<span class="text-xs font-semibold text-slate-600 truncate max-w-[110px] block" title="' + escapeHtml(creatorName) + '">' + escapeHtml(creatorName) + '</span>';
 
     const publicHtml = isOwner
-        ? '<div class="flex items-center justify-center"><input type="checkbox" data-id="' + escapeHtml(mod.id) + '" class="w-4 h-4 text-indigo-600 border-slate-300 bg-white rounded cursor-pointer module-public-toggle" ' + (mod.is_public ? 'checked' : '') + ' title="' + (mod.is_public ? 'Public (Click to make Private)' : 'Private (Click to make Public)') + '" aria-label="Toggle public visibility"></div>'
+        ? '<div class="flex items-center justify-center"><input type="checkbox" data-id="' + escapeHtml(mod.id) + '" class="w-4 h-4 text-brand border-slate-300 bg-white rounded cursor-pointer module-public-toggle" ' + (mod.is_public ? 'checked' : '') + ' title="' + (mod.is_public ? 'Public (Click to make Private)' : 'Private (Click to make Public)') + '" aria-label="Toggle public visibility"></div>'
         : '<div class="flex items-center justify-center"><input type="checkbox" checked disabled class="w-4 h-4 text-slate-400 border-slate-200 bg-slate-100 rounded cursor-not-allowed opacity-60" title="Shared (View only)" aria-label="Shared resource"></div>';
 
     const actionsHtml = isOwner
         ? '<div class="actions-dropdown">'
           + '<button type="button" class="px-2.5 py-1.5 text-xs font-bold rounded-lg border border-slate-200 bg-white text-slate-700 cursor-pointer hover:bg-slate-50 flex items-center gap-1" data-dropdown-trigger="true" aria-expanded="false" aria-label="Toggle actions menu">'
-          + 'Actions <i class="bi bi-chevron-down text-[10px]"></i>'
+          + 'Actions ' + icon('chevron-down', 'w-2.5 h-2.5')
           + '</button>'
           + '<div class="dropdown-menu hidden">'
-          + '<button type="button" class="dropdown-item reuse-module-btn" data-id="' + escapeHtml(mod.id) + '" data-section-id="' + escapeHtml((sections[0] && sections[0].id) || '') + '"><i class="bi bi-copy mr-2"></i>Reuse in test</button>'
-          + '<button type="button" class="dropdown-item clone-module-btn" data-id="' + escapeHtml(mod.id) + '"><i class="bi bi-copy mr-2"></i> Clone</button>'
-          + '<button type="button" class="dropdown-item text-danger delete-module-btn" data-id="' + escapeHtml(mod.id) + '"><i class="bi bi-trash mr-2"></i> Delete</button>'
+          + '<button type="button" class="dropdown-item reuse-module-btn" data-id="' + escapeHtml(mod.id) + '" data-section-id="' + escapeHtml((sections[0] && sections[0].id) || '') + '">' + icon('copy', 'w-4 h-4 mr-2') + 'Reuse in test</button>'
+          + '<button type="button" class="dropdown-item clone-module-btn" data-id="' + escapeHtml(mod.id) + '">' + icon('copy', 'w-4 h-4 mr-2') + ' Clone</button>'
+          + '<button type="button" class="dropdown-item text-danger delete-module-btn" data-id="' + escapeHtml(mod.id) + '">' + icon('trash', 'w-4 h-4 mr-2') + ' Delete</button>'
           + '</div>'
           + '</div>'
         : '<button type="button" class="min-h-9 rounded-lg border border-slate-300 bg-white px-3 text-xs font-bold text-slate-700 hover:bg-slate-50 reuse-module-btn" data-id="' + escapeHtml(mod.id) + '" data-section-id="' + escapeHtml((sections[0] && sections[0].id) || '') + '">Reuse</button>';
@@ -143,11 +144,11 @@ function renderModulesPage() {
         + '<td colspan="8" class="px-6 py-20 text-center">'
         + '<div class="flex flex-col items-center justify-center">'
         + '<div class="w-20 h-20 rounded-full bg-slate-50 border border-slate-200 flex items-center justify-center mb-6">'
-        + '<i class="bi bi-inbox text-4xl text-slate-400"></i>'
+        + icon('inbox', 'w-10 h-10 text-slate-400')
         + '</div>'
         + '<h4 class="text-lg font-bold text-slate-800">No modules found</h4>'
         + '<p class="text-sm text-slate-500 mt-1 max-w-xs mx-auto">Create one module, then link it to any section that should use it.</p>'
-        + '<button class="mt-8 px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold text-sm rounded-lg transition-colors shadow-sm" onclick="window.dispatchEvent(new CustomEvent(\'open-offcanvas\', { detail: \'createModuleOffcanvas\' }))">'
+        + '<button class="mt-8 px-5 py-2.5 bg-brand hover:bg-brand-hover text-white font-semibold text-sm rounded-lg transition-colors shadow-sm" onclick="window.dispatchEvent(new CustomEvent(\'open-offcanvas\', { detail: \'createModuleOffcanvas\' }))">'
         + 'Create module'
         + '</button>'
         + '</div>'

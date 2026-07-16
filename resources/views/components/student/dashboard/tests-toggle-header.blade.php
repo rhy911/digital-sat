@@ -2,7 +2,7 @@
     <h2 class="mb-0 text-2xl md:text-3xl font-bold">Your Tests</h2>
     <div class="btn-group" role="group" aria-label="Your tests toggle">
         <input type="radio" class="btn-check" name="btnradio" id="btnradio1" autocomplete="off" checked>
-        <label class="btn" for="btnradio1">✓ Active</label>
+        <label class="btn" for="btnradio1"><x-ui.icon name="check-lg" class="w-3 h-3 inline" /> Active</label>
 
         <input type="radio" class="btn-check" name="btnradio" id="btnradio2" autocomplete="off">
         <label class="btn" for="btnradio2">Past</label>

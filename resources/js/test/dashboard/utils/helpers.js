@@ -228,7 +228,7 @@ export function getPremiumToolbar(activeEditorKey, changeCallback) {
             className: "bi bi-image",
             title: "Upload and Insert Image"
         },
-        "|", { name: "preview", action: togglePreview, className: "bi bi-eye text-indigo-400 font-bold", title: "Toggle Preview", noDisable: true }
+        "|", { name: "preview", action: togglePreview, className: "bi bi-eye text-brand font-bold", title: "Toggle Preview", noDisable: true }
     ];
 }
 

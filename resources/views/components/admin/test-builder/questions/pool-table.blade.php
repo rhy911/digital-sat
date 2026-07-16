@@ -13,11 +13,12 @@
             <div class="questions-filter-inputs flex flex-wrap gap-2.5 items-center flex-1">
                 <div class="relative w-full max-w-xs">
                     <span class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
-                        <i class="bi bi-search text-sm"></i>
+                        <x-ui.icon name="search" class="w-3.5 h-3.5" />
                     </span>
                     <input type="text"
-                        class="w-full pl-9 pr-3 py-2 text-xs rounded-lg border border-slate-200 bg-white text-slate-800 placeholder-slate-500 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 outline-none transition-all duration-150"
-                        id="questionsTableFilter" placeholder="Search question text...">
+                        class="w-full pl-9 pr-3 py-2 text-xs rounded-lg border border-slate-200 bg-white text-slate-800 placeholder-slate-500 focus:border-brand focus:ring-2 focus:ring-brand/20 outline-none transition-all duration-150"
+                        id="questionsTableFilter" placeholder="Search question text..."
+                        aria-label="Search question text">
                 </div>
 
                 @if (auth()->user()->role === 'teacher')
@@ -25,12 +26,12 @@
                         <label for="questionsShowSharedToggle"
                             class="text-xs font-bold text-slate-600 cursor-pointer select-none">Show shared</label>
                         <input type="checkbox" id="questionsShowSharedToggle"
-                            class="w-4 h-4 text-indigo-600 border-slate-300 bg-white rounded cursor-pointer questions-show-shared-toggle">
+                            class="w-4 h-4 text-brand border-slate-300 bg-white rounded cursor-pointer questions-show-shared-toggle">
                     </div>
                 @endif
 
                 <select
-                    class="px-3 py-2 text-xs rounded-lg border border-slate-200 bg-white text-slate-800 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 outline-none w-full max-w-[130px]"
+                    class="px-3 py-2 text-xs rounded-lg border border-slate-200 bg-white text-slate-800 focus:border-brand focus:ring-2 focus:ring-brand/20 outline-none w-full max-w-[130px]"
                     id="questionsTableSectionFilter">
                     <option value="">All sections</option>
                     <option value="reading_writing">R&amp;W</option>
@@ -38,7 +39,7 @@
                 </select>
 
                 <select
-                    class="px-3 py-2 text-xs rounded-lg border border-slate-200 bg-white text-slate-800 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 outline-none w-full max-w-[130px]"
+                    class="px-3 py-2 text-xs rounded-lg border border-slate-200 bg-white text-slate-800 focus:border-brand focus:ring-2 focus:ring-brand/20 outline-none w-full max-w-[130px]"
                     id="questionsTableStatusFilter">
                     <option value="">All status</option>
                     <option value="1">Complete</option>
@@ -46,7 +47,7 @@
                 </select>
 
                 <select
-                    class="text-xs rounded-lg border border-slate-200 bg-white text-slate-800 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 outline-none w-full max-w-xs tom-select tom-select-filter"
+                    class="text-xs rounded-lg border border-slate-200 bg-white text-slate-800 focus:border-brand focus:ring-2 focus:ring-brand/20 outline-none w-full max-w-xs tom-select tom-select-filter"
                     id="questionsTableModuleFilter">
                     <option value="">All modules</option>
                     @php
@@ -82,14 +83,14 @@
             </div>
             <div class="questions-filter-actions flex gap-2">
                 <button type="button"
-                    class="min-h-10 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-xs font-bold flex items-center gap-1.5 cursor-pointer transition-colors duration-150"
+                    class="min-h-10 px-4 py-2 bg-brand hover:bg-brand-hover text-white rounded-lg text-xs font-bold flex items-center gap-1.5 cursor-pointer transition-colors duration-150"
                     id="questionsTableFilterBtn">
-                    <i class="bi bi-filter text-sm"></i> Apply filters
+                    <x-ui.icon name="filter" class="w-3.5 h-3.5" /> Apply filters
                 </button>
                 <button type="button"
                     class="min-h-10 px-4 py-2 bg-white border border-slate-200 text-slate-600 rounded-lg hover:bg-slate-50 text-xs font-bold flex items-center gap-1.5 cursor-pointer transition-colors duration-150"
                     id="questionsTableFilterClearBtn">
-                    <i class="bi bi-x-circle text-sm"></i> Clear
+                    <x-ui.icon name="x-circle" class="w-3.5 h-3.5" /> Clear
                 </button>
             </div>
         </div>
@@ -132,7 +133,7 @@
                                         <span
                                             class="inline-flex items-center px-2 py-0.5 rounded-md text-[9px] font-bold bg-rose-50 text-rose-700 border border-rose-100 uppercase tracking-wide"
                                             title="Missing Domain or Difficulty">
-                                            <i class="bi bi-exclamation-triangle-fill mr-1 text-[9px]"></i> Incomplete
+                                            <x-ui.icon name="exclamation-triangle-fill" class="w-2.5 h-2.5 mr-1" /> Incomplete
                                         </span>
                                     @endif
                                 </div>
@@ -180,15 +181,15 @@
                                                 class="px-2.5 py-1.5 text-xs font-bold rounded-lg border border-slate-200 bg-white text-slate-700 cursor-pointer hover:bg-slate-50 flex items-center gap-1"
                                                 data-dropdown-trigger="true" aria-expanded="false"
                                                 aria-label="Toggle actions menu">
-                                                Actions <i class="bi bi-chevron-down text-[10px]"></i>
+                                                Actions <x-ui.icon name="chevron-down" class="w-2.5 h-2.5" />
                                             </button>
                                             <div class="dropdown-menu hidden">
                                                 <button type="button" class="dropdown-item edit-question-btn"
-                                                    data-id="{{ $question->id }}"><i class="bi bi-pencil mr-2"></i>
+                                                    data-id="{{ $question->id }}"><x-ui.icon name="pencil" class="w-4 h-4 mr-2" />
                                                     Edit</button>
                                                 <button type="button"
                                                     class="dropdown-item text-danger delete-question-btn"
-                                                    data-id="{{ $question->id }}"><i class="bi bi-trash mr-2"></i>
+                                                    data-id="{{ $question->id }}"><x-ui.icon name="trash" class="w-4 h-4 mr-2" />
                                                     Delete</button>
                                             </div>
                                         </div>
@@ -196,7 +197,7 @@
                                         <button
                                             class="px-2.5 py-1.5 border border-slate-200 text-slate-600 bg-white hover:bg-slate-50 rounded-lg text-xs font-bold flex items-center gap-1 edit-question-btn cursor-pointer"
                                             data-id="{{ $question->id }}" aria-label="View question details">
-                                            <i class="bi bi-eye text-xs leading-none"></i> View
+                                            <x-ui.icon name="eye" class="w-3 h-3 leading-none" /> View
                                         </button>
                                     @endif
                                 </div>
@@ -208,7 +209,7 @@
                                 <div class="flex flex-col items-center justify-center">
                                     <div
                                         class="w-12 h-12 rounded-full bg-slate-50 border border-slate-200 flex items-center justify-center mb-3">
-                                        <i class="bi bi-database-fill-x text-2xl text-slate-400"></i>
+                                        <x-ui.icon name="database-fill-x" class="w-6 h-6 text-slate-400" />
                                     </div>
                                     <p class="text-sm font-semibold text-slate-600">No questions found</p>
                                     <p class="text-xs text-slate-400 mt-1">Populate your bank by importing items above!

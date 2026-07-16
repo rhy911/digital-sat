@@ -50,6 +50,12 @@ document.addEventListener('DOMContentLoaded', async function () {
 
     async function renderActiveTab(targetId = null) {
         if (!targetId) {
+            const hashTab = window.location.hash;
+            if (hashTab && ['#tests', '#builder', '#sections', '#modules', '#questions'].includes(hashTab)) {
+                targetId = hashTab;
+            }
+        }
+        if (!targetId) {
             targetId = sessionStorage.getItem(TEST_DASHBOARD_TAB_KEY);
         }
         if (!targetId) {
@@ -453,13 +459,13 @@ document.addEventListener('DOMContentLoaded', async function () {
                 // Disablement & Mode Toggling based on ownership
                 const isOwner = question.created_by === window.__currentUserId || window.__currentUserRole === 'admin';
                 const titleText = document.getElementById('editQuestionModalTitleText');
-                const titleIcon = document.getElementById('editQuestionModalIcon');
+                const titleIconEdit = document.getElementById('editQuestionModalIconEdit');
+                const titleIconView = document.getElementById('editQuestionModalIconView');
                 const submitBtn = document.querySelector('#editQuestionForm button[type="submit"]');
 
                 if (titleText) titleText.textContent = isOwner ? 'Edit Question' : 'View Question';
-                if (titleIcon) {
-                    titleIcon.className = isOwner ? 'bi bi-pencil-square text-indigo-400' : 'bi bi-eye text-slate-400';
-                }
+                if (titleIconEdit) titleIconEdit.classList.toggle('hidden', !isOwner);
+                if (titleIconView) titleIconView.classList.toggle('hidden', isOwner);
                 if (submitBtn) {
                     if (isOwner) submitBtn.classList.remove('hidden');
                     else submitBtn.classList.add('hidden');
@@ -723,7 +729,7 @@ document.addEventListener('DOMContentLoaded', async function () {
     // Dismiss tips banner
     document.getElementById('builderDismissInstructionsBtn')?.addEventListener('click', function () {
         localStorage.setItem('test_builder_instructions_dismissed', 'true');
-        const banner = this.closest('.bg-indigo-50');
+        const banner = this.closest('.bg-brand-soft');
         if (banner) {
             banner.remove();
         }

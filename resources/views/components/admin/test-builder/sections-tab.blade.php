@@ -14,14 +14,14 @@
             aria-hidden="{{ $hasSections ? 'true' : 'false' }}">
             <div class="p-16 text-center">
                 <div
-                    class="mx-auto w-20 h-20 bg-indigo-50 border border-indigo-100 rounded-full flex items-center justify-center mb-6">
-                    <i class="bi bi-puzzle-fill text-3xl text-indigo-600"></i>
+                    class="mx-auto w-20 h-20 bg-[var(--color-brand-soft)] border border-brand/20 rounded-full flex items-center justify-center mb-6">
+                    <x-ui.icon name="puzzle-fill" class="w-8 h-8 text-brand" />
                 </div>
                 <h3 class="text-xl font-extrabold text-slate-900 mb-2">No sections yet</h3>
                 <p class="text-slate-600 mb-8 max-w-sm mx-auto text-sm leading-relaxed">Add a section to a test, then
                     attach the modules students will take.</p>
                 <button type="button"
-                    class="px-5 py-3 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold rounded-lg shadow-sm text-sm transition-colors duration-150"
+                    class="px-5 py-3 bg-brand hover:bg-brand-hover text-white font-semibold rounded-lg shadow-sm text-sm transition-colors duration-150"
                     x-on:click="$dispatch('open-offcanvas', 'createSectionOffcanvas')">
                     Create section
                 </button>
@@ -36,23 +36,24 @@
                 <h5 class="font-bold text-slate-800 mb-0 text-sm">All sections</h5>
                 <div class="flex items-center gap-4 flex-wrap md:flex-nowrap">
                     <button
-                        class="inline-flex min-h-10 items-center gap-2 rounded-lg bg-indigo-600 px-3 py-2 text-xs font-bold text-white hover:bg-indigo-700"
-                        x-on:click="$dispatch('open-offcanvas', 'createSectionOffcanvas')"><i class="bi bi-plus-lg"
-                            aria-hidden="true"></i>Create section</button>
+                        class="inline-flex min-h-10 items-center gap-2 rounded-lg bg-brand px-3 py-2 text-xs font-bold text-white hover:bg-brand-hover"
+                        x-on:click="$dispatch('open-offcanvas', 'createSectionOffcanvas')"><x-ui.icon name="plus-lg"
+                            class="w-4 h-4" aria-hidden="true" />Create section</button>
                     @if (auth()->user()->role === 'teacher')
                         <div class="flex items-center gap-2 bg-white px-3 py-1.5 rounded-lg border border-slate-200">
                             <label for="sectionsShowSharedToggle"
                                 class="text-xs font-bold text-slate-600 cursor-pointer select-none">Show shared</label>
                             <input type="checkbox" id="sectionsShowSharedToggle"
-                                class="w-4 h-4 text-indigo-600 border-slate-300 bg-white rounded cursor-pointer sections-show-shared-toggle">
+                                class="w-4 h-4 text-brand border-slate-300 bg-white rounded cursor-pointer sections-show-shared-toggle">
                         </div>
                     @endif
                     <div class="relative">
-                        <span class="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"><i
-                                class="bi bi-search text-xs"></i></span>
+                        <span class="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"><x-ui.icon name="search"
+                                class="w-3 h-3" /></span>
                         <input type="text"
-                            class="pl-9 pr-4 py-2.5 w-full md:w-72 text-sm rounded-lg border border-slate-200 bg-white text-slate-800 placeholder-slate-400 hover:border-indigo-500/40 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 outline-none transition-all duration-150"
-                            id="sectionsTableSearch" placeholder="Search by section or test...">
+                            class="pl-9 pr-4 py-2.5 w-full md:w-72 text-sm rounded-lg border border-slate-200 bg-white text-slate-800 placeholder-slate-400 hover:border-brand/40 focus:border-brand focus:ring-2 focus:ring-brand/20 outline-none transition-all duration-150"
+                            id="sectionsTableSearch" placeholder="Search by section or test..."
+                            aria-label="Search sections by name or test">
                     </div>
                 </div>
             </div>
@@ -117,7 +118,7 @@
     <!-- Create Section Offcanvas -->
     <x-ui.offcanvas id="createSectionOffcanvas" width="w-[480px]">
         <x-slot:titleContent>
-            <i class="bi bi-puzzle-fill text-indigo-600 mr-3 text-xl"></i> Create section
+            <x-ui.icon name="puzzle-fill" class="w-5 h-5 text-brand mr-3" /> Create section
         </x-slot:titleContent>
         <form id="sectionForm" class="space-y-6">
             @csrf
@@ -126,7 +127,7 @@
                     class="text-xs font-extrabold text-slate-500 tracking-wider uppercase mb-2 block">Parent test <span
                         class="text-rose-500">*</span></label>
                 <select
-                    class="form-select tom-select w-full bg-white border border-slate-200 text-slate-800 text-sm placeholder-slate-400 hover:border-indigo-500/40 focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 focus:outline-hidden transition-all duration-200 rounded-xl"
+                    class="form-select tom-select w-full bg-white border border-slate-200 text-slate-800 text-sm placeholder-slate-400 hover:border-brand/40 focus:border-brand focus:ring-4 focus:ring-brand/10 focus:outline-hidden transition-all duration-200 rounded-xl"
                     id="sectionTest" name="test_id" required>
                     <option value="">Search test...</option>
                     @foreach ($tests as $test)
@@ -140,7 +141,7 @@
                     class="text-xs font-extrabold text-slate-500 tracking-wider uppercase mb-2 block">Section type <span
                         class="text-rose-500">*</span></label>
                 <select
-                    class="w-full px-4 py-2.5 rounded-xl border border-slate-200 bg-white text-slate-800 text-sm hover:border-indigo-500/40 focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 focus:outline-hidden transition-all duration-200 appearance-none bg-no-repeat bg-position-[right_1rem_center] bg-size-[1em_1em]"
+                    class="w-full px-4 py-2.5 rounded-xl border border-slate-200 bg-white text-slate-800 text-sm hover:border-brand/40 focus:border-brand focus:ring-4 focus:ring-brand/10 focus:outline-hidden transition-all duration-200 appearance-none bg-no-repeat bg-position-[right_1rem_center] bg-size-[1em_1em]"
                     style="background-image: url('data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 fill=%22none%22 viewBox=%220 0 24 24%22 stroke=%22%2394a3b8%22 stroke-width=%222%22%3E%3Cpath stroke-linecap=%22round%22 stroke-linejoin=%22round%22 d=%22M19 9l-7 7-7-7%22 /%3E%3C/svg%3E')"
                     id="sectionType" name="type" required onchange="updateSectionName(this)">
                     <option value="">Select type...</option>
@@ -162,7 +163,7 @@
             <div class="bg-amber-50 border border-amber-200 rounded-xl p-5 flex gap-4 items-start shadow-xs">
                 <div
                     class="w-10 h-10 rounded-lg bg-amber-100 border border-amber-200 flex items-center justify-center shrink-0">
-                    <i class="bi bi-info-circle-fill text-amber-600 text-lg"></i>
+                    <x-ui.icon name="info-circle-fill" class="w-5 h-5 text-amber-600" />
                 </div>
                 <div>
                     <h6 class="text-xs font-extrabold text-amber-800 uppercase tracking-wider mb-1">Standardized SAT

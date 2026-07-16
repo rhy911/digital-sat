@@ -6,14 +6,14 @@
         class="border-b border-slate-100 pb-4 mb-5 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
             <h3 class="text-lg font-bold text-slate-800 flex items-center gap-2 tracking-tight mb-1">
-                <i class="bi bi-cloud-arrow-up text-indigo-600 text-xl leading-none"></i> Import Questions
+                <x-ui.icon name="cloud-arrow-up" class="w-5 h-5 text-brand leading-none" /> Import Questions
             </h3>
             <p class="text-sm text-slate-600 mb-0">Add SAT questions to a module from a file or editor. Preview catches
                 missing fields before anything is saved.</p>
         </div>
         <button type="button" x-data x-on:click="$dispatch('open-modal', 'importGuideModal')"
-            class="inline-flex items-center gap-1.5 px-3.5 py-2 bg-indigo-50 hover:bg-indigo-100 text-indigo-600 hover:text-indigo-700 rounded-lg text-xs font-bold transition-colors cursor-pointer border border-indigo-100/80 shadow-xs shrink-0">
-            <i class="bi bi-info-circle text-sm leading-none"></i>
+            class="inline-flex items-center gap-1.5 px-3.5 py-2 bg-[var(--color-brand-soft)] hover:bg-[var(--color-brand-soft)] text-brand hover:text-brand rounded-lg text-xs font-bold transition-colors cursor-pointer border border-brand/20 shadow-xs shrink-0">
+            <x-ui.icon name="info-circle" class="w-3.5 h-3.5 leading-none" />
             <span>Import Guide</span>
         </button>
     </div>
@@ -23,7 +23,7 @@
         <div>
             <div class="flex items-center gap-3 mb-4">
                 <span
-                    class="flex items-center justify-center w-8 h-8 rounded-full bg-indigo-50 text-indigo-600 font-bold text-sm border border-indigo-100">1</span>
+                    class="flex items-center justify-center w-8 h-8 rounded-full bg-[var(--color-brand-soft)] text-brand font-bold text-sm border border-brand/20">1</span>
                 <h4 class="text-base font-bold text-slate-800 tracking-tight">Choose where questions should go</h4>
             </div>
             <div class="pl-11 grid grid-cols-1 md:grid-cols-12 gap-5">
@@ -31,7 +31,7 @@
                     <label for="bulkQuestionModule" class="block text-xs font-bold text-slate-600 mb-1.5">Module <span
                             class="text-rose-500">*</span></label>
                     <select
-                        class="w-full text-sm text-slate-800 bg-white border border-slate-200 rounded-lg focus:outline-hidden focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 tom-select"
+                        class="w-full text-sm text-slate-800 bg-white border border-slate-200 rounded-lg focus:outline-hidden focus:ring-2 focus:ring-brand/20 focus:border-brand tom-select"
                         id="bulkQuestionModule" required>
                         <option value="">Search module to import into...</option>
                         @php
@@ -74,7 +74,7 @@
                     <label for="bulkStartPosition" class="block text-xs font-bold text-slate-600 mb-1.5">Start at
                         question <span class="text-rose-500">*</span></label>
                     <input type="number"
-                        class="w-full px-3 py-2 text-sm text-slate-800 bg-white border border-slate-200 rounded-lg placeholder-slate-400 focus:outline-hidden focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
+                        class="w-full px-3 py-2 text-sm text-slate-800 bg-white border border-slate-200 rounded-lg placeholder-slate-400 focus:outline-hidden focus:ring-2 focus:ring-brand/20 focus:border-brand"
                         id="bulkStartPosition" min="1" value="1" required>
                     <div class="text-xs text-slate-500 mt-1.5">Existing questions at this number or later move down
                         automatically.</div>
@@ -97,7 +97,7 @@
         }">
             <div class="flex items-center gap-3 mb-4">
                 <span
-                    class="flex items-center justify-center w-8 h-8 rounded-full bg-indigo-50 text-indigo-600 font-bold text-sm border border-indigo-100">2</span>
+                    class="flex items-center justify-center w-8 h-8 rounded-full bg-[var(--color-brand-soft)] text-brand font-bold text-sm border border-brand/20">2</span>
                 <h4 class="text-base font-bold text-slate-800 tracking-tight">Choose an import method</h4>
             </div>
             <div class="pl-11">
@@ -108,34 +108,34 @@
                     <li role="presentation">
                         <button id="import-json-tab"
                             class="rounded-lg px-4 py-2 font-semibold text-sm focus:outline-hidden transition-colors cursor-pointer"
-                            :class="importTab === 'json' ? 'bg-indigo-600 text-white shadow-sm' :
+                            :class="importTab === 'json' ? 'bg-brand text-white shadow-sm' :
                                 'text-slate-650 hover:text-slate-900 hover:bg-slate-100'"
                             x-on:click="setImportTab('json')" type="button" role="tab" aria-controls="import-json"
                             :aria-selected="importTab === 'json' ? 'true' : 'false'"
                             :tabindex="importTab === 'json' ? '0' : '-1'">
-                            <i class="bi bi-filetype-json mr-1.5 text-base leading-none"></i> Paste or upload
+                            <x-ui.icon name="filetype-json" class="w-4 h-4 mr-1.5 leading-none" /> Paste or upload
                         </button>
                     </li>
                     <li role="presentation">
                         <button id="import-csv-tab"
                             class="rounded-lg px-4 py-2 font-semibold text-sm focus:outline-hidden transition-colors cursor-pointer"
-                            :class="importTab === 'csv' ? 'bg-indigo-600 text-white shadow-sm' :
+                            :class="importTab === 'csv' ? 'bg-brand text-white shadow-sm' :
                                 'text-slate-650 hover:text-slate-900 hover:bg-slate-100'"
                             x-on:click="setImportTab('csv')" type="button" role="tab" aria-controls="import-csv"
                             :aria-selected="importTab === 'csv' ? 'true' : 'false'"
                             :tabindex="importTab === 'csv' ? '0' : '-1'">
-                            <i class="bi bi-file-earmark-spreadsheet mr-1.5 text-base leading-none"></i> CSV
+                            <x-ui.icon name="file-earmark-spreadsheet" class="w-4 h-4 mr-1.5 leading-none" /> CSV
                         </button>
                     </li>
                     <li role="presentation">
                         <button id="import-zip-tab"
                             class="rounded-lg px-4 py-2 font-semibold text-sm focus:outline-hidden transition-colors cursor-pointer"
-                            :class="importTab === 'zip' ? 'bg-indigo-600 text-white shadow-sm' :
+                            :class="importTab === 'zip' ? 'bg-brand text-white shadow-sm' :
                                 'text-slate-650 hover:text-slate-900 hover:bg-slate-100'"
                             x-on:click="setImportTab('zip')" type="button" role="tab" aria-controls="import-zip"
                             :aria-selected="importTab === 'zip' ? 'true' : 'false'"
                             :tabindex="importTab === 'zip' ? '0' : '-1'">
-                            <i class="bi bi-file-earmark-zip mr-1.5 text-base leading-none"></i> ZIP + images
+                            <x-ui.icon name="file-earmark-zip" class="w-4 h-4 mr-1.5 leading-none" /> ZIP + images
                         </button>
                     </li>
                 </ul>
@@ -163,13 +163,13 @@
                                         class="block text-xs font-bold text-slate-600 uppercase tracking-wider mb-2">Import
                                         JSON File</label>
                                     <div
-                                        class="file-dropzone border-2 border-dashed border-slate-200 rounded-xl p-6 text-center bg-slate-50 relative cursor-pointer hover:bg-slate-100/60 hover:border-indigo-500/50">
+                                        class="file-dropzone border-2 border-dashed border-slate-200 rounded-xl p-6 text-center bg-slate-50 relative cursor-pointer hover:bg-slate-100/60 hover:border-brand/50">
                                         <input type="file"
                                             class="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
                                             id="bulkJsonFile" accept=".json,application/json" style="z-index: 10;"
                                             aria-label="Upload JSON questions file">
-                                        <i
-                                            class="bi bi-filetype-json text-4xl text-slate-400 mb-2 block leading-none"></i>
+                                        <x-ui.icon name="filetype-json"
+                                            class="w-10 h-10 text-slate-400 mb-2 block leading-none bi" />
                                         <span
                                             class="font-semibold block text-slate-700 text-sm mb-1 drag-instruction">Drag
                                             &amp; drop JSON here</span>
@@ -189,23 +189,23 @@
                                         <button type="button"
                                             class="w-full text-left px-3.5 py-2.5 text-sm bg-white border border-slate-200 rounded-xl hover:bg-slate-50 text-slate-700 flex items-center font-semibold"
                                             id="bulkLoadExampleRwBtn">
-                                            <i
-                                                class="bi bi-plus-circle mr-2 text-indigo-600 text-base leading-none"></i>
+                                            <x-ui.icon name="plus-circle"
+                                                class="w-4 h-4 mr-2 text-brand leading-none" />
                                             Insert R&amp;W Example
                                         </button>
                                         <button type="button"
                                             class="w-full text-left px-3.5 py-2.5 text-sm bg-white border border-slate-200 rounded-xl hover:bg-slate-50 text-slate-700 flex items-center font-semibold"
                                             id="bulkLoadExampleMathBtn">
-                                            <i
-                                                class="bi bi-plus-circle mr-2 text-indigo-600 text-base leading-none"></i>
+                                            <x-ui.icon name="plus-circle"
+                                                class="w-4 h-4 mr-2 text-brand leading-none" />
                                             Insert Math Example
                                         </button>
                                         <div class="flex gap-2 pt-1.5">
                                             <button type="button"
-                                                class="flex-1 px-3 py-2 text-xs font-semibold text-indigo-600 bg-indigo-50 hover:bg-indigo-100 rounded-lg border border-indigo-100"
+                                                class="flex-1 px-3 py-2 text-xs font-semibold text-brand bg-[var(--color-brand-soft)] hover:bg-[var(--color-brand-soft)] rounded-lg border border-brand/20"
                                                 id="bulkDownloadRwSampleBtn">R&amp;W Sample.json</button>
                                             <button type="button"
-                                                class="flex-1 px-3 py-2 text-xs font-semibold text-indigo-600 bg-indigo-50 hover:bg-indigo-100 rounded-lg border border-indigo-100"
+                                                class="flex-1 px-3 py-2 text-xs font-semibold text-brand bg-[var(--color-brand-soft)] hover:bg-[var(--color-brand-soft)] rounded-lg border border-brand/20"
                                                 id="bulkDownloadMathSampleBtn">Math Sample.json</button>
                                         </div>
                                     </div>
@@ -220,7 +220,7 @@
                                         id="bulkClearEditorBtn">Clear Editor</button>
                                 </div>
                                 <textarea
-                                    class="w-full px-3 py-2.5 text-sm text-slate-800 bg-white border border-slate-200 rounded-lg placeholder-slate-400 focus:outline-hidden focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 font-mono"
+                                    class="w-full px-3 py-2.5 text-sm text-slate-800 bg-white border border-slate-200 rounded-lg placeholder-slate-400 focus:outline-hidden focus:ring-2 focus:ring-brand/20 focus:border-brand font-mono"
                                     id="bulkQuestionsJson" rows="12" spellcheck="false" placeholder='{ "items": [ ... ] }'></textarea>
                             </div>
                         </div>
@@ -229,12 +229,12 @@
                             <button type="button"
                                 class="px-4 py-2 bg-white border border-slate-200 text-slate-700 hover:text-slate-900 rounded-lg hover:bg-slate-50 shadow-sm text-sm font-semibold flex items-center gap-1.5"
                                 id="bulkPreviewBtn">
-                                <i class="bi bi-eye text-base leading-none"></i> Preview
+                                <x-ui.icon name="eye" class="w-4 h-4 leading-none" /> Preview
                             </button>
                             <button type="button"
-                                class="px-5 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold text-sm rounded-lg shadow-sm flex items-center gap-1.5"
+                                class="px-5 py-2 bg-brand hover:bg-brand-hover text-white font-semibold text-sm rounded-lg shadow-sm flex items-center gap-1.5"
                                 id="bulkImportSubmitBtn">
-                                <i class="bi bi-cloud-arrow-up text-base leading-none"></i> Import from Editor
+                                <x-ui.icon name="cloud-arrow-up" class="w-4 h-4 leading-none" /> Import from Editor
                             </button>
                         </div>
                     </div>
@@ -258,13 +258,13 @@
                                 <label class="block text-xs font-bold text-slate-600 uppercase tracking-wider mb-2">CSV
                                     File (.csv or .txt) <span class="text-rose-500">*</span></label>
                                 <div
-                                    class="file-dropzone border-2 border-dashed border-slate-200 rounded-xl p-8 text-center bg-slate-50 relative cursor-pointer hover:bg-slate-100/60 hover:border-indigo-500/50">
+                                    class="file-dropzone border-2 border-dashed border-slate-200 rounded-xl p-8 text-center bg-slate-50 relative cursor-pointer hover:bg-slate-100/60 hover:border-brand/50">
                                     <input type="file"
                                         class="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
                                         id="bulkCsvFile" accept=".csv,.txt,text/csv,text/plain" style="z-index: 10;"
                                         aria-label="Upload CSV questions file">
-                                    <i
-                                        class="bi bi-file-earmark-spreadsheet text-4xl text-slate-400 mb-3 block leading-none"></i>
+                                    <x-ui.icon name="file-earmark-spreadsheet"
+                                        class="w-10 h-10 text-slate-400 mb-3 block leading-none bi" />
                                     <span class="font-semibold block text-slate-700 text-sm mb-1 drag-instruction">Drag
                                         &amp; drop CSV here</span>
                                     <span class="text-slate-450 text-xs">or click to browse file</span>
@@ -281,13 +281,13 @@
                                 <button type="button"
                                     class="w-fit px-4 py-2 text-sm bg-white border border-slate-200 rounded-lg hover:bg-slate-50 text-slate-700 shadow-sm flex items-center gap-2 font-semibold"
                                     id="bulkDownloadRwSampleCsvBtn">
-                                    <i class="bi bi-download text-indigo-600 text-base leading-none"></i> Download
+                                    <x-ui.icon name="download" class="w-4 h-4 text-brand leading-none" /> Download
                                     R&amp;W Template.csv
                                 </button>
                                 <button type="button"
                                     class="w-fit px-4 py-2 text-sm bg-white border border-slate-200 rounded-lg hover:bg-slate-50 text-slate-700 shadow-sm flex items-center gap-2 font-semibold"
                                     id="bulkDownloadMathSampleCsvBtn">
-                                    <i class="bi bi-download text-indigo-600 text-base leading-none"></i> Download Math
+                                    <x-ui.icon name="download" class="w-4 h-4 text-brand leading-none" /> Download Math
                                     Template.csv
                                 </button>
                             </div>
@@ -297,12 +297,12 @@
                             <button type="button"
                                 class="px-4 py-2 bg-white border border-slate-200 text-slate-700 hover:text-slate-900 rounded-lg hover:bg-slate-50 shadow-sm text-sm font-semibold flex items-center gap-1.5"
                                 id="bulkCsvPreviewBtn">
-                                <i class="bi bi-eye text-base leading-none"></i> Preview
+                                <x-ui.icon name="eye" class="w-4 h-4 leading-none" /> Preview
                             </button>
                             <button type="button"
-                                class="px-5 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold text-sm rounded-lg shadow-sm flex items-center gap-1.5"
+                                class="px-5 py-2 bg-brand hover:bg-brand-hover text-white font-semibold text-sm rounded-lg shadow-sm flex items-center gap-1.5"
                                 id="bulkCsvImportSubmitBtn">
-                                <i class="bi bi-cloud-arrow-up text-base leading-none"></i> Import CSV
+                                <x-ui.icon name="cloud-arrow-up" class="w-4 h-4 leading-none" /> Import CSV
                             </button>
                         </div>
                     </div>
@@ -326,13 +326,13 @@
                                 <label class="block text-xs font-bold text-slate-600 uppercase tracking-wider mb-2">ZIP
                                     File <span class="text-rose-500">*</span></label>
                                 <div
-                                    class="file-dropzone border-2 border-dashed border-slate-200 rounded-xl p-8 text-center bg-slate-50 relative cursor-pointer hover:bg-slate-100/60 hover:border-indigo-500/50">
+                                    class="file-dropzone border-2 border-dashed border-slate-200 rounded-xl p-8 text-center bg-slate-50 relative cursor-pointer hover:bg-slate-100/60 hover:border-brand/50">
                                     <input type="file"
                                         class="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
                                         id="bulkZipFile" accept=".zip" style="z-index: 10;"
                                         aria-label="Upload ZIP questions package">
-                                    <i
-                                        class="bi bi-file-earmark-zip text-4xl text-slate-400 mb-3 block leading-none"></i>
+                                    <x-ui.icon name="file-earmark-zip"
+                                        class="w-10 h-10 text-slate-400 mb-3 block leading-none bi" />
                                     <span class="font-semibold block text-slate-700 text-sm mb-1 drag-instruction">Drag
                                         &amp; drop ZIP here</span>
                                     <span class="text-slate-450 text-xs">or click to browse file</span>
@@ -345,12 +345,12 @@
                                     class="hidden mt-4 bg-slate-50 border border-slate-200 rounded-xl p-4 shadow-inner">
                                     <div class="flex justify-between text-xs font-semibold text-slate-500 mb-2">
                                         <span>Uploading &amp; Unzipping Package...</span>
-                                        <span id="zipUploadPercentage" class="text-indigo-600 font-bold">0%</span>
+                                        <span id="zipUploadPercentage" class="text-brand font-bold">0%</span>
                                     </div>
                                     <div
                                         class="w-full bg-slate-200 rounded-full h-2 overflow-hidden border border-slate-350">
                                         <div id="zipUploadProgressBar"
-                                            class="bg-indigo-600 h-2 rounded-full relative overflow-hidden"
+                                            class="bg-brand h-2 rounded-full relative overflow-hidden"
                                             style="width: 0%">
                                             <div class="absolute inset-0 bg-white/20"
                                                 style="background-image: linear-gradient(45deg, rgba(255,255,255,.15) 25%, transparent 25%, transparent 50%, rgba(255,255,255,.15) 50%, rgba(255,255,255,.15) 75%, transparent 75%, transparent); background-size: 1rem 1rem; animation: progress-stripes 1s linear infinite;">
@@ -361,9 +361,9 @@
                             </div>
                             <div class="lg:col-span-4">
                                 <button type="button"
-                                    class="w-full py-4 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-lg shadow-sm flex items-center justify-center gap-2"
+                                    class="w-full py-4 bg-brand hover:bg-brand-hover text-white font-bold rounded-lg shadow-sm flex items-center justify-center gap-2"
                                     id="bulkZipImportBtn">
-                                    <i class="bi bi-cloud-arrow-up text-lg leading-none"></i> Import ZIP Package
+                                    <x-ui.icon name="cloud-arrow-up" class="w-5 h-5 leading-none" /> Import ZIP Package
                                 </button>
                             </div>
                         </div>
@@ -394,31 +394,31 @@
         <div
             class="w-full md:w-56 shrink-0 flex flex-col gap-1 border-b md:border-b-0 md:border-r border-slate-200 pb-4 md:pb-0 md:pr-4">
             <button type="button" @click="activeTab = 'overview'"
-                :class="activeTab === 'overview' ? 'bg-indigo-50 text-indigo-700 font-bold' :
+                :class="activeTab === 'overview' ? 'bg-[var(--color-brand-soft)] text-brand font-bold' :
                     'text-slate-655 hover:bg-slate-50'"
                 class="w-full text-left px-3 py-2 rounded-lg text-sm transition-colors flex items-center gap-2 cursor-pointer border-0">
-                <i class="bi bi-info-circle text-base"></i>
+                <x-ui.icon name="info-circle" class="w-4 h-4" />
                 <span>Quy trình Import</span>
             </button>
             <button type="button" @click="activeTab = 'formatting'"
-                :class="activeTab === 'formatting' ? 'bg-indigo-50 text-indigo-700 font-bold' :
+                :class="activeTab === 'formatting' ? 'bg-[var(--color-brand-soft)] text-brand font-bold' :
                     'text-slate-655 hover:bg-slate-50'"
                 class="w-full text-left px-3 py-2 rounded-lg text-sm transition-colors flex items-center gap-2 cursor-pointer border-0">
-                <i class="bi bi-type-italic text-base"></i>
+                <x-ui.icon name="type-italic" class="w-4 h-4" />
                 <span>Quy tắc Định dạng</span>
             </button>
             <button type="button" @click="activeTab = 'specs'"
-                :class="activeTab === 'specs' ? 'bg-indigo-50 text-indigo-700 font-bold' :
+                :class="activeTab === 'specs' ? 'bg-[var(--color-brand-soft)] text-brand font-bold' :
                     'text-slate-655 hover:bg-slate-50'"
                 class="w-full text-left px-3 py-2 rounded-lg text-sm transition-colors flex items-center gap-2 cursor-pointer border-0">
-                <i class="bi bi-file-earmark-code text-base"></i>
+                <x-ui.icon name="file-earmark-code" class="w-4 h-4" />
                 <span>Cấu trúc File (JSON/ZIP/CSV)</span>
             </button>
             <button type="button" @click="activeTab = 'prompt'"
-                :class="activeTab === 'prompt' ? 'bg-indigo-50 text-indigo-700 font-bold' :
+                :class="activeTab === 'prompt' ? 'bg-[var(--color-brand-soft)] text-brand font-bold' :
                     'text-slate-655 hover:bg-slate-50'"
                 class="w-full text-left px-3 py-2 rounded-lg text-sm transition-colors flex items-center gap-2 cursor-pointer border-0">
-                <i class="bi bi-robot text-base"></i>
+                <x-ui.icon name="robot" class="w-4 h-4" />
                 <span>AI Conversion Prompt</span>
             </button>
         </div>
@@ -430,13 +430,13 @@
             <div x-show="activeTab === 'overview'" class="space-y-4">
                 <h4
                     class="text-base font-extrabold text-slate-800 border-b pb-1.5 flex items-center gap-2 m-0 font-sans">
-                    <i class="bi bi-list-ol text-indigo-600"></i> Quy trình Import câu hỏi (3 bước)
+                    <x-ui.icon name="list-ol" class="w-4 h-4 text-brand" /> Quy trình Import câu hỏi (3 bước)
                 </h4>
 
                 <div class="space-y-4 mt-2">
                     <div class="flex gap-3">
                         <span
-                            class="flex items-center justify-center w-6 h-6 rounded-full bg-indigo-100 text-indigo-700 font-bold shrink-0 text-xs">1</span>
+                            class="flex items-center justify-center w-6 h-6 rounded-full bg-[var(--color-brand-soft)] text-brand font-bold shrink-0 text-xs">1</span>
                         <div>
                             <strong class="text-slate-800 font-bold block">Chọn vị trí đích</strong>
                             <p class="text-xs text-slate-600 mt-1">Chọn đúng Module bài thi cần import (ví dụ: R&W
@@ -446,7 +446,7 @@
                     </div>
                     <div class="flex gap-3">
                         <span
-                            class="flex items-center justify-center w-6 h-6 rounded-full bg-indigo-100 text-indigo-700 font-bold shrink-0 text-xs">2</span>
+                            class="flex items-center justify-center w-6 h-6 rounded-full bg-[var(--color-brand-soft)] text-brand font-bold shrink-0 text-xs">2</span>
                         <div>
                             <strong class="text-slate-800 font-bold block">Chọn phương thức tải dữ liệu</strong>
                             <ul class="list-disc pl-5 text-xs text-slate-600 space-y-1.5 mt-1">
@@ -461,7 +461,7 @@
                     </div>
                     <div class="flex gap-3">
                         <span
-                            class="flex items-center justify-center w-6 h-6 rounded-full bg-indigo-100 text-indigo-700 font-bold shrink-0 text-xs">3</span>
+                            class="flex items-center justify-center w-6 h-6 rounded-full bg-[var(--color-brand-soft)] text-brand font-bold shrink-0 text-xs">3</span>
                         <div>
                             <strong class="text-slate-800 font-bold block">Xem trước (Preview) &amp; Lưu kết
                                 quả</strong>
@@ -478,14 +478,14 @@
             <div x-show="activeTab === 'formatting'" class="space-y-4" style="display: none;">
                 <h4
                     class="text-base font-extrabold text-slate-800 border-b pb-1.5 flex items-center gap-2 m-0 font-sans">
-                    <i class="bi bi-regex text-indigo-600"></i> Quy tắc định dạng câu hỏi
+                    <x-ui.icon name="regex" class="w-4 h-4 text-brand" /> Quy tắc định dạng câu hỏi
                 </h4>
 
-                <div class="bg-indigo-50/40 rounded-xl p-4 border border-indigo-100/60 space-y-4 mt-2">
+                <div class="bg-[var(--color-brand-soft)]/40 rounded-xl p-4 border border-brand/20 space-y-4 mt-2">
                     <div class="space-y-1.5">
                         <strong
-                            class="text-indigo-900 flex items-center gap-1.5 font-bold text-xs uppercase tracking-wider">
-                            <i class="bi bi-calculator"></i> 1. Công thức Toán &amp; Biến số (LaTeX)
+                            class="text-brand flex items-center gap-1.5 font-bold text-xs uppercase tracking-wider">
+                            <x-ui.icon name="calculator" class="w-4 h-4" /> 1. Công thức Toán &amp; Biến số (LaTeX)
                         </strong>
                         <p class="text-xs text-slate-700 leading-normal">
                             Mọi biểu thức toán, phương trình, biến số (ví dụ: $$x$$, $$y$$), phép nhân chia, góc độ,
@@ -501,7 +501,7 @@
                             <li><strong>Escape dấu gạch chéo ngược (\) trong JSON</strong>: Khi viết trong JSON, bắt buộc phải viết đúp thành hai dấu gạch chéo ngược <code>\\</code> để tránh lỗi parser. Ví dụ: <code>"$$ \\\\$5 $$"</code>, <code>"$$ 50\\\\% $$"</code>, <code>"$$ \\\\pi $$"</code>, <code>"$$ \\\\displaystyle \\\\frac{1}{2} $$"</code>.</li>
                         </ul>
                         <div
-                            class="bg-white/95 rounded-lg p-2.5 font-mono text-xs border border-indigo-100/50 mt-1.5 text-slate-800">
+                            class="bg-white/95 rounded-lg p-2.5 font-mono text-xs border border-brand/20 mt-1.5 text-slate-800">
                             Ví dụ thực tế:<br>
                             - Phân số hiển thị rộng: <code class="text-rose-600">$$\displaystyle \frac{1}{2}$$</code><br>
                             - Số mũ: <code class="text-rose-600">$$x^2 + 5x = 6$$</code><br>
@@ -509,12 +509,12 @@
                         </div>
                     </div>
 
-                    <div class="h-px bg-indigo-100/60"></div>
+                    <div class="h-px bg-[var(--color-brand-soft)]/60"></div>
 
                     <div class="space-y-1.5">
                         <strong
-                            class="text-indigo-900 flex items-center gap-1.5 font-bold text-xs uppercase tracking-wider">
-                            <i class="bi bi-grid-3x3"></i> 2. Bảng biểu dữ liệu (HTML Table)
+                            class="text-brand flex items-center gap-1.5 font-bold text-xs uppercase tracking-wider">
+                            <x-ui.icon name="grid-3x3" class="w-4 h-4" /> 2. Bảng biểu dữ liệu (HTML Table)
                         </strong>
                         <p class="text-xs text-slate-700 leading-normal">
                             Khi cần tạo bảng dữ liệu có thể đọc và quét được (thay vì dùng ảnh), hãy mã hóa dưới dạng
@@ -523,12 +523,12 @@
                         </p>
                     </div>
 
-                    <div class="h-px bg-indigo-100/60"></div>
+                    <div class="h-px bg-[var(--color-brand-soft)]/60"></div>
 
                     <div class="space-y-1.5">
                         <strong
-                            class="text-indigo-900 flex items-center gap-1.5 font-bold text-xs uppercase tracking-wider">
-                            <i class="bi bi-image"></i> 3. Ký hiệu Hình ảnh / Đồ thị (Media Placeholder)
+                            class="text-brand flex items-center gap-1.5 font-bold text-xs uppercase tracking-wider">
+                            <x-ui.icon name="image" class="w-4 h-4" /> 3. Ký hiệu Hình ảnh / Đồ thị (Media Placeholder)
                         </strong>
                         <p class="text-xs text-slate-700 leading-normal">
                             Nếu đề bài có hình vẽ đồ thị, biểu đồ hình học hoặc ảnh bảng biểu không thể chuyển sang
@@ -548,13 +548,13 @@
             <div x-show="activeTab === 'specs'" class="space-y-4" style="display: none;">
                 <h4
                     class="text-base font-extrabold text-slate-800 border-b pb-1.5 flex items-center gap-2 m-0 font-sans">
-                    <i class="bi bi-file-earmark-code text-indigo-600"></i> Cấu trúc File &amp; Schema
+                    <x-ui.icon name="file-earmark-code" class="w-4 h-4 text-brand" /> Cấu trúc File &amp; Schema
                 </h4>
 
                 <div class="space-y-3 mt-2">
                     <div class="border border-slate-200 rounded-xl p-3 bg-slate-50/50">
-                        <strong class="text-slate-800 block text-xs font-bold uppercase tracking-wider mb-1"><i
-                                class="bi bi-file-earmark-zip text-indigo-600 mr-1"></i> Gói ZIP chứa hình ảnh</strong>
+                        <strong class="text-slate-800 block text-xs font-bold uppercase tracking-wider mb-1">
+                                <x-ui.icon name="file-earmark-zip" class="w-4 h-4 text-brand mr-1" /> Gói ZIP chứa hình ảnh</strong>
                         <p class="text-xs text-slate-600 leading-relaxed">
                             Nếu import câu hỏi có hình ảnh, file ZIP phải chứa:
                             <br>1. Một file dữ liệu (ví dụ: <code>questions.json</code> hoặc <code>questions.csv</code>)
@@ -565,8 +565,8 @@
 
                     <!-- JSON SECTION -->
                     <div class="border border-slate-200 rounded-xl p-3 bg-slate-50/50 space-y-2">
-                        <strong class="text-slate-800 block text-xs font-bold uppercase tracking-wider mb-1"><i
-                                class="bi bi-filetype-json text-indigo-600 mr-1"></i> Ví dụ JSON hoàn chỉnh (Đầy đủ
+                        <strong class="text-slate-800 block text-xs font-bold uppercase tracking-wider mb-1">
+                                <x-ui.icon name="filetype-json" class="w-4 h-4 text-brand mr-1" /> Ví dụ JSON hoàn chỉnh (Đầy đủ
                             thuộc tính)</strong>
                         <p class="text-[11px] text-slate-500 leading-normal mt-0">Mẫu JSON dưới đây biểu diễn 1 câu R&W
                             (Multiple Choice với passage, LaTeX, giải thích chi tiết), 1 câu Toán MCQ có bảng HTML, và 1
@@ -639,8 +639,8 @@
 
                     <!-- CSV SECTION -->
                     <div class="border border-slate-200 rounded-xl p-3 bg-slate-50/50 space-y-2">
-                        <strong class="text-slate-800 block text-xs font-bold uppercase tracking-wider mb-1"><i
-                                class="bi bi-file-earmark-spreadsheet text-indigo-600 mr-1"></i> Định dạng CSV mẫu (Raw
+                        <strong class="text-slate-800 block text-xs font-bold uppercase tracking-wider mb-1">
+                                <x-ui.icon name="file-earmark-spreadsheet" class="w-4 h-4 text-brand mr-1" /> Định dạng CSV mẫu (Raw
                             CSV Text)</strong>
                         <p class="text-[11px] text-slate-550 leading-normal mt-0">Bạn có thể sao chép đoạn văn bản thô
                             dưới đây, lưu vào file dạng <code>.csv</code> (mã hóa UTF-8) để mở trực tiếp trong Excel
@@ -660,11 +660,11 @@ student_produced_response,hard,algebra,linear_equations_in_one_variable,"If $$3x
                 <div class="space-y-3 flex flex-col h-full">
                     <div class="flex justify-between items-center border-b pb-1.5">
                         <h4 class="text-base font-extrabold text-slate-800 flex items-center gap-2 m-0 font-sans">
-                            <i class="bi bi-robot text-indigo-600"></i> AI Conversion Prompt
+                            <x-ui.icon name="robot" class="w-4 h-4 text-brand" /> AI Conversion Prompt
                         </h4>
                         <button type="button" @click="copyPrompt()"
-                            class="inline-flex items-center gap-1.5 px-3 py-1 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-xs font-bold transition-colors cursor-pointer border-0 shadow-xs">
-                            <i :class="copied ? 'bi bi-check-lg' : 'bi bi-copy'"></i>
+                            class="inline-flex items-center gap-1.5 px-3 py-1 bg-brand hover:bg-brand-hover text-white rounded-lg text-xs font-bold transition-colors cursor-pointer border-0 shadow-xs">
+                            <x-ui.icon :name="copied ? 'check-lg' : 'copy'" class="w-4 h-4" />
                             <span x-text="copied ? 'Đã sao chép!' : 'Sao chép Prompt'"></span>
                         </button>
                     </div>

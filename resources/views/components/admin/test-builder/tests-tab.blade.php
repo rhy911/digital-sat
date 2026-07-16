@@ -10,8 +10,8 @@
             aria-hidden="{{ $tests->isEmpty() ? 'false' : 'true' }}">
             <div class="p-16 text-center">
                 <div
-                    class="mx-auto w-20 h-20 bg-indigo-50 border border-indigo-100 rounded-full flex items-center justify-center mb-6">
-                    <i class="bi bi-journal-text text-3xl text-indigo-600"></i>
+                    class="mx-auto w-20 h-20 bg-brand-soft border border-brand/20 rounded-full flex items-center justify-center mb-6">
+                    <x-ui.icon name="journal-text" class="w-8 h-8 text-brand" />
                 </div>
                 <h3 class="text-xl font-extrabold text-slate-900 mb-2">No practice tests yet</h3>
                 <p class="text-slate-600 mb-8 max-w-sm mx-auto text-sm leading-relaxed">Start with a draft test, then
@@ -32,15 +32,15 @@
                             <label for="testsShowSharedToggle"
                                 class="text-xs font-bold text-slate-600 cursor-pointer select-none">Show shared</label>
                             <input type="checkbox" id="testsShowSharedToggle"
-                                class="w-4 h-4 text-indigo-600 border-slate-300 bg-white rounded cursor-pointer tests-show-shared-toggle">
+                                class="w-4 h-4 text-brand border-slate-300 bg-white rounded cursor-pointer tests-show-shared-toggle">
                         </div>
                     @endif
                     <div class="relative">
-                        <span class="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"><i
-                                class="bi bi-search text-xs"></i></span>
+                        <span class="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"><x-ui.icon name="search"
+                                class="w-3 h-3" /></span>
                         <input type="text"
-                            class="pl-9 pr-4 py-2.5 w-full md:w-72 text-sm rounded-lg border border-slate-200 bg-white text-slate-800 placeholder-slate-400 hover:border-indigo-500/40 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 outline-none transition-all duration-150"
-                            id="testsTableSearch" placeholder="Search by title...">
+                            class="pl-9 pr-4 py-2.5 w-full md:w-72 text-sm rounded-lg border border-slate-200 bg-white text-slate-800 placeholder-slate-400 hover:border-brand/40 focus:border-brand focus:ring-2 focus:ring-brand/20 outline-none transition-all duration-150"
+                            id="testsTableSearch" placeholder="Search by title..." aria-label="Search tests by title">
                     </div>
                 </div>
             </div>
@@ -115,26 +115,26 @@
                     <h3 id="scoreConversionTitle" class="text-base font-extrabold text-slate-900">Score conversion</h3>
                     <p class="mt-1 max-w-2xl text-sm leading-6 text-slate-600">Normal Full tests use a built-in route-neutral table. Import a reviewed form table when you need a more accurate form-specific conversion. Adaptive Full tests use the system IRT mapping.</p>
                 </div>
-                <button type="button" id="scoreConversionClose" class="min-h-11 rounded-lg px-3 text-sm font-bold text-slate-600 hover:bg-slate-100 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600">Close</button>
+                <button type="button" id="scoreConversionClose" class="min-h-11 rounded-lg px-3 text-sm font-bold text-slate-600 hover:bg-slate-100 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand">Close</button>
             </div>
 
             <form id="scoreConversionForm" class="mt-5 space-y-4">
                 <input type="hidden" id="scoreConversionTestId">
                 <div class="grid gap-4 md:grid-cols-2">
                     <label class="grid gap-1.5 text-sm font-bold text-slate-700">Source name
-                        <input id="scoreConversionSource" required maxlength="255" class="min-h-11 rounded-lg border border-slate-300 px-3 font-normal text-slate-900 focus:border-indigo-600 focus:ring-2 focus:ring-indigo-600/20" placeholder="Reviewed practice estimate v1">
+                        <input id="scoreConversionSource" required maxlength="255" class="min-h-11 rounded-lg border border-slate-300 px-3 font-normal text-slate-900 focus:border-brand focus:ring-2 focus:ring-brand/20" placeholder="Reviewed practice estimate v1">
                     </label>
                     <label class="grid gap-1.5 text-sm font-bold text-slate-700">Source URL <span class="font-normal text-slate-500">Optional</span>
-                        <input id="scoreConversionSourceUrl" type="url" maxlength="2048" class="min-h-11 rounded-lg border border-slate-300 px-3 font-normal text-slate-900 focus:border-indigo-600 focus:ring-2 focus:ring-indigo-600/20" placeholder="https://...">
+                        <input id="scoreConversionSourceUrl" type="url" maxlength="2048" class="min-h-11 rounded-lg border border-slate-300 px-3 font-normal text-slate-900 focus:border-brand focus:ring-2 focus:ring-brand/20" placeholder="https://...">
                     </label>
                 </div>
                 <label class="grid gap-1.5 text-sm font-bold text-slate-700">Conversion rows (JSON)
-                    <textarea id="scoreConversionRows" required rows="9" spellcheck="false" class="rounded-lg border border-slate-300 px-3 py-2 font-mono text-xs leading-5 text-slate-900 focus:border-indigo-600 focus:ring-2 focus:ring-indigo-600/20" placeholder='[{"section_type":"math","raw_score":0,"scaled_score":200}]'></textarea>
+                    <textarea id="scoreConversionRows" required rows="9" spellcheck="false" class="rounded-lg border border-slate-300 px-3 py-2 font-mono text-xs leading-5 text-slate-900 focus:border-brand focus:ring-2 focus:ring-brand/20" placeholder='[{"section_type":"math","raw_score":0,"scaled_score":200}]'></textarea>
                 </label>
                 <div id="scoreConversionStatus" class="hidden rounded-lg bg-slate-100 px-4 py-3 text-sm font-semibold text-slate-700" role="status"></div>
                 <div class="flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
-                    <button type="submit" id="scoreConversionImport" class="min-h-11 rounded-lg border border-indigo-600 bg-white px-4 text-sm font-extrabold text-indigo-700 hover:bg-indigo-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600 disabled:cursor-not-allowed disabled:opacity-50">Import draft</button>
-                    <button type="button" id="scoreConversionApprove" disabled class="min-h-11 rounded-lg bg-indigo-700 px-4 text-sm font-extrabold text-white hover:bg-indigo-800 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600 disabled:cursor-not-allowed disabled:opacity-50">Approve conversion</button>
+                    <button type="submit" id="scoreConversionImport" class="min-h-11 rounded-lg border border-brand bg-white px-4 text-sm font-extrabold text-brand hover:bg-brand-soft focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand disabled:cursor-not-allowed disabled:opacity-50">Import draft</button>
+                    <button type="button" id="scoreConversionApprove" disabled class="min-h-11 rounded-lg bg-brand px-4 text-sm font-extrabold text-white hover:bg-brand-hover focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand disabled:cursor-not-allowed disabled:opacity-50">Approve conversion</button>
                 </div>
             </form>
         </section>

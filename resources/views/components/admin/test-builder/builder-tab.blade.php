@@ -10,33 +10,33 @@
             <div class="flex items-center gap-2">
                 <button type="button" id="builderPreviewToggle" aria-expanded="false"
                     class="inline-flex min-h-10 items-center gap-2 rounded-lg border border-slate-300 bg-white px-3 py-2 text-xs font-bold text-slate-700 hover:bg-slate-50 xl:hidden">
-                    <i class="bi bi-eye" aria-hidden="true"></i><span>Show preview</span>
+                    <x-ui.icon name="eye" class="w-4 h-4" aria-hidden="true" /><span>Show preview</span>
                 </button>
                 <span id="builderActiveCountBadge"
-                    class="bg-indigo-50 border border-indigo-100 text-indigo-700 font-bold px-3 py-1 text-xs rounded-full">0
+                    class="bg-[var(--color-brand-soft)] border border-brand/20 text-brand font-bold px-3 py-1 text-xs rounded-full">0
                     questions</span>
             </div>
         </div>
 
         <div class="p-5">
             <div x-data="{ dismissed: localStorage.getItem('test_builder_instructions_dismissed') === 'true' }" x-show="!dismissed"
-                class="bg-indigo-50 border border-indigo-100 rounded-xl p-4 flex gap-4 items-start mb-5 relative group">
+                class="bg-brand-soft border border-brand/20 rounded-xl p-4 flex gap-4 items-start mb-5 relative group">
                 <div
-                    class="w-10 h-10 rounded-lg bg-white border border-indigo-100 flex items-center justify-center shrink-0">
-                    <i class="bi bi-info-circle-fill text-indigo-600 text-lg"></i>
+                    class="w-10 h-10 rounded-lg bg-white border border-brand/20 flex items-center justify-center shrink-0">
+                    <x-ui.icon name="info-circle-fill" class="w-5 h-5 text-brand" />
                 </div>
                 <div class="pr-12">
-                    <h6 class="text-xs font-bold text-indigo-700 mb-1">Start here</h6>
-                    <p class="text-xs text-indigo-800 leading-relaxed mb-0 font-medium">
+                    <h6 class="text-xs font-bold text-brand mb-1">Start here</h6>
+                    <p class="text-xs text-brand leading-relaxed mb-0 font-medium">
                         Choose a module, set the first question number, then add your first question card. The preview
                         updates markdown and LaTeX as you write.
                     </p>
                 </div>
                 <button type="button" id="builderDismissInstructionsBtn"
                     @click="localStorage.setItem('test_builder_instructions_dismissed', 'true'); dismissed = true"
-                    class="absolute top-4 right-4 text-indigo-600 hover:text-indigo-700 text-xs font-bold flex items-center gap-1 cursor-pointer transition-colors duration-150 py-1 px-2.5 rounded-lg bg-white hover:bg-indigo-50 border border-indigo-100"
+                    class="absolute top-4 right-4 text-brand hover:text-brand text-xs font-bold flex items-center gap-1 cursor-pointer transition-colors duration-150 py-1 px-2.5 rounded-lg bg-white hover:bg-[var(--color-brand-soft)] border border-brand/20"
                     aria-label="Dismiss Instructions">
-                    <i class="bi bi-x-lg text-[10px]"></i> Got it
+                    <x-ui.icon name="x-lg" class="w-2.5 h-2.5" /> Got it
                 </button>
             </div>
 
@@ -45,7 +45,7 @@
                     <label for="builderModuleId" class="text-xs font-bold text-slate-600 mb-2 block">Module <span
                             class="text-rose-500">*</span></label>
                     <select
-                        class="form-select tom-select w-full bg-white border border-slate-200 text-slate-800 text-sm placeholder-slate-400 hover:border-indigo-500/40 focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 focus:outline-hidden transition-all duration-200 rounded-xl"
+                        class="form-select tom-select w-full bg-white border border-slate-200 text-slate-800 text-sm placeholder-slate-400 hover:border-brand/40 focus:border-brand focus:ring-4 focus:ring-brand/10 focus:outline-hidden transition-all duration-200 rounded-xl"
                         id="builderModuleId" required>
                         <option value="">Search module...</option>
                         @php
@@ -86,7 +86,7 @@
                     <label for="builderStartPosition" class="text-xs font-bold text-slate-600 mb-2 block">Start at
                         question</label>
                     <input type="number"
-                        class="w-full px-4 py-2.5 rounded-xl border border-slate-200 bg-white text-slate-800 text-sm placeholder-slate-400 hover:border-indigo-500/40 focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 focus:outline-hidden transition-all duration-200"
+                        class="w-full px-4 py-2.5 rounded-xl border border-slate-200 bg-white text-slate-800 text-sm placeholder-slate-400 hover:border-brand/40 focus:border-brand focus:ring-4 focus:ring-brand/10 focus:outline-hidden transition-all duration-200"
                         id="builderStartPosition" value="1" min="1">
                 </div>
             </div>
@@ -98,14 +98,14 @@
                         <div class="rounded-xl border border-slate-200 bg-white overflow-hidden">
                             <div class="px-4 py-3 bg-slate-50 border-b border-slate-200">
                                 <h6 class="text-xs font-bold text-slate-600 flex items-center gap-2 mb-0">
-                                    <i class="bi bi-compass text-indigo-650"></i> Module questions
+                                    <x-ui.icon name="compass" class="w-4 h-4 text-brand" /> Module questions
                                 </h6>
                             </div>
                             <div class="p-3">
                                 <div class="flex flex-col gap-1.5 max-h-[400px] overflow-y-auto"
                                     id="builderSidebarNavigator">
                                     <div class="text-slate-400 text-center py-8 text-xs font-medium">
-                                        <i class="bi bi-layers text-2xl block mb-2 text-slate-350"></i>
+                                        <x-ui.icon name="layers" class="w-6 h-6 block mb-2 text-slate-350" />
                                         Add a question card to start
                                     </div>
                                 </div>
@@ -123,7 +123,7 @@
                         <nav aria-label="breadcrumb">
                             <ol class="flex items-center gap-1.5 text-xs text-slate-500 mb-0">
                                 <li class="flex items-center gap-1.5">
-                                    <i class="bi bi-journal-text text-sm text-slate-400"></i>
+                                    <x-ui.icon name="journal-text" class="w-3.5 h-3.5 text-slate-400" />
                                     <span id="bc-test-title" class="truncate font-semibold text-slate-700 max-w-[100px]"
                                         title="Test">Test</span>
                                 </li>
@@ -131,7 +131,7 @@
                                     <span class="text-slate-450">/</span>
                                     <div class="relative inline-block text-left" x-data="{ open: false }"
                                         @click.outside="open = false">
-                                        <span class="cursor-pointer font-semibold text-slate-700 hover:text-indigo-600"
+                                        <span class="cursor-pointer font-semibold text-slate-700 hover:text-brand"
                                             @click="open = !open" id="bc-section-title">Section</span>
                                         <ul x-show="open" @click="open = false" x-transition style="display: none;"
                                             class="absolute left-0 z-50 mt-2 min-w-48 py-1 shadow-md border border-slate-250 rounded-xl text-xs bg-white text-slate-700"
@@ -142,7 +142,7 @@
                                     <span class="text-slate-450">/</span>
                                     <div class="relative inline-block text-left" x-data="{ open: false }"
                                         @click.outside="open = false">
-                                        <span class="cursor-pointer font-bold text-indigo-650 hover:text-indigo-700"
+                                        <span class="cursor-pointer font-bold text-brand hover:text-brand"
                                             @click="open = !open" id="bc-module-title">Module</span>
                                         <ul x-show="open" @click="open = false" x-transition style="display: none;"
                                             class="absolute left-0 z-50 mt-2 min-w-48 py-1 shadow-md border border-slate-250 rounded-xl text-xs bg-white text-slate-700"
@@ -159,9 +159,9 @@
 
                     <div>
                         <button type="button"
-                            class="w-full py-3 border border-dashed border-indigo-200 hover:border-indigo-500 hover:bg-indigo-50 text-indigo-600 font-semibold text-sm rounded-xl flex items-center justify-center gap-2 cursor-pointer transition-all duration-150"
+                            class="w-full py-3 border border-dashed border-brand/30 hover:border-brand hover:bg-[var(--color-brand-soft)] text-brand font-semibold text-sm rounded-xl flex items-center justify-center gap-2 cursor-pointer transition-all duration-150"
                             id="addBuilderBlockBtn">
-                            <i class="bi bi-plus-circle-fill"></i> Add question card
+                            <x-ui.icon name="plus-circle-fill" class="w-4 h-4" /> Add question card
                         </button>
                     </div>
                 </div>
@@ -173,12 +173,12 @@
                             class="rounded-xl border border-slate-200 bg-white overflow-hidden flex flex-col live-preview-drawer-container">
                             <div class="px-4 py-3 bg-slate-50 border-b border-slate-200">
                                 <h6 class="text-xs font-bold text-slate-600 flex items-center gap-2 mb-0">
-                                    <i class="bi bi-eye-fill text-indigo-600"></i> Live preview
+                                    <x-ui.icon name="eye-fill" class="w-4 h-4 text-brand" /> Live preview
                                 </h6>
                             </div>
                             <div class="p-4 overflow-y-auto grow bg-white" id="builderLivePreviewDrawer">
                                 <div class="text-slate-400 text-center py-12 text-xs font-medium">
-                                    <i class="bi bi-file-earmark-richtext text-3xl block mb-2 text-slate-350"></i>
+                                    <x-ui.icon name="file-earmark-richtext" class="w-8 h-8 block mb-2 text-slate-350" />
                                     A Bluebook-style preview appears as you write.
                                 </div>
                             </div>
@@ -192,24 +192,24 @@
             class="builder-save-footer px-6 py-4 bg-white border-t border-slate-200 flex justify-between items-center gap-4">
             <span id="builderAutoSaveIndicator"
                 class="text-slate-500 text-xs font-medium opacity-0 flex items-center gap-2" aria-live="polite">
-                <i class="bi bi-cloud-check text-emerald-600 text-base"></i> Draft saved at <span
+                <x-ui.icon name="cloud-check" class="w-4 h-4 text-emerald-600" /> Draft saved at <span
                     class="time font-bold text-slate-800"></span>
             </span>
             <div class="flex gap-2">
                 <button type="button"
                     class="px-4 py-2.5 bg-white border border-slate-200 text-slate-700 font-semibold text-sm rounded-lg hover:bg-slate-50 shadow-sm flex items-center justify-center gap-2 cursor-pointer transition-colors duration-150"
                     id="clearBuilderBtn">
-                    <i class="bi bi-trash"></i> Clear all
+                    <x-ui.icon name="trash" class="w-4 h-4" /> Clear all
                 </button>
                 <button type="button"
                     class="px-4 py-2.5 bg-white border border-slate-200 text-slate-700 font-semibold text-sm rounded-lg hover:bg-slate-50 shadow-sm flex items-center justify-center gap-2 cursor-pointer transition-colors duration-150"
                     id="clearUnchangedBtn" title="Clear opened questions with no modifications">
-                    <i class="bi bi-eraser"></i> Clear unchanged
+                    <x-ui.icon name="eraser" class="w-4 h-4" /> Clear unchanged
                 </button>
                 <button type="button"
-                    class="px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold text-sm rounded-lg shadow-sm flex items-center justify-center gap-2 cursor-pointer transition-colors duration-150"
+                    class="px-5 py-2.5 bg-brand hover:bg-brand-hover text-white font-semibold text-sm rounded-lg shadow-sm flex items-center justify-center gap-2 cursor-pointer transition-colors duration-150"
                     id="submitBuilderBtn" title="Shortcut: Ctrl+S">
-                    <i class="bi bi-cloud-arrow-up"></i> Save questions
+                    <x-ui.icon name="cloud-arrow-up" class="w-4 h-4" /> Save questions
                 </button>
             </div>
         </div>

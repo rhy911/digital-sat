@@ -39,12 +39,16 @@ Token quyết định cho redesign (xem `docs/redesign-roadmap.md` Phase 1). Dù
 ## Icon set
 
 - Chọn: **Lucide** (SVG path copy trực tiếp, MIT license, không cần thêm npm package).
-- Hiện trạng: Bootstrap Icons CDN (195 chỗ `bi bi-*`, 24 file, toàn bộ admin/test-builder) và inline SVG tự vẽ rải rác (87 chỗ, 28 file, không có shared component) **chưa đổi** — quyết định ghi lại ở đây, thực thi thật sự dời sang **Phase 6** (Admin/Test Builder migration) khi build `<x-ui.icon>`.
+- **Đã áp dụng ở Phase 6**: `<x-ui.icon name="...">` (`resources/views/components/ui/icon.blade.php`, 85 icon), Bootstrap Icons CDN (`admin/test-builder/index.blade.php:3`) đã gỡ hoàn toàn.
+- JS-rendered markup (Tabulator rows, dropdown menu, alert trong `resources/js/test/dashboard/**`) dùng bản mirror `resources/js/shared/icons.js` (hàm `icon(name, className)`) — cùng bộ path với Blade, giữ đồng bộ khi thêm icon mới.
+- **Ngoại lệ đã biết**: toolbar EasyMDE (rich-text editor cho question stem/passage/explanation) tự render `<i class="bi bi-*">` nội bộ, không nhận SVG/innerHTML tùy chỉnh qua config. Thay vì giữ CDN chỉ cho việc này, đã thêm `resources/css/admin/easymde-toolbar-icons.css` (import vào `test-builder.css`) — CSS mask-image trỏ tới cùng path Lucide, style theo đúng class name `bi-type-bold` v.v. mà EasyMDE tự gắn, không cần font/CDN nào. 87 inline SVG tự vẽ rải rác ở các surface khác (student/teacher) chưa đổi — ngoài phạm vi Phase 6 (chỉ admin/test-builder).
 
 ## Math renderer
 
 - Chọn: **KaTeX** (đang chạy thật ở `components/layouts/test.blade.php`, `student/scores/index.blade.php`, admin builder `helpers.js`).
 - Đã xóa guard chết `window.MathJax` ở `teacher/assignments/partials/attempt-monitor.blade.php` — MathJax chưa từng được load trong repo, block đó là dead code, không có hành vi nào thay đổi.
+- **Phase 7 review**: KaTeX vẫn tải qua CDN (`jsdelivr`) ở cả `scores/index.blade.php` lẫn `components/layouts/test.blade.php`. Quyết định: **giữ nguyên**, không bundle qua Vite — `layouts/test.blade.php` là layout dùng chung với Test Engine (`resources/views/engine/**`), không được đụng vào; tách `scores/index.blade.php` sang bundle riêng sẽ tạo 2 nguồn KaTeX khác nhau (rủi ro version-drift) mà lợi ích không rõ ràng. Ghi nhận là ngoại lệ có chủ đích, không phải nợ kỹ thuật.
+- Geist font (`components/layouts/landing.blade.php:8`, CDN riêng) — landing là marketing register, ngoài phạm vi "product" — giữ nguyên, không đổi.
 
 ## Nợ kỹ thuật đã biết (không xử lý ở Phase 1)
 

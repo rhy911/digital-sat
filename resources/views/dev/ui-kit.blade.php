@@ -85,6 +85,32 @@
             <x-ui.skeleton class="h-4 w-1/3" />
             <x-ui.skeleton class="h-24 w-full" count="3" />
         </section>
+
+        {{-- Icon --}}
+        <section class="space-y-3">
+            <h2 class="text-lg font-bold">Icon</h2>
+            <div class="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6">
+                @foreach ([
+                    'arrow-clockwise', 'arrow-left', 'arrow-repeat', 'arrow-right', 'box-arrow-right', 'box-seam',
+                    'calculator', 'check-all', 'check-circle', 'check-circle-fill', 'check-lg', 'chevron-down',
+                    'chevron-right', 'cloud-arrow-up', 'cloud-check', 'compass', 'copy', 'database',
+                    'database-fill-x', 'diagram-3', 'download', 'eraser', 'exclamation-triangle-fill', 'eye',
+                    'eye-fill', 'file-earmark-code', 'file-earmark-richtext', 'file-earmark-spreadsheet',
+                    'file-earmark-spreadsheet-fill', 'file-earmark-zip', 'filetype-json', 'filter', 'folder-plus',
+                    'folder2-open', 'grid-3x3', 'grid-3x3-gap-fill', 'house', 'image', 'inbox', 'info-circle',
+                    'info-circle-fill', 'journal-text', 'layers', 'layout-sidebar-inset', 'layout-text-window',
+                    'lightning-charge', 'list', 'list-ol', 'list-stars', 'pencil', 'pencil-square', 'people',
+                    'person-plus', 'plus-circle', 'plus-circle-fill', 'plus-lg', 'puzzle-fill', 'question-circle',
+                    'regex', 'robot', 'search', 'sliders', 'tag', 'trash', 'type-italic', 'unlock', 'x-circle',
+                    'x-lg',
+                ] as $iconName)
+                    <div class="flex flex-col items-center gap-2 rounded-lg border border-slate-200 bg-white p-3 text-center">
+                        <x-ui.icon :name="$iconName" class="h-6 w-6 text-slate-700" />
+                        <span class="break-all text-xs text-slate-500">{{ $iconName }}</span>
+                    </div>
+                @endforeach
+            </div>
+        </section>
     </div>
 </body>
 

@@ -162,7 +162,7 @@ u {
 }
 
 .bento-card:hover {
-    transform: translateY(-4px);
+    transform: translateY(-2px);
 }
 
 /* ==================== SECURE LOADING SCREEN ==================== */

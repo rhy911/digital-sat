@@ -11,23 +11,24 @@
             <h5 class="font-bold text-slate-800 mb-0 text-sm">All modules</h5>
             <div class="flex items-center gap-4 flex-wrap md:flex-nowrap">
                 <button
-                    class="inline-flex min-h-10 items-center gap-2 rounded-lg bg-indigo-600 px-3 py-2 text-xs font-bold text-white hover:bg-indigo-700"
-                    x-on:click="$dispatch('open-offcanvas', 'createModuleOffcanvas')"><i class="bi bi-plus-lg"
-                        aria-hidden="true"></i>Create module</button>
+                    class="inline-flex min-h-10 items-center gap-2 rounded-lg bg-brand px-3 py-2 text-xs font-bold text-white hover:bg-brand-hover"
+                    x-on:click="$dispatch('open-offcanvas', 'createModuleOffcanvas')"><x-ui.icon name="plus-lg"
+                        class="w-4 h-4" aria-hidden="true" />Create module</button>
                 @if (auth()->user()->role === 'teacher')
                     <div class="flex items-center gap-2 bg-white px-3 py-1.5 rounded-lg border border-slate-200">
                         <label for="modulesShowSharedToggle"
                             class="text-xs font-bold text-slate-600 cursor-pointer select-none">Show shared</label>
                         <input type="checkbox" id="modulesShowSharedToggle"
-                            class="w-4 h-4 text-indigo-600 border-slate-300 bg-white rounded cursor-pointer modules-show-shared-toggle">
+                            class="w-4 h-4 text-brand border-slate-300 bg-white rounded cursor-pointer modules-show-shared-toggle">
                     </div>
                 @endif
                 <div class="relative">
-                    <span class="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"><i
-                            class="bi bi-search text-xs"></i></span>
+                    <span class="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"><x-ui.icon name="search"
+                            class="w-3 h-3" /></span>
                     <input type="text"
-                        class="pl-9 pr-4 py-2 w-full md:w-64 text-sm rounded-lg border border-slate-200 bg-white text-slate-800 placeholder-slate-400 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 focus:outline-none transition-all duration-150"
-                        id="modulesTableSearch" placeholder="Search by module code...">
+                        class="pl-9 pr-4 py-2 w-full md:w-64 text-sm rounded-lg border border-slate-200 bg-white text-slate-800 placeholder-slate-400 focus:border-brand focus:ring-2 focus:ring-brand/20 focus:outline-none transition-all duration-150"
+                        id="modulesTableSearch" placeholder="Search by module code..."
+                        aria-label="Search modules by code">
                 </div>
             </div>
         </div>
@@ -76,14 +77,14 @@
                             <td class="px-6 py-4">
                                 @if ($module->sections->isEmpty())
                                     <span class="status-chip status-chip-readonly">
-                                        <i class="bi bi-unlock mr-1.5"></i> Standalone
+                                        <x-ui.icon name="unlock" class="w-4 h-4 mr-1.5" /> Standalone
                                     </span>
                                 @else
                                     <div class="flex flex-col gap-1.5">
                                         @foreach ($module->sections as $sec)
                                             <div>
                                                 <span class="status-chip status-chip-shared">
-                                                    <i class="bi bi-tag mr-1.5"></i> {{ $sec->test->title ?? 'Test' }}
+                                                    <x-ui.icon name="tag" class="w-4 h-4 mr-1.5" /> {{ $sec->test->title ?? 'Test' }}
                                                     &raquo; <span
                                                         class="ml-1 opacity-90 text-slate-800 font-medium normal-case">{{ $sec->name }}</span>
                                                 </span>
@@ -103,7 +104,7 @@
                                         'easy' =>
                                             'status-chip-active text-emerald-700 bg-emerald-50 border-emerald-100',
                                         'standard' =>
-                                            'status-chip-shared text-indigo-700 bg-indigo-50 border-indigo-100',
+                                            'status-chip-shared text-brand bg-[var(--color-brand-soft)] border-brand/20',
                                     ];
                                     $colorClass = $diffColors[$module->difficulty_level] ?? 'status-chip-readonly';
                                 @endphp
@@ -124,7 +125,7 @@
                                                 : 'Private (Click to make Public)';
                                         @endphp
                                         <input type="checkbox" data-id="{{ $module->id }}"
-                                            class="w-4 h-4 text-indigo-600 border-slate-300 bg-white rounded cursor-pointer module-public-toggle"
+                                            class="w-4 h-4 text-brand border-slate-300 bg-white rounded cursor-pointer module-public-toggle"
                                             {{ $module->is_public ? 'checked' : '' }} title="{{ $title }}"
                                             aria-label="Toggle public visibility">
                                     @else
@@ -148,14 +149,14 @@
                                             class="px-2.5 py-1.5 text-xs font-bold rounded-lg border border-slate-200 bg-white text-slate-700 cursor-pointer hover:bg-slate-50 flex items-center gap-1"
                                             data-dropdown-trigger="true" aria-expanded="false"
                                             aria-label="Toggle actions menu">
-                                            Actions <i class="bi bi-chevron-down text-[10px]"></i>
+                                            Actions <x-ui.icon name="chevron-down" class="w-2.5 h-2.5" />
                                         </button>
                                         <div class="dropdown-menu hidden">
                                             <button type="button" class="dropdown-item clone-module-btn"
-                                                data-id="{{ $module->id }}"><i class="bi bi-copy mr-2"></i>
+                                                data-id="{{ $module->id }}"><x-ui.icon name="copy" class="w-4 h-4 mr-2" />
                                                 Clone</button>
                                             <button type="button" class="dropdown-item text-danger delete-module-btn"
-                                                data-id="{{ $module->id }}"><i class="bi bi-trash mr-2"></i>
+                                                data-id="{{ $module->id }}"><x-ui.icon name="trash" class="w-4 h-4 mr-2" />
                                                 Delete</button>
                                         </div>
                                     </div>
@@ -170,13 +171,13 @@
                                 <div class="flex flex-col items-center justify-center">
                                     <div
                                         class="w-20 h-20 rounded-full bg-slate-50 border border-slate-200 flex items-center justify-center mb-6">
-                                        <i class="bi bi-inbox text-3xl text-slate-400"></i>
+                                        <x-ui.icon name="inbox" class="w-8 h-8 text-slate-400" />
                                     </div>
                                     <h4 class="text-base font-extrabold text-slate-800">No modules found</h4>
                                     <p class="text-xs text-slate-500 mt-1 max-w-xs mx-auto leading-relaxed">Create one
                                         module, then link it to any section that should use it.</p>
                                     <button
-                                        class="mt-6 px-5 py-3 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold text-sm rounded-lg shadow-sm cursor-pointer"
+                                        class="mt-6 px-5 py-3 bg-brand hover:bg-brand-hover text-white font-semibold text-sm rounded-lg shadow-sm cursor-pointer"
                                         x-on:click="$dispatch('open-offcanvas', 'createModuleOffcanvas')">
                                         Create module
                                     </button>
@@ -193,7 +194,7 @@
     <!-- Create Module Offcanvas -->
     <x-ui.offcanvas id="createModuleOffcanvas" width="w-[480px]">
         <x-slot:titleContent>
-            <i class="bi bi-folder-plus text-indigo-600 mr-3 text-xl"></i> Create module
+            <x-ui.icon name="folder-plus" class="w-5 h-5 text-brand mr-3" /> Create module
         </x-slot:titleContent>
         <form id="moduleForm" class="space-y-6">
             @csrf
@@ -202,7 +203,7 @@
                     class="text-xs font-extrabold text-slate-500 tracking-wider uppercase mb-2 block">Target Test <span
                         class="text-slate-500 font-normal normal-case">(Optional)</span></label>
                 <select
-                    class="form-select tom-select w-full bg-white border border-slate-200 text-slate-800 text-sm placeholder-slate-400 hover:border-indigo-500/40 focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 focus:outline-hidden transition-all duration-200 rounded-xl"
+                    class="form-select tom-select w-full bg-white border border-slate-200 text-slate-800 text-sm placeholder-slate-400 hover:border-brand/40 focus:border-brand focus:ring-4 focus:ring-brand/10 focus:outline-hidden transition-all duration-200 rounded-xl"
                     id="moduleTest" name="test_id">
                     <option value="">No test (Standalone reusable module)</option>
                     @foreach ($tests as $test)
@@ -210,7 +211,7 @@
                     @endforeach
                 </select>
                 <p class="text-[10px] text-slate-550 mt-2 italic flex items-center gap-1.5 font-medium">
-                    <i class="bi bi-info-circle text-indigo-500"></i> Section will be auto-generated inside the test
+                    <x-ui.icon name="info-circle" class="w-4 h-4 text-brand" /> Section will be auto-generated inside the test
                 </p>
             </div>
 
@@ -219,7 +220,7 @@
                     class="text-xs font-extrabold text-slate-500 tracking-wider uppercase mb-2 block">Section Type
                     <span class="text-rose-500">*</span></label>
                 <select
-                    class="w-full px-4 py-2.5 rounded-xl border border-slate-200 bg-white text-slate-800 text-sm hover:border-indigo-500/40 focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 focus:outline-hidden transition-all duration-200 appearance-none bg-no-repeat bg-position-[right_1rem_center] bg-size-[1em_1em]"
+                    class="w-full px-4 py-2.5 rounded-xl border border-slate-200 bg-white text-slate-800 text-sm hover:border-brand/40 focus:border-brand focus:ring-4 focus:ring-brand/10 focus:outline-hidden transition-all duration-200 appearance-none bg-no-repeat bg-position-[right_1rem_center] bg-size-[1em_1em]"
                     style="background-image: url('data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 fill=%22none%22 viewBox=%220 0 24 24%22 stroke=%22%2394a3b8%22 stroke-width=%222%22%3E%3Cpath stroke-linecap=%22round%22 stroke-linejoin=%22round%22 d=%22M19 9l-7 7-7-7%22 /%3E%3C/svg%3E')"
                     id="moduleSectionType" name="section_type" required onchange="applyModuleDefaults(this)">
                     <option value="reading_writing" data-type="reading_writing">Reading and Writing</option>
@@ -232,7 +233,7 @@
                     class="text-xs font-extrabold text-slate-500 tracking-wider uppercase mb-2 block">Module Key /
                     Unique Code <span class="text-slate-500 font-normal normal-case">(Optional)</span></label>
                 <input type="text"
-                    class="w-full px-4 py-2.5 rounded-xl border border-slate-200 bg-white text-slate-800 text-sm placeholder-slate-400 hover:border-indigo-500/40 focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 focus:outline-hidden transition-all duration-200 font-mono font-bold"
+                    class="w-full px-4 py-2.5 rounded-xl border border-slate-200 bg-white text-slate-800 text-sm placeholder-slate-400 hover:border-brand/40 focus:border-brand focus:ring-4 focus:ring-brand/10 focus:outline-hidden transition-all duration-200 font-mono font-bold"
                     id="moduleKey" name="key" placeholder="e.g. RW_M1_STANDARD_01">
             </div>
 
@@ -242,7 +243,7 @@
                         class="text-xs font-extrabold text-slate-500 tracking-wider uppercase mb-2 block">Module Type #
                         <span class="text-rose-500">*</span></label>
                     <select
-                        class="w-full px-4 py-2.5 rounded-xl border border-slate-200 bg-white text-slate-800 text-sm hover:border-indigo-500/40 focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 focus:outline-hidden transition-all duration-200 appearance-none bg-no-repeat bg-position-[right_1rem_center] bg-size-[1em_1em]"
+                        class="w-full px-4 py-2.5 rounded-xl border border-slate-200 bg-white text-slate-800 text-sm hover:border-brand/40 focus:border-brand focus:ring-4 focus:ring-brand/10 focus:outline-hidden transition-all duration-200 appearance-none bg-no-repeat bg-position-[right_1rem_center] bg-size-[1em_1em]"
                         style="background-image: url('data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 fill=%22none%22 viewBox=%220 0 24 24%22 stroke=%22%2394a3b8%22 stroke-width=%222%22%3E%3Cpath stroke-linecap=%22round%22 stroke-linejoin=%22round%22 d=%22M19 9l-7 7-7-7%22 /%3E%3C/svg%3E')"
                         id="moduleNumber" name="module_number" required>
                         <option value="1">1 (Standard)</option>
@@ -254,7 +255,7 @@
                         class="text-xs font-extrabold text-slate-500 tracking-wider uppercase mb-2 block">Difficulty
                         <span class="text-rose-500">*</span></label>
                     <select
-                        class="w-full px-4 py-2.5 rounded-xl border border-slate-200 bg-white text-slate-800 text-sm hover:border-indigo-500/40 focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 focus:outline-hidden transition-all duration-200 appearance-none bg-no-repeat bg-position-[right_1rem_center] bg-size-[1em_1em]"
+                        class="w-full px-4 py-2.5 rounded-xl border border-slate-200 bg-white text-slate-800 text-sm hover:border-brand/40 focus:border-brand focus:ring-4 focus:ring-brand/10 focus:outline-hidden transition-all duration-200 appearance-none bg-no-repeat bg-position-[right_1rem_center] bg-size-[1em_1em]"
                         style="background-image: url('data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 fill=%22none%22 viewBox=%220 0 24 24%22 stroke=%22%2394a3b8%22 stroke-width=%222%22%3E%3Cpath stroke-linecap=%22round%22 stroke-linejoin=%22round%22 d=%22M19 9l-7 7-7-7%22 /%3E%3C/svg%3E')"
                         id="difficultyLevel" name="difficulty_level" required>
                         <option value="standard">Standard (M1)</option>
@@ -270,7 +271,7 @@
                         class="text-xs font-extrabold text-slate-500 tracking-wider uppercase mb-2 block">Duration
                         (min) <span class="text-rose-500">*</span></label>
                     <input type="number"
-                        class="w-full px-4 py-2.5 rounded-xl border border-slate-200 bg-white text-slate-800 text-sm placeholder-slate-400 hover:border-indigo-500/40 focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 focus:outline-hidden transition-all duration-200"
+                        class="w-full px-4 py-2.5 rounded-xl border border-slate-200 bg-white text-slate-800 text-sm placeholder-slate-400 hover:border-brand/40 focus:border-brand focus:ring-4 focus:ring-brand/10 focus:outline-hidden transition-all duration-200"
                         id="moduleDuration" name="duration_minutes" value="32" required>
                 </div>
                 <div>
@@ -278,7 +279,7 @@
                         class="text-xs font-extrabold text-slate-500 tracking-wider uppercase mb-2 block">Questions
                         <span class="text-rose-500">*</span></label>
                     <input type="number"
-                        class="w-full px-4 py-2.5 rounded-xl border border-slate-200 bg-white text-slate-800 text-sm placeholder-slate-400 hover:border-indigo-500/40 focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 focus:outline-hidden transition-all duration-200"
+                        class="w-full px-4 py-2.5 rounded-xl border border-slate-200 bg-white text-slate-800 text-sm placeholder-slate-400 hover:border-brand/40 focus:border-brand focus:ring-4 focus:ring-brand/10 focus:outline-hidden transition-all duration-200"
                         id="totalQuestions" name="total_questions" value="27" required>
                 </div>
             </div>
@@ -286,22 +287,22 @@
             <div class="flex items-center">
                 <label class="flex items-center group cursor-pointer">
                     <input type="checkbox" name="is_public" value="1"
-                        class="w-4 h-4 text-indigo-600 border-slate-300 bg-white rounded-md cursor-pointer">
+                        class="w-4 h-4 text-brand border-slate-300 bg-white rounded-md cursor-pointer">
                     <span
-                        class="ml-2.5 text-xs font-extrabold text-slate-500 group-hover:text-indigo-600 uppercase tracking-wider">Public
+                        class="ml-2.5 text-xs font-extrabold text-slate-500 group-hover:text-brand uppercase tracking-wider">Public
                         visibility</span>
                 </label>
             </div>
 
-            <div class="bg-indigo-50 border border-indigo-100 rounded-xl p-4 flex gap-3 shadow-xs">
-                <i class="bi bi-info-circle-fill text-indigo-600 text-base shrink-0 mt-0.5"></i>
-                <p class="text-[11px] text-indigo-800 leading-relaxed mb-0 font-medium">Standalone modules are reusable
+            <div class="bg-[var(--color-brand-soft)] border border-brand/20 rounded-xl p-4 flex gap-3 shadow-xs">
+                <x-ui.icon name="info-circle-fill" class="w-4 h-4 text-brand shrink-0 mt-0.5" />
+                <p class="text-[11px] text-brand leading-relaxed mb-0 font-medium">Standalone modules are reusable
                     and can be associated with multiple test sections later.</p>
             </div>
 
             <div class="pt-4">
                 <button type="submit"
-                    class="w-full py-3.5 bg-indigo-600 hover:bg-indigo-700 text-white font-extrabold rounded-xl text-xs uppercase tracking-wider cursor-pointer">
+                    class="w-full py-3.5 bg-brand hover:bg-brand-hover text-white font-extrabold rounded-xl text-xs uppercase tracking-wider cursor-pointer">
                     Create module
                 </button>
             </div>

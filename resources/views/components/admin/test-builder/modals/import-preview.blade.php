@@ -1,7 +1,7 @@
 <x-ui.modal id="importPreviewModal" max-width="xl">
     <x-slot:title>
         <div class="flex items-center gap-2">
-            <i class="bi bi-file-earmark-spreadsheet-fill text-indigo-600 text-base"></i> Import Data Preview
+            <x-ui.icon name="file-earmark-spreadsheet-fill" class="w-4 h-4 text-brand" /> Import Data Preview
         </div>
     </x-slot:title>
 

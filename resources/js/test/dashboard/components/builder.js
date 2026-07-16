@@ -7,10 +7,11 @@ import {
     dashboardJsonResponse,
     dashboardResourceUrl,
 } from '../core/config.js';
-import { 
+import {
     getPremiumToolbar, compileMarkdownToHtml, getTomSelectValue, showAlert, showCustomConfirm,
     stripTags, humanizeUnderscores, escapeHtml
 } from '../utils/helpers.js';
+import { icon } from '../../../shared/icons.js';
 
 let builderBlockCount = 0;
 const builderEditors = {};
@@ -63,11 +64,11 @@ export function updateBuilderGridState() {
                 const div = document.createElement('div');
                 div.className = "text-slate-500 text-center py-12 px-4 border border-dashed border-slate-200 rounded-2xl bg-slate-50 builder-workspace-placeholder";
                 div.innerHTML = `
-                    <i class="bi bi-arrow-left-circle text-3xl block mb-3 text-indigo-600"></i>
+                    ${icon('arrow-left-circle', 'w-9 h-9 block mb-3 text-brand')}
                     <p class="text-xs text-slate-500 font-medium leading-relaxed mb-0">
-                        This module has <strong class="text-indigo-600">${existingCount}</strong> existing question(s).<br>
-                        Select a question from the <strong class="text-indigo-650">Workspace Index</strong> on the left to edit it,<br>
-                        or click <strong class="text-indigo-600">Add Another Question</strong> below to create a new one.
+                        This module has <strong class="text-brand">${existingCount}</strong> existing question(s).<br>
+                        Select a question from the <strong class="text-brand">Workspace Index</strong> on the left to edit it,<br>
+                        or click <strong class="text-brand">Add Another Question</strong> below to create a new one.
                     </p>
                 `;
                 container.appendChild(div);
@@ -84,7 +85,7 @@ export function updateBuilderGridState() {
         if (blockCount === 0) {
             badge.className = "bg-slate-100 border border-slate-200 text-slate-500 font-bold px-3 py-1 text-xs rounded-full";
         } else {
-            badge.className = "bg-indigo-50 border border-indigo-100 text-indigo-700 font-bold px-3 py-1 text-xs rounded-full";
+            badge.className = "bg-[var(--color-brand-soft)] border border-brand/20 text-brand font-bold px-3 py-1 text-xs rounded-full";
         }
     }
 }
@@ -211,7 +212,7 @@ export function renderLivePreviewCard(block) {
         const sprVal = block.querySelector('.builder-spr-answers').value.trim() || '______';
         questionBodyHtml = `
             <div class="answer-input-container p-3.5 bg-amber-50/30 rounded-lg mt-3.5 border border-amber-200">
-                <label class="block mb-2 font-bold text-amber-800 text-[10px] uppercase tracking-wider"><i class="bi bi-pencil-fill"></i> Student Produced Response:</label>
+                <label class="block mb-2 font-bold text-amber-800 text-[10px] uppercase tracking-wider">${icon('pencil-fill', 'w-4 h-4')} Student Produced Response:</label>
                 <div class="w-full max-w-[140px] px-3 py-1.5 rounded-lg border border-amber-200 bg-white font-mono text-center text-base text-amber-700 tracking-wider">
                     ${sprVal}
                 </div>
@@ -231,7 +232,7 @@ export function renderLivePreviewCard(block) {
 
     previewCard.innerHTML = `
         <div class="bg-slate-50 px-4 py-2.5 border-b border-slate-200 flex justify-between items-center">
-            <span class="font-bold text-xs text-indigo-600"><i class="bi bi-file-earmark-text"></i> Live Preview Q#${qNum}</span>
+            <span class="font-bold text-xs text-brand">${icon('file-earmark-text', 'w-4 h-4')} Live Preview Q#${qNum}</span>
             <span class="bg-slate-200 text-slate-600 font-mono text-[9px] px-2 py-0.5 rounded-md uppercase tracking-wider">${qType === 'multiple_choice' ? 'MCQ' : 'SPR'}</span>
         </div>
         <div class="p-4 space-y-3.5">
@@ -268,7 +269,7 @@ export function highlightSidebarItem(block) {
     if (!navigator) return;
     
     navigator.querySelectorAll('.list-group-item').forEach(el => {
-        el.classList.remove('border-indigo-500/50', 'bg-indigo-50');
+        el.classList.remove('border-brand/50', 'bg-[var(--color-brand-soft)]');
     });
 
     const qId = block.dataset.questionId;
@@ -282,7 +283,7 @@ export function highlightSidebarItem(block) {
     }
     
     if (targetItem) {
-        targetItem.classList.add('border-indigo-500/50', 'bg-indigo-50');
+        targetItem.classList.add('border-brand/50', 'bg-[var(--color-brand-soft)]');
         targetItem.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
     }
 }
@@ -319,9 +320,9 @@ export function refreshQuestionBlockNumbers() {
         const titleEl = block.querySelector('.text-sm.font-extrabold.text-white') || block.querySelector('.text-secondary') || block.querySelector('.text-sm.font-bold.text-slate-800');
         if (titleEl) {
             if (qId) {
-                titleEl.innerHTML = `<i class="bi bi-question-circle text-indigo-600"></i> Question #${qNum} <span class="bg-indigo-50 border border-indigo-100 text-indigo-700 font-bold px-1.5 py-0.5 text-[10px] rounded uppercase ml-2">Existing ID: ${qId}</span>`;
+                titleEl.innerHTML = `${icon('question-circle', 'w-4 h-4 text-brand')} Question #${qNum} <span class="bg-[var(--color-brand-soft)] border border-brand/20 text-brand font-bold px-1.5 py-0.5 text-[10px] rounded uppercase ml-2">Existing ID: ${qId}</span>`;
             } else {
-                titleEl.innerHTML = `<i class="bi bi-question-circle text-indigo-600"></i> Question #${qNum}`;
+                titleEl.innerHTML = `${icon('question-circle', 'w-4 h-4 text-brand')} Question #${qNum}`;
             }
         }
 
@@ -330,7 +331,7 @@ export function refreshQuestionBlockNumbers() {
             if (previewCard) {
                 const textEl = previewCard.querySelector('.card-header span.fw-bold');
                 if (textEl) {
-                    textEl.innerHTML = `<i class="bi bi-file-earmark-text"></i> Live Preview Q#${qNum}`;
+                    textEl.innerHTML = `${icon('file-earmark-text', 'w-4 h-4')} Live Preview Q#${qNum}`;
                 }
             }
         }
@@ -405,7 +406,7 @@ export function clearUnchangedQuestions() {
         if (drawer && drawer.querySelectorAll('[data-preview-index]').length === 0) {
             drawer.innerHTML = `
                 <div class="text-slate-400 text-center py-12 text-xs font-medium">
-                    <i class="bi bi-file-earmark-richtext text-3xl block mb-2 text-slate-350"></i>
+                    ${icon('file-earmark-richtext', 'w-9 h-9 block mb-2 text-slate-350')}
                     Live compilation of STEM and formulas will appear here in real-time
                 </div>
             `;
@@ -426,7 +427,7 @@ export function updateSidebarNavigator() {
     if (existingQs.length === 0 && blocks.length === 0) {
         navigator.innerHTML = `
             <div class="text-slate-400 text-center py-8 text-xs font-medium">
-                <i class="bi bi-layers text-2xl block mb-2 text-slate-350"></i>
+                ${icon('layers', 'w-6 h-6 block mb-2 text-slate-350')}
                 No questions. Add a question to start.
             </div>
         `;
@@ -454,7 +455,7 @@ export function updateSidebarNavigator() {
             item.dataset.navQuestionId = qId;
             
             if (isLoaded) {
-                item.className = "list-group-item list-group-item-action border border-indigo-200 bg-indigo-50/50 rounded-xl p-2.5 flex flex-col gap-1 mb-2 hover:bg-indigo-50 transition-all duration-150 active-question-item";
+                item.className = "list-group-item list-group-item-action border border-brand/30 bg-[var(--color-brand-soft)]/50 rounded-xl p-2.5 flex flex-col gap-1 mb-2 hover:bg-[var(--color-brand-soft)] transition-all duration-150 active-question-item";
             } else {
                 item.className = "list-group-item list-group-item-action border border-slate-200 bg-white hover:bg-slate-50 rounded-xl p-2.5 flex flex-col gap-1 mb-2 transition-all duration-150";
             }
@@ -466,12 +467,12 @@ export function updateSidebarNavigator() {
                 ? `<span class="bg-slate-100 text-slate-655 text-slate-600 font-mono text-[9px] px-1.5 py-0.5 rounded capitalize">${q.difficulty}</span>`
                 : '';
 
-            const badgeBg = isLoaded ? 'bg-indigo-55 bg-indigo-50 border border-indigo-100' : 'bg-slate-100 border border-slate-200';
-            const badgeText = isLoaded ? 'text-indigo-700' : 'text-slate-600';
+            const badgeBg = isLoaded ? 'bg-[var(--color-brand-soft)] bg-[var(--color-brand-soft)] border border-brand/20' : 'bg-slate-100 border border-slate-200';
+            const badgeText = isLoaded ? 'text-brand' : 'text-slate-600';
 
             item.innerHTML = `
                 <div class="flex items-center justify-between gap-2">
-                    <span class="font-bold text-xs ${isLoaded ? 'text-indigo-600' : 'text-slate-700'}">
+                    <span class="font-bold text-xs ${isLoaded ? 'text-brand' : 'text-slate-700'}">
                         Q#${q.question_number || (i + 1)} 
                         <span class="font-bold px-1 py-0.5 text-[8px] rounded uppercase ${badgeBg} ${badgeText}">
                             ${isLoaded ? 'Editing' : 'Stored'}
@@ -479,7 +480,7 @@ export function updateSidebarNavigator() {
                     </span>
                     <span class="text-[9px] font-mono text-slate-400">ID: ${q.id}</span>
                 </div>
-                <div class="text-[10px] ${isLoaded ? 'text-indigo-800/80' : 'text-slate-500'} truncate mt-0.5" title="${escapeHtml(stemText || '(Empty stem)')}">
+                <div class="text-[10px] ${isLoaded ? 'text-brand/80' : 'text-slate-500'} truncate mt-0.5" title="${escapeHtml(stemText || '(Empty stem)')}">
                     ${snippet || '(Empty stem)'}
                 </div>
                 <div class="flex items-center justify-between gap-1 mt-1">
@@ -494,12 +495,12 @@ export function updateSidebarNavigator() {
                     loadedBlock.scrollIntoView({ behavior: 'smooth', block: 'start' });
                     syncLivePreviewScroll(loadedBlock);
                     // Highlight the item
-                    navigator.querySelectorAll('.list-group-item').forEach(el => el.classList.remove('border-indigo-500/50', 'bg-indigo-50'));
-                    item.classList.add('border-indigo-500/50', 'bg-indigo-50');
+                    navigator.querySelectorAll('.list-group-item').forEach(el => el.classList.remove('border-brand/50', 'bg-[var(--color-brand-soft)]'));
+                    item.classList.add('border-brand/50', 'bg-[var(--color-brand-soft)]');
                 } else {
                     item.innerHTML = `
                         <div class="text-slate-500 text-center py-2 text-xs font-medium">
-                            <div class="animate-spin inline-block w-4 h-4 border-2 border-indigo-600 border-t-transparent rounded-full mr-2 align-middle"></div>
+                            <div class="animate-spin inline-block w-4 h-4 border-2 border-brand border-t-transparent rounded-full mr-2 align-middle"></div>
                             <span class="align-middle">Loading details...</span>
                         </div>
                     `;
@@ -540,9 +541,9 @@ export function updateSidebarNavigator() {
 
             item.innerHTML = `
                 <div class="flex items-center justify-between gap-2">
-                    <span class="font-bold text-xs text-indigo-650 text-indigo-600">
-                        Q#${existingQs.length + i + 1} 
-                        <span class="bg-indigo-50 border border-indigo-100 text-indigo-700 font-bold px-1 py-0.5 text-[8px] rounded uppercase">Draft</span>
+                    <span class="font-bold text-xs text-brand text-brand">
+                        Q#${existingQs.length + i + 1}
+                        <span class="bg-[var(--color-brand-soft)] border border-brand/20 text-brand font-bold px-1 py-0.5 text-[8px] rounded uppercase">Draft</span>
                     </span>
                     <span class="badge bg-slate-100 border border-slate-250 text-slate-600 font-mono text-[8px] uppercase">${qType}</span>
                 </div>
@@ -559,8 +560,8 @@ export function updateSidebarNavigator() {
                 renderLivePreviewCard(block);
                 block.scrollIntoView({ behavior: 'smooth', block: 'start' });
                 syncLivePreviewScroll(block);
-                navigator.querySelectorAll('.list-group-item').forEach(el => el.classList.remove('border-indigo-500/50', 'bg-indigo-50'));
-                item.classList.add('border-indigo-500/50', 'bg-indigo-50');
+                navigator.querySelectorAll('.list-group-item').forEach(el => el.classList.remove('border-brand/50', 'bg-[var(--color-brand-soft)]'));
+                item.classList.add('border-brand/50', 'bg-[var(--color-brand-soft)]');
             };
 
             navigator.appendChild(item);
@@ -653,7 +654,7 @@ export function addBuilderBlock() {
         if (drawer && drawer.querySelectorAll('[data-preview-index]').length === 0) {
             drawer.innerHTML = `
                 <div class="text-slate-400 text-center py-12 text-xs font-medium">
-                    <i class="bi bi-file-earmark-richtext text-3xl block mb-2 text-slate-350"></i>
+                    ${icon('file-earmark-richtext', 'w-9 h-9 block mb-2 text-slate-350')}
                     Live compilation of STEM and formulas will appear here in real-time
                 </div>
             `;
@@ -725,7 +726,7 @@ export function clearBuilderWorkspace() {
     if (previewDrawer) {
         previewDrawer.innerHTML = `
             <div class="text-slate-400 text-center py-12 text-xs font-medium">
-                <i class="bi bi-file-earmark-richtext text-3xl block mb-2 text-slate-350"></i>
+                ${icon('file-earmark-richtext', 'w-9 h-9 block mb-2 text-slate-350')}
                 Live compilation of STEM and formulas will appear here in real-time
             </div>
         `;
@@ -751,7 +752,7 @@ export async function fetchModuleQuestions(moduleId) {
     if (navigator) {
         navigator.innerHTML = `
             <div class="text-slate-500 text-center py-8 text-xs font-medium">
-                <div class="animate-spin inline-block w-5 h-5 border-2 border-indigo-600 border-t-transparent rounded-full mb-2"></div>
+                <div class="animate-spin inline-block w-5 h-5 border-2 border-brand border-t-transparent rounded-full mb-2"></div>
                 <div>Fetching existing questions...</div>
             </div>
         `;
@@ -831,7 +832,7 @@ export async function loadExistingQuestionIntoWorkspace(qId, autoScroll = true) 
         // Update the display title
         const titleEl = block.querySelector('.text-sm.font-extrabold.text-white');
         if (titleEl) {
-            titleEl.innerHTML = `<i class="bi bi-question-circle text-amber-400"></i> Question #${builderBlockCount} <span class="bg-indigo-500/20 text-indigo-300 font-extrabold px-1.5 py-0.5 text-[10px] rounded uppercase ml-2">Existing ID: ${question.id}</span>`;
+            titleEl.innerHTML = `${icon('question-circle', 'w-4 h-4 text-amber-400')} Question #${builderBlockCount} <span class="bg-brand/20 text-brand font-extrabold px-1.5 py-0.5 text-[10px] rounded uppercase ml-2">Existing ID: ${question.id}</span>`;
         }
 
         container.appendChild(block);
@@ -933,7 +934,7 @@ export async function loadExistingQuestionIntoWorkspace(qId, autoScroll = true) 
             if (drawer && drawer.querySelectorAll('[data-preview-index]').length === 0) {
                 drawer.innerHTML = `
                     <div class="text-slate-500 text-center py-12 text-xs font-medium">
-                        <i class="bi bi-file-earmark-richtext text-3xl block mb-2 text-slate-655"></i>
+                        ${icon('file-earmark-richtext', 'w-9 h-9 block mb-2 text-slate-655')}
                         Live compilation of STEM and formulas will appear here in real-time
                     </div>
                 `;
@@ -1320,7 +1321,7 @@ export async function restoreBuilderDraft() {
                 block.dataset.questionId = bData.id;
                 const titleEl = block.querySelector('.text-sm.font-extrabold.text-white');
                 if (titleEl) {
-                    titleEl.innerHTML = `<i class="bi bi-question-circle text-amber-400"></i> Question #${builderBlockCount} <span class="bg-indigo-500/20 text-indigo-300 font-extrabold px-1.5 py-0.5 text-[10px] rounded uppercase ml-2">Existing ID: ${bData.id}</span>`;
+                    titleEl.innerHTML = `${icon('question-circle', 'w-4 h-4 text-amber-400')} Question #${builderBlockCount} <span class="bg-brand/20 text-brand font-extrabold px-1.5 py-0.5 text-[10px] rounded uppercase ml-2">Existing ID: ${bData.id}</span>`;
                 }
             }
 
@@ -1415,7 +1416,7 @@ export async function restoreBuilderDraft() {
                 if (drawer && drawer.querySelectorAll('[data-preview-index]').length === 0) {
                     drawer.innerHTML = `
                         <div class="text-slate-500 text-center py-12 text-xs font-medium">
-                            <i class="bi bi-file-earmark-richtext text-3xl block mb-2 text-slate-655"></i>
+                            ${icon('file-earmark-richtext', 'w-9 h-9 block mb-2 text-slate-655')}
                             Live compilation of STEM and formulas will appear here in real-time
                         </div>
                     `;

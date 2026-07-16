@@ -1,5 +1,6 @@
 import { BASE_URL } from '../core/config.js';
 import { showAlert } from '../utils/helpers.js';
+import { icon } from '../../../shared/icons.js';
 
 const WORKFLOWS = {
     full_length: {
@@ -419,12 +420,12 @@ export function initQuickAuthorWizard({ onCreated } = {}) {
         const tr = document.createElement('tr');
         tr.className = 'wizard-module-row';
         tr.innerHTML = `
-            <td class="px-3 py-2.5"><label class="sr-only" for="wizard-section-${id}">Section</label><select id="wizard-section-${id}" class="wizard-section min-h-11 w-full rounded-lg border border-slate-300 bg-white px-2 py-2 text-slate-800 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20"><option value="reading_writing">R&amp;W</option><option value="math">Math</option></select></td>
-            <td class="px-3 py-2.5"><label class="sr-only" for="wizard-module-${id}">Module number</label><input id="wizard-module-${id}" type="number" min="1" max="10" class="wizard-module-number min-h-11 w-20 rounded-lg border border-slate-300 bg-white px-2 py-2 text-slate-800 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20"></td>
-            <td class="px-3 py-2.5"><label class="sr-only" for="wizard-difficulty-${id}">Difficulty</label><select id="wizard-difficulty-${id}" class="wizard-difficulty min-h-11 w-full rounded-lg border border-slate-300 bg-white px-2 py-2 text-slate-800 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20"><option value="standard">Standard</option><option value="easy">Easy</option><option value="hard">Hard</option></select></td>
-            <td class="px-3 py-2.5"><label class="sr-only" for="wizard-duration-${id}">Duration in minutes</label><input id="wizard-duration-${id}" type="number" min="1" max="240" class="wizard-duration min-h-11 w-24 rounded-lg border border-slate-300 bg-white px-2 py-2 text-slate-800 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20"></td>
-            <td class="px-3 py-2.5"><label class="sr-only" for="wizard-questions-${id}">Question count</label><input id="wizard-questions-${id}" type="number" min="1" max="100" class="wizard-questions min-h-11 w-24 rounded-lg border border-slate-300 bg-white px-2 py-2 text-slate-800 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20"></td>
-            <td class="px-3 py-2.5 text-right"><button type="button" class="wizard-remove-row inline-flex h-11 w-11 items-center justify-center rounded-lg text-rose-700 hover:bg-rose-50 focus-visible:ring-2 focus-visible:ring-rose-500/30"><i class="bi bi-trash" aria-hidden="true"></i></button></td>`;
+            <td class="px-3 py-2.5"><label class="sr-only" for="wizard-section-${id}">Section</label><select id="wizard-section-${id}" class="wizard-section min-h-11 w-full rounded-lg border border-slate-300 bg-white px-2 py-2 text-slate-800 focus:border-brand focus:ring-2 focus:ring-brand/20"><option value="reading_writing">R&amp;W</option><option value="math">Math</option></select></td>
+            <td class="px-3 py-2.5"><label class="sr-only" for="wizard-module-${id}">Module number</label><input id="wizard-module-${id}" type="number" min="1" max="10" class="wizard-module-number min-h-11 w-20 rounded-lg border border-slate-300 bg-white px-2 py-2 text-slate-800 focus:border-brand focus:ring-2 focus:ring-brand/20"></td>
+            <td class="px-3 py-2.5"><label class="sr-only" for="wizard-difficulty-${id}">Difficulty</label><select id="wizard-difficulty-${id}" class="wizard-difficulty min-h-11 w-full rounded-lg border border-slate-300 bg-white px-2 py-2 text-slate-800 focus:border-brand focus:ring-2 focus:ring-brand/20"><option value="standard">Standard</option><option value="easy">Easy</option><option value="hard">Hard</option></select></td>
+            <td class="px-3 py-2.5"><label class="sr-only" for="wizard-duration-${id}">Duration in minutes</label><input id="wizard-duration-${id}" type="number" min="1" max="240" class="wizard-duration min-h-11 w-24 rounded-lg border border-slate-300 bg-white px-2 py-2 text-slate-800 focus:border-brand focus:ring-2 focus:ring-brand/20"></td>
+            <td class="px-3 py-2.5"><label class="sr-only" for="wizard-questions-${id}">Question count</label><input id="wizard-questions-${id}" type="number" min="1" max="100" class="wizard-questions min-h-11 w-24 rounded-lg border border-slate-300 bg-white px-2 py-2 text-slate-800 focus:border-brand focus:ring-2 focus:ring-brand/20"></td>
+            <td class="px-3 py-2.5 text-right"><button type="button" class="wizard-remove-row inline-flex h-11 w-11 items-center justify-center rounded-lg text-rose-700 hover:bg-rose-50 focus-visible:ring-2 focus-visible:ring-rose-500/30">${icon('trash', 'w-4 h-4')}</button></td>`;
 
         const [section, moduleNumber, difficulty, duration, questions] = row;
         tr.querySelector('.wizard-section').value = section;

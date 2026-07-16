@@ -231,7 +231,7 @@
                                             </ul>
                                         </details>
                                     @else
-                                        <span style="color: var(--cw-success, #16a34a); font-weight: 600; font-size: 0.85rem;">All correct! 🎉</span>
+                                        <span style="color: var(--cw-success, #16a34a); font-weight: 600; font-size: 0.85rem;">All correct!</span>
                                     @endif
                                 </td>
                             </tr>

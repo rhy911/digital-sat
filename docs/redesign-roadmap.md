@@ -2,7 +2,7 @@
 
 Tài liệu này dùng để bắt đầu cuộc hội thoại mới tập trung **thực hiện** cải thiện UI/UX. Không cần đọc lại audit gốc — mọi quyết định và context cần thiết đã tóm tắt ở đây.
 
-## Tiến độ (cập nhật 2026-07-15)
+## Tiến độ (cập nhật 2026-07-16)
 
 | Phase | Trạng thái |
 |---|---|
@@ -11,9 +11,9 @@ Tài liệu này dùng để bắt đầu cuộc hội thoại mới tập trung
 | 3 — Shared Chrome | ✅ Xong (2 header migrate sang `x-ui.dropdown`, logout hợp nhất, dead code dọn sạch) |
 | 4 — Student Surfaces | ✅ Xong (trừ link "Administrator?" — chủ động giữ nguyên, không phải lỗi kỹ thuật) |
 | 5 — Teacher Surfaces | ✅ Xong (kể cả 3 tính năng mới: view-attempts+prev/next, bulk-approve, CSV/print export) |
-| 6 — Admin/Test Builder | ⬜ Chưa làm |
-| 7 — Cross-cutting Polish | ⬜ Chưa làm |
-| 8 — Verify | ⬜ Chưa làm |
+| 6 — Admin/Test Builder | ✅ Xong (icon Lucide đầy đủ 85 icon + JS mirror, indigo→brand, hash-sync tab, Bootstrap Icons CDN gỡ hoàn toàn) |
+| 7 — Cross-cutting Polish | ✅ Xong (contrast AA, 4 input thiếu label thật đã fix, motion/emoji/unicode badge dọn sạch, CDN KaTeX/Geist ghi nhận là ngoại lệ có chủ đích) |
+| 8 — Verify | ⬜ Đang làm |
 
 Chi tiết từng mục xem checklist bên dưới (đã tick `[x]` + ghi chú deviation/lý do).
 
@@ -109,34 +109,40 @@ Verdict: không phải AI-slop — sản phẩm đa tác giả, thiếu design s
 
 ---
 
-## Phase 6 — Migration: Admin / Test Builder (phụ thuộc Phase 2-3)
+## Phase 6 — Migration: Admin / Test Builder (phụ thuộc Phase 2-3) ✅ XONG (có điều chỉnh scope)
 
-- [ ] Thay Tailwind thô + `indigo-*` + Bootstrap Icons bằng `x-ui.*` + token brand trong `admin/test-builder/index.blade.php` và các component con (`components/admin/test-builder/**`).
-- [ ] Sidebar active-tab: chuyển từ `sessionStorage`-only sang sync URL/hash (theo đúng pattern `teacher/classes/show.blade.php` đã làm đúng) — cho deep-link được.
-- [ ] Áp nguyên tắc giảm modal-first cho luồng "create test" (`admin/test-builder/index.blade.php:145`).
-- [ ] Đồng bộ header/nav Test Builder với header chung đã làm ở Phase 3 (không còn "cảm giác sản phẩm khác").
-- [ ] Dọn markup single-line dày đặc ở `admin/teacher-applications/index.blade.php` khi tiện tay sửa (không bắt buộc, dễ lỗi khi migrate).
+- [x] Icon: build `<x-ui.icon>` (`components/ui/icon.blade.php`, 85 icon Lucide, path fetch trực tiếp từ `unpkg.com/lucide-static` — không đoán path). Swap toàn bộ `bi bi-*` trong `index.blade.php` + 15 component con. **Phát hiện ngoài audit gốc**: JS trong `resources/js/test/dashboard/**` (Tabulator rows, dropdown, alert) cũng render `bi bi-*` qua template string (innerHTML), không phải chỉ Blade — build thêm `resources/js/shared/icons.js` (mirror cùng path) cho các chỗ này. Bootstrap Icons CDN (`index.blade.php:3`) đã gỡ hoàn toàn.
+- [x] **Ngoại lệ phát sinh**: toolbar EasyMDE (rich-text editor) tự render `<i class="bi bi-*">` nội bộ qua config `className`, không nhận SVG. Giải quyết bằng CSS mask-image riêng (`resources/css/admin/easymde-toolbar-icons.css`) thay vì giữ CDN — xem `DESIGN.md`.
+- [x] `indigo-*` → brand token (`bg-brand`, `text-brand`, `bg-brand-soft`, v.v.) trong toàn bộ `index.blade.php` + 15 component con + 10 file JS liên quan (pixel không đổi, chỉ tên class — theo ghi nhận ở Phase 1 rằng override CSS đã trỏ đúng brand từ trước).
+- [x] Sidebar active-tab: chuyển từ `sessionStorage`-only sang sync URL/hash (theo pattern `teacher/classes/show.blade.php`) — deep-link `#tests`/`#builder`/... hoạt động, đồng bộ cả Alpine (`index.blade.php`) lẫn vanilla JS (`test/dashboard/index.js` `renderActiveTab()`).
+- [x] **Đánh giá lại, giữ nguyên có chủ đích**: "create test" vẫn dùng modal (`createTestWizardModal`) — đây là luồng author nhiều bước thật sự (5 bước), ép phẳng ra trang riêng rủi ro cao hơn lợi ích; đã đảm bảo trigger là `<x-ui.button>` thật, giữ nguyên hành vi đóng/mở hiện có.
+- [ ] **Chưa làm**: đồng bộ header/nav Test Builder với header chung Phase 3 — không có admin header partial nào tồn tại để tái dùng (`components/layouts/admin.blade.php` chỉ là shell trần, không như `layouts/student.blade.php`); dựng mới một shared admin header là thay đổi kiến trúc lớn hơn phạm vi phiên này, để quyết định riêng.
+- [ ] **Chưa làm**: dọn markup single-line `admin/teacher-applications/index.blade.php` — đúng như đánh giá gốc, rủi ro cao hơn lợi ích, bỏ qua.
 
-**Output**: Test Builder cùng ngôn ngữ thị giác với student/teacher.
-
----
-
-## Phase 7 — Cross-cutting Polish (phụ thuộc Phase 4-6 xong phần lớn)
-
-- [ ] Accessibility sweep: audit input thiếu `for="..."` (grep signal ~40% chưa gắn label rõ), contrast `text-[#94a3b8]` trên nền trắng (`auth/signin.blade.php:77`, `auth/role-select.blade.php:32`) — làm đậm hơn để đạt 4.5:1 AA.
-- [ ] Chuyển `aria-expanded` sync từ `setTimeout` hack sang binding khai báo (Alpine `x-bind`) — theo sau Phase 3 dropdown consolidation.
-- [ ] Gỡ CDN không quản lý (KaTeX, Bootstrap Icons) nếu chưa gỡ hết ở Phase 1/6 — bundle qua Vite.
-- [ ] Gỡ decorative motion còn sót: `.bento-card:hover { translateY(-4px) }`, emoji "🎉" (`teacher/assignments/show.blade.php:241`), unicode "✓ Completed" badge text (chuyển vào icon set của `<x-ui.status-badge>`).
+**Output**: Test Builder dùng chung `<x-ui.icon>`/brand token/hash-sync với student/teacher; Bootstrap Icons CDN gỡ hoàn toàn khỏi product surface. Header hợp nhất và teacher-applications markup vẫn còn nợ kỹ thuật, để lại cho đợt sau.
 
 ---
 
-## Phase 8 — Verify
+## Phase 7 — Cross-cutting Polish (phụ thuộc Phase 4-6 xong phần lớn) ✅ XONG
 
-- [ ] Chạy lại `/impeccable critique` toàn scope, so điểm với baseline 17/40.
-- [ ] Đi lại 3 persona trong report gốc — xác nhận từng red flag đã hết:
-  - **Alex** (power user): review nhiều học sinh không cần modal-per-row, có CSV export, có bulk-approve.
-  - **Jordan** (first-timer): score report hiểu được trong 10s, sign-out là control thật, assignment start không cần modal.
-  - **Sam** (accessibility): keyboard-only đi hết luồng chính, contrast đạt AA, dropdown không lệch trạng thái với screen reader.
+- [x] Contrast: `text-[#94a3b8]` → `text-slate-600` ở cả 3 file (`auth/signin.blade.php:77`, `auth/role-select.blade.php:32`, và `auth/remembered.blade.php:42` — phát hiện thêm ngoài audit gốc, cùng pattern).
+- [x] Accessibility sweep: audit lại phát hiện claim "~40% input thiếu label" phần lớn là **false positive** — nhiều input đã có label hợp lệ qua wrap ngầm định (`<label>Text<input></label>`, không cần `for=`) như `profile/show.blade.php`, `teacher/assignments/show.blade.php`, `auth/reset-password.blade.php` (qua component `x-auth.password-field` đã có `for`/`id` đúng). **Gap thật tìm thấy**: 4 ô tìm kiếm chỉ có `placeholder`, không có label nào (`tests-tab.blade.php`, `sections-tab.blade.php`, `modules-tab.blade.php`, `questions/pool-table.blade.php`) — đã thêm `aria-label` tương ứng.
+- [x] `aria-expanded` sync qua `setTimeout` — audit lại xác nhận **đã sạch từ Phase 3**, không còn `setTimeout` nào wrap `aria-expanded`. Bỏ khỏi scope Phase 7 (không có việc thật để làm).
+- [x] Gỡ CDN Bootstrap Icons — hoàn thành ở Phase 6. KaTeX và Geist (landing) — **giữ nguyên có chủ đích**, xem `DESIGN.md` mục Math renderer để biết lý do (parity với Test Engine layout dùng chung, landing ngoài phạm vi "product").
+- [x] Gỡ decorative motion còn sót: `.bento-card:hover { translateY(-4px) }` → `-2px` (`app.css:165`), emoji "🎉" xóa (`teacher/assignments/show.blade.php:234`), unicode "✓ Completed"/"✓ Active" → `<x-ui.icon name="check-lg">` (3 file: `completed-practice-card.blade.php`, `practice-toggle-header.blade.php`, `tests-toggle-header.blade.php`).
+
+---
+
+## Phase 8 — Verify ✅ XONG (điểm tăng, còn vài mục mở)
+
+- [x] Chạy lại `/impeccable critique` toàn scope (dual-agent: design review + detector). Điểm **17/40 → 23/40** (Poor → Fair band). Report đầy đủ: `.impeccable/critique/2026-07-16T08-28-27Z__full-product-non-engine-redesign.md`.
+- [x] Đi lại 3 persona — kết quả trộn (đã fix thật + vẫn còn gap thật, không tự nhận hết):
+  - **Alex** (power user): review nhiều học sinh không cần modal-per-row ✅ (prev/next đã verify hoạt động đúng qua render test trực tiếp, không phải bug như critique ban đầu nghi ngờ), có CSV export ✅, có bulk-approve ✅. Còn thiếu: document management (`teacher/classes/show.blade.php`) chưa có bulk action.
+  - **Jordan** (first-timer): score report hiểu được trong 10s ✅ (progressive disclosure đã verify). "Administrator?" link vẫn còn ở role-select — giữ nguyên có chủ đích (Phase 4), không phải lỗi kỹ thuật. Emoji role icon (📖/🎓) ở `auth/signup.blade.php:103,109` sót lại — chưa fix.
+  - **Sam** (accessibility): dropdown state đồng bộ ✅. Contrast: 3 file auth đã fix, nhưng phát hiện thêm gap contrast mới ở `pool-table.blade.php` (Test Builder, `text-slate-400` trên `bg-slate-50`) — sweep Phase 7 không quét lại đúng surface vừa migrate ở Phase 6.
+- [ ] **Việc còn mở sau critique** (chưa làm ở phiên này, để quyết định tiếp): (1) `pool-table.blade.php` còn hệ thống `.status-chip`/button/dropdown song song với `<x-ui.*>` — Consistency & Standards vẫn 2/4; (2) `indigo-*` còn sống ở `teacher/assignments/partials/attempt-monitor.blade.php:248,256,272` (ngoài phạm vi Phase 6, chưa đụng); (3) contrast `pool-table.blade.php` table header; (4) emoji signup.
+
+**Kết luận Phase 8**: tiến bộ thật, đo được (17→23), không phải chỉ tự nhận. Consistency & Standards — mục tiêu số 1 của cả đợt redesign — vẫn là điểm yếu nhất (2/4), vì chính surface vừa migrate (Test Builder `pool-table.blade.php`) tái hiện đúng anti-pattern ban đầu ở quy mô nhỏ hơn.
 
 ---
 

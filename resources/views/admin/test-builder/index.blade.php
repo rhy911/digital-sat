@@ -1,6 +1,5 @@
 <x-layouts.admin title="Test Dashboard">
     @push('styles')
-        <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
         @vite(['resources/css/admin/test-builder.css'])
     @endpush
 
@@ -11,7 +10,13 @@
 
     <div data-test-builder-shell class="test-builder-shell flex bg-[#f6f8fb] text-[#0f172a] relative font-sans"
         x-data="{
-            activeTab: sessionStorage.getItem('testDashboardActiveTab') ? sessionStorage.getItem('testDashboardActiveTab').replace('#', '') : 'tests',
+            activeTab: (() => {
+                const hashTab = window.location.hash.replace('#', '');
+                const tabs = ['tests', 'builder', 'sections', 'modules', 'questions'];
+                if (tabs.includes(hashTab)) return hashTab;
+                const stored = sessionStorage.getItem('testDashboardActiveTab');
+                return stored ? stored.replace('#', '') : 'tests';
+            })(),
             mobileSidebarOpen: false,
             tabs: ['tests', 'builder', 'sections', 'modules', 'questions'],
             activateTab(tab) {
@@ -20,6 +25,7 @@
                 }
                 this.activeTab = tab;
                 this.mobileSidebarOpen = false;
+                history.replaceState(null, '', `${window.location.pathname}${window.location.search}#${tab}`);
             },
             focusNext() {
                 let cur = this.tabs.indexOf(this.activeTab);
@@ -56,13 +62,13 @@
                     <span class="test-builder-sidebar-wordmark"><x-brand.wordmark size="lg"
                             tone="inverse" /></span>
                     <span
-                        class="test-builder-sidebar-label text-[10px] text-indigo-400 font-extrabold tracking-widest uppercase">Content
+                        class="test-builder-sidebar-label text-[10px] text-brand font-extrabold tracking-widest uppercase">Content
                         Suite</span>
                 </a>
                 <button type="button" class="test-builder-sidebar-toggle" data-sidebar-toggle
                     aria-controls="testDashboardSidebar" aria-expanded="true" aria-label="Compact sidebar"
                     title="Compact sidebar">
-                    <i class="bi bi-layout-sidebar-inset" aria-hidden="true"></i>
+                    <x-ui.icon name="layout-sidebar-inset" aria-hidden="true" />
                 </button>
             </div>
 
@@ -76,7 +82,7 @@
                     data-bs-target="#tests" type="button" role="tab"
                     :aria-selected="activeTab === 'tests' ? 'true' : 'false'" aria-controls="tests"
                     :tabindex="activeTab === 'tests' ? '0' : '-1'" title="Practice Tests">
-                    <i class="bi bi-journal-text text-lg"></i><span class="test-builder-sidebar-label">Practice
+                    <x-ui.icon name="journal-text" class="w-5 h-5" /><span class="test-builder-sidebar-label">Practice
                         Tests</span>
                 </button>
                 <button
@@ -85,7 +91,7 @@
                     data-bs-target="#builder" type="button" role="tab"
                     :aria-selected="activeTab === 'builder' ? 'true' : 'false'" aria-controls="builder"
                     :tabindex="activeTab === 'builder' ? '0' : '-1'" title="Easy Builder">
-                    <i class="bi bi-pencil-square text-lg"></i><span class="test-builder-sidebar-label">Easy
+                    <x-ui.icon name="pencil-square" class="w-5 h-5" /><span class="test-builder-sidebar-label">Easy
                         Builder</span>
                 </button>
 
@@ -96,7 +102,7 @@
                     x-on:click="activateTab('sections')" data-bs-target="#sections" type="button" role="tab"
                     :aria-selected="activeTab === 'sections' ? 'true' : 'false'" aria-controls="sections"
                     :tabindex="activeTab === 'sections' ? '0' : '-1'" title="Sections">
-                    <i class="bi bi-folder2-open text-lg"></i><span class="test-builder-sidebar-label">Sections</span>
+                    <x-ui.icon name="folder2-open" class="w-5 h-5" /><span class="test-builder-sidebar-label">Sections</span>
                 </button>
                 <button
                     class="sidebar-link mt-1 w-full text-left px-3 py-2.5 rounded-lg text-sm flex items-center gap-3 cursor-pointer"
@@ -104,7 +110,7 @@
                     x-on:click="activateTab('modules')" data-bs-target="#modules" type="button" role="tab"
                     :aria-selected="activeTab === 'modules' ? 'true' : 'false'" aria-controls="modules"
                     :tabindex="activeTab === 'modules' ? '0' : '-1'" title="Modules">
-                    <i class="bi bi-box-seam text-lg"></i><span class="test-builder-sidebar-label">Modules</span>
+                    <x-ui.icon name="box-seam" class="w-5 h-5" /><span class="test-builder-sidebar-label">Modules</span>
                 </button>
                 <button
                     class="sidebar-link mt-1 w-full text-left px-3 py-2.5 rounded-lg text-sm flex items-center gap-3 cursor-pointer"
@@ -112,7 +118,7 @@
                     x-on:click="activateTab('questions')" data-bs-target="#questions" type="button" role="tab"
                     :aria-selected="activeTab === 'questions' ? 'true' : 'false'" aria-controls="questions"
                     :tabindex="activeTab === 'questions' ? '0' : '-1'" title="Question Bank">
-                    <i class="bi bi-database text-lg"></i><span class="test-builder-sidebar-label">Question
+                    <x-ui.icon name="database" class="w-5 h-5" /><span class="test-builder-sidebar-label">Question
                         Bank</span>
                 </button>
             </nav>
@@ -127,7 +133,7 @@
                     <button @click="mobileSidebarOpen = !mobileSidebarOpen"
                         class="lg:hidden p-2 text-slate-600 hover:text-slate-900 hover:bg-slate-100 rounded-lg mr-3 shrink-0"
                         aria-label="Open navigation menu">
-                        <i class="bi bi-list text-2xl"></i>
+                        <x-ui.icon name="list" class="w-6 h-6" />
                     </button>
                     <div class="min-w-0">
                         <h1 id="dashboard-active-title"
@@ -139,35 +145,35 @@
                 </div>
                 @auth
                     <div class="flex items-center gap-2 shrink-0 sm:gap-3">
-                        <button type="button"
-                            class="inline-flex min-h-11 items-center gap-2 rounded-lg bg-indigo-600 px-4 py-2 text-sm font-bold text-white transition-colors hover:bg-indigo-700 focus-visible:ring-4 focus-visible:ring-indigo-500/20"
-                            aria-label="Create test"
+                        <x-ui.button variant="primary" aria-label="Create test"
                             x-on:click="if (!window.confirmBuilderNavigation || window.confirmBuilderNavigation()) $dispatch('open-modal', 'createTestWizardModal')">
-                            <i class="bi bi-plus-lg text-xs" aria-hidden="true"></i><span class="hidden sm:inline">Create
-                                test</span>
-                        </button>
+                            <x-slot:icon>
+                                <x-ui.icon name="plus-lg" class="w-3.5 h-3.5" />
+                            </x-slot:icon>
+                            <span class="hidden sm:inline">Create test</span>
+                        </x-ui.button>
                         <div class="hidden sm:flex flex-col text-right">
                             <span
                                 class="text-sm font-bold text-slate-800 leading-none">{{ auth()->user()->name ?? (auth()->user()->username ?? auth()->user()->email) }}</span>
                             <span
-                                class="text-[10px] text-indigo-600 font-extrabold uppercase tracking-widest mt-1.5 flex items-center gap-2 justify-end">
-                                <span class="w-1.5 h-1.5 rounded-full bg-indigo-600"></span>
+                                class="text-[10px] text-brand font-extrabold uppercase tracking-widest mt-1.5 flex items-center gap-2 justify-end">
+                                <span class="w-1.5 h-1.5 rounded-full bg-brand"></span>
                                 {{ auth()->user()->role === 'teacher' ? 'Teacher' : 'Administrator' }}
                             </span>
                         </div>
                         <div class="hidden sm:block w-px h-8 bg-slate-200"></div>
                         <div class="flex items-center gap-2">
                             <a href="{{ $workspaceUrl }}"
-                                class="text-slate-500 hover:text-indigo-600 flex items-center justify-center w-10 h-10 rounded-xl hover:bg-slate-100"
+                                class="text-slate-500 hover:text-brand flex items-center justify-center w-10 h-10 rounded-xl hover:bg-slate-100"
                                 title="Return to {{ $workspaceLabel }}" aria-label="Return to {{ $workspaceLabel }}">
-                                <i class="bi bi-house text-xl"></i>
+                                <x-ui.icon name="house" class="w-5 h-5" />
                             </a>
                             <form id="logoutForm" action="{{ route('logout') }}" method="POST">
                                 @csrf
                                 <button type="submit"
                                     class="text-slate-500 hover:text-rose-600 flex items-center justify-center w-10 h-10 rounded-xl hover:bg-slate-100 cursor-pointer"
                                     title="Logout" aria-label="Logout">
-                                    <i class="bi bi-box-arrow-right text-xl"></i>
+                                    <x-ui.icon name="box-arrow-right" class="w-5 h-5" />
                                 </button>
                             </form>
                         </div>

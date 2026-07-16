@@ -1,10 +1,11 @@
 import { 
     BULK_PREVIEW_URL, CSV_BULK_PREVIEW_URL, BULK_STORE_URL, CSV_BULK_URL, BASE_URL 
 } from '../core/config.js';
-import { 
-    showAlert, showCustomConfirm, getTomSelectValue, humanizeUnderscores, 
-    processMedia, captureTomSelectPreservation 
+import {
+    showAlert, showCustomConfirm, getTomSelectValue, humanizeUnderscores,
+    processMedia, captureTomSelectPreservation
 } from '../utils/helpers.js';
+import { icon } from '../../../shared/icons.js';
 
 export function setBulkQuestionsJson(obj) {
     const ta = document.getElementById('bulkQuestionsJson');
@@ -440,8 +441,8 @@ export function renderPreview(items) {
             }
             if (content.trim()) {
                 passageHtml = `
-                    <div class="p-3 mb-3 bg-slate-900/40 border-l-4 border-indigo-500 rounded-r-lg shadow-sm">
-                        <h6 class="text-indigo-400 text-xs font-bold mb-1.5 flex items-center gap-1"><i class="bi bi-justify-left"></i> Passage</h6>
+                    <div class="p-3 mb-3 bg-slate-900/40 border-l-4 border-brand rounded-r-lg shadow-sm">
+                        <h6 class="text-brand text-xs font-bold mb-1.5 flex items-center gap-1">${icon('justify-left', 'w-4 h-4')} Passage</h6>
                         <div class="passage-content text-slate-300 text-xs leading-relaxed" style="max-height: 150px; overflow-y: auto;">
                             ${content}
                         </div>
@@ -467,7 +468,7 @@ export function renderPreview(items) {
                                 <div class="flex items-center gap-2">
                                     <strong class="flex items-center justify-center w-6 h-6 rounded-full bg-slate-800/80 border border-slate-700/60 text-xs text-slate-300">${c.label}</strong>
                                     <div class="grow text-xs text-slate-200">${content}</div>
-                                    ${c.is_correct ? '<i class="bi bi-check-circle-fill text-emerald-400"></i>' : ''}
+                                    ${c.is_correct ? icon('check-circle-fill', 'w-4 h-4 text-emerald-400') : ''}
                                 </div>
                             </div>
                         `;
@@ -493,7 +494,7 @@ export function renderPreview(items) {
         if (item.explanation) {
             expHtml = `
                 <div class="mt-3 p-3 bg-slate-900/40 border border-slate-800/60 rounded-xl text-xs">
-                    <h6 class="font-bold text-slate-400 mb-1.5 flex items-center gap-1"><i class="bi bi-info-circle"></i> Explanation:</h6>
+                    <h6 class="font-bold text-slate-400 mb-1.5 flex items-center gap-1">${icon('info-circle', 'w-4 h-4')} Explanation:</h6>
                     <div class="text-slate-400 leading-relaxed">${processMedia(item.explanation)}</div>
                 </div>
             `;
@@ -503,9 +504,9 @@ export function renderPreview(items) {
             <div class="dash-panel p-5 mb-4">
                 <div class="flex justify-between items-center flex-wrap gap-2 border-b border-slate-800/80 pb-3 mb-3">
                     <div class="flex items-center gap-2 flex-wrap">
-                        <span class="inline-flex items-center px-2 py-0.5 rounded bg-indigo-500/10 text-indigo-400 border border-indigo-500/20 font-extrabold text-[10px]">Item ${index + 1}</span>
+                        <span class="inline-flex items-center px-2 py-0.5 rounded bg-brand/10 text-brand border border-brand/20 font-extrabold text-[10px]">Item ${index + 1}</span>
                         ${sectionBadge}
-                        <span class="inline-flex items-center px-2 py-0.5 rounded bg-indigo-500/10 text-indigo-400 border border-indigo-500/20 font-extrabold text-[10px] uppercase">${humanizeUnderscores(item.skill_domain || '')}</span>
+                        <span class="inline-flex items-center px-2 py-0.5 rounded bg-brand/10 text-brand border border-brand/20 font-extrabold text-[10px] uppercase">${humanizeUnderscores(item.skill_domain || '')}</span>
                         ${item.skill_subdomain ? `<span class="inline-flex items-center px-2 py-0.5 rounded bg-slate-800 text-slate-400 border border-slate-700/60 font-semibold text-[10px]">${item.skill_subdomain}</span>` : ''}
                     </div>
                     <div class="flex items-center gap-2">
@@ -602,14 +603,14 @@ export function initPremiumDropzones() {
         ['dragenter', 'dragover'].forEach(eventName => {
             zone.addEventListener(eventName, (e) => {
                 e.preventDefault();
-                zone.classList.add('border-indigo-500', 'bg-indigo-500/5', 'shadow-lg');
+                zone.classList.add('border-brand', 'bg-brand/5', 'shadow-lg');
             }, false);
         });
 
         ['dragleave', 'drop'].forEach(eventName => {
             zone.addEventListener(eventName, (e) => {
                 e.preventDefault();
-                zone.classList.remove('border-indigo-500', 'bg-indigo-500/5', 'shadow-lg');
+                zone.classList.remove('border-brand', 'bg-brand/5', 'shadow-lg');
             }, false);
         });
 
@@ -821,7 +822,7 @@ export function initBulkImport() {
             showAlert('danger', 'Error: ' + err.message);
         } finally {
             btn.disabled = false;
-            btn.innerHTML = '<i class="bi bi-cloud-arrow-up text-lg leading-none"></i> Import ZIP Package';
+            btn.innerHTML = `${icon('cloud-arrow-up', 'w-5 h-5 leading-none')} Import ZIP Package`;
         }
     });
 
