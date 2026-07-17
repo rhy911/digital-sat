@@ -1,0 +1,1612 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Student Progress & Scores Redesign - Digital SAT</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Architects+Daughter&family=IBM+Plex+Mono:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            /* Palette */
+            --desk-bg: #151922;
+            --wood-rim: #2E1A0C;
+            --wood-grain: #1F1107;
+            
+            /* Manila Binder paper */
+            --manila-paper: #FAF6EE;
+            --manila-folder: #EFE4CE;
+            --manila-folder-dark: #DECFA9;
+            --manila-border: #E5D6B6;
+            --grid-line: rgba(37, 99, 235, 0.05);
+            --ruled-line: rgba(220, 38, 38, 0.06);
+            
+            /* UI Accents */
+            --ink-primary: #1E293B;
+            --ink-secondary: #475569;
+            --ink-faint: #94A3B8;
+            
+            --brand-blue: #2563EB;
+            --brand-blue-hover: #1D4ED8;
+            --brand-blue-soft: rgba(37, 99, 235, 0.08);
+            
+            /* Highlighters */
+            --highlighter-green: rgba(16, 185, 129, 0.65);
+            --highlighter-green-edge: #059669;
+            --highlighter-amber: rgba(245, 158, 11, 0.65);
+            --highlighter-amber-edge: #D97706;
+            --highlighter-red: rgba(239, 68, 68, 0.65);
+            --highlighter-red-edge: #DC2626;
+            
+            /* Spine & Tabs */
+            --binder-spine: #C59D4E;
+            --tab-active-bg: #FAF6EE;
+            --tab-inactive-bg: #DECFA9;
+            
+            --shadow-sm: 0 2px 4px rgba(0, 0, 0, 0.05);
+            --shadow-md: 0 8px 24px rgba(0, 0, 0, 0.16);
+            --shadow-lg: 0 24px 48px rgba(0, 0, 0, 0.4);
+            
+            --transition-smooth: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        html, body {
+            height: 100vh;
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+            background: var(--desk-bg);
+            color: var(--ink-primary);
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            font-size: 13px;
+            line-height: 1.5;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        .mono {
+            font-family: 'IBM Plex Mono', monospace;
+        }
+
+        .handwriting {
+            font-family: 'Architects Daughter', cursive;
+            color: #1E3A8A;
+        }
+
+        /* App Layout Grid */
+        .app-shell {
+            display: grid;
+            grid-template-columns: 72px 1fr;
+            height: 100vh;
+            width: 100vw;
+        }
+
+        /* ============ ICON RAIL ============ */
+        .icon-rail {
+            background: #0B0E14;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px 0;
+            z-index: 10;
+            border-right: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .rail-logo {
+            width: 36px;
+            height: 36px;
+            border-radius: 10px;
+            background: linear-gradient(135deg, var(--brand-blue), #1D4ED8);
+            color: #fff;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 800;
+            font-size: 16px;
+            margin-bottom: 30px;
+            text-decoration: none;
+            box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3);
+        }
+
+        .rail-nav {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            flex: 1;
+        }
+
+        .rail-item {
+            width: 44px;
+            height: 44px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #64748B;
+            position: relative;
+            text-decoration: none;
+            transition: var(--transition-smooth);
+        }
+
+        .rail-item svg {
+            width: 20px;
+            height: 20px;
+        }
+
+        .rail-item:hover {
+            color: #fff;
+            background: rgba(255, 255, 255, 0.06);
+        }
+
+        .rail-item.active {
+            color: #fff;
+            background: var(--brand-blue);
+            box-shadow: 0 4px 12px rgba(37, 99, 235, 0.2);
+        }
+
+        .rail-item.active::after {
+            content: '';
+            position: absolute;
+            left: -4px;
+            top: 14px;
+            width: 4px;
+            height: 16px;
+            background: #fff;
+            border-radius: 0 4px 4px 0;
+        }
+
+        .rail-footer {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+            align-items: center;
+        }
+
+        .user-avatar {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            background: var(--manila-folder);
+            border: 2px solid rgba(255, 255, 255, 0.1);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            color: var(--ink-primary);
+            font-size: 13px;
+        }
+
+        /* ============ WORKSPACE / DESK ============ */
+        .desk-workspace {
+            height: 100vh;
+            overflow-y: auto;
+            position: relative;
+            padding: 30px;
+            /* Wood Desk Background (Pure CSS Texture) */
+            background: 
+                linear-gradient(rgba(0,0,0,0.25), rgba(0,0,0,0.45)),
+                repeating-linear-gradient(
+                    to bottom,
+                    #1C130D 0px,
+                    #1C130D 3px,
+                    #271B12 3px,
+                    #271B12 6px
+                );
+            box-shadow: inset 0 0 120px rgba(0,0,0,0.9);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .desk-workspace__inner {
+            width: 100%;
+            max-width: 1080px;
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        /* ============ HEADER ============ */
+        .workspace-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            color: #fff;
+        }
+
+        .workspace-header__title h1 {
+            font-size: 24px;
+            font-weight: 800;
+            letter-spacing: -0.03em;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .workspace-header__title p {
+            color: #94A3B8;
+            font-size: 13px;
+            margin-top: 4px;
+        }
+
+        .workspace-header__actions {
+            display: flex;
+            gap: 12px;
+        }
+
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 9px 18px;
+            border-radius: 8px;
+            font-weight: 700;
+            font-size: 12.5px;
+            transition: var(--transition-smooth);
+            text-decoration: none;
+            box-shadow: var(--shadow-sm);
+            border: none;
+            cursor: pointer;
+        }
+
+        .btn-primary {
+            background: var(--brand-blue);
+            color: #fff;
+        }
+
+        .btn-primary:hover {
+            background: var(--brand-blue-hover);
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(37, 99, 235, 0.2);
+        }
+
+        .btn-secondary {
+            background: rgba(255, 255, 255, 0.08);
+            color: #fff;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .btn-secondary:hover {
+            background: rgba(255, 255, 255, 0.12);
+            transform: translateY(-1px);
+        }
+
+        /* ============ BINDER LEDGER JOURNAL ============ */
+        .desk-journal {
+            display: flex;
+            background: var(--manila-folder);
+            border-radius: 16px;
+            position: relative;
+            padding: 4px;
+            box-shadow: var(--shadow-lg), 0 24px 50px -12px rgba(0, 0, 0, 0.6);
+            border: 1px solid var(--manila-folder-dark);
+            min-height: 600px;
+            margin-top: 30px; /* Space for Top Tabs */
+        }
+
+        /* Ring Binder Spine */
+        .journal-spine {
+            width: 32px;
+            background: linear-gradient(
+                to right,
+                var(--manila-folder-dark) 0%,
+                rgba(0,0,0,0.12) 35%,
+                var(--binder-spine) 48%,
+                var(--binder-spine) 52%,
+                rgba(0,0,0,0.12) 65%,
+                var(--manila-folder-dark) 100%
+            );
+            position: absolute;
+            top: 4px;
+            bottom: 4px;
+            left: calc(50% - 16px);
+            z-index: 15;
+            box-shadow: inset 0 0 8px rgba(0, 0, 0, 0.25);
+            display: flex;
+            flex-direction: column;
+            justify-content: space-around;
+            align-items: center;
+            padding: 40px 0;
+        }
+
+        .spine-ring {
+            width: 24px;
+            height: 7px;
+            background: linear-gradient(to bottom, #e4e4e7, #71717a, #27272a);
+            border-radius: 3.5px;
+            box-shadow: 0 2.5px 3.5px rgba(0,0,0,0.35);
+            transform: rotate(-10deg);
+        }
+
+        /* Top Ledger Folder Tabs */
+        .journal-top-tabs {
+            position: absolute;
+            top: -28px;
+            left: 20px;
+            display: flex;
+            gap: 4px;
+            z-index: 1;
+        }
+
+        .journal-top-tab {
+            padding: 6px 20px;
+            font-size: 10.5px;
+            font-weight: 800;
+            letter-spacing: 0.05em;
+            color: #5C523D;
+            border-radius: 8px 8px 0 0;
+            border: 1px solid var(--manila-folder-dark);
+            border-bottom: none;
+            cursor: pointer;
+            transition: var(--transition-smooth);
+            background: var(--tab-inactive-bg);
+            box-shadow: 0 -2px 4px rgba(0, 0, 0, 0.06);
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .journal-top-tab.active {
+            background: var(--tab-active-bg);
+            color: var(--brand-blue);
+            height: 30px;
+            margin-top: -2px;
+            z-index: 10;
+            box-shadow: 0 -3px 6px rgba(0,0,0,0.08);
+            border-top: 2px solid var(--brand-blue);
+        }
+
+        .journal-top-tab svg {
+            width: 14px;
+            height: 14px;
+        }
+
+        /* Binder Pages */
+        .journal-page {
+            flex: 1;
+            background: var(--manila-paper);
+            border-radius: 12px;
+            padding: 24px 28px;
+            position: relative;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+            transition: var(--transition-smooth);
+        }
+
+        .journal-page--left {
+            margin-right: 16px;
+            border-top-right-radius: 4px;
+            border-bottom-right-radius: 4px;
+            box-shadow: inset -6px 0 12px rgba(0, 0, 0, 0.04);
+            /* Grid Paper Pattern */
+            background-size: 20px 20px;
+            background-image: 
+                linear-gradient(to right, var(--grid-line) 1px, transparent 1px),
+                linear-gradient(to bottom, var(--grid-line) 1px, transparent 1px);
+        }
+
+        .journal-page--right {
+            margin-left: 16px;
+            border-top-left-radius: 4px;
+            border-bottom-left-radius: 4px;
+            box-shadow: inset 6px 0 12px rgba(0, 0, 0, 0.04);
+            /* Ruled Paper Pattern */
+            background-size: 100% 24px;
+            background-image: linear-gradient(to bottom, transparent 23px, var(--ruled-line) 23px);
+            background-position: 0 4px;
+        }
+
+        /* Hole punches */
+        .hole-punch {
+            position: absolute;
+            width: 12px;
+            height: 12px;
+            background: rgba(0, 0, 0, 0.9);
+            border-radius: 50%;
+            top: var(--punch-top);
+            box-shadow: inset 0 2px 2px rgba(0,0,0,0.75), 0 1px 1px rgba(255,255,255,0.25);
+            z-index: 10;
+        }
+
+        .journal-page--left .hole-punch {
+            right: 8px;
+        }
+
+        .journal-page--right .hole-punch {
+            left: 8px;
+        }
+
+        /* ==================== VIEW 1: OVERALL PROGRESS & MASTERY ==================== */
+        
+        /* Stats strip */
+        .ds-stats-strip {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+        }
+
+        .ds-stat-card {
+            background: #fff;
+            border: 1px solid var(--manila-border);
+            border-radius: 8px;
+            padding: 10px 12px;
+            box-shadow: var(--shadow-sm);
+        }
+
+        .ds-stat-card__label {
+            font-size: 9.5px;
+            font-weight: 700;
+            color: var(--ink-secondary);
+            text-transform: uppercase;
+        }
+
+        .ds-stat-card__val {
+            font-size: 15px;
+            font-weight: 800;
+            color: var(--ink-primary);
+            margin-top: 1px;
+        }
+
+        /* Sticky Focus Note */
+        .ds-cork-note {
+            background: #FFF9C4;
+            border: 1px solid #FDE047;
+            border-radius: 4px;
+            padding: 16px 20px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05), 0 1px 3px rgba(0, 0, 0, 0.05);
+            position: relative;
+            transform: rotate(-1deg);
+            margin-top: 10px;
+            transition: var(--transition-smooth);
+        }
+
+        .ds-cork-note:hover {
+            transform: rotate(0deg) scale(1.01);
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.08);
+        }
+
+        .pushpin {
+            position: absolute;
+            width: 12px;
+            height: 12px;
+            background: radial-gradient(circle at 4px 4px, #EF4444, #991B1B);
+            border-radius: 50%;
+            top: -6px;
+            left: calc(50% - 6px);
+            box-shadow: 0 3px 4px rgba(0,0,0,0.3);
+            z-index: 10;
+        }
+
+        .pushpin::after {
+            content: '';
+            position: absolute;
+            width: 2px;
+            height: 10px;
+            background: #64748B;
+            transform: rotate(15deg);
+            top: 7px;
+            left: 7px;
+            box-shadow: 1px 1px 1px rgba(0,0,0,0.4);
+        }
+
+        .ds-cork-note__title {
+            font-size: 12.5px;
+            font-weight: 800;
+            color: #854D0E;
+            margin-bottom: 6px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .ds-cork-note__body {
+            font-size: 12px;
+            color: #713F12;
+            line-height: 1.6;
+        }
+
+        /* Handwritten checklists for tasks */
+        .ds-checklist-card {
+            background: #fff;
+            border: 1px solid var(--manila-border);
+            border-radius: 10px;
+            padding: 16px;
+            box-shadow: var(--shadow-sm);
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .ds-checklist-card__title {
+            font-size: 11px;
+            font-weight: 700;
+            color: var(--ink-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            margin-bottom: 10px;
+        }
+
+        .ds-checklist-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 8px 0;
+            border-bottom: 1px dashed var(--manila-border);
+        }
+
+        .ds-checklist-item:last-child {
+            border-bottom: none;
+        }
+
+        .ds-checkbox-btn {
+            width: 18px;
+            height: 18px;
+            border: 2px solid var(--ink-secondary);
+            border-radius: 4px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            font-weight: 800;
+            font-size: 11px;
+            transition: var(--transition-smooth);
+        }
+
+        .ds-checkbox-btn.checked {
+            background: var(--brand-blue);
+            border-color: var(--brand-blue);
+            color: #fff;
+        }
+
+        .ds-checklist-text {
+            font-size: 12px;
+            color: var(--ink-primary);
+        }
+
+        /* Domain Breakdowns & Folder Tabs */
+        .ds-tabs-container {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .ds-tabs-header {
+            display: flex;
+            gap: 4px;
+            border-bottom: 2px solid var(--manila-border);
+        }
+
+        .ds-tab-button {
+            padding: 6px 14px;
+            border-radius: 6px 6px 0 0;
+            font-size: 11px;
+            font-weight: 700;
+            color: var(--ink-secondary);
+            border: 1px solid transparent;
+            border-bottom: none;
+            margin-bottom: -2px;
+            transition: var(--transition-smooth);
+        }
+
+        .ds-tab-button:hover {
+            color: var(--brand-blue);
+        }
+
+        .ds-tab-button.active {
+            color: var(--brand-blue);
+            background: #fff;
+            border-color: var(--manila-border);
+            border-bottom: 2px solid #fff;
+            padding-bottom: 7px;
+        }
+
+        .ds-tab-content {
+            background: #fff;
+            border: 1px solid var(--manila-border);
+            border-top: none;
+            border-radius: 0 0 8px 8px;
+            padding: 16px;
+            box-shadow: var(--shadow-sm);
+            display: flex;
+            flex-direction: column;
+            gap: 14px;
+        }
+
+        .ds-accuracy-row {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+
+        .ds-accuracy-row__header {
+            display: flex;
+            justify-content: space-between;
+            font-weight: 700;
+            font-size: 11px;
+            color: var(--ink-primary);
+        }
+
+        .ds-accuracy-row__stats {
+            font-size: 10.5px;
+        }
+
+        .ds-accuracy-row__stats span {
+            color: var(--ink-secondary);
+        }
+
+        .ds-accuracy-row__stats strong {
+            color: var(--brand-blue);
+        }
+
+        /* Tactile Highlighter progress meter */
+        .ds-progress-meter {
+            height: 10px;
+            width: 100%;
+            background: #F1F5F9;
+            border-radius: 5px;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .ds-progress-meter__fill {
+            height: 100%;
+            border-radius: 5px;
+            transition: width 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+            background-image: repeating-linear-gradient(
+                45deg,
+                rgba(255,255,255,0.15) 0px,
+                rgba(255,255,255,0.15) 4px,
+                transparent 4px,
+                transparent 8px
+            );
+        }
+
+        .ds-progress-meter__fill--high {
+            background-color: var(--highlighter-green);
+            border-right: 2px solid var(--highlighter-green-edge);
+        }
+        
+        .ds-progress-meter__fill--mid {
+            background-color: var(--highlighter-amber);
+            border-right: 2px solid var(--highlighter-amber-edge);
+        }
+
+        .ds-progress-meter__fill--low {
+            background-color: var(--highlighter-red);
+            border-right: 2px solid var(--highlighter-red-edge);
+        }
+
+        /* ==================== VIEW 2: TEST SCORES & EXAM LEDGER ==================== */
+        
+        /* Large Score Display */
+        .ds-score-display {
+            background: #fff;
+            border: 1px solid var(--manila-border);
+            border-radius: 10px;
+            padding: 16px;
+            box-shadow: var(--shadow-sm);
+            display: grid;
+            grid-template-columns: 1fr 100px;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .ds-score-display__details {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .ds-score-display__label {
+            font-size: 10px;
+            font-weight: 700;
+            text-transform: uppercase;
+            color: var(--ink-secondary);
+        }
+
+        .ds-score-display__value {
+            font-size: 32px;
+            font-weight: 800;
+            color: var(--ink-primary);
+            letter-spacing: -0.04em;
+        }
+
+        .ds-score-display__delta {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            font-size: 10.5px;
+            font-weight: 700;
+            padding: 3px 6px;
+            border-radius: 5px;
+            width: fit-content;
+        }
+
+        .ds-score-display__delta--up {
+            background: rgba(16, 185, 129, 0.08);
+            color: #059669;
+        }
+
+        .ds-score-gauge {
+            position: relative;
+            width: 90px;
+            height: 90px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .ds-score-gauge svg {
+            width: 100%;
+            height: 100%;
+            transform: rotate(-90deg);
+        }
+
+        .ds-score-gauge__bg {
+            fill: none;
+            stroke: #F3F4F6;
+            stroke-width: 9px;
+        }
+
+        .ds-score-gauge__fill {
+            fill: none;
+            stroke: var(--brand-blue);
+            stroke-width: 9px;
+            stroke-linecap: round;
+            stroke-dasharray: 283;
+            stroke-dashoffset: 28; /* Default */
+            transition: stroke-dashoffset 0.8s ease-out;
+        }
+
+        .ds-score-gauge__text {
+            position: absolute;
+            font-size: 18px;
+            font-weight: 800;
+            color: var(--ink-primary);
+        }
+
+        /* SVG Trend Chart */
+        .ds-chart-card {
+            background: #fff;
+            border: 1px solid var(--manila-border);
+            border-radius: 10px;
+            padding: 14px;
+            box-shadow: var(--shadow-sm);
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .ds-chart-card__header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+        }
+
+        .ds-chart-card__title {
+            font-size: 11px;
+            font-weight: 700;
+            color: var(--ink-primary);
+            text-transform: uppercase;
+        }
+
+        .ds-chart-container {
+            width: 100%;
+            height: 150px;
+            position: relative;
+            margin-top: 6px;
+            border-left: 2px solid var(--ink-faint);
+            border-bottom: 2px solid var(--ink-faint);
+            background-size: 25px 25px;
+            background-image: 
+                linear-gradient(to right, rgba(0, 0, 0, 0.02) 1px, transparent 1px),
+                linear-gradient(to bottom, rgba(0, 0, 0, 0.02) 1px, transparent 1px);
+        }
+
+        .ds-chart-axis-label {
+            position: absolute;
+            font-size: 9px;
+            font-weight: 700;
+            color: var(--ink-faint);
+        }
+
+        .ds-chart-axis-label--y-top { top: -4px; left: -26px; }
+        .ds-chart-axis-label--y-mid { top: calc(50% - 6px); left: -26px; }
+        .ds-chart-axis-label--y-bottom { bottom: -4px; left: -26px; }
+
+        .ds-chart-path {
+            fill: none;
+            stroke: var(--brand-blue);
+            stroke-width: 3px;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+        }
+
+        .ds-chart-dot {
+            fill: #fff;
+            stroke: var(--brand-blue);
+            stroke-width: 2.5px;
+            r: 5.5;
+            cursor: pointer;
+            transition: var(--transition-smooth);
+        }
+
+        .ds-chart-dot:hover, .ds-chart-dot.active {
+            r: 7.5;
+            fill: var(--brand-blue);
+        }
+
+        .ds-chart-tooltip {
+            position: absolute;
+            background: #0F172A;
+            color: #fff;
+            padding: 6px 10px;
+            border-radius: 6px;
+            font-size: 10px;
+            font-weight: 700;
+            pointer-events: none;
+            display: none;
+            box-shadow: var(--shadow-md);
+            z-index: 10;
+        }
+
+        .ds-chart-labels-x {
+            display: flex;
+            justify-content: space-between;
+            padding-top: 4px;
+            padding-left: 8px;
+            color: var(--ink-secondary);
+            font-size: 9px;
+            font-weight: 700;
+        }
+
+        /* Vintage gradebook ledger details */
+        .ds-ledger-card {
+            background: #fff;
+            border: 1px solid var(--manila-border);
+            border-radius: 10px;
+            padding: 16px;
+            box-shadow: var(--shadow-sm);
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .ds-ledger-card__title {
+            font-size: 12px;
+            font-weight: 700;
+            color: var(--ink-primary);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            margin-bottom: 12px;
+            border-bottom: 2px solid var(--manila-border);
+            padding-bottom: 6px;
+        }
+
+        .ds-ledger-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .ds-ledger-table th {
+            text-align: left;
+            font-size: 10px;
+            font-weight: 700;
+            text-transform: uppercase;
+            color: var(--ink-secondary);
+            padding: 6px 8px;
+            border-bottom: 1px solid var(--manila-border);
+        }
+
+        .ds-ledger-table td {
+            padding: 10px 8px;
+            border-bottom: 1px dashed var(--manila-border);
+            font-size: 11.5px;
+        }
+
+        .ds-ledger-table tr:last-child td {
+            border-bottom: none;
+        }
+
+        .ds-ledger-table tr.active {
+            background-color: var(--brand-blue-soft);
+        }
+
+        .ds-ledger-table tr.active td {
+            font-weight: 700;
+        }
+
+        .ds-ledger-badge {
+            display: inline-block;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-size: 8.5px;
+            font-weight: 700;
+            text-transform: uppercase;
+        }
+
+        .ds-ledger-badge--self {
+            background-color: rgba(37, 99, 235, 0.1);
+            color: var(--brand-blue);
+        }
+
+        .ds-ledger-badge--class {
+            background-color: rgba(245, 158, 11, 0.1);
+            color: #B45309;
+        }
+
+        .ds-ledger-badge--in-progress {
+            background-color: rgba(148, 163, 184, 0.1);
+            color: #475569;
+        }
+
+        /* Quick toggle controls for interactive demo mode */
+        .demo-onboarding-btn {
+            background: rgba(37, 99, 235, 0.1);
+            border: 1px dashed var(--brand-blue);
+            color: var(--brand-blue);
+            padding: 6px 12px;
+            border-radius: 6px;
+            font-size: 11px;
+            font-weight: 700;
+            cursor: pointer;
+            margin-top: 10px;
+            align-self: center;
+            transition: var(--transition-smooth);
+        }
+
+        .demo-onboarding-btn:hover {
+            background: var(--brand-blue);
+            color: #fff;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Demo Control Header -->
+    <header class="demo-control-bar">
+        <div>
+            <strong>Interactive UX/UI Review Mode</strong>
+        </div>
+        <div class="demo-selector">
+            <button class="demo-btn active" id="btnActiveStudent" onclick="toggleStudentMode('active')">
+                Active Student (Data View)
+            </button>
+            <button class="demo-btn" id="btnNewStudent" onclick="toggleStudentMode('new')">
+                Brand New Student (Onboarding Checklist)
+            </button>
+        </div>
+    </header>
+
+    <div class="app-shell">
+        
+        <!-- ============ COLUMN 1: ICON RAIL ============ -->
+        <nav class="icon-rail" aria-label="Main Navigation">
+            <a href="#" class="rail-logo" title="Digital SAT">S</a>
+            <div class="rail-nav">
+                <a href="#" class="rail-item" title="Dashboard">
+                    <svg fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v4a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v4a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v4a2 2 0 01-2 2H6a2 2 0 01-2-2v-4zM14 16a2 2 0 012-2h2a2 2 0 012 2v4a2 2 0 01-2 2h-2a2 2 0 01-2-2v-4z" />
+                    </svg>
+                </a>
+                <a href="#" class="rail-item" title="Classrooms">
+                    <svg fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+                    </svg>
+                </a>
+                <a href="#" class="rail-item" title="Test Library">
+                    <svg fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
+                    </svg>
+                </a>
+                <a href="#" class="rail-item active" title="Scores & Analytics">
+                    <svg fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 002 2h2a2 2 0 002-2z" />
+                    </svg>
+                </a>
+            </div>
+            <div class="rail-footer">
+                <div class="user-avatar" title="Minh Cường">MC</div>
+            </div>
+        </nav>
+
+        <!-- ============ COLUMN 3: DESK WORKSPACE ============ -->
+        <main class="desk-workspace">
+            <div class="desk-workspace__inner">
+                
+                <!-- HEADER BAR -->
+                <div class="workspace-header">
+                    <div class="workspace-header__title">
+                        <h1 id="workspaceTitle">Minh Cường's Workspace</h1>
+                        <p id="workspaceSubtitle">Detailed overview of topic mastery and SAT growth statistics</p>
+                    </div>
+                    <div class="workspace-header__actions">
+                        <button class="btn btn-secondary">
+                            <svg xmlns="http://www.w3.org/2000/svg" style="width:16px;height:16px;" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                            </svg>
+                            Export PDF Report
+                        </button>
+                        <button class="btn btn-primary">Consolidate Sections</button>
+                    </div>
+                </div>
+
+                <!-- DESK BINDER JOURNAL -->
+                <div class="desk-journal">
+                    
+                    <!-- FOLDER TOP INDEX DIVIDER TABS -->
+                    <div class="journal-top-tabs" id="journalTopTabs">
+                        <button class="journal-top-tab active" id="tabProgress" onclick="switchMainTab('progress')">
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 002 2h2a2 2 0 002-2z" />
+                            </svg>
+                            Overall Progress & Mastery
+                        </button>
+                        <button class="journal-top-tab" id="tabScores" onclick="switchMainTab('scores')">
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
+                            </svg>
+                            Test Scores & Exam Ledger
+                        </button>
+                    </div>
+
+                    <!-- RING BINDER SPINE -->
+                    <div class="journal-spine" aria-hidden="true">
+                        <div class="spine-ring"></div>
+                        <div class="spine-ring"></div>
+                        <div class="spine-ring"></div>
+                        <div class="spine-ring"></div>
+                        <div class="spine-ring"></div>
+                        <div class="spine-ring"></div>
+                    </div>
+
+                    <!-- LEFT PAGE: DYNAMIC SUB-VIEWS -->
+                    <div class="journal-page journal-page--left" id="leftPage">
+                        <!-- Hole punches -->
+                        <div class="hole-punch" style="--punch-top: 40px;"></div>
+                        <div class="hole-punch" style="--punch-top: 130px;"></div>
+                        <div class="hole-punch" style="--punch-top: 220px;"></div>
+                        <div class="hole-punch" style="--punch-top: 310px;"></div>
+                        <div class="hole-punch" style="--punch-top: 400px;"></div>
+                        <div class="hole-punch" style="--punch-top: 490px;"></div>
+
+                        <!-- ACTIVE MODE LEFT PAGE CONTENT -->
+                        <div id="leftContentContainer" style="display:contents;">
+                            
+                            <!-- TAB 1 CONTENT: PROGRESS SUMMARY & DRILLS -->
+                            <div id="paneProgressLeft" style="display:flex; flex-direction:column; gap:16px; height:100%;">
+                                <div class="ds-stats-strip">
+                                    <div class="ds-stat-card">
+                                        <div class="ds-stat-card__label">Drills Run</div>
+                                        <div class="ds-stat-card__val">18 Drills</div>
+                                    </div>
+                                    <div class="ds-stat-card">
+                                        <div class="ds-stat-card__label">Avg Accuracy</div>
+                                        <div class="ds-stat-card__val">78.5%</div>
+                                    </div>
+                                    <div class="ds-stat-card">
+                                        <div class="ds-stat-card__label">Time Spent</div>
+                                        <div class="ds-stat-card__val">6h 12m</div>
+                                    </div>
+                                </div>
+
+                                <!-- Sticky Note recommendation -->
+                                <div class="ds-cork-note" style="margin-top:5px;">
+                                    <div class="pushpin"></div>
+                                    <h3 class="ds-cork-note__title handwriting">
+                                        <svg xmlns="http://www.w3.org/2000/svg" style="width:14px;height:14px;" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
+                                    </svg>
+                                        Concept Recommendation
+                                    </h3>
+                                    <div class="ds-cork-note__body handwriting">
+                                        Your cumulative algebra accuracy is high (90%), but <strong>Standard English Conventions</strong> is at 40%. Focus on grammar drills next.
+                                    </div>
+                                </div>
+
+                                <!-- Task list check list -->
+                                <div class="ds-checklist-card">
+                                    <h4 class="ds-checklist-card__title">Priority Tasks</h4>
+                                    <div class="ds-checklist-item">
+                                        <div class="ds-checkbox-btn checked" onclick="toggleCheckItem(this)">✓</div>
+                                        <span class="ds-checklist-text">Review Practice Test 2 wrong answers</span>
+                                    </div>
+                                    <div class="ds-checklist-item">
+                                        <div class="ds-checkbox-btn" onclick="toggleCheckItem(this)"></div>
+                                        <span class="ds-checklist-text">Take 20-question grammar practice block</span>
+                                    </div>
+                                    <div class="ds-checklist-item">
+                                        <div class="ds-checkbox-btn" onclick="toggleCheckItem(this)"></div>
+                                        <span class="ds-checklist-text">Read linear functions strategy guides</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- TAB 2 CONTENT: SCORE GAUGE & GRAPH TREND -->
+                            <div id="paneScoresLeft" style="display:none; flex-direction:column; gap:16px; height:100%;">
+                                <div class="ds-score-display">
+                                    <div class="ds-score-display__details">
+                                        <span class="ds-score-display__label">Latest SAT Score</span>
+                                        <h2 class="ds-score-display__value" id="estScoreVal">1480</h2>
+                                        <div class="ds-score-display__delta ds-score-display__delta--up">
+                                            <svg xmlns="http://www.w3.org/2000/svg" style="width:12px;height:12px;" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 10l7-7 7 7M12 3v18" />
+                                            </svg>
+                                            +60 points since Test 1
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="ds-score-gauge">
+                                        <svg viewBox="0 0 100 100">
+                                            <circle class="ds-score-gauge__bg" cx="50" cy="50" r="45"></circle>
+                                            <circle class="ds-score-gauge__fill" id="gaugeCircle" cx="50" cy="50" r="45" style="stroke-dashoffset: 28;"></circle>
+                                        </svg>
+                                        <span class="ds-score-gauge__text" id="gaugePercentage">92%</span>
+                                    </div>
+                                </div>
+
+                                <div class="ds-chart-card">
+                                    <div class="ds-chart-card__header">
+                                        <h3 class="ds-chart-card__title">Score Growth Trend</h3>
+                                        <span style="font-size:9.5px; color:var(--ink-secondary);" class="mono">SCALE: 400 - 1600</span>
+                                    </div>
+                                    
+                                    <div class="ds-chart-container">
+                                        <span class="ds-chart-axis-label ds-chart-axis-label--y-top mono">1600</span>
+                                        <span class="ds-chart-axis-label ds-chart-axis-label--y-mid mono">1000</span>
+                                        <span class="ds-chart-axis-label ds-chart-axis-label--y-bottom mono">400</span>
+                                        
+                                        <svg width="100%" height="100%" viewBox="0 0 100 100" preserveAspectRatio="none">
+                                            <path d="M 15 90 L 15 88 L 50 83 L 85 73 L 85 90 Z" fill="rgba(37, 99, 235, 0.04)"></path>
+                                            <path class="ds-chart-path" d="M 15 88 L 50 83 L 85 73"></path>
+                                        </svg>
+                                        
+                                        <div id="chartTooltip" class="ds-chart-tooltip"></div>
+                                        
+                                        <span style="position:absolute; left:15%; bottom:12%; transform:translate(-50%, 50%);">
+                                            <svg width="14" height="14">
+                                                <circle cx="7" cy="7" class="ds-chart-dot" data-score="1420" data-date="Jul 07" onclick="selectLedgerAttempt('pt1', 1420, '42')" />
+                                            </svg>
+                                        </span>
+                                        <span style="position:absolute; left:50%; bottom:17%; transform:translate(-50%, 50%);">
+                                            <svg width="14" height="14">
+                                                <circle cx="7" cy="7" class="ds-chart-dot active" data-score="1480" data-date="Jul 15" onclick="selectLedgerAttempt('pt2', 1480, '28')" />
+                                            </svg>
+                                        </span>
+                                        <span style="position:absolute; left:85%; bottom:27%; transform:translate(-50%, 50%);">
+                                            <svg width="14" height="14">
+                                                <circle cx="7" cy="7" class="ds-chart-dot" data-score="1520" data-date="Proj" />
+                                            </svg>
+                                        </span>
+                                    </div>
+                                    
+                                    <div class="ds-chart-labels-x mono">
+                                        <span>Test 1 (Jul 07)</span>
+                                        <span>Test 2 (Jul 15)</span>
+                                        <span>Target (Next)</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                        </div>
+
+                        <!-- BRAND NEW STUDENT CHECKLIST ONBOARDING -->
+                        <div id="newStudentLeftContent" style="display:none; height:100%; justify-content:center;">
+                            <div class="onboarding-checklist">
+                                <h3 class="onboarding-title handwriting">Student Onboarding</h3>
+                                
+                                <div class="checklist-item" onclick="toggleChecklistItem(this)">
+                                    <div class="checklist-checkbox checked">✓</div>
+                                    <div class="checklist-text">
+                                        <strong>1. Preview SAT Exam Format</strong>
+                                        <p>Learn about adaptive module routing and testing tools.</p>
+                                    </div>
+                                </div>
+
+                                <div class="checklist-item" onclick="toggleChecklistItem(this)">
+                                    <div class="checklist-checkbox"></div>
+                                    <div class="checklist-text">
+                                        <strong>2. Take Diagnostic baseline test</strong>
+                                        <p>Complete a practice test to initialize estimated scoring charts.</p>
+                                    </div>
+                                </div>
+
+                                <div class="checklist-item" onclick="toggleChecklistItem(this)">
+                                    <div class="checklist-checkbox"></div>
+                                    <div class="checklist-text">
+                                        <strong>3. Review domain progress breakdowns</strong>
+                                        <p>Investigate and target algebra or reading details.</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                    </div>
+
+                    <!-- RIGHT PAGE: DYNAMIC SUB-VIEWS -->
+                    <div class="journal-page journal-page--right" id="rightPage">
+                        <!-- Hole punches -->
+                        <div class="hole-punch" style="--punch-top: 40px;"></div>
+                        <div class="hole-punch" style="--punch-top: 130px;"></div>
+                        <div class="hole-punch" style="--punch-top: 220px;"></div>
+                        <div class="hole-punch" style="--punch-top: 310px;"></div>
+                        <div class="hole-punch" style="--punch-top: 400px;"></div>
+                        <div class="hole-punch" style="--punch-top: 490px;"></div>
+
+                        <!-- ACTIVE MODE RIGHT PAGE CONTENT -->
+                        <div id="rightContentContainer" style="display:contents;">
+                            
+                            <!-- TAB 1 CONTENT: ACCURACY BREAKDOWNS (FOLDER FILES) -->
+                            <div id="paneProgressRight" style="display:flex; flex-direction:column; gap:16px;">
+                                <div class="ds-tabs-container">
+                                    <div class="ds-tabs-header">
+                                        <button class="ds-tab-button active" id="btnTabRW" onclick="switchSectionTab('rw')">Reading & Writing</button>
+                                        <button class="ds-tab-button" id="btnTabMath" onclick="switchSectionTab('math')">Math</button>
+                                    </div>
+                                    
+                                    <div class="ds-tab-content">
+                                        
+                                        <!-- ROW 1 -->
+                                        <div class="ds-accuracy-row">
+                                            <div class="ds-accuracy-row__header">
+                                                <span id="row1Label">Craft and Structure</span>
+                                                <div class="ds-accuracy-row__stats">
+                                                    <span>Accuracy:</span>
+                                                    <strong id="row1Val">84%</strong>
+                                                </div>
+                                            </div>
+                                            <div class="ds-progress-meter">
+                                                <div class="ds-progress-meter__fill ds-progress-meter__fill--high" id="row1Meter" style="width: 84%"></div>
+                                            </div>
+                                        </div>
+
+                                        <!-- ROW 2 -->
+                                        <div class="ds-accuracy-row">
+                                            <div class="ds-accuracy-row__header">
+                                                <span id="row2Label">Information and Ideas</span>
+                                                <div class="ds-accuracy-row__stats">
+                                                    <span>Accuracy:</span>
+                                                    <strong id="row2Val">75%</strong>
+                                                </div>
+                                            </div>
+                                            <div class="ds-progress-meter">
+                                                <div class="ds-progress-meter__fill ds-progress-meter__fill--high" id="row2Meter" style="width: 75%"></div>
+                                            </div>
+                                        </div>
+
+                                        <!-- ROW 3 -->
+                                        <div class="ds-accuracy-row">
+                                            <div class="ds-accuracy-row__header">
+                                                <span id="row3Label">Expression of Ideas</span>
+                                                <div class="ds-accuracy-row__stats">
+                                                    <span>Accuracy:</span>
+                                                    <strong id="row3Val">58%</strong>
+                                                </div>
+                                            </div>
+                                            <div class="ds-progress-meter">
+                                                <div class="ds-progress-meter__fill ds-progress-meter__fill--mid" id="row3Meter" style="width: 58%"></div>
+                                            </div>
+                                        </div>
+
+                                        <!-- ROW 4 -->
+                                        <div class="ds-accuracy-row">
+                                            <div class="ds-accuracy-row__header">
+                                                <span id="row4Label">Standard English Conventions</span>
+                                                <div class="ds-accuracy-row__stats">
+                                                    <span>Accuracy:</span>
+                                                    <strong id="row4Val">40%</strong>
+                                                </div>
+                                            </div>
+                                            <div class="ds-progress-meter">
+                                                <div class="ds-progress-meter__fill ds-progress-meter__fill--low" id="row4Meter" style="width: 40%"></div>
+                                            </div>
+                                        </div>
+
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- TAB 2 CONTENT: SCHOOL EXAM LEDGER SHEET -->
+                            <div id="paneScoresRight" style="display:none; flex-direction:column; gap:16px;">
+                                <div class="ds-ledger-card">
+                                    <h4 class="ds-ledger-card__title">Exam Ledger Record</h4>
+                                    
+                                    <table class="ds-ledger-table">
+                                        <thead>
+                                            <tr>
+                                                <th>Date</th>
+                                                <th>Test Name</th>
+                                                <th>Type</th>
+                                                <th>Score</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <tr class="active" id="ledgerPt2" onclick="selectLedgerAttempt('pt2', 1480, '28')">
+                                                <td class="mono">Jul 15</td>
+                                                <td>Practice Test 2</td>
+                                                <td><span class="ds-ledger-badge ds-ledger-badge--self">Self</span></td>
+                                                <td class="mono"><strong>1480</strong></td>
+                                            </tr>
+                                            <tr id="ledgerPt3" onclick="selectLedgerAttempt('pt3', 1320, '65')">
+                                                <td class="mono">Jul 10</td>
+                                                <td>Practice Test 3</td>
+                                                <td><span class="ds-ledger-badge ds-ledger-badge--in-progress">Active</span></td>
+                                                <td class="mono" style="color:var(--ink-faint)">--</td>
+                                            </tr>
+                                            <tr id="ledgerPt1" onclick="selectLedgerAttempt('pt1', 1420, '42')">
+                                                <td class="mono">Jul 07</td>
+                                                <td>Practice Test 1</td>
+                                                <td><span class="ds-ledger-badge ds-ledger-badge--self">Self</span></td>
+                                                <td class="mono"><strong>1420</strong></td>
+                                            </tr>
+                                            <tr id="ledgerMathOnly">
+                                                <td class="mono">Jun 28</td>
+                                                <td>Math Section Only</td>
+                                                <td><span class="ds-ledger-badge ds-ledger-badge--class">Class</span></td>
+                                                <td class="mono"><strong>740</strong></td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+
+                        </div>
+
+                        <!-- BRAND NEW STUDENT GRAPHIC ONBOARDING -->
+                        <div id="newStudentRightContent" style="display:none; height:100%; justify-content:center;">
+                            <div class="onboarding-graphic">
+                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 002 2h2a2 2 0 002-2z" />
+                                </svg>
+                                <h3>No Completed Tests Yet</h3>
+                                <p>Start a full practice baseline from the library to populate the estimated score gauge and growth line chart trend.</p>
+                                <button class="demo-onboarding-btn" onclick="toggleStudentMode('active')">Start Diagnostic 1</button>
+                            </div>
+                        </div>
+
+                    </div>
+
+                </div>
+
+            </div>
+        </main>
+
+    </div>
+
+    <!-- Interactive script for demo -->
+    <script>
+        // Tab switching state
+        let activeMainTab = 'progress';
+        let currentActiveSection = 'rw';
+        let currentActiveAttempt = 'pt2';
+
+        const mockAttemptDetails = {
+            pt2: {
+                score: 1480,
+                percent: "92%",
+                offset: "28",
+                rw: {
+                    labels: ["Craft and Structure", "Information and Ideas", "Expression of Ideas", "Standard English Conventions"],
+                    vals: ["84%", "75%", "58%", "40%"],
+                    meters: ["84%", "75%", "58%", "40%"],
+                    classes: ["ds-progress-meter__fill--high", "ds-progress-meter__fill--high", "ds-progress-meter__fill--mid", "ds-progress-meter__fill--low"]
+                },
+                math: {
+                    labels: ["Algebra", "Advanced Math", "Problem-Solving & Data Analysis", "Geometry and Trigonometry"],
+                    vals: ["90%", "82%", "68%", "73%"],
+                    meters: ["90%", "82%", "68%", "73%"],
+                    classes: ["ds-progress-meter__fill--high", "ds-progress-meter__fill--high", "ds-progress-meter__fill--mid", "ds-progress-meter__fill--high"]
+                }
+            },
+            pt1: {
+                score: 1420,
+                percent: "88%",
+                offset: "42",
+                rw: {
+                    labels: ["Craft and Structure", "Information and Ideas", "Expression of Ideas", "Standard English Conventions"],
+                    vals: ["70%", "68%", "52%", "30%"],
+                    meters: ["70%", "68%", "52%", "30%"],
+                    classes: ["ds-progress-meter__fill--high", "ds-progress-meter__fill--mid", "ds-progress-meter__fill--mid", "ds-progress-meter__fill--low"]
+                },
+                math: {
+                    labels: ["Algebra", "Advanced Math", "Problem-Solving & Data Analysis", "Geometry and Trigonometry"],
+                    vals: ["80%", "72%", "58%", "60%"],
+                    meters: ["80%", "72%", "58%", "60%"],
+                    classes: ["ds-progress-meter__fill--high", "ds-progress-meter__fill--high", "ds-progress-meter__fill--mid", "ds-progress-meter__fill--mid"]
+                }
+            },
+            pt3: {
+                score: 1320,
+                percent: "78%",
+                offset: "65",
+                rw: {
+                    labels: ["Craft and Structure", "Information and Ideas", "Expression of Ideas", "Standard English Conventions"],
+                    vals: ["--", "--", "--", "--"],
+                    meters: ["0%", "0%", "0%", "0%"],
+                    classes: ["ds-progress-meter__fill--low", "ds-progress-meter__fill--low", "ds-progress-meter__fill--low", "ds-progress-meter__fill--low"]
+                },
+                math: {
+                    labels: ["Algebra", "Advanced Math", "Problem-Solving & Data Analysis", "Geometry and Trigonometry"],
+                    vals: ["--", "--", "--", "--"],
+                    meters: ["0%", "0%", "0%", "0%"],
+                    classes: ["ds-progress-meter__fill--low", "ds-progress-meter__fill--low", "ds-progress-meter__fill--low", "ds-progress-meter__fill--low"]
+                }
+            }
+        };
+
+        function switchMainTab(tabId) {
+            activeMainTab = tabId;
+            const tabProgress = document.getElementById('tabProgress');
+            const tabScores = document.getElementById('tabScores');
+            const paneProgressLeft = document.getElementById('paneProgressLeft');
+            const paneProgressRight = document.getElementById('paneProgressRight');
+            const paneScoresLeft = document.getElementById('paneScoresLeft');
+            const paneScoresRight = document.getElementById('paneScoresRight');
+
+            if (tabId === 'progress') {
+                tabProgress.classList.add('active');
+                tabScores.classList.remove('active');
+                paneProgressLeft.style.display = 'flex';
+                paneProgressRight.style.display = 'flex';
+                paneScoresLeft.style.display = 'none';
+                paneScoresRight.style.display = 'none';
+                
+                document.getElementById('workspaceSubtitle').textContent = "Detailed overview of topic mastery and SAT growth statistics";
+            } else {
+                tabProgress.classList.remove('active');
+                tabScores.classList.add('active');
+                paneProgressLeft.style.display = 'none';
+                paneProgressRight.style.display = 'none';
+                paneScoresLeft.style.display = 'flex';
+                paneScoresRight.style.display = 'flex';
+
+                document.getElementById('workspaceSubtitle').textContent = "Complete history of test attempts and score growths";
+            }
+        }
+
+        // Toggle review student mode
+        function toggleStudentMode(mode) {
+            const btnActive = document.getElementById('btnActiveStudent');
+            const btnNew = document.getElementById('btnNewStudent');
+            const leftContent = document.getElementById('leftContentContainer');
+            const rightContent = document.getElementById('rightContentContainer');
+            const newLeft = document.getElementById('newStudentLeftContent');
+            const newRight = document.getElementById('newStudentRightContent');
+            const topTabs = document.getElementById('journalTopTabs');
+
+            if (mode === 'active') {
+                btnActive.classList.add('active');
+                btnNew.classList.remove('active');
+                leftContent.style.display = 'contents';
+                rightContent.style.display = 'contents';
+                newLeft.style.display = 'none';
+                newRight.style.display = 'none';
+                topTabs.style.display = 'flex';
+                switchMainTab(activeMainTab);
+            } else {
+                btnActive.classList.remove('active');
+                btnNew.classList.add('active');
+                leftContent.style.display = 'none';
+                rightContent.style.display = 'none';
+                newLeft.style.display = 'flex';
+                newRight.style.display = 'flex';
+                topTabs.style.display = 'none';
+            }
+        }
+
+        // Toggle check box in priorities
+        function toggleCheckItem(el) {
+            if (el.classList.contains('checked')) {
+                el.classList.remove('checked');
+                el.innerHTML = '';
+            } else {
+                el.classList.add('checked');
+                el.innerHTML = '✓';
+            }
+        }
+
+        // Toggle list checklist items
+        function toggleChecklistItem(el) {
+            const checkbox = el.querySelector('.checklist-checkbox');
+            if (checkbox.classList.contains('checked')) {
+                checkbox.classList.remove('checked');
+                checkbox.innerHTML = '';
+            } else {
+                checkbox.classList.add('checked');
+                checkbox.innerHTML = '✓';
+            }
+        }
+
+        // Click row/dot in ledger
+        function selectLedgerAttempt(attemptId, score, offset) {
+            currentActiveAttempt = attemptId;
+            
+            // Remove active classes in table
+            const rows = document.querySelectorAll('.ds-ledger-table tbody tr');
+            rows.forEach(r => r.classList.remove('active'));
+            
+            const selectedRow = document.getElementById(`ledger${attemptId.charAt(0).toUpperCase() + attemptId.slice(1)}`);
+            if (selectedRow) selectedRow.classList.add('active');
+
+            // Update gauges
+            const data = mockAttemptDetails[attemptId];
+            if (data) {
+                document.getElementById('estScoreVal').textContent = data.score;
+                document.getElementById('gaugeCircle').style.strokeDashoffset = data.offset;
+                document.getElementById('gaugePercentage').textContent = data.percent;
+
+                // Sync accuracy meters on the other tab just in case
+                loadMeters(data[currentActiveSection]);
+            }
+        }
+
+        // Switch between Reading/Writing and Math domain breakdowns
+        function switchSectionTab(section) {
+            currentActiveSection = section;
+            const btnRW = document.getElementById('btnTabRW');
+            const btnMath = document.getElementById('btnTabMath');
+
+            if (section === 'rw') {
+                btnRW.classList.add('active');
+                btnMath.classList.remove('active');
+            } else {
+                btnRW.classList.remove('active');
+                btnMath.classList.add('active');
+            }
+
+            const data = mockAttemptDetails[currentActiveAttempt][section];
+            loadMeters(data);
+        }
+
+        // Load meters helper
+        function loadMeters(sectionData) {
+            for (let i = 1; i <= 4; i++) {
+                document.getElementById(`row${i}Label`).textContent = sectionData.labels[i-1];
+                document.getElementById(`row${i}Val`).textContent = sectionData.vals[i-1];
+                
+                const meter = document.getElementById(`row${i}Meter`);
+                meter.style.width = sectionData.meters[i-1];
+                
+                // Clear classes and apply new one
+                meter.className = "ds-progress-meter__fill";
+                meter.classList.add(sectionData.classes[i-1]);
+            }
+        }
+
+        // SVG line chart dynamic interactions
+        const dots = document.querySelectorAll('.ds-chart-dot');
+        const tooltip = document.getElementById('chartTooltip');
+        const chartContainer = document.querySelector('.ds-chart-container');
+
+        dots.forEach(dot => {
+            dot.addEventListener('mouseenter', (e) => {
+                const score = dot.getAttribute('data-score');
+                const date = dot.getAttribute('data-date');
+                tooltip.innerHTML = `Score: ${score}<br>Date: ${date}`;
+                tooltip.style.display = 'block';
+                
+                const dotRect = dot.getBoundingClientRect();
+                const containerRect = chartContainer.getBoundingClientRect();
+                
+                const left = dotRect.left - containerRect.left + 15;
+                const top = dotRect.top - containerRect.top - 40;
+                
+                tooltip.style.left = `${left}px`;
+                tooltip.style.top = `${top}px`;
+            });
+
+            dot.addEventListener('mouseleave', () => {
+                tooltip.style.display = 'none';
+            });
+        });
+    </script>
+</body>
+</html>

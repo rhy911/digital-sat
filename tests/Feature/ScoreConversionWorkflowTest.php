@@ -157,8 +157,9 @@ class ScoreConversionWorkflowTest extends TestCase
 
         $this->actingAs($student)->get(route('my-practice.score', $attempt))
             ->assertOk()
-            ->assertSee('Route-neutral estimate using all presented questions and built-in conversion')
-            ->assertSee('A form-specific table may improve accuracy.')
+            ->assertSee('Estimated practice score · Normal conversion')
+            ->assertSee('This estimate uses all the questions you answered, converted with our standard scoring table.')
+            ->assertSee('Your raw score was converted to a 400–1600 scale using our standard conversion table')
             ->assertSee('Not an official College Board score.');
     }
 

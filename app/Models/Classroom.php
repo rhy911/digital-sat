@@ -38,6 +38,7 @@ class Classroom extends Model
     public function activeMemberships() { return $this->memberships()->where('status', 'active'); }
     public function assignments() { return $this->hasMany(Assignment::class); }
     public function documents() { return $this->hasMany(ClassroomDocument::class); }
+    public function note() { return $this->hasOne(ClassroomNote::class); }
 
     public function hasTeacher(User $user): bool
     {

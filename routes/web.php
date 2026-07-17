@@ -95,6 +95,7 @@ Route::middleware(['auth', 'verified'])->prefix('student')->group(function () {
         Route::get('/classes/{classroom}', [\App\Http\Controllers\Student\ClassroomController::class, 'show'])->name('student.classes.show');
         Route::post('/classes/join', [\App\Http\Controllers\Student\ClassroomController::class, 'join'])->middleware('throttle:10,1')->name('student.classes.join');
         Route::post('/classes/memberships/{membership}/leave', [\App\Http\Controllers\Student\ClassroomController::class, 'leave'])->name('student.classes.leave');
+        Route::put('/classes/{classroom}/nickname', [\App\Http\Controllers\Student\ClassroomController::class, 'updateNickname'])->name('student.classes.nickname.update');
         Route::get('/assignments', [\App\Http\Controllers\Student\AssignmentController::class, 'index'])->name('student.assignments.index');
         Route::get('/assignments/{assignment}', [\App\Http\Controllers\Student\AssignmentController::class, 'show'])->name('student.assignments.show');
         Route::post('/assignments/{assignment}/start', [\App\Http\Controllers\Student\AssignmentController::class, 'start'])->name('student.assignments.start');
@@ -123,6 +124,7 @@ Route::middleware(['auth', 'verified', 'role:admin,teacher'])->prefix('teacher')
         Route::delete('/classes/{classroom}/co-teachers/{teacher}', [\App\Http\Controllers\Teacher\CoTeacherController::class, 'destroy'])->name('classes.co-teachers.destroy');
         Route::post('/classes/{classroom}/documents', [\App\Http\Controllers\Teacher\ClassroomDocumentController::class, 'store'])->name('classes.documents.store');
         Route::delete('/classes/{classroom}/documents/{document}', [\App\Http\Controllers\Teacher\ClassroomDocumentController::class, 'destroy'])->name('classes.documents.destroy');
+        Route::put('/classes/{classroom}/note', [\App\Http\Controllers\Teacher\ClassroomController::class, 'noteUpdate'])->name('classes.note.update');
         Route::post('/memberships/{membership}/approve', [\App\Http\Controllers\Teacher\MembershipController::class, 'approve'])->name('memberships.approve');
         Route::post('/memberships/{membership}/reject', [\App\Http\Controllers\Teacher\MembershipController::class, 'reject'])->name('memberships.reject');
         Route::post('/memberships/{membership}/remove', [\App\Http\Controllers\Teacher\MembershipController::class, 'remove'])->name('memberships.remove');

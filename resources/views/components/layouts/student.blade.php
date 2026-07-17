@@ -34,13 +34,17 @@
 
     @if ($headerType === 'progress')
         <x-student.headers.progress-header :user="$user" />
-    @else
+    @elseif ($headerType !== 'none')
         <x-student.headers.user-header :user="$user" :header-class="$headerClass" :logo-class="$logoClass" :user-class="$userClass" />
     @endif
 
-    <main class="{{ $headerType === 'progress' ? 'ds-home-main' : '' }}">
+    @if ($headerType !== 'none')
+        <main class="{{ $headerType === 'progress' ? 'ds-home-main' : '' }}">
+            {{ $slot }}
+        </main>
+    @else
         {{ $slot }}
-    </main>
+    @endif
 
     @livewireScripts
     @stack('scripts')

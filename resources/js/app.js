@@ -45,6 +45,11 @@ export function initDatePickers() {
             minDate: "today",
             minuteIncrement: 5,
             allowInput: true,
+            // Appending to body (flatpickr default) makes the calendar a sibling of
+            // any open modal, which dialog-manager.js marks `inert` — clicks pass
+            // through to the backdrop and close the modal. Keep it inside the open
+            // dialog when present so it stays interactive.
+            appendTo: input.closest('[data-modal-dialog]') || undefined,
             onChange: () => syncAssignmentWindow(input),
             onClose: () => syncAssignmentWindow(input)
         });

@@ -36,4 +36,36 @@ class Assignment extends Model
             && (!$this->available_at || now()->gte($this->available_at))
             && (!$this->due_at || now()->lt($this->due_at));
     }
+
+    public function isSectionAssignment(): bool
+    {
+        return $this->assign_type === 'section';
+    }
+
+    public function sectionLabel(): string
+    {
+        if (!$this->isSectionAssignment()) {
+            return 'Full Test';
+        }
+
+        return $this->section_type === 'reading_writing' ? 'Reading & Writing' : 'Math';
+    }
+
+    public function sectionShort(): string
+    {
+        if (!$this->isSectionAssignment()) {
+            return 'Full Test';
+        }
+
+        return $this->section_type === 'reading_writing' ? 'R&W' : 'Math';
+    }
+
+    public function sectionSuffix(): string
+    {
+        if (!$this->isSectionAssignment()) {
+            return '';
+        }
+
+        return $this->section_type === 'reading_writing' ? ' (Reading & Writing Only)' : ' (Math Only)';
+    }
 }

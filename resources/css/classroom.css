@@ -62,7 +62,7 @@
     gap: 6px;
 }
 
-.teacher-nav__group+.teacher-nav__group {
+.teacher-nav__group + .teacher-nav__group {
     padding-top: 18px;
     border-top: 1px solid #1e293b;
 }
@@ -185,10 +185,6 @@
     padding-top: 22px;
 }
 
-.teacher-detail>.back-link {
-    margin-bottom: 10px;
-}
-
 .class-command {
     display: grid;
     grid-template-columns: minmax(0, 1fr) minmax(300px, 360px);
@@ -294,7 +290,7 @@
 
 .page-heading p,
 .section-heading p,
-.class-panel>div>p {
+.class-panel > div > p {
     max-width: 68ch;
     margin: 0;
     color: var(--cw-muted);
@@ -302,14 +298,14 @@
     text-wrap: pretty;
 }
 
-.student-workspace>.page-heading {
+.student-workspace > .page-heading {
     padding: 22px 20px;
     border: 1px solid var(--cw-line);
     border-radius: var(--cw-radius-md);
     background: var(--cw-surface);
 }
 
-.student-workspace>.page-heading h1 {
+.student-workspace > .page-heading h1 {
     margin-top: 0;
 }
 
@@ -410,11 +406,14 @@
     font-size: 0.8rem;
 }
 
-:where(.teacher-shell,
-    .student-workspace,
-    .admin-review,
-    .teacher-workspace-panel,
-    .ds-teacher-workspace) label {
+:where(
+        .teacher-shell,
+        .student-workspace,
+        .admin-review,
+        .teacher-workspace-panel,
+        .ds-teacher-workspace
+    )
+    label {
     display: grid;
     gap: 7px;
     color: var(--cw-muted-strong);
@@ -422,11 +421,14 @@
     font-weight: 750;
 }
 
-:where(.teacher-shell,
-    .student-workspace,
-    .admin-review,
-    .teacher-workspace-panel,
-    .ds-teacher-workspace) :is(input, select, textarea) {
+:where(
+        .teacher-shell,
+        .student-workspace,
+        .admin-review,
+        .teacher-workspace-panel,
+        .ds-teacher-workspace
+    )
+    :is(input, select, textarea) {
     width: 100%;
     min-height: 44px;
     box-sizing: border-box;
@@ -442,46 +444,61 @@
         background-color 180ms var(--cw-ease);
 }
 
-:where(.teacher-shell,
-    .student-workspace,
-    .admin-review,
-    .teacher-workspace-panel,
-    .ds-teacher-workspace) textarea {
+:where(
+        .teacher-shell,
+        .student-workspace,
+        .admin-review,
+        .teacher-workspace-panel,
+        .ds-teacher-workspace
+    )
+    textarea {
     resize: vertical;
 }
 
-:where(.teacher-shell,
-    .student-workspace,
-    .admin-review,
-    .teacher-workspace-panel,
-    .ds-teacher-workspace) :is(input, textarea)::placeholder {
+:where(
+        .teacher-shell,
+        .student-workspace,
+        .admin-review,
+        .teacher-workspace-panel,
+        .ds-teacher-workspace
+    )
+    :is(input, textarea)::placeholder {
     color: var(--cw-muted-strong);
     opacity: 1;
 }
 
-:where(.teacher-shell,
-    .student-workspace,
-    .admin-review,
-    .teacher-workspace-panel,
-    .ds-teacher-workspace) :is(input, select, textarea):hover {
+:where(
+        .teacher-shell,
+        .student-workspace,
+        .admin-review,
+        .teacher-workspace-panel,
+        .ds-teacher-workspace
+    )
+    :is(input, select, textarea):hover {
     border-color: var(--cw-muted);
 }
 
-:where(.teacher-shell,
-    .student-workspace,
-    .admin-review,
-    .teacher-workspace-panel,
-    .ds-teacher-workspace) :is(input, select, textarea):focus {
+:where(
+        .teacher-shell,
+        .student-workspace,
+        .admin-review,
+        .teacher-workspace-panel,
+        .ds-teacher-workspace
+    )
+    :is(input, select, textarea):focus {
     border-color: var(--cw-accent);
     outline: 3px solid var(--cw-focus);
     outline-offset: 0;
 }
 
-:where(.teacher-shell,
-    .student-workspace,
-    .admin-review,
-    .teacher-workspace-panel,
-    .ds-teacher-workspace) :is(input, select, textarea)[aria-invalid="true"] {
+:where(
+        .teacher-shell,
+        .student-workspace,
+        .admin-review,
+        .teacher-workspace-panel,
+        .ds-teacher-workspace
+    )
+    :is(input, select, textarea)[aria-invalid="true"] {
     border-color: var(--cw-danger);
     background: oklch(98% 0.012 24);
 }
@@ -591,7 +608,7 @@
     font-weight: 800;
 }
 
-.section-heading>span {
+.section-heading > span {
     color: var(--cw-muted);
 }
 
@@ -671,9 +688,9 @@
     color: var(--cw-muted);
 }
 
-.class-row>div,
-.student-assignment>div,
-.assignment-row>div {
+.class-row > div,
+.student-assignment > div,
+.assignment-row > div {
     min-width: 0;
 }
 
@@ -683,7 +700,7 @@
     overflow-wrap: anywhere;
 }
 
-.student-assignment>div:first-child {
+.student-assignment > div:first-child {
     flex: 1 1 360px;
     display: grid;
     grid-template-columns: auto minmax(0, 1fr);
@@ -691,16 +708,16 @@
     gap: 6px 10px;
 }
 
-.student-assignment>div:first-child .status-chip {
+.student-assignment > div:first-child .status-chip {
     align-self: center;
 }
 
-.student-assignment>div:first-child h2 {
+.student-assignment > div:first-child h2 {
     min-width: 0;
     margin: 0;
 }
 
-.student-assignment>div:first-child p {
+.student-assignment > div:first-child p {
     grid-column: 1 / -1;
 }
 
@@ -744,20 +761,26 @@
     gap: 3px;
 }
 
-:where(.teacher-shell,
-    .student-workspace,
-    .admin-review,
-    .teacher-workspace-panel,
-    .ds-teacher-workspace) dt {
+:where(
+        .teacher-shell,
+        .student-workspace,
+        .admin-review,
+        .teacher-workspace-panel,
+        .ds-teacher-workspace
+    )
+    dt {
     color: var(--cw-muted);
     font-size: 0.78rem;
 }
 
-:where(.teacher-shell,
-    .student-workspace,
-    .admin-review,
-    .teacher-workspace-panel,
-    .ds-teacher-workspace) dd {
+:where(
+        .teacher-shell,
+        .student-workspace,
+        .admin-review,
+        .teacher-workspace-panel,
+        .ds-teacher-workspace
+    )
+    dd {
     margin: 0;
     color: var(--cw-ink-strong);
     font-weight: 800;
@@ -1061,7 +1084,7 @@
     border-bottom: 1px solid var(--cw-line);
 }
 
-.class-section-bar>span,
+.class-section-bar > span,
 .list-heading span {
     color: var(--cw-muted);
     font-size: 0.78rem;
@@ -1408,8 +1431,8 @@
     border-top: 1px solid var(--cw-line);
 }
 
-.roster-row>div:first-child,
-.attempt-row>div {
+.roster-row > div:first-child,
+.attempt-row > div {
     display: grid;
     gap: 2px;
 }
@@ -1448,7 +1471,7 @@
     border-top: 0;
 }
 
-.teacher-team-row>div:first-child {
+.teacher-team-row > div:first-child {
     min-width: 0;
     display: grid;
     gap: 4px;
@@ -1733,12 +1756,12 @@
     text-decoration: none;
 }
 
-.assignment-row>div {
+.assignment-row > div {
     display: grid;
     gap: 5px;
 }
 
-.assignment-row>div:last-child {
+.assignment-row > div:last-child {
     text-align: right;
 }
 
@@ -1914,21 +1937,6 @@
     justify-content: flex-end;
 }
 
-.back-link {
-    min-height: 44px;
-    display: inline-flex;
-    align-items: center;
-    margin-bottom: 8px;
-    color: var(--cw-accent);
-    font-weight: 800;
-    text-decoration: none;
-}
-
-.back-link:hover {
-    text-decoration: underline;
-    text-underline-offset: 3px;
-}
-
 .metric-strip {
     display: grid;
     grid-template-columns: repeat(6, 1fr);
@@ -1988,8 +1996,8 @@
     background: var(--cw-surface-soft);
 }
 
-.report-table td>strong,
-.report-table td>small {
+.report-table td > strong,
+.report-table td > small {
     display: block;
 }
 
@@ -2048,9 +2056,9 @@
     font-weight: 750;
 }
 
-.attempt-monitor__student div>span,
+.attempt-monitor__student div > span,
 .attempt-monitor__activity,
-.attempt-monitor__responses-heading>span {
+.attempt-monitor__responses-heading > span {
     color: var(--cw-muted);
     font-size: 0.78rem;
 }
@@ -2213,7 +2221,7 @@
     margin-top: 18px;
 }
 
-.attempt-monitor__progress>div {
+.attempt-monitor__progress > div {
     display: flex;
     justify-content: space-between;
     gap: 12px;
@@ -2222,7 +2230,7 @@
     font-size: 0.78rem;
 }
 
-.attempt-monitor__progress>span {
+.attempt-monitor__progress > span {
     height: 7px;
     display: block;
     overflow: hidden;
@@ -2419,7 +2427,7 @@
     transform: translateX(2px) rotate(45deg);
 }
 
-.student-class-card>div {
+.student-class-card > div {
     flex: 1 1 auto;
     display: grid;
     grid-template-columns: auto minmax(0, 1fr);
@@ -2489,11 +2497,11 @@
     font-weight: 800;
 }
 
-.assignment-brief>div {
+.assignment-brief > div {
     margin: 22px 0;
 }
 
-.assignment-brief>div:last-child {
+.assignment-brief > div:last-child {
     margin-bottom: 0;
 }
 
@@ -2503,7 +2511,7 @@
     margin: 24px 0 0;
 }
 
-.assignment-brief.assignment-brief--modal>.assignment-brief__section {
+.assignment-brief.assignment-brief--modal > .assignment-brief__section {
     margin: 24px 0 0;
 }
 
@@ -2540,7 +2548,7 @@
     border-top: 1px solid var(--cw-line);
 }
 
-.attempt-row--card>.attempt-row__identity {
+.attempt-row--card > .attempt-row__identity {
     display: flex;
     align-items: center;
     flex-wrap: wrap;
@@ -2552,7 +2560,7 @@
     color: var(--cw-ink-strong);
 }
 
-.attempt-row--card>.attempt-row__result {
+.attempt-row--card > .attempt-row__result {
     display: grid;
     grid-template-columns: minmax(88px, auto) auto;
     grid-template-areas:
@@ -2564,7 +2572,7 @@
     text-align: right;
 }
 
-.attempt-row--card>.attempt-row__result>strong {
+.attempt-row--card > .attempt-row__result > strong {
     grid-area: score;
     justify-self: end;
     color: var(--cw-ink-strong);
@@ -2629,7 +2637,7 @@
     flex: 1;
 }
 
-.review-actions label>span {
+.review-actions label > span {
     color: var(--cw-muted);
     font-size: 0.74rem;
     font-weight: 500;
@@ -2663,7 +2671,7 @@
         gap: 4px;
     }
 
-    .teacher-nav__group+.teacher-nav__group {
+    .teacher-nav__group + .teacher-nav__group {
         padding-top: 0;
         padding-left: 12px;
         border-top: 0;
@@ -2860,7 +2868,7 @@
         font-size: 1.5rem;
     }
 
-    .student-workspace>.page-heading {
+    .student-workspace > .page-heading {
         padding: 18px 16px;
     }
 
@@ -2972,14 +2980,14 @@
         padding: 14px;
     }
 
-    .attempt-row--card>.attempt-row__result {
+    .attempt-row--card > .attempt-row__result {
         width: 100%;
         grid-template-columns: minmax(0, 1fr) auto;
         justify-content: flex-start;
         text-align: left;
     }
 
-    .attempt-row--card>.attempt-row__result>strong,
+    .attempt-row--card > .attempt-row__result > strong,
     .attempt-row__score-label {
         justify-self: start;
     }
@@ -3053,7 +3061,6 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-
     *,
     *::before,
     *::after {

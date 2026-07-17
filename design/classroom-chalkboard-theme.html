@@ -1,0 +1,1154 @@
+<!DOCTYPE html>
+<html lang="vi" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Chalkboard Classroom — Premium LMS Mockup</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Architects+Daughter&family=IBM+Plex+Mono:wght@400;500;600&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root {
+    /* Chalkboard theme palette (blueish) */
+    --wood-border: #2B3B52;
+    --chalkboard: #16283F;
+    --chalkboard-dark: #0E1B2C;
+    --chalkboard-light: #1F3654;
+    --chalk-white: #EAF1F8;
+    --chalk-dim: #93A9C2;
+    --chalk-yellow: #7CB9E8;
+    --chalk-blue: #5B8DEF;
+    --manila-paper: #F1E5C9;
+    --manila-dark: #E2D0A7;
+    --manila-shadow: #b3a076;
+    --red-pen: #D34E36;
+    --red-pen-dim: #993322;
+    
+    /* System theme fallback */
+    --sidebar-bg: #0D131A;
+    --shadow-rgb: 0, 0, 0;
+    --overlay-rgb: 255, 255, 255;
+    --classes-col-bg: #18221D;
+    --transition-smooth: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  html[data-theme="light"] {
+    --wood-border: #2B3B52;
+    --chalkboard: #F3F7FC;
+    --chalkboard-dark: #E5EDF6;
+    --chalkboard-light: #FFFFFF;
+    --chalk-white: #14263D;
+    --chalk-dim: #5B7290;
+    --chalk-yellow: #2563EB;
+    --chalk-blue: #1D4ED8;
+    --sidebar-bg: #FFFFFF;
+    --overlay-rgb: 20, 38, 61;
+    --classes-col-bg: #ECF2F9;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--chalkboard-dark);
+    color: var(--chalk-white);
+    font-family: 'Plus Jakarta Sans', sans-serif;
+    min-height: 100vh;
+    display: flex;
+    overflow: hidden;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .handwriting {
+    font-family: 'Architects Daughter', cursive;
+  }
+
+  .mono {
+    font-family: 'IBM Plex Mono', monospace;
+  }
+
+  /* ============ MAIN SHELL ============ */
+  .app-shell {
+    display: grid;
+    grid-template-columns: 72px 280px 1fr;
+    width: 100vw;
+    height: 100vh;
+  }
+
+  /* ============ 1. SYSTEM SIDEBAR (Bluebook aligned) ============ */
+  .sidebar-rail {
+    background: var(--sidebar-bg);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 20px 0;
+    border-right: 1px solid rgba(var(--overlay-rgb), 0.05);
+    z-index: 10;
+  }
+
+  .sidebar-logo {
+    width: 36px;
+    height: 36px;
+    border-radius: 10px;
+    background: linear-gradient(135deg, #2563EB, #1D4ED8);
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 800;
+    font-size: 16px;
+    margin-bottom: 30px;
+    text-decoration: none;
+    box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3);
+  }
+
+  .nav-items {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    flex: 1;
+  }
+
+  .nav-link {
+    width: 44px;
+    height: 44px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #64748B;
+    transition: var(--transition-smooth);
+    position: relative;
+    text-decoration: none;
+  }
+
+  .nav-link svg {
+    width: 20px;
+    height: 20px;
+  }
+
+  .nav-link:hover {
+    color: white;
+    background: rgba(var(--overlay-rgb), 0.08);
+  }
+
+  .nav-link.active {
+    color: white;
+    background: linear-gradient(135deg, #2563EB, #1D4ED8);
+    box-shadow: 0 4px 12px rgba(37, 99, 235, 0.2);
+  }
+
+  .nav-tooltip {
+    position: absolute;
+    left: 60px;
+    top: 50%;
+    transform: translateY(-50%);
+    background: #0F172A;
+    color: white;
+    font-size: 11px;
+    font-weight: 600;
+    padding: 6px 10px;
+    border-radius: 6px;
+    white-space: nowrap;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.15s ease;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+  }
+
+  .nav-link:hover .nav-tooltip {
+    opacity: 1;
+  }
+
+  .user-profile {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #C9A227, #8F7420);
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    font-size: 12px;
+    cursor: pointer;
+  }
+
+  .theme-toggle {
+    width: 36px;
+    height: 36px;
+    border-radius: 10px;
+    border: 1px solid rgba(var(--overlay-rgb), 0.12);
+    background: transparent;
+    color: var(--chalk-dim);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    margin-top: 14px;
+    transition: var(--transition-smooth);
+  }
+
+  .theme-toggle:hover {
+    color: var(--chalk-white);
+    border-color: rgba(var(--overlay-rgb), 0.3);
+  }
+
+  .theme-toggle svg {
+    width: 18px;
+    height: 18px;
+  }
+
+  .theme-toggle .icon-sun { display: none; }
+  html[data-theme="light"] .theme-toggle .icon-moon { display: none; }
+  html[data-theme="light"] .theme-toggle .icon-sun { display: block; }
+
+  /* ============ 2. CLASS LIST COLUMN (Manila Accordion Style) ============ */
+  .classes-col {
+    background: var(--classes-col-bg);
+    border-right: 1px solid rgba(var(--overlay-rgb), 0.05);
+    display: flex;
+    flex-direction: column;
+    padding: 24px 0 24px 20px;
+    overflow: hidden;
+  }
+
+  .classes-title {
+    font-size: 18px;
+    font-weight: 800;
+    letter-spacing: -0.3px;
+    margin-bottom: 4px;
+    color: var(--chalk-white);
+  }
+
+  .classes-subtitle {
+    font-size: 12px;
+    color: var(--chalk-dim);
+    margin-bottom: 20px;
+  }
+
+  .classes-list {
+    flex: 1;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    padding-right: 16px;
+  }
+
+  /* Folders Accordion Look */
+  .class-folder {
+    background: rgba(var(--overlay-rgb), 0.02);
+    border: 1px solid rgba(var(--overlay-rgb), 0.05);
+    border-radius: 10px;
+    padding: 16px;
+    cursor: pointer;
+    transition: var(--transition-smooth);
+    text-decoration: none;
+    color: inherit;
+    display: block;
+    position: relative;
+    border-left: 4px solid rgba(var(--overlay-rgb), 0.15);
+  }
+
+  .class-folder:hover {
+    background: rgba(var(--overlay-rgb), 0.05);
+    transform: translateX(4px);
+  }
+
+  .class-folder.active {
+    background: var(--manila-paper);
+    color: var(--chalkboard-dark);
+    border-left-color: var(--red-pen);
+    box-shadow: -4px 6px 15px rgba(0, 0, 0, 0.3);
+    transform: translateX(8px);
+  }
+
+  .folder-name {
+    font-weight: 700;
+    font-size: 14px;
+    margin-bottom: 4px;
+  }
+
+  .folder-meta {
+    font-size: 11.5px;
+    color: var(--chalk-dim);
+    display: flex;
+    gap: 8px;
+  }
+
+  .class-folder.active .folder-meta {
+    color: #6E624A;
+  }
+
+  .add-class-btn {
+    border: 1px dashed rgba(var(--overlay-rgb), 0.2);
+    border-radius: 8px;
+    background: transparent;
+    color: var(--chalk-dim);
+    padding: 12px;
+    font-size: 12.5px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: var(--transition-smooth);
+    margin-top: 10px;
+    margin-right: 16px;
+  }
+
+  .add-class-btn:hover {
+    color: var(--chalk-white);
+    border-color: var(--chalk-white);
+    background: rgba(var(--overlay-rgb), 0.03);
+  }
+
+  /* ============ 3. MAIN WORKSPACE (Chalkboard Ledger) ============ */
+  .ledger-pane {
+    background: var(--chalkboard);
+    background-image: 
+      radial-gradient(ellipse at 50% 0%, rgba(255,255,255,0.035), transparent 70%),
+      radial-gradient(circle at 10% 90%, rgba(0,0,0,0.15), transparent 40%);
+    overflow-y: auto;
+    padding: 30px 40px;
+    box-shadow: inset 10px 0 20px rgba(0, 0, 0, 0.2);
+    display: grid;
+    grid-template-columns: 1fr 320px;
+    gap: 36px;
+  }
+
+  /* Ledger Header */
+  .ledger-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+    margin-bottom: 24px;
+    border-bottom: 2px dashed rgba(var(--overlay-rgb), 0.15);
+    padding-bottom: 18px;
+  }
+
+  .ledger-title {
+    font-size: 26px;
+    font-weight: 800;
+    letter-spacing: -0.5px;
+  }
+
+  .ledger-subtitle {
+    font-size: 13px;
+    color: var(--chalk-dim);
+    margin-top: 4px;
+  }
+
+  .ledger-tag {
+    color: var(--chalk-yellow);
+    font-size: 16px;
+    margin-left: 8px;
+    display: inline-block;
+  }
+
+  .invite-badge {
+    background: rgba(var(--overlay-rgb), 0.06);
+    border: 1px solid rgba(var(--overlay-rgb), 0.15);
+    border-radius: 6px;
+    padding: 8px 14px;
+    font-size: 12px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .invite-badge strong {
+    color: var(--chalk-yellow);
+  }
+
+  /* Table Style */
+  .roster-card {
+    background: rgba(0, 0, 0, 0.15);
+    border: 1.5px solid rgba(var(--overlay-rgb), 0.1);
+    border-radius: 12px;
+    padding: 16px;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
+    margin-bottom: 30px;
+  }
+
+  .roster-table {
+    width: 100%;
+    border-collapse: collapse;
+    text-align: left;
+  }
+
+  .roster-table th {
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    color: var(--chalk-dim);
+    padding: 12px 10px;
+    border-bottom: 2px solid rgba(var(--overlay-rgb), 0.15);
+  }
+
+  .roster-table td {
+    padding: 16px 10px;
+    border-bottom: 1.5px solid rgba(var(--overlay-rgb), 0.08);
+    font-size: 13.5px;
+    vertical-align: middle;
+  }
+
+  .roster-table tr:hover td {
+    background: rgba(var(--overlay-rgb), 0.02);
+  }
+
+  .student-name {
+    font-weight: 700;
+  }
+
+  .student-email {
+    font-size: 11px;
+    color: var(--chalk-dim);
+    margin-top: 2px;
+  }
+
+  /* Con Dấu Điểm Danh (Stamp Button) */
+  .stamp-button {
+    width: 86px;
+    height: 36px;
+    border-radius: 6px;
+    border: 1.5px solid rgba(var(--overlay-rgb), 0.25);
+    background: transparent;
+    color: var(--chalk-dim);
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: transform 0.1s ease;
+  }
+
+  .stamp-button.present {
+    border-color: var(--chalk-yellow);
+    color: var(--chalk-yellow);
+    transform: rotate(-3deg);
+    box-shadow: 0 0 0 1px rgba(230, 200, 117, 0.2) inset;
+    text-shadow: 0 0 3px rgba(230, 200, 117, 0.3);
+  }
+
+  .stamp-button.late {
+    border-color: var(--chalk-blue);
+    color: var(--chalk-blue);
+    border-style: dashed;
+    transform: rotate(2deg);
+    text-shadow: 0 0 3px rgba(124, 185, 232, 0.3);
+  }
+
+  .stamp-button.absent {
+    border-color: var(--red-pen);
+    color: var(--red-pen);
+    transform: rotate(1deg);
+    box-shadow: 0 0 0 1px rgba(211, 78, 54, 0.2) inset;
+    text-shadow: 0 0 3px rgba(211, 78, 54, 0.3);
+  }
+
+  /* Stamp Pop Animation */
+  .stamp-pop {
+    animation: stampdown 0.25s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  }
+
+  @keyframes stampdown {
+    0% { transform: scale(1.8) rotate(0deg); opacity: 0; }
+    70% { transform: scale(0.9) rotate(-6deg); opacity: 1; }
+    100% { transform: scale(1) rotate(-3deg); opacity: 1; }
+  }
+
+  /* Grades and Ratio */
+  .score-cell {
+    font-family: 'IBM Plex Mono', monospace;
+    font-weight: 600;
+  }
+
+  .score-cell.success { color: var(--chalk-yellow); }
+  .score-cell.error { color: var(--red-pen); }
+
+  /* Assignments row title */
+  .row-section-title {
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--chalk-dim);
+    margin: 32px 0 16px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .row-section-title::after {
+    content: '';
+    flex: 1;
+    height: 1.5px;
+    background: rgba(var(--overlay-rgb), 0.1);
+  }
+
+  /* ============ INDEX CARDS (Assignments Layout) ============ */
+  .assignments-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    gap: 18px;
+  }
+
+  .index-card {
+    background: var(--manila-paper);
+    color: var(--chalkboard-dark);
+    border-radius: 4px;
+    padding: 20px 18px 16px;
+    position: relative;
+    box-shadow: 0 6px 16px rgba(0,0,0,0.3);
+    background-image: repeating-linear-gradient(
+      to bottom, transparent, transparent 23px, rgba(29, 31, 24, 0.06) 24px
+    );
+    transition: var(--transition-smooth);
+    cursor: pointer;
+  }
+
+  .index-card:hover {
+    transform: translateY(-4px) rotate(0.5deg);
+    box-shadow: 0 10px 22px rgba(0,0,0,0.4);
+  }
+
+  .index-card::before {
+    content: '';
+    position: absolute;
+    top: -6px;
+    left: 20px;
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    background: radial-gradient(circle at 30% 30%, #ef4444, #991b1b);
+    box-shadow: 0 2px 4px rgba(0,0,0,0.4);
+  }
+
+  .card-due {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--red-pen-dim);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 6px;
+    padding-top: 6px;
+  }
+
+  .card-title {
+    font-weight: 800;
+    font-size: 14.5px;
+    line-height: 1.3;
+    min-height: 38px;
+  }
+
+  .card-meta {
+    font-size: 11.5px;
+    color: #5C523D;
+    margin-top: 12px;
+    border-top: 1px solid rgba(0, 0, 0, 0.08);
+    padding-top: 8px;
+    display: flex;
+    justify-content: space-between;
+  }
+
+  /* ============ 4. CORKBOARD (Right Panel) ============ */
+  .corkboard-pane {
+    background: #4D3319; /* Wood border backing */
+    border: 12px solid var(--wood-border);
+    border-radius: 8px;
+    box-shadow: 
+      0 10px 25px rgba(0,0,0,0.5),
+      inset 0 4px 10px rgba(0,0,0,0.8);
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    padding: 16px;
+    height: fit-content;
+    max-height: calc(100vh - 60px);
+    overflow-y: auto;
+  }
+
+  /* Corkboard Texture Pattern */
+  .cork-texture {
+    background-color: #A67C52;
+    background-image: 
+      radial-gradient(rgba(0,0,0,0.15) 15%, transparent 16%),
+      radial-gradient(rgba(0,0,0,0.15) 15%, transparent 16%);
+    background-size: 8px 8px;
+    background-position: 0 0, 4px 4px;
+    border-radius: 4px;
+    padding: 14px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    min-height: 100%;
+  }
+
+  .cork-header {
+    font-size: 11px;
+    font-weight: 800;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    color: #4A2E13;
+    border-bottom: 2px solid rgba(74, 46, 19, 0.2);
+    padding-bottom: 6px;
+    margin-bottom: 4px;
+  }
+
+  /* Sticky Notes */
+  .sticky-note {
+    background: #FFF7AD;
+    color: #3C3A21;
+    padding: 16px;
+    border-radius: 2px;
+    box-shadow: 3px 5px 12px rgba(0,0,0,0.3);
+    position: relative;
+    font-size: 12.5px;
+    line-height: 1.5;
+    transform: rotate(-1.5deg);
+    transition: var(--transition-smooth);
+  }
+
+  .sticky-note:nth-child(even) {
+    transform: rotate(2deg);
+    background: #FFD2E5;
+  }
+
+  .sticky-note:hover {
+    transform: scale(1.03) rotate(0deg);
+    box-shadow: 5px 10px 18px rgba(0,0,0,0.4);
+    z-index: 5;
+  }
+
+  /* Red Thumbtack */
+  .pushpin {
+    position: absolute;
+    top: -8px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    background: radial-gradient(circle at 35% 30%, #ef4444, #7f1d1d);
+    box-shadow: 0 3px 5px rgba(0,0,0,0.3);
+    cursor: pointer;
+  }
+
+  .pushpin::after {
+    content: '';
+    position: absolute;
+    bottom: -6px;
+    left: 6px;
+    width: 2px;
+    height: 6px;
+    background: #94A3B8;
+  }
+
+  .sticky-hand {
+    display: block;
+    margin-top: 8px;
+    font-size: 14px;
+    color: var(--red-pen-dim);
+    text-align: right;
+  }
+
+  /* Class Chat inside Board */
+  .board-chat-box {
+    background: rgba(30, 43, 36, 0.95);
+    border: 2px solid var(--wood-border);
+    border-radius: 6px;
+    padding: 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    box-shadow: inset 0 2px 8px rgba(0,0,0,0.4);
+  }
+
+  .chat-box-title {
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--chalk-yellow);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .chat-status-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--chalk-blue);
+    box-shadow: 0 0 8px var(--chalk-blue);
+  }
+
+  .chat-scroller {
+    max-height: 160px;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    padding-right: 4px;
+  }
+
+  .chat-msg {
+    font-size: 11.5px;
+    line-height: 1.35;
+  }
+
+  .chat-sender {
+    font-weight: 700;
+    color: var(--chalk-white);
+  }
+
+  .chat-time {
+    font-size: 9px;
+    color: var(--chalk-dim);
+    margin-left: 4px;
+  }
+
+  .chat-text {
+    color: var(--chalk-dim);
+    margin-top: 1px;
+  }
+
+  .chat-footer {
+    display: flex;
+    gap: 6px;
+    border-top: 1px dashed rgba(var(--overlay-rgb), 0.1);
+    padding-top: 8px;
+  }
+
+  .chat-input {
+    flex: 1;
+    background: rgba(0,0,0,0.3);
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 4px;
+    padding: 6px 8px;
+    color: var(--chalk-white);
+    font-size: 11px;
+  }
+
+  .chat-input:focus {
+    outline: none;
+    border-color: var(--chalk-yellow);
+  }
+
+  .chat-send-btn {
+    background: var(--chalk-yellow);
+    border: none;
+    color: var(--chalkboard-dark);
+    padding: 0 10px;
+    border-radius: 4px;
+    font-size: 11px;
+    font-weight: 700;
+    cursor: pointer;
+  }
+
+  /* Responsive styling */
+  @media (max-width: 1024px) {
+    .app-shell {
+      grid-template-columns: 60px 220px 1fr;
+    }
+    .ledger-pane {
+      grid-template-columns: 1fr;
+      padding: 20px;
+    }
+    .corkboard-pane {
+      max-height: none;
+    }
+  }
+</style>
+</head>
+<body>
+
+  <div class="app-shell">
+
+    <!-- 1. ICON RAIL (Standard Navy Minimalist style for project alignment) -->
+    <div class="sidebar-rail">
+      <a href="#" class="sidebar-logo">D</a>
+      <div class="nav-items">
+        <a href="#" class="nav-link"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19V5M4 19h16M8 15l3-4 3 3 5-7" stroke-linecap="round" stroke-linejoin="round"/></svg><span class="nav-tooltip">Báo cáo</span></a>
+        <a href="#" class="nav-link active"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M9 3v18M3 9h18"/></svg><span class="nav-tooltip">Lớp học</span></a>
+        <a href="#" class="nav-link"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10z"/><path d="M12 6v6l4 2"/></svg><span class="nav-tooltip">Lịch sử đề</span></a>
+        <a href="#" class="nav-link"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9M3 20v-8c0-2.2 1.8-4 4-4h10c2.2 0 4 1.8 4 4v8M9 8V4a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v4"/></svg><span class="nav-tooltip">Thiết lập</span></a>
+      </div>
+      <div class="user-profile">M</div>
+      <button type="button" class="theme-toggle" id="themeToggle" aria-label="Đổi giao diện sáng/tối">
+        <svg class="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        <svg class="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41" stroke-linecap="round"/></svg>
+      </button>
+    </div>
+
+    <!-- 2. CLASSES ACCORDION COLUMN (Manila Folder Tabs style) -->
+    <div class="classes-col">
+      <div class="classes-title">Lớp học của tôi</div>
+      <div class="classes-subtitle">3 lớp đang hoạt động</div>
+
+      <div class="classes-list">
+        <a href="#" class="class-folder active" data-class="sat-advance">
+          <div class="folder-name">SAT Advanced (900+)</div>
+          <div class="folder-meta">
+            <span>5 học sinh</span>
+            <span>·</span>
+            <span>4 đề bài</span>
+          </div>
+        </a>
+
+        <a href="#" class="class-folder" data-class="sat-basic">
+          <div class="folder-name">SAT Foundation 101</div>
+          <div class="folder-meta">
+            <span>8 học sinh</span>
+            <span>·</span>
+            <span>2 đề bài</span>
+          </div>
+        </a>
+
+        <a href="#" class="class-folder" data-class="igcse-math">
+          <div class="folder-name">IGCSE Math Extra</div>
+          <div class="folder-meta">
+            <span>3 học sinh</span>
+            <span>·</span>
+            <span>6 đề bài</span>
+          </div>
+        </a>
+
+        <button class="add-class-btn">+ Tạo lớp học mới</button>
+      </div>
+    </div>
+
+    <!-- 3. MAIN WORKSPACE (Chalkboard Ledger) -->
+    <div class="ledger-pane">
+      
+      <!-- Main Content -->
+      <div>
+        <div class="ledger-header">
+          <div>
+            <div class="ledger-title" id="classTitle">SAT Advanced (900+) <span class="ledger-tag handwriting">"adaptive week"</span></div>
+            <div class="ledger-subtitle">Lịch học: Thứ 3 & Thứ 7 · Giáo viên: Minh · Học phần: Digital SAT Math & RW</div>
+          </div>
+          <div class="invite-badge">
+            Mã mời lớp: <strong class="mono" id="classJoinCode">SAT-900X</strong>
+          </div>
+        </div>
+
+        <!-- Student Roster Ledger Table -->
+        <div class="roster-card">
+          <table class="roster-table">
+            <thead>
+              <tr>
+                <th style="width: 38%">Học sinh</th>
+                <th style="width: 20%">Điểm danh</th>
+                <th style="width: 24%">Bài tập gần nhất</th>
+                <th style="width: 18%">Lần cuối</th>
+              </tr>
+            </thead>
+            <tbody id="rosterBody">
+              <tr>
+                <td>
+                  <div class="student-name">Phạm Anh Khoa</div>
+                  <div class="student-email">khoa.pham@student.edu</div>
+                </td>
+                <td>
+                  <button class="stamp-button present" data-state="present">PRESENT</button>
+                </td>
+                <td>
+                  <span class="score-cell success">1480 / 1600</span>
+                </td>
+                <td class="mono" style="color: var(--chalk-dim)">15/07/2026</td>
+              </tr>
+              <tr>
+                <td>
+                  <div class="student-name">Lê Bảo Trân</div>
+                  <div class="student-email">tran.lebao@student.edu</div>
+                </td>
+                <td>
+                  <button class="stamp-button late" data-state="late">LATE</button>
+                </td>
+                <td>
+                  <span class="score-cell success">1350 / 1600</span>
+                </td>
+                <td class="mono" style="color: var(--chalk-dim)">14/07/2026</td>
+              </tr>
+              <tr>
+                <td>
+                  <div class="student-name">Nguyễn Mạnh Hùng</div>
+                  <div class="student-email">hung.nguyen@student.edu</div>
+                </td>
+                <td>
+                  <button class="stamp-button absent" data-state="absent">ABSENT</button>
+                </td>
+                <td>
+                  <span class="score-cell error">Chưa nộp</span>
+                </td>
+                <td class="mono" style="color: var(--chalk-dim)">—</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="row-section-title">Bài luyện tập đã giao</div>
+
+        <!-- Assignments styled as Index Cards -->
+        <div class="assignments-grid" id="assignmentsContainer">
+          <div class="index-card">
+            <div class="card-due">HẠN: THỨ BẢY, 19/07</div>
+            <div class="card-title">Practice Test 4 — Math Adaptive Module 2 (Hard)</div>
+            <div class="card-meta">
+              <span>Đã nộp: 2/3</span>
+              <span class="mono" style="font-weight: 700;">#MATH-M2</span>
+            </div>
+          </div>
+
+          <div class="index-card">
+            <div class="card-due">HẠN: THỨ BA, 22/07</div>
+            <div class="card-title">RW Vocabulary Practice Set 12</div>
+            <div class="card-meta">
+              <span>Đã nộp: 0/3</span>
+              <span class="mono" style="font-weight: 700;">#RW-VOCAB</span>
+            </div>
+          </div>
+
+          <div class="index-card">
+            <div class="card-due">CHƯA BẮT ĐẦU</div>
+            <div class="card-title">Full Diagnostic Test — Digital SAT Prep #1</div>
+            <div class="card-meta">
+              <span>Chờ mở</span>
+              <span class="mono" style="font-weight: 700;">#FULL-DIAG</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 4. CORKBOARD (Right Panel Notes & Live Chat) -->
+      <div class="corkboard-pane">
+        <div class="cork-texture" id="corkboard">
+          <div class="cork-header">Ghim lớp học</div>
+          
+          <div class="sticky-note">
+            <div class="pushpin"></div>
+            Tuần sau sửa bài thi thử M2. Đề nghị học sinh làm bài đầy đủ trước tối thứ Sáu!
+            <span class="sticky-hand handwriting">— thầy Minh</span>
+          </div>
+
+          <div class="sticky-note">
+            <div class="pushpin"></div>
+            Tải tài liệu PDF "SAT Math Formula Cheat Sheet" trong mục Resources của lớp học nhé các em.
+          </div>
+
+          <div class="cork-header" style="margin-top: 10px;">Lớp thảo luận</div>
+
+          <div class="board-chat-box">
+            <div class="chat-box-title">
+              <span>Trò chuyện nhóm</span>
+              <div class="chat-status-dot"></div>
+            </div>
+
+            <div class="chat-scroller" id="chatScroller">
+              <div class="chat-msg">
+                <span class="chat-sender">Phạm Anh Khoa</span><span class="chat-time">18:02</span>
+                <div class="chat-text">Thầy ơi đề Math 2 có đáp án chi tiết chưa ạ?</div>
+              </div>
+              <div class="chat-msg">
+                <span class="chat-sender">Minh</span><span class="chat-time">18:03</span>
+                <div class="chat-text">Sau 19/07 hệ thống tự nhả đáp án chi tiết và video giải thích nhé Khoa.</div>
+              </div>
+            </div>
+
+            <div class="chat-footer">
+              <input type="text" class="chat-input" placeholder="Gửi tin nhắn..." id="chatInput">
+              <button class="chat-send-btn" id="chatSend">Gửi</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+  </div>
+
+  <script>
+    // 0. Theme toggle (light/dark) with persistence
+    (function () {
+      const root = document.documentElement;
+      const toggleBtn = document.getElementById('themeToggle');
+      const saved = localStorage.getItem('chalkboard-theme');
+      if (saved === 'light' || saved === 'dark') root.setAttribute('data-theme', saved);
+
+      toggleBtn.addEventListener('click', () => {
+        const next = root.getAttribute('data-theme') === 'light' ? 'dark' : 'light';
+        root.setAttribute('data-theme', next);
+        localStorage.setItem('chalkboard-theme', next);
+      });
+    })();
+
+    // 1. Mock Data for switching classes
+    const classMockData = {
+      'sat-advance': {
+        title: 'SAT Advanced (900+)',
+        hand: 'adaptive week',
+        sub: 'Lịch học: Thứ 3 & Thứ 7 · Giáo viên: Minh · Học phần: Digital SAT Math & RW',
+        code: 'SAT-900X',
+        students: [
+          { name: 'Phạm Anh Khoa', email: 'khoa.pham@student.edu', state: 'present', score: '1480 / 1600', date: '15/07/2026' },
+          { name: 'Lê Bảo Trân', email: 'tran.lebao@student.edu', state: 'late', score: '1350 / 1600', date: '14/07/2026' },
+          { name: 'Nguyễn Mạnh Hùng', email: 'hung.nguyen@student.edu', state: 'absent', score: 'Chưa nộp', date: '—' }
+        ],
+        assignments: [
+          { due: 'HẠN: THỨ BẢY, 19/07', title: 'Practice Test 4 — Math Adaptive Module 2 (Hard)', submitted: '2/3', tag: '#MATH-M2' },
+          { due: 'HẠN: THỨ BA, 22/07', title: 'RW Vocabulary Practice Set 12', submitted: '0/3', tag: '#RW-VOCAB' },
+          { due: 'CHƯA BẮT ĐẦU', title: 'Full Diagnostic Test — Digital SAT Prep #1', submitted: 'Chờ mở', tag: '#FULL-DIAG' }
+        ]
+      },
+      'sat-basic': {
+        title: 'SAT Foundation 101',
+        hand: 'fundamentals',
+        sub: 'Lịch học: Thứ 2 & Thứ 5 · Giáo viên: Minh · Học phần: SAT Algebra & Reading Focus',
+        code: 'SAT-101F',
+        students: [
+          { name: 'Trần Gia Bách', email: 'bach.tran@student.edu', state: 'present', score: '1120 / 1600', date: '15/07/2026' },
+          { name: 'Ngô Mỹ Linh', email: 'linh.ngo@student.edu', state: 'present', score: '1210 / 1600', date: '15/07/2026' }
+        ],
+        assignments: [
+          { due: 'HẠN: THỨ NĂM, 17/07', title: 'Linear Equations and Inequalities Quiz', submitted: '2/2', tag: '#ALG-1' }
+        ]
+      },
+      'igcse-math': {
+        title: 'IGCSE Math Extra',
+        hand: 'past papers',
+        sub: 'Lịch học: Thứ 6 · Giáo viên: Minh · Học phần: Cambridge Extended (0580)',
+        code: 'IG-EXT580',
+        students: [
+          { name: 'Vũ Nam Khánh', email: 'khanh.vu@student.edu', state: 'present', score: 'Grade A', date: '12/07/2026' }
+        ],
+        assignments: [
+          { due: 'ĐÃ QUA HẠN', title: 'IGCSE Extended Math Past Paper 4 2025', submitted: '1/1', tag: '#P4-2025' }
+        ]
+      }
+    };
+
+    // 2. Class folder switching
+    document.querySelectorAll('.class-folder').forEach(folder => {
+      folder.addEventListener('click', (e) => {
+        e.preventDefault();
+        document.querySelectorAll('.class-folder').forEach(f => f.classList.remove('active'));
+        folder.classList.add('active');
+
+        const classKey = folder.dataset.class;
+        const data = classMockData[classKey];
+        if (data) {
+          // Switch texts
+          document.getElementById('classTitle').innerHTML = `${data.title} <span class="ledger-tag handwriting">"${data.hand}"</span>`;
+          document.getElementById('classJoinCode').textContent = data.code;
+          document.querySelector('.ledger-subtitle').textContent = data.sub;
+
+          // Render Roster
+          const rosterBody = document.getElementById('rosterBody');
+          rosterBody.innerHTML = '';
+          data.students.forEach(st => {
+            const tr = document.createElement('tr');
+            const scoreClass = st.score.includes('/') ? 'success' : (st.score === 'Chưa nộp' ? 'error' : '');
+            tr.innerHTML = `
+              <td>
+                <div class="student-name">${st.name}</div>
+                <div class="student-email">${st.email}</div>
+              </td>
+              <td>
+                <button class="stamp-button ${st.state}" data-state="${st.state}">${st.state.toUpperCase()}</button>
+              </td>
+              <td>
+                <span class="score-cell ${scoreClass}">${st.score}</span>
+              </td>
+              <td class="mono" style="color: var(--chalk-dim)">${st.date}</td>
+            `;
+            rosterBody.appendChild(tr);
+          });
+
+          // Bind stamp event listeners again
+          bindStamps();
+
+          // Render Assignments
+          const assignmentsContainer = document.getElementById('assignmentsContainer');
+          assignmentsContainer.innerHTML = '';
+          data.assignments.forEach(as => {
+            const card = document.createElement('div');
+            card.className = 'index-card';
+            card.innerHTML = `
+              <div class="card-due">${as.due}</div>
+              <div class="card-title">${as.title}</div>
+              <div class="card-meta">
+                <span>Đã nộp: ${as.submitted}</span>
+                <span class="mono" style="font-weight: 700;">${as.tag}</span>
+              </div>
+            `;
+            assignmentsContainer.appendChild(card);
+          });
+        }
+      });
+    });
+
+    // 3. Stamp Button state cycle with Event Delegation (Optimized)
+    function bindStamps() {
+      const rosterTable = document.querySelector('.roster-table');
+      rosterTable.onclick = (e) => {
+        const btn = e.target.closest('.stamp-button');
+        if (!btn) return;
+        
+        const states = ['present', 'late', 'absent'];
+        const cur = btn.dataset.state;
+        const next = states[(states.indexOf(cur) + 1) % states.length];
+        
+        btn.className = `stamp-button ${next}`;
+        btn.dataset.state = next;
+        btn.textContent = next.toUpperCase();
+        
+        // Trigger stamp pop animation
+        btn.classList.remove('stamp-pop');
+        void btn.offsetWidth; // Force reflow
+        btn.classList.add('stamp-pop');
+      };
+    }
+    bindStamps();
+
+    // 4. Secure Chat System (Escaped input)
+    const chatInput = document.getElementById('chatInput');
+    const chatSend = document.getElementById('chatSend');
+    const chatScroller = document.getElementById('chatScroller');
+
+    function sendChatMessage() {
+      const text = chatInput.value.trim();
+      if (!text) return;
+
+      const chatMsg = document.createElement('div');
+      chatMsg.className = 'chat-msg';
+
+      const senderSpan = document.createElement('span');
+      senderSpan.className = 'chat-sender';
+      senderSpan.textContent = 'Minh';
+
+      const timeSpan = document.createElement('span');
+      timeSpan.className = 'chat-time';
+      timeSpan.textContent = 'vừa xong';
+
+      const textDiv = document.createElement('div');
+      textDiv.className = 'chat-text';
+      textDiv.textContent = text; // Safe text assignment
+
+      chatMsg.appendChild(senderSpan);
+      chatMsg.appendChild(timeSpan);
+      chatMsg.appendChild(textDiv);
+      chatScroller.appendChild(chatMsg);
+
+      chatInput.value = '';
+      chatScroller.scrollTop = chatScroller.scrollHeight;
+    }
+
+    chatSend.addEventListener('click', sendChatMessage);
+    chatInput.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') sendChatMessage();
+    });
+  </script>
+
+</body>
+</html>

@@ -78,6 +78,17 @@ class User extends Authenticatable implements MustVerifyEmail
         return $this->hasMany(UserTest::class);
     }
 
+    public function getInitialsAttribute(): string
+    {
+        $initials = collect(explode(' ', trim($this->name ?? $this->username ?? '')))
+            ->filter()
+            ->take(2)
+            ->map(fn ($word) => mb_strtoupper(mb_substr($word, 0, 1)))
+            ->implode('');
+
+        return $initials !== '' ? $initials : 'U';
+    }
+
     public function ownedClassrooms() { return $this->hasMany(Classroom::class, 'owner_id'); }
     public function coTaughtClassrooms() { return $this->belongsToMany(Classroom::class, 'classroom_teachers', 'teacher_id', 'classroom_id')->withPivot('added_by')->withTimestamps(); }
     public function classroomMemberships() { return $this->hasMany(ClassroomMembership::class, 'student_id'); }

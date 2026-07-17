@@ -1,0 +1,281 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Practice Library Redesign — Digital SAT</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Architects+Daughter&family=IBM+Plex+Mono:wght@400;500;600;700&family=Roboto:wght@400;500;700;800&display=swap" rel="stylesheet">
+<style>
+:root{
+  /* Canonical unified tokens (reconciled with classroom navy anchor) */
+  --app-bg:#F1F2F5;
+  --panel:#FFFFFF;
+  --border:rgba(26,32,44,.08);
+  --border-strong:rgba(26,32,44,.16);
+  --ink:#1A202C;
+  --ink-soft:#5A6980;
+  --ink-faint:#8592A8;
+  --accent:#2A4D8F;
+  --accent-hover:#203C70;
+  --accent-soft:rgba(42,77,143,.10);
+  --green:#2F855A;--green-soft:rgba(47,133,90,.12);
+  --amber:#B7791F;--amber-soft:rgba(183,121,31,.12);
+  --red:#C1443A;--red-soft:#FFF5F5;
+  --rail-bg:#0B1626;
+  --manila:#F1E5C9;--manila-ink:#1A202C;--manila-soft:#5C523D;
+  --binder-bg:#FCF9F2;--binder-spine:#E2CE8B;--binder-border:#E2D0A7;
+  --wood-back:#4D3319;--wood-border:#2B3B52;
+  --shadow-sm:0 2px 5px rgba(26,32,44,.06);
+  --shadow-md:0 8px 22px rgba(26,32,44,.10);
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;overflow:hidden}
+body{
+  background:var(--app-bg);color:var(--ink);
+  font-family:'Roboto',ui-sans-serif,system-ui,sans-serif;font-size:13.5px;line-height:1.5;
+  -webkit-font-smoothing:antialiased;
+}
+.mono{font-family:'IBM Plex Mono',monospace}
+.handwriting{font-family:'Architects Daughter',cursive}
+button{font-family:inherit;cursor:pointer}
+a{color:inherit;text-decoration:none}
+
+/* demo bar */
+.demo-bar{position:fixed;bottom:14px;left:50%;transform:translateX(-50%);z-index:200;
+  background:#0B1626;color:#fff;border-radius:10px;padding:6px;display:flex;gap:4px;box-shadow:0 8px 24px rgba(0,0,0,.35)}
+.demo-bar button{background:transparent;border:none;color:#94A3B8;font-size:11.5px;font-weight:700;padding:7px 12px;border-radius:7px}
+.demo-bar button.active{background:var(--accent);color:#fff}
+
+.app-shell{display:grid;grid-template-columns:72px 1fr;height:100vh}
+
+/* ---- icon rail ---- */
+.icon-rail{background:var(--rail-bg);display:flex;flex-direction:column;align-items:center;padding:20px 0}
+.rail-logo{width:36px;height:36px;border-radius:10px;background:var(--accent);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:16px;margin-bottom:30px}
+.rail-nav{display:flex;flex-direction:column;gap:12px;flex:1}
+.rail-item{width:44px;height:44px;border-radius:12px;display:flex;align-items:center;justify-content:center;color:#7C8494;position:relative;transition:.15s}
+.rail-item svg{width:20px;height:20px}
+.rail-item:hover{color:#fff;background:rgba(255,255,255,.06)}
+.rail-item.active{color:#fff;background:var(--accent)}
+.rail-item .tip{position:absolute;left:52px;top:50%;transform:translateY(-50%);background:#0B1626;color:#fff;font-size:11.5px;font-weight:600;padding:5px 9px;border-radius:5px;white-space:nowrap;opacity:0;pointer-events:none;transition:.12s;z-index:20}
+.rail-item:hover .tip{opacity:1}
+.rail-avatar{width:36px;height:36px;border-radius:50%;background:var(--manila);color:var(--manila-ink);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:12px;margin-top:auto}
+
+/* ---- workspace ---- */
+.workspace{height:100vh;overflow-y:auto;padding:28px 40px 90px}
+.ws-inner{max-width:1120px;margin:0 auto;display:flex;flex-direction:column;gap:26px}
+
+/* header */
+.ws-head{display:flex;justify-content:space-between;align-items:flex-end;padding-bottom:18px;border-bottom:2px dashed var(--border-strong)}
+.ws-head h1{font-size:26px;font-weight:800;letter-spacing:-.02em}
+.ws-head .eyebrow{font-family:'IBM Plex Mono',monospace;font-size:11px;font-weight:600;letter-spacing:.12em;text-transform:uppercase;color:var(--accent);margin-bottom:6px}
+.ws-head p{font-size:13px;color:var(--ink-soft);margin-top:5px}
+.btn{display:inline-flex;align-items:center;gap:8px;padding:9px 16px;border-radius:8px;font-weight:700;font-size:12.5px;border:none;transition:.15s;box-shadow:var(--shadow-sm)}
+.btn svg{width:16px;height:16px}
+.btn-primary{background:var(--accent);color:#fff}
+.btn-primary:hover{background:var(--accent-hover);transform:translateY(-1px)}
+.btn-outline{background:var(--panel);color:var(--ink);border:1px solid var(--border-strong)}
+.btn-outline:hover{background:var(--app-bg)}
+
+/* section heading */
+.sec-head{display:flex;align-items:center;gap:10px;margin-bottom:14px}
+.sec-head h2{font-size:14px;font-weight:800;text-transform:uppercase;letter-spacing:.06em;color:var(--ink)}
+.sec-head .count{font-family:'IBM Plex Mono',monospace;font-size:11px;font-weight:600;color:var(--ink-faint);background:var(--panel);border:1px solid var(--border);border-radius:20px;padding:2px 9px}
+.sec-head .rule{flex:1;height:1px;background:var(--border-strong)}
+
+/* ============ RESUME STRIP — dog-eared bookmarked cards ============ */
+.resume-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(340px,1fr));gap:16px}
+.resume-card{position:relative;background:var(--binder-bg);border:1px solid var(--binder-border);border-radius:8px;padding:16px 18px;display:flex;justify-content:space-between;align-items:center;gap:14px;box-shadow:var(--shadow-sm);overflow:hidden}
+/* red bookmark ribbon */
+.resume-card::after{content:'';position:absolute;top:-2px;right:20px;width:16px;height:34px;background:var(--red);clip-path:polygon(0 0,100% 0,100% 100%,50% 82%,0 100%);box-shadow:0 2px 3px rgba(0,0,0,.2)}
+.resume-card .rc-icon{width:40px;height:40px;border-radius:9px;background:var(--accent-soft);color:var(--accent);display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.resume-card .rc-icon svg{width:20px;height:20px}
+.rc-info{flex:1;min-width:0}
+.rc-title{font-weight:800;font-size:14px}
+.rc-status{font-size:11.5px;color:var(--ink-soft);margin-top:2px}
+.rc-status b{color:var(--accent);font-weight:700}
+.rc-meta{font-size:11px;color:var(--ink-faint);margin-top:4px;font-family:'IBM Plex Mono',monospace}
+.rc-btn{flex-shrink:0}
+
+/* ============ AVAILABLE TESTS — index-card folder catalog ============ */
+.test-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:20px}
+.test-card{position:relative;background:var(--panel);border:1px solid var(--border);border-radius:6px;padding:20px 18px 16px;display:flex;flex-direction:column;box-shadow:var(--shadow-sm);transition:transform .15s,box-shadow .15s}
+.test-card:hover{transform:translateY(-3px);box-shadow:var(--shadow-md)}
+/* folder tab nub top-left */
+.test-card::before{content:'';position:absolute;top:-8px;left:18px;width:56px;height:9px;background:var(--manila);border:1px solid var(--border);border-bottom:none;border-radius:5px 5px 0 0}
+/* in-progress: tint the folder-tab nub navy + widen, no side border */
+.test-card--in-progress::before{background:var(--accent);width:72px;border-color:var(--accent)}
+.tc-top{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:12px}
+.tc-type{font-family:'IBM Plex Mono',monospace;font-size:10px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-faint)}
+.badge{display:inline-flex;align-items:center;gap:5px;font-size:10.5px;font-weight:700;padding:3px 8px;border-radius:5px;transform:rotate(-2deg)}
+.badge .d{width:6px;height:6px;border-radius:50%}
+.badge--new{color:var(--amber);border:1px dashed var(--amber)}
+.badge--new .d{background:var(--amber)}
+.badge--progress{color:var(--accent);border:1px solid var(--accent)}
+.badge--progress .d{background:var(--accent)}
+.badge--done{color:var(--green);border:1px solid var(--green);transform:rotate(1deg)}
+.badge--done .d{background:var(--green)}
+.tc-title{font-weight:800;font-size:15.5px;line-height:1.25;margin-bottom:6px}
+.tc-desc{font-size:12px;color:var(--ink-soft);line-height:1.5;flex:1;min-height:36px}
+.tc-score{font-size:11.5px;color:var(--green);font-weight:700;margin-top:8px;font-family:'IBM Plex Mono',monospace}
+.tc-meta{display:flex;align-items:center;gap:7px;margin-top:14px;padding-top:12px;border-top:1px dashed var(--border-strong);font-size:11.5px;color:var(--ink-soft);font-family:'IBM Plex Mono',monospace}
+.tc-meta .dot{color:var(--border-strong)}
+.tc-action{margin-top:14px;width:100%;justify-content:center}
+
+/* empty */
+.empty{grid-column:1/-1;text-align:center;padding:44px 24px;border:1.5px dashed var(--border-strong);border-radius:10px;background:var(--binder-bg)}
+.empty h4{font-size:15px;font-weight:800;margin-bottom:6px}
+.empty p{font-size:12.5px;color:var(--ink-soft);max-width:360px;margin:0 auto}
+.empty .pin{width:12px;height:12px;border-radius:50%;background:radial-gradient(circle at 35% 30%,#ef4444,#7f1d1d);margin:0 auto 14px;box-shadow:0 3px 5px rgba(0,0,0,.3)}
+.hidden{display:none!important}
+
+@media(max-width:720px){.workspace{padding:20px}.ws-head{flex-direction:column;align-items:flex-start;gap:12px}}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+</style>
+</head>
+<body>
+
+<div class="app-shell">
+  <!-- rail -->
+  <nav class="icon-rail" aria-label="Main">
+    <a href="#" class="rail-logo">S</a>
+    <div class="rail-nav">
+      <a href="#" class="rail-item"><span class="tip">Dashboard</span>
+        <svg fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v4a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v4a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v4a2 2 0 01-2 2H6a2 2 0 01-2-2v-4zM14 16a2 2 0 012-2h2a2 2 0 012 2v4a2 2 0 01-2 2h-2a2 2 0 01-2-2v-4z"/></svg></a>
+      <a href="#" class="rail-item"><span class="tip">Lớp học</span>
+        <svg fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"/></svg></a>
+      <a href="#" class="rail-item active"><span class="tip">Thư viện đề</span>
+        <svg fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/></svg></a>
+      <a href="#" class="rail-item"><span class="tip">Điểm & Phân tích</span>
+        <svg fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 002 2h2a2 2 0 002-2z"/></svg></a>
+    </div>
+    <div class="rail-avatar">MC</div>
+  </nav>
+
+  <!-- workspace -->
+  <main class="workspace">
+    <div class="ws-inner">
+
+      <!-- header -->
+      <div class="ws-head">
+        <div>
+          <div class="eyebrow">Test Library</div>
+          <h1>Chọn đề luyện tập</h1>
+          <p>Chọn một đề thi thử full-length, rồi làm tiếp bài dở hoặc bắt đầu lượt mới.</p>
+        </div>
+        <button class="btn btn-outline">
+          <svg fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
+          Xem trước định dạng đề
+        </button>
+      </div>
+
+      <!-- resume strip -->
+      <section id="resumeSec">
+        <div class="sec-head">
+          <h2>Làm tiếp bài dở</h2>
+          <span class="count" id="resumeCount">2</span>
+          <span class="rule"></span>
+        </div>
+        <div class="resume-grid">
+          <article class="resume-card">
+            <div class="rc-icon"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.91 11.67a.37.37 0 010 .66l-5.6 3.11a.37.37 0 01-.56-.33V8.89c0-.29.31-.47.56-.33l5.6 3.11z"/></svg></div>
+            <div class="rc-info">
+              <div class="rc-title">Practice Test 4</div>
+              <div class="rc-status">Đang ở: <b>Reading & Writing · Module 2</b></div>
+              <div class="rc-meta">HOẠT ĐỘNG 12 PHÚT TRƯỚC</div>
+            </div>
+            <button class="btn btn-primary rc-btn">Làm tiếp
+              <svg fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M13.5 4.5 21 12m0 0-7.5 7.5M21 12H3"/></svg></button>
+          </article>
+          <article class="resume-card">
+            <div class="rc-icon"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.91 11.67a.37.37 0 010 .66l-5.6 3.11a.37.37 0 01-.56-.33V8.89c0-.29.31-.47.56-.33l5.6 3.11z"/></svg></div>
+            <div class="rc-info">
+              <div class="rc-title">Diagnostic Baseline</div>
+              <div class="rc-status">Đang ở: <b>Math · Module 1</b></div>
+              <div class="rc-meta">HOẠT ĐỘNG HÔM QUA</div>
+            </div>
+            <button class="btn btn-primary rc-btn">Làm tiếp
+              <svg fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M13.5 4.5 21 12m0 0-7.5 7.5M21 12H3"/></svg></button>
+          </article>
+        </div>
+      </section>
+
+      <!-- available tests -->
+      <section>
+        <div class="sec-head">
+          <h2>Đề khả dụng</h2>
+          <span class="count" id="availCount">5 đề</span>
+          <span class="rule"></span>
+        </div>
+        <div class="test-grid" id="testGrid">
+          <!-- new -->
+          <article class="test-card">
+            <div class="tc-top"><span class="tc-type">Full-length</span><span class="badge badge--new"><span class="d"></span>Mới</span></div>
+            <div class="tc-title">Practice Test 6</div>
+            <p class="tc-desc">Bài thi thử digital SAT có chấm điểm đầy đủ, xem lại kết quả ngay sau khi nộp.</p>
+            <div class="tc-meta"><span>134 phút</span><span class="dot">•</span><span>2 phần</span><span class="dot">•</span><span>4 module</span></div>
+            <button class="btn btn-primary tc-action">Bắt đầu làm</button>
+          </article>
+          <!-- in progress -->
+          <article class="test-card test-card--in-progress">
+            <div class="tc-top"><span class="tc-type">Full-length</span><span class="badge badge--progress"><span class="d"></span>Đang làm</span></div>
+            <div class="tc-title">Practice Test 4</div>
+            <p class="tc-desc">Đề adaptive 2 phần theo chuẩn College Board. Làm tiếp module Reading còn dở.</p>
+            <div class="tc-meta"><span>134 phút</span><span class="dot">•</span><span>2 phần</span><span class="dot">•</span><span>4 module</span></div>
+            <button class="btn btn-primary tc-action">Làm tiếp</button>
+          </article>
+          <!-- completed -->
+          <article class="test-card">
+            <div class="tc-top"><span class="tc-type">Full-length</span><span class="badge badge--done"><span class="d"></span>Hoàn thành</span></div>
+            <div class="tc-title">Practice Test 2</div>
+            <p class="tc-desc">Đã hoàn thành và chấm điểm. Xem lại câu sai hoặc làm lại lượt mới.</p>
+            <div class="tc-score">Điểm ước lượng: 1480</div>
+            <div class="tc-meta"><span>134 phút</span><span class="dot">•</span><span>2 phần</span><span class="dot">•</span><span>4 module</span></div>
+            <button class="btn btn-outline tc-action">Làm lại đề</button>
+          </article>
+          <!-- new math only -->
+          <article class="test-card">
+            <div class="tc-top"><span class="tc-type">Section only</span><span class="badge badge--new"><span class="d"></span>Mới</span></div>
+            <div class="tc-title">Math Section Drill</div>
+            <p class="tc-desc">Chỉ phần Math, 2 module. Dùng để luyện nhanh kỹ năng đại số &amp; hàm số.</p>
+            <div class="tc-meta"><span>70 phút</span><span class="dot">•</span><span>1 phần</span><span class="dot">•</span><span>2 module</span></div>
+            <button class="btn btn-primary tc-action">Bắt đầu làm</button>
+          </article>
+          <!-- completed -->
+          <article class="test-card">
+            <div class="tc-top"><span class="tc-type">Full-length</span><span class="badge badge--done"><span class="d"></span>Hoàn thành</span></div>
+            <div class="tc-title">Practice Test 1</div>
+            <p class="tc-desc">Bài diagnostic đầu tiên đã chấm. Đối chiếu tiến bộ với các lượt sau.</p>
+            <div class="tc-score">Điểm ước lượng: 1420</div>
+            <div class="tc-meta"><span>134 phút</span><span class="dot">•</span><span>2 phần</span><span class="dot">•</span><span>4 module</span></div>
+            <button class="btn btn-outline tc-action">Làm lại đề</button>
+          </article>
+        </div>
+        <!-- empty variant (hidden) -->
+        <div class="test-grid hidden" id="emptyGrid">
+          <div class="empty"><div class="pin"></div><h4>Chưa có đề luyện tập</h4><p>Nhờ giáo viên xuất bản một đề thi thử, rồi quay lại đây để bắt đầu.</p></div>
+        </div>
+      </section>
+
+    </div>
+  </main>
+</div>
+
+<div class="demo-bar">
+  <button class="active" onclick="setMode('data',this)">Có dữ liệu</button>
+  <button onclick="setMode('empty',this)">Học sinh mới (rỗng)</button>
+</div>
+
+<script>
+function setMode(mode,btn){
+  document.querySelectorAll('.demo-bar button').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  const empty = mode==='empty';
+  document.getElementById('resumeSec').classList.toggle('hidden',empty);
+  document.getElementById('testGrid').classList.toggle('hidden',empty);
+  document.getElementById('emptyGrid').classList.toggle('hidden',!empty);
+  document.getElementById('availCount').textContent = empty ? '0 đề' : '5 đề';
+}
+</script>
+</body>
+</html>

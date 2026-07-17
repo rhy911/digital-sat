@@ -115,12 +115,10 @@
 
     <nav class="ds-mobile-nav" aria-label="Primary mobile" @if($isTeacherHome) x-data="{ tab: '{{ $teacherHomeTab }}' }" @teacher-home-tab-requested.window="tab = $event.detail.tab" @teacher-home-tab-changed.window="tab = $event.detail.tab" @endif>
         @foreach($navItems as $item)
-            @if($isTeacherHome && isset($item['tab']))
+            @if($isTeacherHome && isset($item['tab']) && $item['tab'] !== 'classes')
                 <button type="button"
                     @if($item['tab'] === 'progress')
                         @click="tab = 'progress'; $dispatch('teacher-home-tab-requested', { tab: 'progress' }); Livewire.dispatch('teacher-home-progress')"
-                    @elseif($item['tab'] === 'classes')
-                        @click="tab = 'classes'; $dispatch('teacher-home-tab-requested', { tab: 'classes' }); Livewire.dispatch('teacher-workspace-section', { section: 'classes' })"
                     @else
                         @click="tab = 'reports'; $dispatch('teacher-home-tab-requested', { tab: 'reports' }); Livewire.dispatch('teacher-workspace-section', { section: 'assignments' })"
                     @endif

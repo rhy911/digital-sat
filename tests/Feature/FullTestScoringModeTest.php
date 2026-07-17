@@ -117,7 +117,7 @@ class FullTestScoringModeTest extends TestCase
         ]);
 
         $this->actingAs($student)->get(route('my-practice.score', $attempt))
-            ->assertOk()->assertSee('Provisional IRT estimate')->assertSee('1170–1310')->assertSee('Item parameters and scaled mapping remain provisional.');
+            ->assertOk()->assertSee('Estimated practice score')->assertSee('1170 and 1310')->assertSee('The scaled score mapping for this route is still provisional');
     }
 
     public function test_rescore_command_audits_and_corrects_generic_v1_attempt(): void

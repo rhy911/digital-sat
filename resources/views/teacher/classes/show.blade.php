@@ -1,666 +1,845 @@
-<x-layouts.student :user="auth()->user()" :title="$classroom->name" header-type="progress">
+<x-layouts.student :user="auth()->user()" :title="$classroom->name" header-type="none">
     @push('styles')
-        @vite(['resources/css/student/analytics.css', 'resources/css/classroom.css'])
+        <link rel="preconnect" href="https://fonts.googleapis.com">
+        <link
+            href="https://fonts.googleapis.com/css2?family=Architects+Daughter&family=IBM+Plex+Mono:wght@400;500;600&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap"
+            rel="stylesheet">
+        @vite(['resources/css/classroom-workspace.css'])
     @endpush
-    <div class="ds-teacher-workspace teacher-detail" x-data="{
-        tabs: ['team', 'roster', 'documents', 'assignments'],
-        activeTab: 'roster',
-        init() {
-            const hashTab = window.location.hash.replace('#', '');
-            if (this.tabs.includes(hashTab)) this.activeTab = hashTab;
-        },
-        setTab(tab) {
-            if (!this.tabs.includes(tab)) return;
-            this.activeTab = tab;
-            history.replaceState(null, '', `${window.location.pathname}${window.location.search}#${tab}`);
-        },
-        moveTab(direction) {
-            const current = this.tabs.indexOf(this.activeTab);
-            const next = (current + direction + this.tabs.length) % this.tabs.length;
-            this.setTab(this.tabs[next]);
-            this.$nextTick(() => this.$refs[`${this.activeTab}Tab`]?.focus());
-        }
-    }">
-        <x-ui.alert type="success" :dismissible="false">{{ session('success') }}</x-ui.alert>
-        <x-ui.alert type="danger" :messages="$errors->all()" />
-        @php
-            $activeStudents = $classroom->active_memberships_count;
-            $pendingStudents = $classroom->pending_memberships_count;
-            $teacherCount = 1 + $classroom->co_teachers_count;
-            $documentCount = $classroom->documents_count;
-            $assignmentCount = $classroom->assignments_count;
-            $statusBadgeVariant = fn ($status) => match ($status) {
-                'active', 'approved', 'published', 'completed', 'open' => 'success',
-                'pending', 'draft', 'in-progress', 'in_progress' => 'warning',
-                'overdue', 'archived', 'closed', 'rejected', 'removed', 'left' => 'danger',
-                default => 'neutral',
-            };
-        @endphp
 
-        <a class="back-link" href="{{ route('teacher.classes.index') }}">Back to classes</a>
-        <div class="class-command">
-            <div class="class-command__main">
-                <div class="class-title-row">
-                    <x-ui.status-badge :status="$statusBadgeVariant($classroom->status)">{{ ucfirst($classroom->status) }}</x-ui.status-badge>
-                    <h1>{{ $classroom->name }}</h1>
-                </div>
-                <p>{{ $classroom->description ?: 'Manage roster, resources, assignments, and class access.' }}</p>
-                <dl class="class-command__metrics" aria-label="Class summary">
-                    <div><dt>Students</dt><dd>{{ $activeStudents }}</dd></div>
-                    <div><dt>Pending</dt><dd>{{ $pendingStudents }}</dd></div>
-                    <div><dt>Teachers</dt><dd>{{ $teacherCount }}</dd></div>
-                    <div><dt>Resources</dt><dd>{{ $documentCount }}</dd></div>
-                    <div><dt>Assignments</dt><dd>{{ $assignmentCount }}</dd></div>
-                </dl>
-            </div>
-            <div class="class-command__actions">
-                <div class="join-code join-code--compact">
-                    <span>Student join code</span>
-                    <strong>{{ $classroom->join_code }}</strong>
-                    @if ($classroom->status === 'active')
-                        <label>Join link<input readonly
-                                value="{{ route('student.classes.join-link', $classroom->join_code) }}"
-                                onclick="this.select()"></label>
-                    @endif
-                </div>
-                <div class="class-command__buttons">
-                    @if ($classroom->status === 'active')
-                        <form method="POST" action="{{ route('teacher.classes.rotate-code', $classroom) }}">
-                            @csrf
-                            <x-ui.button type="submit" variant="secondary" size="sm">Rotate code</x-ui.button>
-                        </form>
-                    @endif
-                    @can('manageTeam', $classroom)
-                        @if ($classroom->status === 'active')
-                            <form method="POST" action="{{ route('teacher.classes.archive', $classroom) }}"
-                                data-confirm="Archive class and close published assignments?">
-                                @csrf
-                                <x-ui.button type="submit" variant="danger" size="sm">Archive</x-ui.button>
-                            </form>
-                        @else
-                            <form method="POST" action="{{ route('teacher.classes.restore', $classroom) }}">
-                                @csrf
-                                <x-ui.button type="submit" variant="secondary" size="sm">Restore</x-ui.button>
-                            </form>
-                        @endif
-                    @endcan
-                </div>
-            </div>
-        </div>
-        @if ($classroom->status === 'active')
-            <details class="create-disclosure create-disclosure--compact">
-                <summary>Edit class details</summary>
-                <form method="POST" action="{{ route('teacher.classes.update', $classroom) }}" class="inline-form">
-                    @csrf @method('PUT')<label>Class name<input name="name" value="{{ $classroom->name }}"
-                            required maxlength="150"></label><label>Description<input name="description"
-                            value="{{ $classroom->description }}" maxlength="2000"></label><x-ui.button
-                        type="submit" variant="primary" size="sm">Save</x-ui.button></form>
-            </details>
-        @endif
-        <div class="class-tabs class-tabs--segmented" role="tablist" aria-label="Class sections"
-            @keydown.left.prevent="moveTab(-1)" @keydown.right.prevent="moveTab(1)"
-            @keydown.home.prevent="setTab(tabs[0]); $nextTick(() => $refs.teamTab.focus())"
-            @keydown.end.prevent="setTab(tabs[tabs.length - 1]); $nextTick(() => $refs.assignmentsTab.focus())">
-            <button x-ref="teamTab" type="button" role="tab" id="class-tab-team"
-                aria-controls="class-panel-team" :aria-selected="activeTab === 'team' ? 'true' : 'false'"
-                :tabindex="activeTab === 'team' ? 0 : -1" :class="{ 'is-active': activeTab === 'team' }"
-                @click="setTab('team')">Teaching team <span>{{ $teacherCount }}</span></button>
-            <button x-ref="rosterTab" type="button" role="tab" id="class-tab-roster"
-                aria-controls="class-panel-roster" :aria-selected="activeTab === 'roster' ? 'true' : 'false'"
-                :tabindex="activeTab === 'roster' ? 0 : -1" :class="{ 'is-active': activeTab === 'roster' }"
-                @click="setTab('roster')">Roster <span>{{ $activeStudents }}</span></button>
-            <button x-ref="documentsTab" type="button" role="tab" id="class-tab-documents"
-                aria-controls="class-panel-documents" :aria-selected="activeTab === 'documents' ? 'true' : 'false'"
-                :tabindex="activeTab === 'documents' ? 0 : -1" :class="{ 'is-active': activeTab === 'documents' }"
-                @click="setTab('documents')">Documents <span>{{ $documentCount }}</span></button>
-            <button x-ref="assignmentsTab" type="button" role="tab" id="class-tab-assignments"
-                aria-controls="class-panel-assignments" :aria-selected="activeTab === 'assignments' ? 'true' : 'false'"
-                :tabindex="activeTab === 'assignments' ? 0 : -1" :class="{ 'is-active': activeTab === 'assignments' }"
-                @click="setTab('assignments')">Assignments <span>{{ $assignmentCount }}</span></button>
-        </div>
-        <section id="class-panel-team" class="class-panel class-tab-panel" role="tabpanel"
-            aria-labelledby="class-tab-team" x-show="activeTab === 'team'" x-cloak>
-            <div class="section-heading section-heading--tight class-section-bar">
-                <div>
-                    <h2>Teaching team</h2>
-                    <p>Owners and co-teachers can manage daily class work. Owners keep team and archive control.</p>
-                </div>
-                <span>{{ $teacherCount }} total</span>
-            </div>
-            <div class="teacher-team-list">
-                <div class="teacher-team-row">
-                    <div>
-                        <strong>{{ $classroom->owner->name }}</strong><span>{{ $classroom->owner->email }}</span>
-                    </div>
-                    <x-ui.status-badge status="neutral">Owner</x-ui.status-badge>
-                </div>
-                @foreach ($classroom->coTeachers as $teacher)
-                    <div class="teacher-team-row">
-                        <div>
-                            <strong>{{ $teacher->name }}</strong><span>{{ $teacher->email }}</span>
+    @php
+        $userInitials = auth()->user()?->initials ?? 'U';
+        $pending = $classroom->memberships->where('status', 'pending');
+        $dueSoon = $classroom->assignments
+            ->whereNotNull('due_at')
+            ->where('due_at', '>=', now())
+            ->sortBy('due_at')
+            ->take(3);
+
+        // Corkboard digest data
+        $recentJoins = $classroom->memberships
+            ->where('status', 'active')
+            ->sortByDesc(fn($m) => $m->decided_at ?? $m->created_at)
+            ->take(3);
+
+        $lastCoTeacher = $classroom->coTeachers->sortByDesc(fn($t) => $t->pivot->created_at)->first();
+        $lastDocument = $classroom->documents->sortByDesc('created_at')->first();
+    @endphp
+
+    <div class="app-shell" x-data="{
+        searchQuery: '',
+        statusFilter: 'active',
+        newClassOpen: false,
+        activeTab: new URLSearchParams(location.search).get('assign_page') ? 'assign'
+            : new URLSearchParams(location.search).get('docs_page') ? 'docs'
+            : 'roster'
+    }">
+
+        <!-- COLUMN 1: ICON RAIL -->
+        <x-classroom.icon-rail :logo-href="route('teacher.progress')" :avatar-label="$userInitials" :items="[
+            [
+                'route' => route('teacher.progress'),
+                'label' => 'Progress',
+                'icon' => '<svg viewBox=\'0 0 24 24\' fill=\'none\' stroke=\'currentColor\' stroke-width=\'1.8\'><path d=\'M4 19V5M4 19h16M8 15l3-4 3 3 5-7\' stroke-linecap=\'round\' stroke-linejoin=\'round\' /></svg>',
+            ],
+            [
+                'route' => route('teacher.classes.index'),
+                'label' => 'Classes',
+                'active' => true,
+                'icon' => '<svg viewBox=\'0 0 24 24\' fill=\'none\' stroke=\'currentColor\' stroke-width=\'1.8\'><rect x=\'3.5\' y=\'5\' width=\'17\' height=\'14\' rx=\'2\' /><path d=\'M3.5 9.5h17M8 5v-1M16 5v-1\' stroke-linecap=\'round\' /></svg>',
+            ],
+            [
+                'route' => route('teacher.assignments.index'),
+                'label' => 'Reports',
+                'icon' => '<svg viewBox=\'0 0 24 24\' fill=\'none\' stroke=\'currentColor\' stroke-width=\'1.8\'><path d=\'M5 3v18h16\' stroke-linecap=\'round\' /><rect x=\'8\' y=\'12\' width=\'3\' height=\'6\' /><rect x=\'13\' y=\'8\' width=\'3\' height=\'10\' /><rect x=\'18\' y=\'5\' width=\'3\' height=\'13\' /></svg>',
+            ],
+            [
+                'route' => route('home.practice'),
+                'label' => 'Practice',
+                'icon' => '<svg viewBox=\'0 0 24 24\' fill=\'none\' stroke=\'currentColor\' stroke-width=\'1.8\'><path d=\'M4 19.5A2.5 2.5 0 0 1 6.5 17H20V4H6.5A2.5 2.5 0 0 0 4 6.5v13Z\' stroke-linejoin=\'round\' /><path d=\'M4 17h16\' /></svg>',
+            ],
+            [
+                'route' => route('home-dashboard.index'),
+                'label' => 'Test Builder',
+                'target' => '_blank',
+                'icon' => '<svg viewBox=\'0 0 24 24\' fill=\'none\' stroke=\'currentColor\' stroke-width=\'1.8\'><path d=\'M14.7 6.3a3 3 0 0 0 4 4L14 15l-4 1 1-4Z\' stroke-linejoin=\'round\' /></svg>',
+            ],
+        ]" />
+
+        <!-- COLUMN 2: CLASS LIST COLUMN (folder tabs) -->
+        <x-classroom.sidebar-list title="{{ __('classroom.my_classes') }}"
+            count-text="{{ $activeClassroomsCount }} active · {{ $archivedClassroomsCount }} archived"
+            search-placeholder="{{ __('classroom.search_placeholder') }}" :items="$classrooms
+                ->map(
+                    fn($c) => [
+                        'route' => route('teacher.classes.show', $c),
+                        'name' => $c->name,
+                        'status' => $c->status,
+                        'selected' => $classroom->id === $c->id,
+                        'meta' => [
+                            __('classroom.students_count', ['count' => $c->active_memberships_count]),
+                            __('classroom.assignments_count', ['count' => $c->assignments_count]),
+                        ],
+                    ],
+                )
+                ->all()">
+            <x-slot:primaryAction>
+                <button class="new-class-btn"
+                    @click="newClassOpen = !newClassOpen">{{ __('classroom.create_new_class') }}</button>
+                <div class="new-class-form" :class="{ 'open': newClassOpen }">
+                    <form method="POST" action="{{ route('teacher.classes.store') }}">
+                        @csrf
+                        <label>Class name</label>
+                        <input type="text" name="name" required placeholder="SAT Prep — Summer" maxlength="150">
+                        <label>Description</label>
+                        <input type="text" name="description" placeholder="Optional" maxlength="2000">
+                        <div class="actions">
+                            <button type="button" class="btn-sm-ghost"
+                                @click="newClassOpen = false">{{ __('classroom.cancel') }}</button>
+                            <button type="submit" class="btn-sm-primary">{{ __('classroom.create_class') }}</button>
                         </div>
-                        <div class="row-actions">
-                            <x-ui.status-badge status="neutral">Co-teacher</x-ui.status-badge>
-                            @can('manageTeam', $classroom)
+                    </form>
+                </div>
+            </x-slot:primaryAction>
+        </x-classroom.sidebar-list>
+
+        <!-- COLUMN 3: LEDGER PANE (main workspace + corkboard) -->
+        <div class="ledger-pane">
+            <x-ui.flash />
+
+            <!-- MAIN LEDGER COLUMN -->
+            <div class="binder-panel">
+                <div class="ledger-header">
+                    <div class="dh-left">
+                        <h2>{{ $classroom->name }} <span
+                                class="handwriting status-quote">"{{ ucfirst($classroom->status) }}"</span></h2>
+                        <div class="dh-desc">
+                            {{ $classroom->description ?: 'Manage roster, resources, assignments, and class access.' }}
+                        </div>
+                    </div>
+                </div>
+
+                <x-classroom.stat-row :stats="[
+                    ['value' => $classroom->activeMemberships->count(), 'label' => 'Students'],
+                    ['value' => $classroom->pending_memberships_count, 'label' => 'Pending'],
+                    ['value' => 1 + $classroom->co_teachers_count, 'label' => 'Teachers'],
+                    ['value' => $classroom->documents_count, 'label' => 'Resources'],
+                    ['value' => $classroom->assignments_count, 'label' => 'Assignments'],
+                ]" />
+
+                <!-- PINNED TAB BAR (Teams-style: swaps the whole panel below, lazy via x-show) -->
+                <x-classroom.tab-bar :tabs="[
+                    ['key' => 'roster', 'label' => 'Roster', 'count' => $classroom->activeMemberships->count()],
+                    ['key' => 'team', 'label' => 'Teaching team', 'count' => 1 + $classroom->co_teachers_count],
+                    ['key' => 'docs', 'label' => 'Documents', 'count' => $classroom->documents_count],
+                    ['key' => 'assign', 'label' => 'Assignments', 'count' => $classroom->assignments_count],
+                    ['key' => 'settings', 'label' => 'Settings'],
+                ]" />
+
+                <!-- ROSTER TAB PANEL -->
+                <div class="section-panel" :class="{ 'active': activeTab === 'roster' }">
+                    @if ($pending->isNotEmpty())
+                        <div class="pending-block" x-data="{ selected: [] }">
+                            <div class="pending-head">
+                                <h3>Pending requests
+                                    ({{ $pending->count() }})</h3>
                                 @if ($classroom->status === 'active')
                                     <form method="POST"
-                                        action="{{ route('teacher.classes.co-teachers.destroy', [$classroom, $teacher]) }}"
-                                        data-confirm="Remove this co-teacher from the class?">
-                                        @csrf @method('DELETE')
-                                        <button class="text-button text-button--danger">Remove</button>
-                                    </form>
-                                @endif
-                            @endcan
-                        </div>
-                    </div>
-                @endforeach
-            </div>
-            @can('manageTeam', $classroom)
-                @if ($classroom->status === 'active')
-                    <details class="create-disclosure create-disclosure--compact">
-                        <summary>Add co-teacher</summary>
-                        <form method="POST" action="{{ route('teacher.classes.co-teachers.store', $classroom) }}"
-                            class="inline-form inline-form--compact">
-                            @csrf
-                            <label class="teacher-search">Approved teacher
-                                <input id="coTeacherSearch" type="search" name="email" required
-                                    placeholder="Search name or email" autocomplete="off">
-                                <input id="coTeacherId" type="hidden" name="teacher_id">
-                                <div id="coTeacherSearchResults" class="teacher-search-results" role="listbox" hidden></div>
-                            </label>
-                            <x-ui.button type="submit" variant="primary" size="sm">Add co-teacher</x-ui.button>
-                        </form>
-                    </details>
-                @endif
-            @endcan
-        </section>
-        <section id="class-panel-roster" class="class-panel class-tab-panel" role="tabpanel"
-            aria-labelledby="class-tab-roster" x-show="activeTab === 'roster'" x-cloak>
-            <div class="section-heading class-section-bar">
-                <div>
-                    <h2>Roster</h2>
-                    <p>{{ $activeStudents }} active students{{ $pendingStudents ? ' · '.$pendingStudents.' pending' : '' }}</p>
-                </div>
-                <span>{{ $classroom->memberships->count() }} memberships</span>
-            </div>
-            @php
-                $pending = $classroom->memberships->where('status', 'pending');
-            @endphp
-            @if ($pending->isNotEmpty())
-                <div class="pending-block pending-block--priority" x-data="{ selected: [] }">
-                    <div class="section-heading section-heading--tight">
-                        <h3>Pending requests <span>{{ $pending->count() }}</span></h3>
-                        @if ($classroom->status === 'active')
-                            <form method="POST" action="{{ route('teacher.memberships.bulk-approve', $classroom) }}"
-                                onsubmit="const btn = this.querySelector('button'); btn.disabled = true; btn.innerText = 'Approving...';">
-                                @csrf
-                                <template x-for="id in selected" :key="id">
-                                    <input type="hidden" name="membership_ids[]" :value="id">
-                                </template>
-                                <x-ui.button type="submit" variant="primary" size="sm" x-bind:disabled="selected.length === 0">
-                                    Approve selected (<span x-text="selected.length"></span>)
-                                </x-ui.button>
-                            </form>
-                        @endif
-                    </div>
-                    @if ($classroom->status === 'active')
-                        <label class="roster-select-all">
-                            <input type="checkbox"
-                                x-bind:checked="selected.length === {{ $pending->count() }} && selected.length > 0"
-                                x-on:change="selected = $event.target.checked ? [{{ $pending->pluck('id')->implode(',') }}] : []">
-                            Select all
-                        </label>
-                    @endif
-                    @foreach ($pending as $membership)
-                        <div class="roster-row">
-                            @if ($classroom->status === 'active')
-                                <input type="checkbox" x-model.number="selected" value="{{ $membership->id }}">
-                            @endif
-                            <div>
-                                <strong>{{ $membership->student->name }}</strong><span>{{ $membership->student->email }}</span>
-                            </div>
-                            @if ($classroom->status === 'active')
-                                <div class="row-actions">
-                                    <form method="POST"
-                                        action="{{ route('teacher.memberships.approve', $membership) }}"
-                                        onsubmit="const btn = this.querySelector('button'); btn.disabled = true; btn.innerText = 'Approving...';">
+                                        action="{{ route('teacher.memberships.bulk-approve', $classroom) }}"
+                                        class="d-inline">
                                         @csrf
-                                        <x-ui.button type="submit" variant="primary" size="sm">Approve</x-ui.button>
-                                    </form>
-                                    <form method="POST"
-                                        action="{{ route('teacher.memberships.reject', $membership) }}"
-                                        onsubmit="const btn = this.querySelector('button'); btn.disabled = true; btn.innerText = 'Rejecting...';">
-                                        @csrf
-                                        <x-ui.button type="submit" variant="secondary" size="sm">Reject</x-ui.button>
-                                    </form>
-                                </div>
-                            @endif
-                        </div>
-                    @endforeach
-                </div>
-            @endif
-            <div class="list-heading">
-                <span>Active students</span>
-                <span>Actions</span>
-            </div>
-            @forelse($classroom->memberships->where('status', 'active') as $membership)
-                <div class="roster-row">
-                    <div>
-                        <strong>{{ $membership->student->name }}</strong><span>{{ $membership->student->email }}</span>
-                    </div>
-                    @if ($classroom->status === 'active')
-                        <form method="POST" action="{{ route('teacher.memberships.remove', $membership) }}"
-                            data-confirm="Remove this student? Result history will remain.">@csrf<button
-                                class="text-button text-button--danger">Remove</button></form>
-                    @endif
-                </div>
-            @empty <div class="class-empty class-empty--compact">
-                    <p>No active students. Share code <strong>{{ $classroom->join_code }}</strong>.</p>
-                </div>
-            @endforelse
-        </section>
-        <section id="class-panel-documents" class="class-panel class-tab-panel" role="tabpanel"
-            aria-labelledby="class-tab-documents" x-show="activeTab === 'documents'" x-cloak>
-            <div class="section-heading class-section-bar">
-                <div>
-                    <h2>Study documents</h2>
-                    <p>Share reference files and links with active students in this class.</p>
-                </div>
-                <span>{{ $documentCount }} resources</span>
-            </div>
-            <div class="resource-console">
-                <div class="resource-list">
-                    @forelse($classroom->documents->sortByDesc('created_at') as $document)
-                        @php
-                            $ext = $document->isFile() ? strtolower(pathinfo($document->original_name ?? '', PATHINFO_EXTENSION)) : '';
-                        @endphp
-                        <div class="document-row">
-                            <div class="document-row__left">
-                                <div class="document-row__icon-container document-row__icon--{{ $document->isFile() ? ($ext ?: 'file') : 'link' }}">
-                                    @if ($document->isFile())
-                                        @if ($ext === 'pdf')
-                                            <!-- PDF icon -->
-                                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/><path d="M10 9H8"/><path d="M16 13H8"/><path d="M16 17H8"/></svg>
-                                        @elseif (in_array($ext, ['doc', 'docx']))
-                                            <!-- Word doc icon -->
-                                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12.5 22H18a2 2 0 0 0 2-2V7l-5-5H6a2 2 0 0 0-2 2v9.5"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/><path d="M10.4 12.6a2 2 0 1 1 2.8 2.8L6 22l-3 1 1-3Z"/></svg>
-                                        @elseif (in_array($ext, ['ppt', 'pptx']))
-                                            <!-- PPT/Presentation icon -->
-                                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 3h20"/><path d="M21 3v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V3"/><path d="m7 21 5-5 5 5"/></svg>
-                                        @elseif (in_array($ext, ['xls', 'xlsx']))
-                                            <!-- Spreadsheet icon -->
-                                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22H18a2 2 0 0 0 2-2V7l-5-5H6a2 2 0 0 0-2 2v18a2 2 0 0 0 2 2Z"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/><path d="M8 12h8"/><path d="M8 16h8"/><path d="M12 12v8"/></svg>
-                                        @elseif (in_array($ext, ['png', 'jpg', 'jpeg', 'webp']))
-                                            <!-- Image icon -->
-                                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="18" x="3" y="3" rx="2" ry="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"/></svg>
-                                        @else
-                                            <!-- Generic document file icon -->
-                                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/></svg>
-                                        @endif
-                                    @else
-                                        <!-- External Web link icon -->
-                                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
-                                    @endif
-                                </div>
-                                <div class="document-row__details">
-                                    <div class="document-row__header">
-                                        <strong class="document-row__title">{{ $document->title }}</strong>
-                                        @if ($document->isFile())
-                                            <x-ui.status-badge status="neutral">{{ strtoupper($ext ?: 'file') }}</x-ui.status-badge>
-                                        @else
-                                            <x-ui.status-badge status="brand">LINK</x-ui.status-badge>
-                                        @endif
-                                    </div>
-                                    @if ($document->description)
-                                        <p class="document-row__description">{{ $document->description }}</p>
-                                    @endif
-                                    <div class="document-row__meta">
-                                        @if ($document->isFile())
-                                            <span class="document-row__meta-item" title="Filename: {{ $document->original_name }}">{{ Str::limit($document->original_name, 28) }}</span>
-                                            @if ($document->displaySize())
-                                                <span class="document-row__meta-dot">&middot;</span>
-                                                <span class="document-row__meta-item">{{ $document->displaySize() }}</span>
-                                            @endif
-                                        @else
-                                            <span class="document-row__meta-item">{{ parse_url($document->external_url ?? '', PHP_URL_HOST) }}</span>
-                                        @endif
-                                        <span class="document-row__meta-dot">&middot;</span>
-                                        <span class="document-row__meta-item">Shared {{ $document->created_at->diffForHumans() }}</span>
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="row-actions document-row__actions" role="group" aria-label="Document actions">
-                                @if ($document->isFile())
-                                    <a class="document-action document-action--primary" href="{{ route('class-documents.open', $document) }}" target="_blank"
-                                        rel="noopener">
-                                        <svg aria-hidden="true" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none"
-                                            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                            <path d="M15 3h6v6" />
-                                            <path d="M10 14 21 3" />
-                                            <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
-                                        </svg>
-                                        <span>Open</span>
-                                    </a>
-                                    <a class="document-action document-action--icon" href="{{ route('class-documents.download', $document) }}"
-                                        aria-label="Download {{ $document->title }}" title="Download">
-                                        <svg aria-hidden="true" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none"
-                                            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
-                                            <path d="M7 10l5 5 5-5" />
-                                            <path d="M12 15V3" />
-                                        </svg>
-                                    </a>
-                                @else
-                                    <a class="document-action document-action--primary" href="{{ $document->external_url }}" target="_blank"
-                                        rel="noopener noreferrer">
-                                        <svg aria-hidden="true" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none"
-                                            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                            <path d="M15 3h6v6" />
-                                            <path d="M10 14 21 3" />
-                                            <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
-                                        </svg>
-                                        <span>Open</span>
-                                    </a>
-                                @endif
-                                @if ($classroom->status === 'active')
-                                    <form method="POST" action="{{ route('teacher.classes.documents.destroy', [$classroom, $document]) }}"
-                                        data-confirm="Remove this study document?">
-                                        @csrf @method('DELETE')
-                                        <button class="document-action document-action--icon document-action--danger"
-                                            aria-label="Remove {{ $document->title }}" title="Remove">
-                                            <svg aria-hidden="true" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none"
-                                                stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                                <path d="M3 6h18" />
-                                                <path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
-                                                <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6" />
-                                                <path d="M10 11v6" />
-                                                <path d="M14 11v6" />
-                                            </svg>
+                                        <template x-for="id in selected" :key="id">
+                                            <input type="hidden" name="membership_ids[]" :value="id">
+                                        </template>
+                                        <button type="submit" class="btn-sm-primary btn-compact flex-none w-auto"
+                                            :disabled="selected.length === 0">
+                                            Approve selected (<span x-text="selected.length"></span>)
                                         </button>
                                     </form>
                                 @endif
                             </div>
-                        </div>
-                    @empty
-                        <div class="document-empty-state">
-                            <div class="document-empty-state__graphic">
-                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><circle cx="9" cy="13" r="1"/><circle cx="15" cy="13" r="1"/><path d="M8 17s1 1.5 4 1.5 4-1.5 4-1.5"/></svg>
+                            @if ($classroom->status === 'active')
+                                <label class="pending-select-all">
+                                    <input type="checkbox"
+                                        x-bind:checked="selected.length === {{ $pending->count() }} && selected.length > 0"
+                                        x-on:change="selected = $event.target.checked ? [{{ $pending->pluck('id')->implode(',') }}] : []">
+                                    Select all
+                                </label>
+                            @endif
+                            <div class="flex flex-col gap-8">
+                                @foreach ($pending as $membership)
+                                    <div class="pending-row">
+                                        <div class="flex items-center gap-8">
+                                            @if ($classroom->status === 'active')
+                                                <input type="checkbox" x-model.number="selected"
+                                                    value="{{ $membership->id }}">
+                                            @endif
+                                            <div>
+                                                <strong>{{ $membership->student->name }}</strong>
+                                                <span class="pending-row-email">({{ $membership->student->email }})</span>
+                                            </div>
+                                        </div>
+                                        @if ($classroom->status === 'active')
+                                            <div class="flex gap-6">
+                                                <form method="POST"
+                                                    action="{{ route('teacher.memberships.approve', $membership) }}"
+                                                    class="d-inline">
+                                                    @csrf
+                                                    <button type="submit"
+                                                        class="btn-sm-primary btn-tight flex-none w-auto">Approve</button>
+                                                </form>
+                                                <form method="POST"
+                                                    action="{{ route('teacher.memberships.reject', $membership) }}"
+                                                    class="d-inline">
+                                                    @csrf
+                                                    <button type="submit"
+                                                        class="btn-sm-ghost btn-tight flex-none w-auto">Reject</button>
+                                                </form>
+                                            </div>
+                                        @endif
+                                    </div>
+                                @endforeach
                             </div>
-                            <h3>No study documents</h3>
-                            <p>Upload worksheets, formulas, or link online reading materials to help students prepare for the exam.</p>
                         </div>
-                    @endforelse
-                </div>
-                @if ($classroom->status === 'active')
-                    <aside class="resource-actions" x-data="{ activeForm: 'file' }" aria-label="Add study resource">
-                        <div class="resource-panel-header">
-                            <h3>Add resource</h3>
-                            <p>Share files or external links with your class.</p>
-                        </div>
-                        
-                        <div class="resource-tab-toggle">
-                            <button type="button" 
-                                :class="{ 'toggle-active': activeForm === 'file' }" 
-                                x-on:click="activeForm = 'file'">
-                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
-                                File
-                            </button>
-                            <button type="button" 
-                                :class="{ 'toggle-active': activeForm === 'link' }" 
-                                x-on:click="activeForm = 'link'">
-                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
-                                Link
-                            </button>
-                        </div>
+                    @endif
 
-                        <!-- Upload File form -->
-                        <div x-show="activeForm === 'file'" class="fade-enter">
-                            <form method="POST" action="{{ route('teacher.classes.documents.store', $classroom) }}"
-                                class="resource-form" enctype="multipart/form-data"
-                                onsubmit="const btn = this.querySelector('button[type=submit]'); btn.disabled = true; btn.innerText = 'Uploading...';">
-                                @csrf
-                                <input type="hidden" name="source_type" value="file">
-                                
-                                <div class="form-group">
-                                    <label for="doc-title-file">Title</label>
-                                    <input type="text" id="doc-title-file" name="title" required maxlength="180" placeholder="e.g. SAT Reading Tips">
-                                </div>
-                                
-                                <div class="form-group" x-data="{ fileName: '' }">
-                                    <label for="doc-file-upload">Choose File</label>
-                                    <div class="file-dropzone-wrapper">
-                                        <input type="file" id="doc-file-upload" name="document_file" required
-                                            accept=".pdf,.doc,.docx,.ppt,.pptx,.xls,.xlsx,.txt,.png,.jpg,.jpeg,.webp"
-                                            x-on:change="fileName = $event.target.files[0]?.name">
-                                        <div class="file-dropzone-custom">
-                                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 14.899A7 7 0 1 1 15.71 8h1.79a4.5 4.5 0 0 1 2.5 8.242"/><path d="M12 12v9"/><path d="m15 15-3-3-3 3"/></svg>
-                                            <span x-text="fileName || 'Click to browse files'">Click to browse files</span>
-                                            <small>PDF, Word, PPT, Excel, Images up to 10MB</small>
+                    <div class="sp-head">
+                        <div>
+                            <p>{{ __('classroom.roster_desc') }}</p>
+                        </div>
+                        <button class="btn-outline" onclick="copyJoinCode('{{ $classroom->join_code }}', this)">Invite
+                            code: {{ $classroom->join_code }}</button>
+                    </div>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Student</th>
+                                <th>Joined</th>
+                                @if ($classroom->status === 'active')
+                                    <th class="text-right">Actions</th>
+                                @endif
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @forelse($rosterPage as $membership)
+                                <tr>
+                                    <td class="name-cell">
+                                        <div class="flex-name">
+                                            <div class="avatar-sm">{{ $membership->student->initials }}</div>
+                                            <div>
+                                                <div class="n">{{ $membership->student->name }}</div>
+                                                <div class="m">
+                                                    {{ $membership->student->email }}</div>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td>{{ $membership->decided_at?->format('d/m/Y') ?? $membership->created_at->format('d/m/Y') }}
+                                    </td>
+                                    @if ($classroom->status === 'active')
+                                        <td class="text-right">
+                                            <form method="POST"
+                                                action="{{ route('teacher.memberships.remove', $membership) }}"
+                                                onsubmit="return confirm('Remove this student? Result history will remain.');"
+                                                class="d-inline">
+                                                @csrf
+                                                <button type="submit" class="link-action danger btn-link-plain font-bold text-xs-plus">Remove</button>
+                                            </form>
+                                        </td>
+                                    @endif
+                                </tr>
+                            @empty
+                                <tr>
+                                    <td colspan="{{ $classroom->status === 'active' ? 3 : 2 }}" class="empty-row">
+                                        No active students. Share code <strong>{{ $classroom->join_code }}</strong>.
+                                    </td>
+                                </tr>
+                            @endforelse
+                        </tbody>
+                    </table>
+                    @if ($rosterPage->hasPages())
+                        <div class="mt-12">{{ $rosterPage->links() }}</div>
+                    @endif
+                </div>
+
+                <!-- TEACHING TEAM TAB PANEL -->
+                <div class="section-panel" :class="{ 'active': activeTab === 'team' }">
+                    <div class="sp-head">
+                        <div>
+                            <p>{{ __('classroom.team_desc') }}</p>
+                        </div>
+                    </div>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Name</th>
+                                <th>Role</th>
+                                <th>Added</th>
+                                @if ($classroom->status === 'active')
+                                    <th class="text-right">Actions</th>
+                                @endif
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td class="name-cell">
+                                    <div class="flex-name">
+                                        <div class="avatar-sm">{{ $classroom->owner->initials }}</div>
+                                        <div>
+                                            <div class="n">{{ $classroom->owner->name }}</div>
+                                            <div class="m">
+                                                {{ $classroom->owner->email }}</div>
                                         </div>
                                     </div>
+                                </td>
+                                <td><span class="role-tag">Owner</span></td>
+                                <td>{{ $classroom->created_at->format('d/m/Y') }}</td>
+                                @if ($classroom->status === 'active')
+                                    <td></td>
+                                @endif
+                            </tr>
+
+                            @foreach ($classroom->coTeachers as $teacher)
+                                <tr>
+                                    <td class="name-cell">
+                                        <div class="flex-name">
+                                            <div class="avatar-sm">{{ $teacher->initials }}</div>
+                                            <div>
+                                                <div class="n">{{ $teacher->name }}</div>
+                                                <div class="m">
+                                                    {{ $teacher->email }}</div>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td><span class="role-tag">Co-teacher</span></td>
+                                    <td>{{ $teacher->pivot->created_at?->format('d/m/Y') ?? '—' }}</td>
+                                    @if ($classroom->status === 'active')
+                                        <td class="text-right">
+                                            @can('manageTeam', $classroom)
+                                                <form method="POST"
+                                                    action="{{ route('teacher.classes.co-teachers.destroy', [$classroom, $teacher]) }}"
+                                                    onsubmit="return confirm('Remove this co-teacher from the class?');"
+                                                    class="d-inline">
+                                                    @csrf @method('DELETE')
+                                                    <button type="submit" class="link-action danger btn-link-plain font-bold text-xs-plus">Remove</button>
+                                                </form>
+                                            @endcan
+                                        </td>
+                                    @endif
+                                </tr>
+                            @endforeach
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- DOCUMENTS TAB PANEL -->
+                <div class="section-panel" :class="{ 'active': activeTab === 'docs' }">
+                    <div class="sp-head">
+                        <div>
+                            <p>{{ __('classroom.docs_desc') }}</p>
+                        </div>
+                    </div>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Document</th>
+                                <th>Type</th>
+                                <th class="num">Uploaded</th>
+                                <th class="text-right">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @forelse($documentsPage as $document)
+                                @php
+                                    $ext = $document->isFile()
+                                        ? strtolower(pathinfo($document->original_name ?? '', PATHINFO_EXTENSION))
+                                        : '';
+                                @endphp
+                                <tr class="row-clickable"
+                                    onclick="if (!event.target.closest('[data-row-menu]')) { window.open('{{ $document->isFile() ? route('class-documents.open', $document) : $document->external_url }}', '_blank'); }">
+                                    <td class="name-cell">
+                                        <div class="n">{{ $document->title }}</div>
+                                        <div class="m">
+                                            @if ($document->isFile())
+                                                {{ Str::limit($document->original_name, 28) }} ·
+                                                {{ $document->displaySize() }}
+                                            @else
+                                                {{ parse_url($document->external_url ?? '', PHP_URL_HOST) }}
+                                            @endif
+                                        </div>
+                                    </td>
+                                    <td><span
+                                            class="type-tag">{{ $document->isFile() ? strtoupper($ext ?: 'file') : 'LINK' }}</span>
+                                    </td>
+                                    <td class="num">{{ $document->created_at->format('d/m/Y') }}</td>
+                                    <td class="text-right">
+                                        <div data-row-menu class="row-menu-wrap" x-data="{ menuOpen: false, top: 0, left: 0 }"
+                                            @click.stop>
+                                            <button type="button" class="row-menu-btn" title="Actions"
+                                                @click="const r = $el.getBoundingClientRect(); top = r.bottom + 4; left = r.right - 140; menuOpen = !menuOpen">
+                                                <svg viewBox="0 0 24 24" fill="currentColor">
+                                                    <circle cx="5" cy="12" r="1.8" />
+                                                    <circle cx="12" cy="12" r="1.8" />
+                                                    <circle cx="19" cy="12" r="1.8" />
+                                                </svg>
+                                            </button>
+                                            <template x-teleport="body">
+                                                <div class="row-menu-popover" x-show="menuOpen" x-cloak
+                                                    :style="`position:fixed; top:${top}px; left:${left}px;`"
+                                                    @click.away="menuOpen = false" @click="menuOpen = false">
+                                                    @if ($document->isFile())
+                                                        <a href="{{ route('class-documents.download', $document) }}"
+                                                            class="row-menu-item">Download</a>
+                                                    @endif
+                                                    @if ($classroom->status === 'active')
+                                                        <form method="POST"
+                                                            action="{{ route('teacher.classes.documents.destroy', [$classroom, $document]) }}"
+                                                            onsubmit="return confirm('Remove this study document?');">
+                                                            @csrf @method('DELETE')
+                                                            <button type="submit"
+                                                                class="row-menu-item danger">Remove</button>
+                                                        </form>
+                                                    @endif
+                                                </div>
+                                            </template>
+                                        </div>
+                                    </td>
+                                </tr>
+                            @empty
+                                <tr>
+                                    <td colspan="4" class="empty-row">
+                                        No study documents. Upload reference files or web links for this class.
+                                    </td>
+                                </tr>
+                            @endforelse
+                        </tbody>
+                    </table>
+                    @if ($documentsPage->hasPages())
+                        <div class="mt-12">{{ $documentsPage->links() }}</div>
+                    @endif
+                </div>
+
+                <!-- ASSIGNMENTS TAB PANEL -->
+                <div class="section-panel" :class="{ 'active': activeTab === 'assign' }">
+                    @if ($dueSoon->isNotEmpty())
+                        <div class="due-soon-row">
+                            @foreach ($dueSoon as $assignment)
+                                <div class="due-soon-card">
+                                    <div class="dsc-title">{{ $assignment->title }}</div>
+                                    <div class="dsc-due">Due {{ $assignment->due_at->format('D, M j') }}</div>
+                                    <div class="dsc-meta">{{ $assignment->attempt_limit }}
+                                        attempt{{ $assignment->attempt_limit === 1 ? '' : 's' }}</div>
                                 </div>
-                                
-                                <div class="form-group">
-                                    <label for="doc-desc-file">Description</label>
-                                    <textarea id="doc-desc-file" name="description" rows="2" maxlength="2000" placeholder="A short description of this document (optional)"></textarea>
+                            @endforeach
+                        </div>
+                    @endif
+
+                    <div class="sp-head">
+                        <div>
+                            <p>Publish an owned or shared active test to everyone in this class.</p>
+                        </div>
+                    </div>
+
+                    <div class="assignments-grid">
+                        @forelse($assignmentsPage as $assignment)
+                            <a href="{{ route('teacher.assignments.show', $assignment) }}" class="index-card">
+                                <div class="card-due">
+                                    {{ $assignment->due_at ? $assignment->due_at->format('D, M j') : 'No deadline' }}
                                 </div>
-                                
-                                <x-ui.button type="submit" variant="primary" class="resource-submit-btn">Upload Resource</x-ui.button>
+                                <div class="card-title">{{ $assignment->title }}</div>
+                                <div class="card-sub">
+                                    {{ $assignment->test->title }}{{ $assignment->sectionSuffix() }}
+                                </div>
+                                <div class="card-meta">
+                                    <span class="type-tag">{{ $assignment->sectionShort() }}</span>
+                                    <span
+                                        class="status-pill {{ in_array($assignment->status, ['published', 'completed']) ? 'ok' : 'pending' }}">
+                                        <span class="d"></span>{{ ucfirst($assignment->status) }}
+                                    </span>
+                                </div>
+                                <div class="card-meta card-meta-divider">
+                                    <span>{{ $assignment->attempt_limit }}
+                                        attempt{{ $assignment->attempt_limit === 1 ? '' : 's' }}</span>
+                                    <span class="mono text-faint text-2xs">{{ $assignment->due_at?->format('g:i A') ?: '' }}</span>
+                                </div>
+                            </a>
+                        @empty
+                            <div class="empty-grid-cell">
+                                No assignments. Create one to assign tests to students.
+                            </div>
+                        @endforelse
+                    </div>
+                    @if ($assignmentsPage->hasPages())
+                        <div class="mt-12">{{ $assignmentsPage->links() }}</div>
+                    @endif
+                </div>
+
+                <!-- SETTINGS TAB PANEL -->
+                <div class="section-panel" :class="{ 'active': activeTab === 'settings' }">
+                    <div class="sp-head">
+                        <div>
+                            <p>{{ __('classroom.settings_desc') }}</p>
+                        </div>
+                    </div>
+
+                    <div class="settings-card mb-16">
+                        <div class="join-box join-box-inline">
+                            <div class="lbl">Student join code</div>
+                            <div class="code-row justify-start">
+                                <span class="code">{{ $classroom->join_code }}</span>
+                                <button class="copy-btn" title="Copy"
+                                    onclick="copyJoinCode('{{ $classroom->join_code }}', this)">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <rect x="9" y="9" width="12" height="12" rx="2" />
+                                        <path d="M5 15V5a2 2 0 0 1 2-2h10" />
+                                    </svg>
+                                </button>
+                            </div>
+                            <div class="sub-actions justify-start mt-12">
+                                @if ($classroom->status === 'active')
+                                    <form method="POST"
+                                        action="{{ route('teacher.classes.rotate-code', $classroom) }}"
+                                        class="d-inline">
+                                        @csrf
+                                        <button type="submit" class="link-action btn-link-plain">Rotate
+                                            code</button>
+                                    </form>
+                                    @can('manageTeam', $classroom)
+                                        <form method="POST" action="{{ route('teacher.classes.archive', $classroom) }}"
+                                            class="d-inline"
+                                            onsubmit="return confirm('Archive class and close published assignments?');">
+                                            @csrf
+                                            <button type="submit" class="link-action danger btn-link-plain">Archive</button>
+                                        </form>
+                                    @endcan
+                                @else
+                                    @can('manageTeam', $classroom)
+                                        <form method="POST" action="{{ route('teacher.classes.restore', $classroom) }}"
+                                            class="d-inline">
+                                            @csrf
+                                            <button type="submit" class="link-action btn-link-plain">Restore</button>
+                                        </form>
+                                    @endcan
+                                @endif
+                            </div>
+                        </div>
+                    </div>
+
+                    @if ($classroom->status === 'active')
+                        <div class="settings-card">
+                            <h3 class="settings-title lg">Edit
+                                class details</h3>
+                            <form method="POST" action="{{ route('teacher.classes.update', $classroom) }}"
+                                class="flex flex-col gap-10 max-w-420">
+                                @csrf @method('PUT')
+                                <label class="form-field-label">Class
+                                    name
+                                    <input name="name" value="{{ $classroom->name }}" required maxlength="150"
+                                        class="settings-input w-full mt-4">
+                                </label>
+                                <label class="form-field-label">Description
+                                    <input name="description" value="{{ $classroom->description }}" maxlength="2000"
+                                        class="settings-input w-full mt-4">
+                                </label>
+                                <button type="submit" class="btn-sm-primary btn-px-16 self-start flex-none w-auto">Save</button>
                             </form>
+                        </div>
+                    @endif
+                </div>
+            </div>
+
+            <!-- CORKBOARD: glanceable digest per tab + shortcuts, follows the active tab -->
+            <x-classroom.corkboard header="{{ __('classroom.pinned_header') }}">
+                    @if ($classroom->status === 'active')
+                        <div x-show="activeTab === 'roster'" class="cork-note">
+                            <h3>{{ __('classroom.recent_activity') }}</h3>
+                            @if ($recentJoins->isNotEmpty())
+                                <div class="digest-stack">
+                                    @foreach ($recentJoins as $m)
+                                        <div class="digest-line">
+                                            <strong>{{ $m->student->name }}</strong>
+                                            {{ __('classroom.joined_class') }}
+                                            <span class="digest-meta">·
+                                                {{ ($m->decided_at ?? $m->created_at)->format('d/m') }}</span>
+                                        </div>
+                                    @endforeach
+                                </div>
+                            @else
+                                <p class="cork-empty">{{ __('classroom.no_students_yet') }}</p>
+                            @endif
                         </div>
 
-                        <!-- Add Link form -->
-                        <div x-show="activeForm === 'link'" class="fade-enter" x-cloak>
-                            <form method="POST" action="{{ route('teacher.classes.documents.store', $classroom) }}"
-                                class="resource-form"
-                                onsubmit="const btn = this.querySelector('button[type=submit]'); btn.disabled = true; btn.innerText = 'Adding...';">
-                                @csrf
-                                <input type="hidden" name="source_type" value="link">
-                                
-                                <div class="form-group">
-                                    <label for="doc-title-link">Title</label>
-                                    <input type="text" id="doc-title-link" name="title" required maxlength="180" placeholder="e.g. Desmos Online Practice">
+                        <div x-show="activeTab === 'team'" x-cloak class="cork-note">
+                            <h3>{{ __('classroom.teaching_team') }}</h3>
+                            <p class="digest-line">
+                                {{ __('classroom.teachers_managing', ['count' => 1 + $classroom->co_teachers_count]) }}
+                            </p>
+                            @if ($lastCoTeacher)
+                                <p class="cork-empty mt-4">{{ __('classroom.latest') }}:
+                                    {{ $lastCoTeacher->name }} ·
+                                    {{ $lastCoTeacher->pivot->created_at?->format('d/m/Y') }}
+                                </p>
+                            @endif
+                            @can('manageTeam', $classroom)
+                                <button type="button" class="btn-sm-primary btn-pin"
+                                    @click="$dispatch('open-modal', 'modal-add-co-teacher')">{{ __('classroom.add_co_teacher') }}</button>
+                            @endcan
+                        </div>
+
+                        <div x-show="activeTab === 'docs'" x-cloak class="cork-note">
+                            <h3>{{ __('classroom.shared_documents') }}</h3>
+                            @if ($lastDocument)
+                                <p class="digest-line"><strong>{{ Str::limit($lastDocument->title, 32) }}</strong>
+                                </p>
+                                <p class="cork-empty mt-2">
+                                    {{ __('classroom.posted_on', ['date' => $lastDocument->created_at->format('d/m/Y'), 'count' => $classroom->documents_count]) }}
+                                </p>
+                            @else
+                                <p class="cork-empty">{{ __('classroom.no_documents_yet') }}</p>
+                            @endif
+                            <button type="button" class="btn-sm-primary btn-pin"
+                                @click="$dispatch('open-modal', 'modal-add-resource')">{{ __('classroom.add_document') }}</button>
+                        </div>
+
+                        <div x-show="activeTab === 'assign'" x-cloak class="cork-note">
+                            <h3>{{ __('classroom.top_score') }}</h3>
+                            @if ($topScore)
+                                <p class="digest-line">
+                                    {{ __('classroom.leads_with_score', ['name' => $topScore['name'], 'score' => $topScore['score']]) }}
+                                </p>
+                            @else
+                                <p class="cork-empty">{{ __('classroom.no_scores_yet') }}</p>
+                            @endif
+                            <p class="cork-empty mt-6">
+                                {{ __('classroom.assignments_given', ['count' => $classroom->assignments_count]) }}{{ $dueSoon->isNotEmpty() ? __('classroom.due_soon_suffix', ['count' => $dueSoon->count()]) : '' }}.
+                            </p>
+                            <button type="button" class="btn-sm-primary btn-pin"
+                                @click="$dispatch('open-modal', 'modal-create-assignment')">{{ __('classroom.create_assignment') }}</button>
+                        </div>
+
+                        <div x-show="activeTab === 'settings'" x-cloak class="cork-note">
+                            <h3>Class settings</h3>
+                            <p class="cork-empty">Rotate the join code if it leaked, or archive the class to close
+                                published assignments. Both live in the Settings tab.</p>
+                        </div>
+
+                        <div x-show="activeTab === 'settings'" x-cloak class="cork-note mt-neg4">
+                            <h3>Note to class</h3>
+                            <form method="POST" action="{{ route('teacher.classes.note.update', $classroom) }}">
+                                @csrf @method('PUT')
+                                <div class="field">
+                                    <textarea name="body" rows="3" maxlength="2000"
+                                        placeholder="Pinned message students will see on their corkboard...">{{ $classroom->note?->body }}</textarea>
                                 </div>
-                                
-                                <div class="form-group">
-                                    <label for="doc-url-link">URL</label>
-                                    <input type="url" id="doc-url-link" name="external_url" required maxlength="2000" placeholder="https://example.com/resource">
-                                </div>
-                                
-                                <div class="form-group">
-                                    <label for="doc-desc-link">Description</label>
-                                    <textarea id="doc-desc-link" name="description" rows="2" maxlength="2000" placeholder="A short description of this link (optional)"></textarea>
-                                </div>
-                                
-                                <x-ui.button type="submit" variant="primary" class="resource-submit-btn">Add Link</x-ui.button>
+                                <button type="submit" class="btn-sm-primary btn-full mt-8">Save note</button>
                             </form>
                         </div>
-                    </aside>
-                @endif
-            </div>
-        </section>
-        <section id="class-panel-assignments" class="class-panel class-tab-panel" role="tabpanel"
-            aria-labelledby="class-tab-assignments" x-show="activeTab === 'assignments'" x-cloak>
-            <div class="section-heading class-section-bar">
-                <div>
-                    <h2>Assignments</h2>
-                    <p>Publish an owned or shared active test to everyone in this class.</p>
-                </div>
-                <span>{{ $assignmentCount }} total</span>
-            </div>
-            @if ($classroom->status === 'active')
-                <details class="create-disclosure create-disclosure--compact action-disclosure">
-                    <summary>Create assignment</summary>
-                    <form method="POST" action="{{ route('teacher.assignments.store', $classroom) }}"
-                        class="form-grid" x-data="{ assignType: 'full' }">@csrf
-                        <label>Test<select name="test_id" required>
-                                <option value="">Select an active test</option>
-                                @foreach ($tests as $test)
-                                    @php($isShared = auth()->user()->role !== 'admin' && $test->created_by !== auth()->id())
-                                    <option value="{{ $test->id }}">
-                                        {{ $test->title }}{{ $isShared ? ' (shared)' : '' }}{{ $test->isContentLocked() ? ' (locked)' : '' }}</option>
-                                @endforeach
-                            </select>
-                        </label>
-                        <div class="span-2" style="display: flex; flex-direction: column; gap: 0.5rem;">
-                            <fieldset class="assignment-window">
-                                <legend>Assign Type</legend>
-                                <div style="display: flex; gap: 2rem; padding: 0.5rem 0;">
-                                    <label style="display: flex !important; align-items: center; gap: 0.5rem; cursor: pointer; font-weight: 500; margin-bottom: 0; font-size: 0.9rem; color: var(--cw-ink-strong);">
-                                        <input type="radio" name="assign_type" value="full" x-model="assignType" style="width: 1.15rem; height: 1.15rem; min-height: 0; padding: 0; margin: 0; cursor: pointer; flex-shrink: 0; accent-color: var(--cw-accent, var(--color-brand));">
-                                        Full Test
-                                    </label>
-                                    <label style="display: flex !important; align-items: center; gap: 0.5rem; cursor: pointer; font-weight: 500; margin-bottom: 0; font-size: 0.9rem; color: var(--cw-ink-strong);">
-                                        <input type="radio" name="assign_type" value="section" x-model="assignType" style="width: 1.15rem; height: 1.15rem; min-height: 0; padding: 0; margin: 0; cursor: pointer; flex-shrink: 0; accent-color: var(--cw-accent, var(--color-brand));">
-                                        Specific Section Only
-                                    </label>
-                                </div>
-                            </fieldset>
-                            <div x-show="assignType === 'section'" x-cloak style="margin-top: 0.5rem;">
-                                <label style="display: block; width: 100%;">Select Section
-                                    <select name="section_type">
-                                        <option value="reading_writing">Reading & Writing</option>
-                                        <option value="math">Math</option>
-                                    </select>
-                                </label>
-                            </div>
+                    @else
+                        <div class="cork-note">
+                            <h3>Class archived</h3>
+                            <p class="cork-empty">This class is archived. Restore it from the Settings tab to add
+                                resources, co-teachers, or assignments.</p>
                         </div>
-                        <label>Assignment title<input name="title" required maxlength="180"></label>
-                        <label class="span-2">Instructions
-                            <textarea name="instructions" rows="3"></textarea>
-                        </label>
-                        <fieldset class="assignment-window span-2">
-                            <legend>Assignment window</legend>
-                            <p class="form-hint" id="assignment-window-help">
-                                Times use Asia/Ho_Chi_Minh. Leave available empty to open now, or due empty for no deadline.
-                            </p>
-                            <div class="assignment-window__grid">
-                                <label class="time-field" for="assignment_available_at">
-                                    <span class="time-field__label">Available from</span>
-                                    <span class="time-field__control">
-                                        <input id="assignment_available_at" type="text"
-                                            class="datetime-picker time-field__input" name="available_at"
-                                            placeholder="Open immediately" autocomplete="off"
-                                            aria-describedby="assignment-window-help assignment_available_hint"
-                                            data-window-role="start" data-window-pair="assignment_due_at">
-                                    </span>
-                                    <span class="time-field__hint" id="assignment_available_hint">Students can start after this time.</span>
-                                </label>
-                                <label class="time-field" for="assignment_due_at">
-                                    <span class="time-field__label">Due at</span>
-                                    <span class="time-field__control">
-                                        <input id="assignment_due_at" type="text"
-                                            class="datetime-picker time-field__input" name="due_at"
-                                            placeholder="No deadline" autocomplete="off"
-                                            aria-describedby="assignment-window-help assignment_due_hint"
-                                            data-window-role="end" data-window-pair="assignment_available_at">
-                                    </span>
-                                    <span class="time-field__hint" id="assignment_due_hint">Due time must be after availability.</span>
-                                </label>
-                            </div>
-                        </fieldset>
-                        <label>Attempt limit<input type="number" name="attempt_limit" min="1" max="10"
-                                value="1" required></label>
-                        <div class="form-action"><x-ui.button type="submit" variant="primary">Create assignment</x-ui.button>
-                        </div>
-                    </form>
-                </details>
-            @endif
-            <div class="list-heading">
-                <span>Assignment</span>
-                <span>Window</span>
-            </div>
-            @forelse($classroom->assignments->sortByDesc('created_at') as $assignment)
-                <a class="assignment-row" wire:navigate href="{{ route('teacher.assignments.show', $assignment) }}">
-                    <div><x-ui.status-badge :status="$statusBadgeVariant($assignment->status)">{{ ucfirst($assignment->status) }}</x-ui.status-badge><strong>{{ $assignment->title }}</strong><span>{{ $assignment->test->title }}{{ $assignment->assign_type === 'section' ? ($assignment->section_type === 'reading_writing' ? ' (Reading & Writing Only)' : ' (Math Only)') : '' }}</span>
-                    </div>
-                    <div><span>{{ $assignment->attempt_limit }}
-                            attempt{{ $assignment->attempt_limit === 1 ? '' : 's' }}</span><span>{{ $assignment->due_at?->format('M j, g:i A') ?: 'No due time' }}</span>
-                    </div>
-                </a>
-            @empty <div class="class-empty class-empty--compact">
-                    <p>No assignments. Create a draft when your test is ready.</p>
-                </div>
-            @endforelse
-        </section>
+                    @endif
+            </x-classroom.corkboard>
+        </div>
+
     </div>
+
+    @if ($classroom->status === 'active')
+        <!-- MODAL: Add co-teacher (opened from the Team tab pin) -->
+        @can('manageTeam', $classroom)
+            <x-ui.modal id="modal-add-co-teacher" title="{{ __('classroom.modal_add_co_teacher_title') }}"
+                maxWidth="sm">
+                <div class="form-note" x-data="{ query: '', results: [], selectedId: '', showDropdown: false }">
+                    <form method="POST" action="{{ route('teacher.classes.co-teachers.store', $classroom) }}">
+                        @csrf
+                        <div class="field teacher-search-field">
+                            <label>Approved Teacher Email or Name</label>
+                            <input type="text" name="email" required placeholder="Search approved teacher..."
+                                autocomplete="off" x-model="query" @input="selectedId = ''"
+                                @input.debounce.250ms="
+                                  if (query.trim().length < 2) { results = []; showDropdown = false; return; }
+                                  fetch(`{{ route('home-dashboard.teachers.search') }}?q=${encodeURIComponent(query)}`)
+                                    .then(r => r.json())
+                                    .then(d => { results = d.data || []; showDropdown = true; })
+                               "
+                                @click.away="showDropdown = false">
+                            <input type="hidden" name="teacher_id" x-model="selectedId">
+                            <p class="cork-empty mt-4" x-show="query.trim().length > 0 && !selectedId" x-cloak>
+                                Pick a teacher from the list to enable Add.
+                            </p>
+
+                            <div x-show="showDropdown && results.length > 0" class="teacher-search-results" x-cloak>
+                                <template x-for="t in results" :key="t.id">
+                                    <button type="button" class="teacher-search-item"
+                                        @click="selectedId = t.id; query = t.email || t.name; showDropdown = false;">
+                                        <div class="font-bold" x-text="t.name || t.email"></div>
+                                        <div class="teacher-search-item-email" x-text="t.email || ''">
+                                        </div>
+                                    </button>
+                                </template>
+                            </div>
+                        </div>
+                        <button type="submit" class="btn-sm-primary btn-full"
+                            :disabled="!selectedId" :class="{ 'is-disabled': !selectedId }">Add
+                            teacher</button>
+                    </form>
+                </div>
+            </x-ui.modal>
+        @endcan
+
+        <!-- MODAL: Add resource (opened from the Documents tab pin) -->
+        <x-ui.modal id="modal-add-resource" title="{{ __('classroom.modal_add_document_title') }}" maxWidth="sm">
+            <div class="form-note" x-data="{ docType: 'file' }">
+                <div class="type-toggle">
+                    <button type="button" class="type-toggle-btn"
+                        :class="docType === 'file' ? 'bg-white text-slate-800' : 'bg-transparent text-slate-500'"
+                        @click="docType = 'file'">File</button>
+                    <button type="button" class="type-toggle-btn"
+                        :class="docType === 'link' ? 'bg-white text-slate-800' : 'bg-transparent text-slate-500'"
+                        @click="docType = 'link'">Link</button>
+                </div>
+
+                <div x-show="docType === 'file'">
+                    <form method="POST" action="{{ route('teacher.classes.documents.store', $classroom) }}"
+                        enctype="multipart/form-data">
+                        @csrf
+                        <input type="hidden" name="source_type" value="file">
+                        <div class="field">
+                            <label>Title</label>
+                            <input type="text" name="title" required placeholder="e.g. SAT Reading Tips">
+                        </div>
+                        <div class="field">
+                            <label>Choose File</label>
+                            <input type="file" name="document_file" required class="text-xs">
+                        </div>
+                        <div class="field">
+                            <label>Description</label>
+                            <textarea name="description" placeholder="A short description (optional)" rows="2" class="resize-v"></textarea>
+                        </div>
+                        <button type="submit" class="btn-sm-primary btn-full">Upload
+                            Resource</button>
+                    </form>
+                </div>
+
+                <div x-show="docType === 'link'" x-cloak>
+                    <form method="POST" action="{{ route('teacher.classes.documents.store', $classroom) }}">
+                        @csrf
+                        <input type="hidden" name="source_type" value="link">
+                        <div class="field">
+                            <label>Title</label>
+                            <input type="text" name="title" required placeholder="e.g. Desmos Online Practice">
+                        </div>
+                        <div class="field">
+                            <label>URL</label>
+                            <input type="url" name="external_url" required
+                                placeholder="https://example.com/resource">
+                        </div>
+                        <div class="field">
+                            <label>Description</label>
+                            <textarea name="description" placeholder="A short description (optional)" rows="2" class="resize-v"></textarea>
+                        </div>
+                        <button type="submit" class="btn-sm-primary btn-full">Add
+                            Link</button>
+                    </form>
+                </div>
+            </div>
+        </x-ui.modal>
+
+        <!-- MODAL: Create assignment (opened from the Assignments tab pin) -->
+        <x-ui.modal id="modal-create-assignment" title="{{ __('classroom.modal_create_assignment_title') }}"
+            maxWidth="sm">
+            <div class="form-note" x-data="{ assignType: 'full' }">
+                <form method="POST" action="{{ route('teacher.assignments.store', $classroom) }}">
+                    @csrf
+                    <div class="field">
+                        <label>Test</label>
+                        <select name="test_id" required>
+                            <option value="">Select an active test</option>
+                            @foreach ($tests as $test)
+                                @php($isShared = auth()->user()->role !== 'admin' && $test->created_by !== auth()->id())
+                                <option value="{{ $test->id }}">
+                                    {{ $test->title }}{{ $isShared ? ' (shared)' : '' }}{{ $test->isContentLocked() ? ' (locked)' : '' }}
+                                </option>
+                            @endforeach
+                        </select>
+                    </div>
+
+                    <div class="field">
+                        <label>Assign Type</label>
+                        <div class="flex gap-16">
+                            <label class="radio-inline">
+                                <input type="radio" name="assign_type" value="full" x-model="assignType"> Full Test
+                            </label>
+                            <label class="radio-inline">
+                                <input type="radio" name="assign_type" value="section" x-model="assignType"> Section Only
+                            </label>
+                        </div>
+                    </div>
+
+                    <div class="field" x-show="assignType === 'section'" x-cloak>
+                        <label>Select Section</label>
+                        <select name="section_type">
+                            <option value="reading_writing">Reading & Writing</option>
+                            <option value="math">Math</option>
+                        </select>
+                    </div>
+
+                    <div class="field">
+                        <label>Assignment title</label>
+                        <input type="text" name="title" required maxlength="180">
+                    </div>
+
+                    <div class="field">
+                        <label>Instructions</label>
+                        <textarea name="instructions" rows="2" class="resize-v"></textarea>
+                    </div>
+
+                    <div class="flex gap-12">
+                        <div class="field flex-1">
+                            <label>Available from</label>
+                            <input type="text" class="datetime-picker" name="available_at"
+                                placeholder="Open immediately" autocomplete="off">
+                        </div>
+
+                        <div class="field flex-1">
+                            <label>Due at</label>
+                            <input type="text" class="datetime-picker" name="due_at" placeholder="No deadline"
+                                autocomplete="off">
+                        </div>
+                    </div>
+
+                    <div class="field">
+                        <label>Attempt limit</label>
+                        <input type="number" name="attempt_limit" min="1" max="10" value="1"
+                            required>
+                    </div>
+
+                    <button type="submit" class="btn-sm-primary btn-full mt-10">Create
+                        assignment</button>
+                </form>
+            </div>
+        </x-ui.modal>
+    @endif
+
     @push('scripts')
         <script>
-            (() => {
-                const initCoTeacherSearch = () => {
-                    const input = document.getElementById('coTeacherSearch');
-                    const hidden = document.getElementById('coTeacherId');
-                    const results = document.getElementById('coTeacherSearchResults');
-                    if (!input || !hidden || !results || input.dataset.searchReady === 'true') return;
-                    input.dataset.searchReady = 'true';
+            function copyJoinCode(code, btn) {
+                navigator.clipboard.writeText(code).then(() => {
+                    if (!btn) return;
+                    const original = btn.innerHTML;
+                    btn.innerHTML = '✓';
+                    setTimeout(() => {
+                        btn.innerHTML = original;
+                    }, 1200);
+                });
+            }
 
-                    const endpoint = @json(route('home-dashboard.teachers.search'));
-                    let timer = null;
-
-                    const clearResults = () => {
-                        results.innerHTML = '';
-                        results.hidden = true;
-                    };
-
-                    const renderResults = (teachers) => {
-                        results.innerHTML = '';
-                        if (!teachers.length) {
-                            const empty = document.createElement('div');
-                            empty.className = 'teacher-search-empty';
-                            empty.textContent = 'No approved teachers found.';
-                            results.appendChild(empty);
-                            results.hidden = false;
-                            return;
-                        }
-
-                        teachers.forEach((teacher) => {
-                            const option = document.createElement('button');
-                            option.type = 'button';
-                            option.className = 'teacher-search-option';
-                            option.setAttribute('role', 'option');
-                            option.innerHTML = `<strong></strong><span></span>`;
-                            option.querySelector('strong').textContent = teacher.name || teacher.email;
-                            option.querySelector('span').textContent = teacher.email || '';
-                            option.addEventListener('click', () => {
-                                hidden.value = teacher.id;
-                                input.value = teacher.email || teacher.name || '';
-                                clearResults();
-                            });
-                            results.appendChild(option);
-                        });
-                        results.hidden = false;
-                    };
-
-                    input.addEventListener('input', () => {
-                        hidden.value = '';
-                        window.clearTimeout(timer);
-                        const q = input.value.trim();
-                        if (q.length < 2) {
-                            clearResults();
-                            return;
-                        }
-
-                        timer = window.setTimeout(async () => {
-                            const response = await fetch(`${endpoint}?q=${encodeURIComponent(q)}`, {
-                                headers: { 'Accept': 'application/json' },
-                            });
-                            if (!response.ok) {
-                                clearResults();
-                                return;
-                            }
-                            const data = await response.json();
-                            renderResults(data.data || []);
-                        }, 220);
-                    });
-
-                    document.addEventListener('click', (event) => {
-                        if (!results.contains(event.target) && event.target !== input) clearResults();
-                    });
-                };
-
-                document.addEventListener('DOMContentLoaded', initCoTeacherSearch);
-                document.addEventListener('livewire:navigated', initCoTeacherSearch);
-            })();
+            document.addEventListener('DOMContentLoaded', () => {
+                if (typeof window.initDatePickers === 'function') {
+                    window.initDatePickers();
+                }
+            });
         </script>
     @endpush
 </x-layouts.student>

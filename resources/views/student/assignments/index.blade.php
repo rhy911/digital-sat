@@ -16,17 +16,12 @@
         <div class="student-assignment-list">
             @forelse($assignments as $assignment)
                 @php($attempts = $assignment->attempts)
-                @php($completed = $attempts->where('status', 'completed'))
-                @php($state = $completed->isNotEmpty() ? 'Completed' : ($attempts->firstWhere('status', 'in_progress') ? 'In progress' : ($assignment->available_at && now()->lt($assignment->available_at) ? 'Upcoming' : ($assignment->due_at && now()->gte($assignment->due_at) ? 'Overdue' : 'Open'))))
-                @php($inProgress = $attempts->firstWhere('status', 'in_progress'))
-                @php($used = $attempts->count())
-                @php($statusVariant = match ($state) {
-                    'Completed' => 'success',
-                    'In progress' => 'brand',
-                    'Overdue' => 'danger',
-                    'Upcoming' => 'neutral',
-                    default => 'warning',
-                })
+                @php($resolved = \App\Support\AssignmentStatusResolver::resolve($assignment, $attempts))
+                @php($state = $resolved['state'])
+                @php($completed = $resolved['completed'])
+                @php($inProgress = $resolved['inProgress'])
+                @php($used = $resolved['used'])
+                @php($statusVariant = $resolved['variant'])
                 <article class="student-assignment">
                     <div class="student-assignment__row">
                         <div>

@@ -6,7 +6,7 @@ use Illuminate\Database\Eloquent\Model;
 
 class ClassroomMembership extends Model
 {
-    protected $fillable = ['classroom_id', 'student_id', 'status', 'requested_at', 'decided_at', 'ended_at', 'decided_by'];
+    protected $fillable = ['classroom_id', 'student_id', 'display_name', 'status', 'requested_at', 'decided_at', 'ended_at', 'decided_by'];
 
     protected function casts(): array
     {

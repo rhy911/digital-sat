@@ -8,7 +8,7 @@ Token quyết định cho redesign (xem `docs/redesign-roadmap.md` Phase 1). Dù
 - Hover variant: `--color-brand-hover: #24367B`.
 - Soft tint (badge/background nhạt): `--color-brand-soft: color-mix(in oklab, var(--color-brand) 12%, white)`.
 - Đã gộp vào brand: `indigo-600` (qua override token ở admin, qua rename `text-brand`/`bg-brand` ở nơi khác), `#4f46e5`, `#4361EE`/`#4361ee`, `#3347b9` (admin/test-builder cục bộ cũ).
-- **Ngoại lệ (không đụng)**: landing page (`components/layouts/landing.blade.php`, `.landing-*` trong `app.css`) — marketing register, ngoài scope "product". Test Engine (`resources/css/engine/**`, `resources/views/engine/**`, và layout dùng riêng `components/layouts/test.blade.php`) — giữ nguyên tuyệt đối, giống thi thật Bluebook.
+- **Ngoại lệ (không đụng)**: landing page (`components/layouts/landing.blade.php`, `.landing-*` trong `app.css`) — marketing register, ngoài scope "product". Test Engine (`resources/css/engine/**`, `resources/views/engine/**`, và layout dùng riêng `components/layouts/test.blade.php`) — giữ nguyên tuyệt đối, giống thi thật Bluebook. Classroom workspace (`resources/css/classroom-workspace.css`, `teacher/classes/show.blade.php`, `student/classes/show.blade.php`, `components/classroom/**`) — theme "manila folder / paper ledger / corkboard" dùng accent riêng (`--accent: #2A4D8F`) thay vì `--color-brand`, quyết định có chủ đích cho identity riêng của classroom feature, không phải nợ kỹ thuật.
 
 ## Semantic color
 
@@ -33,7 +33,7 @@ Token quyết định cho redesign (xem `docs/redesign-roadmap.md` Phase 1). Dù
 
 - Family: **Roboto** (`--font-sans`, `@fontsource/roboto`), áp dụng cho product surfaces (student/teacher/admin/auth).
 - Đã bỏ hardcode `"Roboto"` lặp lại (`app.css:79,95`) → dùng `var(--font-sans)`.
-- **Ngoại lệ (không đụng)**: landing page dùng **Geist** riêng (`--font-geist`, marketing register). Test Engine dùng **Inter** (UI chrome) + **Noto Serif** (reading passages) riêng — giữ nguyên tuyệt đối, không phải nợ kỹ thuật, là quyết định đọc-hiểu cho bài thi.
+- **Ngoại lệ (không đụng)**: landing page dùng **Geist** riêng (`--font-geist`, marketing register). Test Engine dùng **Inter** (UI chrome) + **Noto Serif** (reading passages) riêng — giữ nguyên tuyệt đối, không phải nợ kỹ thuật, là quyết định đọc-hiểu cho bài thi. Classroom workspace (teacher + student) dùng **Plus Jakarta Sans** (body), **IBM Plex Mono** (mã lớp/số liệu), **Architects Daughter** (điểm nhấn viết tay) — quyết định có chủ đích cho identity manila/corkboard, xem mục Accent color ở trên.
 - `public/css/auth.css` (font Inter, `--primary-hover: #4f46e5`) xác nhận là **file mồ côi** — không nằm trong `vite.config.js`, không blade nào load. Không sửa vì không ảnh hưởng runtime; cân nhắc xóa ở lần dọn dẹp sau (ngoài scope Phase 1 — xóa file cần quyết định riêng).
 
 ## Icon set

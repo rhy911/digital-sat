@@ -664,7 +664,8 @@ student_produced_response,hard,algebra,linear_equations_in_one_variable,"If $$3x
                         </h4>
                         <button type="button" @click="copyPrompt()"
                             class="inline-flex items-center gap-1.5 px-3 py-1 bg-brand hover:bg-brand-hover text-white rounded-lg text-xs font-bold transition-colors cursor-pointer border-0 shadow-xs">
-                            <x-ui.icon :name="copied ? 'check-lg' : 'copy'" class="w-4 h-4" />
+                            <x-ui.icon name="check-lg" class="w-4 h-4" x-show="copied" />
+                            <x-ui.icon name="copy" class="w-4 h-4" x-show="!copied" />
                             <span x-text="copied ? 'Đã sao chép!' : 'Sao chép Prompt'"></span>
                         </button>
                     </div>

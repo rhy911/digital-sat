@@ -1,0 +1,1824 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Student Classroom View Mockup - Digital SAT</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Architects+Daughter&family=IBM+Plex+Mono:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            /* Manila portfolio palette (light, warm) */
+            --app-bg: #F1F2F5;
+            --panel: #FFFFFF;
+            --border: rgba(26, 32, 44, 0.08);
+            --border-strong: rgba(26, 32, 44, 0.16);
+            --ink: #1A202C;
+            --ink-soft: #5A6980;
+            --ink-faint: #8592A8;
+            --accent: #2A4D8F;
+            --accent-hover: #203C70;
+            --accent-soft: rgba(42, 77, 143, 0.10);
+            --green: #2F855A;
+            --green-soft: rgba(47, 133, 90, 0.12);
+            --amber: #B7791F;
+            --amber-soft: rgba(183, 121, 31, 0.12);
+            --red: #C1443A;
+            --red-soft: #FFF5F5;
+            --rail-bg: #0B1626;
+            --class-col-bg: #FFFFFF;
+            --manila: #F1E5C9;
+            --manila-ink: #1A202C;
+            --manila-soft: #5C523D;
+            --wood-border: #2B3B52;
+            --wood-back: #4D3319;
+            --cork-tan: #A67C52;
+            --binder-bg: #FCF9F2;
+            --binder-spine: #E2CE8B;
+            --binder-border: #E2D0A7;
+            
+            /* Status Tag Colors */
+            --status-completed-bg: #E6FFFA;
+            --status-completed-color: #234E52;
+            --status-inprogress-bg: #EBF8FF;
+            --status-inprogress-color: #2B6CB0;
+            --status-notstarted-bg: #EDF2F7;
+            --status-notstarted-color: #4A5568;
+            --status-overdue-bg: #FFF5F5;
+            --status-overdue-color: #9B2C2C;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        html, body {
+            height: 100vh;
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+        }
+
+        body {
+            background: var(--app-bg);
+            color: var(--ink);
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            font-size: 13.5px;
+            line-height: 1.5;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        .mono {
+            font-family: 'IBM Plex Mono', monospace;
+        }
+
+        .handwriting {
+            font-family: 'Architects Daughter', cursive;
+        }
+
+        button {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            cursor: pointer;
+            border: none;
+            background: none;
+            transition: all 0.2s ease;
+        }
+
+        .app-shell {
+            display: grid;
+            grid-template-columns: 72px 280px 1fr;
+            height: 100vh;
+            width: 100vw;
+        }
+
+        /* ============ ICON RAIL ============ */
+        .icon-rail {
+            background: var(--rail-bg);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px 0;
+            z-index: 10;
+        }
+
+        .rail-logo {
+            width: 36px;
+            height: 36px;
+            border-radius: 10px;
+            background: linear-gradient(135deg, #2563EB, #1D4ED8);
+            color: #fff;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 800;
+            font-size: 16px;
+            margin-bottom: 30px;
+            text-decoration: none;
+            box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3);
+        }
+
+        .rail-nav {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            flex: 1;
+        }
+
+        .rail-item {
+            width: 44px;
+            height: 44px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #7C8494;
+            position: relative;
+            text-decoration: none;
+            transition: all 0.15s ease;
+        }
+
+        .rail-item svg {
+            width: 20px;
+            height: 20px;
+        }
+
+        .rail-item:hover {
+            color: #fff;
+            background: rgba(255, 255, 255, 0.06);
+        }
+
+        .rail-item.active {
+            color: #fff;
+            background: var(--accent);
+        }
+
+        .rail-item .rail-tip {
+            position: absolute;
+            left: 52px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: #0B1626;
+            color: #fff;
+            font-size: 11.5px;
+            font-weight: 600;
+            padding: 5px 9px;
+            border-radius: 5px;
+            white-space: nowrap;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.12s ease;
+            z-index: 20;
+        }
+
+        .rail-item:hover .rail-tip {
+            opacity: 1;
+        }
+
+        .rail-avatar {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #2A4D8F, #5B7FC2);
+            color: #fff;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-size: 12px;
+            margin-top: auto;
+        }
+
+        /* ============ CLASS LIST COLUMN ============ */
+        .class-col {
+            background: var(--class-col-bg);
+            border-right: 1px solid var(--border);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            z-index: 5;
+        }
+
+        .class-col-head {
+            padding: 24px 18px 12px 20px;
+        }
+
+        .class-col-head h1 {
+            font-size: 18px;
+            font-weight: 800;
+        }
+
+        .class-col-head .count {
+            font-size: 12px;
+            color: var(--ink-soft);
+            margin-top: 4px;
+        }
+
+        .search-row {
+            padding: 0 14px 10px;
+            position: relative;
+        }
+
+        .search-row input {
+            width: 100%;
+            border: 1px solid var(--border-strong);
+            border-radius: 7px;
+            padding: 8px 10px 8px 30px;
+            font-size: 12.5px;
+            background: var(--app-bg);
+            color: var(--ink);
+            outline: none;
+            transition: all 0.2s ease;
+        }
+
+        .search-row input:focus {
+            border-color: var(--accent);
+            background: var(--panel);
+        }
+
+        .search-row svg {
+            position: absolute;
+            left: 24px;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 13px;
+            height: 13px;
+            color: var(--ink-faint);
+            pointer-events: none;
+        }
+
+        .filter-row {
+            display: flex;
+            gap: 6px;
+            padding: 0 14px 12px;
+        }
+
+        .filter-chip {
+            border: 1px solid var(--border-strong);
+            background: var(--panel);
+            padding: 5px 11px;
+            border-radius: 6px;
+            font-size: 11.5px;
+            font-weight: 600;
+            color: var(--ink-soft);
+            cursor: pointer;
+            transition: all 0.15s ease;
+        }
+
+        .filter-chip.active {
+            background: var(--accent);
+            border-color: var(--accent);
+            color: #fff;
+        }
+
+        .join-class-btn {
+            margin: 0 14px 14px;
+            padding: 10px;
+            border-radius: 7px;
+            border: 1.5px dashed var(--border-strong);
+            background: transparent;
+            color: var(--ink-soft);
+            font-size: 12.5px;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            cursor: pointer;
+        }
+
+        .join-class-btn:hover {
+            border-color: var(--accent);
+            color: var(--accent);
+            background: var(--accent-soft);
+        }
+
+        .class-list {
+            flex: 1;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            padding: 0 16px 14px 14px;
+        }
+
+        .class-item {
+            background: #F8FAFC;
+            border: 1px solid var(--border);
+            border-left: 4px solid rgba(26, 32, 44, 0.12);
+            border-radius: 10px;
+            padding: 16px;
+            cursor: pointer;
+            display: flex;
+            flex-direction: column;
+            gap: 3px;
+            transition: transform 0.15s ease, background 0.15s ease, border-color 0.15s ease;
+        }
+
+        .class-item:hover {
+            background: #EDF2F7;
+            transform: translateX(4px);
+        }
+
+        .class-item.selected {
+            background: var(--manila);
+            color: var(--manila-ink) !important;
+            border-left-color: var(--red);
+            box-shadow: -4px 6px 15px rgba(0, 0, 0, 0.2);
+            transform: translateX(8px);
+        }
+
+        .ci-top {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .ci-name {
+            font-weight: 700;
+            font-size: 13.5px;
+        }
+
+        .ci-meta {
+            font-size: 11.5px;
+            color: var(--ink-soft);
+            display: flex;
+            gap: 8px;
+        }
+
+        .class-item.selected .ci-meta {
+            color: #6E624A;
+        }
+
+        /* ============ LEDGER PANE (Main workspace) ============ */
+        .ledger-pane {
+            overflow-y: auto;
+            height: 100vh;
+            background: var(--app-bg);
+            padding: 20px 40px;
+            display: grid;
+            grid-template-columns: 1fr 320px;
+            gap: 36px;
+            align-items: start;
+        }
+
+        .binder-panel {
+            background: var(--binder-bg);
+            border: 1px solid var(--binder-border);
+            border-left: 12px solid var(--binder-spine);
+            border-radius: 12px;
+            padding: 28px 32px 32px;
+            box-shadow: 0 10px 30px rgba(26, 32, 44, 0.05);
+            min-height: calc(100vh - 40px);
+            display: flex;
+            flex-direction: column;
+        }
+
+        .ledger-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-end;
+            padding-bottom: 18px;
+            border-bottom: 2px dashed var(--border-strong);
+        }
+
+        .dh-left h2 {
+            font-size: 26px;
+            font-weight: 800;
+        }
+
+        .dh-desc {
+            font-size: 13px;
+            color: var(--ink-soft);
+            margin-top: 4px;
+        }
+
+        .stat-row {
+            display: flex;
+            gap: 28px;
+            padding: 16px 0;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .stat-row .s {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .stat-row .s .num {
+            font-family: 'IBM Plex Mono', monospace;
+            font-size: 19px;
+            font-weight: 700;
+        }
+
+        .stat-row .s .lbl {
+            font-size: 11px;
+            color: var(--ink-soft);
+            margin-top: 1px;
+        }
+
+        /* ============ TABS BAR ============ */
+        .class-tabs {
+            display: flex;
+            gap: 4px;
+            border-bottom: 1px solid var(--border-strong);
+            margin-top: 22px;
+            position: sticky;
+            top: 0;
+            background: var(--binder-bg);
+            z-index: 5;
+        }
+
+        .seg-btn {
+            border: none;
+            background: transparent;
+            padding: 11px 4px;
+            margin-right: 20px;
+            font-size: 12.5px;
+            font-weight: 600;
+            color: var(--ink-soft);
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            cursor: pointer;
+            border-bottom: 2px solid transparent;
+            margin-bottom: -1px;
+        }
+
+        .seg-btn .count {
+            font-family: 'IBM Plex Mono', monospace;
+            font-size: 10.5px;
+            color: var(--ink-faint);
+        }
+
+        .seg-btn.active {
+            color: var(--ink);
+            border-bottom-color: var(--accent);
+        }
+
+        .seg-btn.active .count {
+            color: var(--accent);
+        }
+
+        .seg-btn:hover:not(.active) {
+            color: var(--ink);
+        }
+
+        .section-panel {
+            display: none;
+            margin-top: 20px;
+            flex: 1;
+        }
+
+        .section-panel.active {
+            display: block;
+        }
+
+        .sp-head {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-end;
+            margin-bottom: 16px;
+            gap: 12px;
+        }
+
+        .sp-head p {
+            font-size: 12px;
+            color: var(--ink-soft);
+        }
+
+        /* ============ ASSIGNMENTS GRID ============ */
+        .assignments-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+            gap: 16px;
+        }
+
+        .assignment-card {
+            background: var(--panel);
+            border: 1px solid var(--border);
+            border-radius: 9px;
+            padding: 16px;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            transition: all 0.2s ease;
+            text-decoration: none;
+            color: inherit;
+        }
+
+        .assignment-card:hover {
+            border-color: var(--border-strong);
+            box-shadow: 0 4px 12px rgba(26, 32, 44, 0.04);
+            transform: translateY(-2px);
+        }
+
+        .card-due {
+            font-size: 11px;
+            font-weight: 700;
+            color: var(--ink-soft);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .card-due.overdue {
+            color: var(--red);
+        }
+
+        .card-title {
+            font-size: 14px;
+            font-weight: 700;
+            color: var(--ink);
+            line-height: 1.3;
+        }
+
+        .card-subtitle {
+            font-size: 12px;
+            color: var(--ink-soft);
+            margin-top: -6px;
+        }
+
+        .card-footer {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: auto;
+            border-top: 1px dashed var(--border-strong);
+            padding-top: 10px;
+        }
+
+        .status-pill {
+            font-size: 11px;
+            font-weight: 700;
+            padding: 3px 8px;
+            border-radius: 5px;
+        }
+
+        .status-pill.completed {
+            background: var(--status-completed-bg);
+            color: var(--status-completed-color);
+        }
+
+        .status-pill.in-progress {
+            background: var(--status-inprogress-bg);
+            color: var(--status-inprogress-color);
+        }
+
+        .status-pill.not-started {
+            background: var(--status-notstarted-bg);
+            color: var(--status-notstarted-color);
+        }
+
+        .status-pill.overdue {
+            background: var(--status-overdue-bg);
+            color: var(--status-overdue-color);
+        }
+
+        .card-action-btn {
+            font-size: 12px;
+            font-weight: 700;
+            color: var(--accent);
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            text-decoration: none;
+        }
+
+        .card-action-btn:hover {
+            color: var(--accent-hover);
+        }
+
+        /* ============ TABLES (Documents, Team, Classmates) ============ */
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            background: var(--panel);
+            border: 1.5px solid var(--border);
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 4px 15px rgba(26, 32, 44, 0.03);
+            margin-top: 8px;
+        }
+
+        thead th {
+            text-align: left;
+            font-size: 11px;
+            font-weight: 700;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            color: var(--manila-soft);
+            padding: 13px 12px;
+            border-bottom: 2px solid var(--binder-spine);
+            background: rgba(226, 206, 139, 0.15);
+        }
+
+        tbody td {
+            padding: 14px 12px;
+            border-bottom: 1.5px solid var(--border);
+            vertical-align: middle;
+            font-size: 13px;
+        }
+
+        tbody tr:last-child td {
+            border-bottom: none;
+        }
+
+        tbody tr:hover td {
+            background: rgba(42, 77, 143, 0.02);
+        }
+
+        .name-cell {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .avatar-sm {
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            background: var(--accent-soft);
+            color: var(--accent);
+            font-weight: 700;
+            font-size: 11px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: 1px solid rgba(42, 77, 143, 0.2);
+        }
+
+        .avatar-sm.owner {
+            background: var(--manila);
+            color: var(--manila-soft);
+            border-color: var(--binder-border);
+        }
+
+        .cell-title {
+            font-weight: 700;
+        }
+
+        .cell-subtitle {
+            font-size: 11px;
+            color: var(--ink-soft);
+            margin-top: 1px;
+        }
+
+        .tag {
+            font-size: 10.5px;
+            font-weight: 700;
+            padding: 2px 6px;
+            border-radius: 4px;
+            text-transform: uppercase;
+        }
+
+        .tag.file-pdf { background: #FDE8E8; color: #9B1C1C; }
+        .tag.file-link { background: #EBF8FF; color: #2B6CB0; }
+        .tag.file-doc { background: #EBF5FF; color: #1A56DB; }
+        
+        .role-badge {
+            font-size: 11px;
+            font-weight: 600;
+            padding: 2px 6px;
+            border-radius: 4px;
+            background: var(--app-bg);
+            color: var(--ink-soft);
+        }
+
+        .role-badge.owner {
+            background: var(--accent-soft);
+            color: var(--accent);
+        }
+
+        .action-link {
+            color: var(--accent);
+            text-decoration: none;
+            font-weight: 600;
+            font-size: 12.5px;
+        }
+
+        .action-link:hover {
+            color: var(--accent-hover);
+            text-decoration: underline;
+        }
+
+        .action-link.danger {
+            color: var(--red);
+        }
+
+        .action-link.danger:hover {
+            color: #9B2C2C;
+        }
+
+        /* ============ CORKBOARD PANE ============ */
+        .corkboard-pane {
+            position: sticky;
+            top: 0;
+            background: var(--wood-back);
+            border: 12px solid var(--wood-border);
+            border-radius: 8px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.4), inset 0 4px 10px rgba(0, 0, 0, 0.7);
+            padding: 16px;
+            height: calc(100vh - 40px);
+            overflow-y: auto;
+        }
+
+        .cork-texture {
+            background-color: var(--cork-tan);
+            background-image:
+                radial-gradient(rgba(0, 0, 0, 0.12) 15%, transparent 16%),
+                radial-gradient(rgba(0, 0, 0, 0.12) 15%, transparent 16%);
+            background-size: 8px 8px;
+            background-position: 0 0, 4px 4px;
+            border-radius: 4px;
+            padding: 14px;
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+            min-height: 100%;
+        }
+
+        .cork-header {
+            font-size: 11px;
+            font-weight: 800;
+            letter-spacing: 1.5px;
+            text-transform: uppercase;
+            color: #4A2E13;
+            border-bottom: 2px solid rgba(74, 46, 19, 0.2);
+            padding-bottom: 6px;
+            margin-bottom: 4px;
+            text-align: center;
+        }
+
+        .cork-note {
+            background: var(--manila);
+            color: var(--manila-ink);
+            border-radius: 4px;
+            padding: 16px;
+            position: relative;
+            box-shadow: 3px 5px 12px rgba(0, 0, 0, 0.25);
+            transform: rotate(-1deg);
+            transition: transform 0.2s ease;
+        }
+
+        .cork-note:nth-child(odd) {
+            transform: rotate(1deg);
+        }
+
+        .cork-note:hover {
+            transform: rotate(0deg) scale(1.02);
+            z-index: 2;
+        }
+
+        .cork-note::before {
+            content: '';
+            position: absolute;
+            top: -7px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: radial-gradient(circle at 35% 30%, #ef4444, #7f1d1d);
+            box-shadow: 0 3px 5px rgba(0, 0, 0, 0.3);
+        }
+
+        .cork-note h3 {
+            font-size: 13px;
+            font-weight: 700;
+            margin-bottom: 8px;
+            color: var(--manila-ink);
+            border-bottom: 1px dashed rgba(26, 32, 44, 0.1);
+            padding-bottom: 4px;
+        }
+
+        .digest-line {
+            font-size: 12px;
+            margin-bottom: 6px;
+            line-height: 1.4;
+        }
+
+        .digest-line:last-child {
+            margin-bottom: 0;
+        }
+
+        .cork-empty {
+            font-size: 12px;
+            font-style: italic;
+            color: var(--manila-soft);
+        }
+
+        /* ============ MODAL SYSTEM ============ */
+        .modal-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(11, 22, 38, 0.6);
+            backdrop-filter: blur(4px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 100;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.25s ease;
+        }
+
+        .modal-overlay.open {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        .modal-card {
+            background: var(--binder-bg);
+            border: 1px solid var(--binder-border);
+            border-radius: 12px;
+            width: 90%;
+            max-width: 400px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.3);
+            overflow: hidden;
+            transform: scale(0.9);
+            transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        .modal-overlay.open .modal-card {
+            transform: scale(1);
+        }
+
+        .modal-header {
+            padding: 16px 20px;
+            background: rgba(226, 206, 139, 0.18);
+            border-bottom: 1px solid var(--binder-border);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .modal-header h3 {
+            font-size: 15px;
+            font-weight: 800;
+        }
+
+        .modal-close {
+            color: var(--ink-soft);
+            font-size: 18px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        .modal-close:hover {
+            color: var(--ink);
+        }
+
+        .modal-body {
+            padding: 20px;
+        }
+
+        .form-group {
+            margin-bottom: 16px;
+        }
+
+        .form-group label {
+            display: block;
+            font-size: 11px;
+            font-weight: 700;
+            color: var(--ink-soft);
+            text-transform: uppercase;
+            letter-spacing: 0.3px;
+            margin-bottom: 6px;
+        }
+
+        .form-group input {
+            width: 100%;
+            border: 1px solid var(--border-strong);
+            border-radius: 6px;
+            padding: 9px 12px;
+            font-size: 13px;
+            background: var(--app-bg);
+            color: var(--ink);
+            outline: none;
+        }
+
+        .form-group input:focus {
+            border-color: var(--accent);
+            background: var(--panel);
+        }
+
+        .btn-primary {
+            width: 100%;
+            background: var(--accent);
+            color: #fff;
+            padding: 10px;
+            border-radius: 6px;
+            font-size: 13px;
+            font-weight: 700;
+            text-align: center;
+        }
+
+        .btn-primary:hover {
+            background: var(--accent-hover);
+        }
+
+        .btn-ghost {
+            background: transparent;
+            border: 1px solid var(--border-strong);
+            padding: 8px 12px;
+            border-radius: 6px;
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--ink-soft);
+        }
+
+        .btn-ghost:hover {
+            background: rgba(0,0,0,0.03);
+        }
+
+        /* Responsive Layout fixes */
+        @media (max-width: 1200px) {
+            .ledger-pane {
+                grid-template-columns: 1fr;
+            }
+            .corkboard-pane {
+                height: auto;
+                max-height: none;
+            }
+        }
+    </style>
+</head>
+<body>
+
+<div class="app-shell">
+    
+    <!-- COLUMN 1: ICON RAIL (Navigation) -->
+    <div class="icon-rail">
+        <a href="#" class="rail-logo">S</a>
+        
+        <div class="rail-nav">
+            <a href="#" class="rail-item">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
+                    <polyline points="9 22 9 12 15 12 15 22"/>
+                </svg>
+                <span class="rail-tip">Dashboard</span>
+            </a>
+            
+            <a href="#" class="rail-item active">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1-2.5-2.5Z"/>
+                    <path d="M6 6h10M6 10h10"/>
+                </svg>
+                <span class="rail-tip">Classrooms</span>
+            </a>
+            
+            <a href="#" class="rail-item">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/>
+                    <path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/>
+                </svg>
+                <span class="rail-tip">Library</span>
+            </a>
+            
+            <a href="#" class="rail-item">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <line x1="18" y1="20" x2="18" y2="10"/>
+                    <line x1="12" y1="20" x2="12" y2="4"/>
+                    <line x1="6" y1="20" x2="6" y2="14"/>
+                </svg>
+                <span class="rail-tip">Review & Score</span>
+            </a>
+        </div>
+        
+        <div class="rail-avatar" title="Minh Cường (Học sinh)">MC</div>
+    </div>
+
+    <!-- COLUMN 2: CLASS LIST (Folder Tabs Style) -->
+    <div class="class-col">
+        <div class="class-col-head">
+            <h1>Lớp Học Của Tôi</h1>
+            <div class="count" id="class-count">3 lớp đang tham gia</div>
+        </div>
+        
+        <div class="search-row">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+            </svg>
+            <input type="text" placeholder="Tìm kiếm lớp học..." onkeyup="filterClasses(this.value)">
+        </div>
+
+        <div class="filter-row">
+            <button class="filter-chip active" onclick="switchFilter('all', this)">Tất cả</button>
+            <button class="filter-chip" onclick="switchFilter('active', this)">Đang học</button>
+            <button class="filter-chip" onclick="switchFilter('archived', this)">Lưu trữ</button>
+        </div>
+
+        <button class="join-class-btn" onclick="openJoinModal()">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
+            </svg>
+            Tham gia lớp bằng mã
+        </button>
+
+        <div class="class-list" id="class-list-container">
+            <!-- Class Item 1 -->
+            <div class="class-item selected" data-status="active" onclick="selectClass('sat-advanced-2026', this)">
+                <div class="ci-top">
+                    <span class="ci-name">SAT Advanced 2026 - T1</span>
+                    <span class="status-pill completed" style="font-size: 9px; padding: 1px 4px;">Active</span>
+                </div>
+                <div class="ci-meta">
+                    <span>GV: Thầy Minh</span>
+                    <span>·</span>
+                    <span>5 bài tập</span>
+                </div>
+            </div>
+
+            <!-- Class Item 2 -->
+            <div class="class-item" data-status="active" onclick="selectClass('sat-math-target-800', this)">
+                <div class="ci-top">
+                    <span class="ci-name">Target 800 Math SAT</span>
+                    <span class="status-pill completed" style="font-size: 9px; padding: 1px 4px;">Active</span>
+                </div>
+                <div class="ci-meta">
+                    <span>GV: Cô Hà</span>
+                    <span>·</span>
+                    <span>3 bài tập</span>
+                </div>
+            </div>
+
+            <!-- Class Item 3 -->
+            <div class="class-item" data-status="archived" onclick="selectClass('sat-summer-intensive', this)">
+                <div class="ci-top">
+                    <span class="ci-name">SAT Summer Intensive</span>
+                    <span class="status-pill not-started" style="font-size: 9px; padding: 1px 4px; background: #E2E8F0; color: #4A5568;">Archived</span>
+                </div>
+                <div class="ci-meta">
+                    <span>GV: Thầy Minh</span>
+                    <span>·</span>
+                    <span>12 bài tập</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- COLUMN 3: LEDGER PANE (Main workspace + Corkboard) -->
+    <div class="ledger-pane">
+        
+        <!-- MAIN LEDGER COLUMN (Binder panel paper) -->
+        <div class="binder-panel">
+            <div class="ledger-header">
+                <div class="dh-left">
+                    <h2 id="class-title-display">SAT Advanced 2026 - T1 <span class="handwriting" style="color: var(--accent); font-size:16px;">"Đang học"</span></h2>
+                    <div class="dh-desc" id="class-desc-display">
+                        Lớp nâng cao tập trung nâng điểm SAT từ 1350 lên 1500+. Luyện đề thi và bổ trợ từ vựng khó.
+                    </div>
+                </div>
+            </div>
+
+            <!-- STATS ROW FOR STUDENT -->
+            <div class="stat-row">
+                <div class="s">
+                    <div class="num" id="stat-completed">3 / 5</div>
+                    <div class="lbl">Bài tập hoàn thành</div>
+                </div>
+                <div class="s">
+                    <div class="num" id="stat-avg">1440</div>
+                    <div class="lbl">Điểm trung bình</div>
+                </div>
+                <div class="s">
+                    <div class="num" id="stat-docs">4 tài liệu</div>
+                    <div class="lbl">Tài liệu chia sẻ</div>
+                </div>
+                <div class="s">
+                    <div class="num" id="stat-classmates">18 bạn</div>
+                    <div class="lbl">Sĩ số lớp</div>
+                </div>
+            </div>
+
+            <!-- TEAMS-STYLE TAB BAR -->
+            <div class="class-tabs">
+                <button class="seg-btn active" onclick="switchTab('assign', this)">
+                    Bài tập <span class="count" id="tab-assign-count">5</span>
+                </button>
+                <button class="seg-btn" onclick="switchTab('docs', this)">
+                    Tài liệu <span class="count" id="tab-docs-count">4</span>
+                </button>
+                <button class="seg-btn" onclick="switchTab('team', this)">
+                    Giảng dạy <span class="count">2</span>
+                </button>
+                <button class="seg-btn" onclick="switchTab('classmates', this)">
+                    Bạn học <span class="count">18</span>
+                </button>
+                <button class="seg-btn" onclick="switchTab('settings', this)">
+                    Cấu hình
+                </button>
+            </div>
+
+            <!-- PANEL 1: ASSIGNMENTS -->
+            <div class="section-panel active" id="panel-assign">
+                <div class="sp-head">
+                    <div>
+                        <p>Danh sách bài tập giáo viên giao riêng cho bạn hoặc lớp học.</p>
+                    </div>
+                </div>
+
+                <div class="assignments-grid" id="assignments-list-el">
+                    <!-- Assignment 1 -->
+                    <div class="assignment-card">
+                        <div class="card-due overdue">Hạn chót: Hôm nay lúc 23:59</div>
+                        <div class="card-title">SAT Full Test #4 (Adaptive Simulation)</div>
+                        <div class="card-subtitle">Test đầy đủ cả 2 phần · 134 phút</div>
+                        <div class="card-footer">
+                            <span class="status-pill in-progress">Đang làm dở</span>
+                            <a href="#" class="card-action-btn" onclick="alert('Bắt đầu làm bài test...')">
+                                Tiếp tục
+                                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg>
+                            </a>
+                        </div>
+                    </div>
+
+                    <!-- Assignment 2 -->
+                    <div class="assignment-card">
+                        <div class="card-due">Hạn chót: 20 thg 7, 2026</div>
+                        <div class="card-title">Weekly Math Drill: Hard Bluebook Module 2</div>
+                        <div class="card-subtitle">Chỉ phần Math Section · 35 phút</div>
+                        <div class="card-footer">
+                            <span class="status-pill not-started">Chưa bắt đầu</span>
+                            <a href="#" class="card-action-btn" onclick="alert('Bắt đầu làm bài test...')">
+                                Làm bài
+                                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg>
+                            </a>
+                        </div>
+                    </div>
+
+                    <!-- Assignment 3 -->
+                    <div class="assignment-card">
+                        <div class="card-due">Hoàn thành lúc 15:40 - 16/07</div>
+                        <div class="card-title">Reading & Writing Mini Quiz #2</div>
+                        <div class="card-subtitle">Chỉ phần R&W Section · 20 phút</div>
+                        <div class="card-footer">
+                            <div style="display: flex; flex-direction: column; gap: 2px;">
+                                <span class="status-pill completed">Hoàn thành</span>
+                                <span class="mono" style="font-size: 11px; font-weight:700; color:var(--green); margin-top:2px;">Điểm: 740 / 800</span>
+                            </div>
+                            <a href="#" class="card-action-btn" style="color: var(--green);" onclick="alert('Chuyển hướng đến trang review phân tích lỗi sai...')">
+                                Xem kết quả
+                            </a>
+                        </div>
+                    </div>
+
+                    <!-- Assignment 4 -->
+                    <div class="assignment-card">
+                        <div class="card-due">Hoàn thành lúc 20:10 - 12/07</div>
+                        <div class="card-title">SAT Full Test #3 (Diagnostic Test)</div>
+                        <div class="card-subtitle">Test đầy đủ cả 2 phần · 134 phút</div>
+                        <div class="card-footer">
+                            <div style="display: flex; flex-direction: column; gap: 2px;">
+                                <span class="status-pill completed">Hoàn thành</span>
+                                <span class="mono" style="font-size: 11px; font-weight:700; color:var(--green); margin-top:2px;">Điểm: 1440 / 1600</span>
+                            </div>
+                            <a href="#" class="card-action-btn" style="color: var(--green);" onclick="alert('Chuyển hướng đến trang review phân tích lỗi sai...')">
+                                Xem kết quả
+                            </a>
+                        </div>
+                    </div>
+
+                    <!-- Assignment 5 -->
+                    <div class="assignment-card">
+                        <div class="card-due">Hoàn thành lúc 10:15 - 08/07</div>
+                        <div class="card-title">Math Section Practice #1</div>
+                        <div class="card-subtitle">Chỉ phần Math Section · 35 phút</div>
+                        <div class="card-footer">
+                            <div style="display: flex; flex-direction: column; gap: 2px;">
+                                <span class="status-pill completed">Hoàn thành</span>
+                                <span class="mono" style="font-size: 11px; font-weight:700; color:var(--green); margin-top:2px;">Điểm: 700 / 800</span>
+                            </div>
+                            <a href="#" class="card-action-btn" style="color: var(--green);" onclick="alert('Chuyển hướng đến trang review...')">
+                                Xem kết quả
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- PANEL 2: DOCUMENTS -->
+            <div class="section-panel" id="panel-docs">
+                <div class="sp-head">
+                    <div>
+                        <p>Tài liệu ôn thi, bài giảng và đường dẫn tham khảo hữu ích do giảng viên cung cấp.</p>
+                    </div>
+                </div>
+
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Tài liệu / Liên kết</th>
+                            <th>Định dạng</th>
+                            <th>Ngày chia sẻ</th>
+                            <th style="text-align: right;">Hành động</th>
+                        </tr>
+                    </thead>
+                    <tbody id="docs-list-el">
+                        <tr>
+                            <td class="name-cell">
+                                <div class="avatar-sm">PDF</div>
+                                <div>
+                                    <div class="cell-title">SAT Vocabulary Builder - 500 Essential Words</div>
+                                    <div class="cell-subtitle">Tập hợp từ vựng hay gặp trong phần Reading & Writing (14.2 MB)</div>
+                                </div>
+                            </td>
+                            <td><span class="tag file-pdf">PDF Document</span></td>
+                            <td>15/07/2026</td>
+                            <td style="text-align: right;">
+                                <a href="#" class="action-link" onclick="alert('Đang mở file PDF...')">Mở</a>
+                                <span style="color: var(--border-strong); margin: 0 4px;">·</span>
+                                <a href="#" class="action-link" onclick="alert('Đang tải file...')">Tải về</a>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td class="name-cell">
+                                <div class="avatar-sm">LN</div>
+                                <div>
+                                    <div class="cell-title">Official Desmos SAT Graphing Calculator Practice</div>
+                                    <div class="cell-subtitle">Hướng dẫn sử dụng các mẹo vẽ đồ thị để giải nhanh phần Math</div>
+                                </div>
+                            </td>
+                            <td><span class="tag file-link">Web Link</span></td>
+                            <td>12/07/2026</td>
+                            <td style="text-align: right;">
+                                <a href="https://www.desmos.com/calculator" target="_blank" class="action-link">Truy cập</a>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td class="name-cell">
+                                <div class="avatar-sm">DOC</div>
+                                <div>
+                                    <div class="cell-title">Bluebook Testing Day Guide checklist</div>
+                                    <div class="cell-subtitle">Danh sách vật dụng cần chuẩn bị và quy trình phòng thi chính thức</div>
+                                </div>
+                            </td>
+                            <td><span class="tag file-doc">DOCX Word</span></td>
+                            <td>10/07/2026</td>
+                            <td style="text-align: right;">
+                                <a href="#" class="action-link" onclick="alert('Đang mở file Word...')">Mở</a>
+                                <span style="color: var(--border-strong); margin: 0 4px;">·</span>
+                                <a href="#" class="action-link" onclick="alert('Đang tải file...')">Tải về</a>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td class="name-cell">
+                                <div class="avatar-sm">LN</div>
+                                <div>
+                                    <div class="cell-title">Khan Academy Digital SAT Prep Course</div>
+                                    <div class="cell-subtitle">Khóa học bổ trợ lý thuyết theo cấu trúc College Board</div>
+                                </div>
+                            </td>
+                            <td><span class="tag file-link">Web Link</span></td>
+                            <td>05/07/2026</td>
+                            <td style="text-align: right;">
+                                <a href="https://www.khanacademy.org" target="_blank" class="action-link">Truy cập</a>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- PANEL 3: TEACHING TEAM -->
+            <div class="section-panel" id="panel-team">
+                <div class="sp-head">
+                    <div>
+                        <p>Những người chịu trách nhiệm giảng dạy, chấm điểm và biên soạn đề cho lớp học.</p>
+                    </div>
+                </div>
+
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Họ và tên</th>
+                            <th>Vai trò</th>
+                            <th>Email liên hệ</th>
+                        </tr>
+                    </thead>
+                    <tbody id="team-list-el">
+                        <tr>
+                            <td class="name-cell">
+                                <div class="avatar-sm owner">TM</div>
+                                <div>
+                                    <div class="cell-title">Nguyễn Minh Minh</div>
+                                    <div class="cell-subtitle">Chủ nhiệm lớp</div>
+                                </div>
+                            </td>
+                            <td><span class="role-badge owner">Class Owner</span></td>
+                            <td class="mono">minh.nguyen@classroom.edu.vn</td>
+                        </tr>
+                        <tr>
+                            <td class="name-cell">
+                                <div class="avatar-sm">TH</div>
+                                <div>
+                                    <div class="cell-title">Trần Thanh Hà</div>
+                                    <div class="cell-subtitle">Giảng viên phụ tá</div>
+                                </div>
+                            </td>
+                            <td><span class="role-badge">Co-teacher</span></td>
+                            <td class="mono">ha.tran@classroom.edu.vn</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- PANEL 4: CLASSMATES -->
+            <div class="section-panel" id="panel-classmates">
+                <div class="sp-head">
+                    <div>
+                        <p>Danh sách các thành viên cùng tham gia thảo luận và thi đua trong lớp học.</p>
+                    </div>
+                </div>
+
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Thành viên</th>
+                            <th>Ngày gia nhập</th>
+                            <th style="text-align: right;">Tương tác</th>
+                        </tr>
+                    </thead>
+                    <tbody id="classmates-list-el">
+                        <tr>
+                            <td class="name-cell">
+                                <div class="avatar-sm">AH</div>
+                                <div>
+                                    <div class="cell-title">An Hoàng</div>
+                                    <div class="cell-subtitle">Học sinh tích cực</div>
+                                </div>
+                            </td>
+                            <td>04/07/2026</td>
+                            <td style="text-align: right;"><a href="#" class="action-link" onclick="alert('Chức năng chat riêng tư sẽ sớm ra mắt...')">Nhắn tin</a></td>
+                        </tr>
+                        <tr>
+                            <td class="name-cell">
+                                <div class="avatar-sm">BM</div>
+                                <div>
+                                    <div class="cell-title">Bình Minh</div>
+                                    <div class="cell-subtitle">Học sinh</div>
+                                </div>
+                            </td>
+                            <td>05/07/2026</td>
+                            <td style="text-align: right;"><a href="#" class="action-link" onclick="alert('Chức năng chat riêng tư sẽ sớm ra mắt...')">Nhắn tin</a></td>
+                        </tr>
+                        <tr>
+                            <td class="name-cell">
+                                <div class="avatar-sm">DT</div>
+                                <div>
+                                    <div class="cell-title">Dương Thùy</div>
+                                    <div class="cell-subtitle">Học sinh</div>
+                                </div>
+                            </td>
+                            <td>05/07/2026</td>
+                            <td style="text-align: right;"><a href="#" class="action-link" onclick="alert('Chức năng chat riêng tư sẽ sớm ra mắt...')">Nhắn tin</a></td>
+                        </tr>
+                        <tr>
+                            <td class="name-cell">
+                                <div class="avatar-sm">KT</div>
+                                <div>
+                                    <div class="cell-title">Khánh Trần</div>
+                                    <div class="cell-subtitle">Học sinh</div>
+                                </div>
+                            </td>
+                            <td>06/07/2026</td>
+                            <td style="text-align: right;"><a href="#" class="action-link" onclick="alert('Chức năng chat riêng tư sẽ sớm ra mắt...')">Nhắn tin</a></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- PANEL 5: SETTINGS -->
+            <div class="section-panel" id="panel-settings">
+                <div class="sp-head">
+                    <div>
+                        <p>Cấu hình cá nhân đối với lớp học này.</p>
+                    </div>
+                </div>
+
+                <div style="background: var(--panel); border: 1px solid var(--border); border-radius: 9px; padding: 20px; max-width: 460px;">
+                    <div style="margin-bottom: 20px;">
+                        <h4 style="font-weight: 700; margin-bottom: 6px; font-size: 13.5px;">Biệt danh hiển thị</h4>
+                        <p style="color: var(--ink-soft); font-size: 12px; margin-bottom: 10px;">Đặt tên phụ giúp giáo viên dễ quản lý (Ví dụ: Số thứ tự lớp học, Mã học sinh...).</p>
+                        <input type="text" value="Nguyễn Minh Cường" style="width: 100%; border:1px solid var(--border-strong); border-radius:6px; padding:8px 10px; font-size:12.5px; background:var(--app-bg); color:var(--ink);">
+                    </div>
+
+                    <div style="border-top: 1px dashed var(--border-strong); padding-top: 20px; margin-top: 10px;">
+                        <h4 style="font-weight: 700; margin-bottom: 6px; font-size: 13.5px; color: var(--red);">Rời khỏi lớp học</h4>
+                        <p style="color: var(--ink-soft); font-size: 12px; margin-bottom: 14px;">Bạn sẽ không thể xem tài liệu hoặc làm bài tập nữa. Lịch sử điểm số đã làm của bạn vẫn được giáo viên lưu trữ.</p>
+                        <button class="btn-ghost" style="color: var(--red); border-color: var(--red);" onclick="confirmLeaveClass()">
+                            Rời khỏi lớp
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- COLUMN 3B: CORKBOARD PANE (Glanceable Pinned Notes) -->
+        <div class="corkboard-pane">
+            <div class="cork-texture">
+                <div class="cork-header">Bảng Ghim Lớp Học</div>
+                
+                <!-- Note 1: Sắp đến hạn -->
+                <div class="cork-note" id="cork-note-due">
+                    <h3 class="handwriting" style="font-size: 15px; color: #782E2E;">Sắp đến hạn! 📌</h3>
+                    <div class="digest-line">
+                        ⚠️ <strong>SAT Full Test #4</strong>
+                        <div style="margin-left: 12px; font-size: 11.5px; color: var(--manila-soft);">Hạn nộp: Hôm nay lúc 23:59</div>
+                    </div>
+                    <div class="digest-line">
+                        ⏳ <strong>Weekly Math Drill</strong>
+                        <div style="margin-left: 12px; font-size: 11.5px; color: var(--manila-soft);">Hạn nộp: 20/07 (còn 3 ngày)</div>
+                    </div>
+                </div>
+
+                <!-- Note 2: GV thông báo -->
+                <div class="cork-note">
+                    <h3 class="handwriting" style="font-size: 15px; color: var(--accent);">Thầy Minh nhắn: 💬</h3>
+                    <p class="digest-line">"Cả lớp nhớ đọc tài liệu <strong>Vocabulary Builder</strong> vừa được đăng tải và làm xong <strong>R&W Quiz #2</strong> trước buổi học thứ Sáu nhé."</p>
+                </div>
+
+                <!-- Note 3: Bảng xếp hạng tuần -->
+                <div class="cork-note">
+                    <h3 class="handwriting" style="font-size: 15px; color: #2F855A;">Thi Đua Tuần Này 🏆</h3>
+                    <div class="digest-line" style="display:flex; justify-content:space-between;">
+                        <span>🥇 An Hoàng</span>
+                        <strong class="mono">1510 / 1600</strong>
+                    </div>
+                    <div class="digest-line" style="display:flex; justify-content:space-between;">
+                        <span>🥈 Bình Minh</span>
+                        <strong class="mono">1480 / 1600</strong>
+                    </div>
+                    <div class="digest-line" style="display:flex; justify-content:space-between;">
+                        <span>🥉 Bạn (Cường)</span>
+                        <strong class="mono">1440 / 1600</strong>
+                    </div>
+                    <p class="cork-empty" style="text-align: center; margin-top: 8px; border-top: 1px dashed rgba(0,0,0,0.1); padding-top:4px;">Làm test để cập nhật thứ hạng!</p>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+</div>
+
+<!-- JOIN CLASS MODAL (Pop-up dialogue) -->
+<div class="modal-overlay" id="join-modal">
+    <div class="modal-card">
+        <div class="modal-header">
+            <h3>Tham Gia Lớp Học Mới</h3>
+            <span class="modal-close" onclick="closeJoinModal()">&times;</span>
+        </div>
+        <div class="modal-body">
+            <div class="form-group">
+                <label for="class-code">Mã mời của lớp học (Join Code)</label>
+                <input type="text" id="class-code" placeholder="e.g. KV6X2P" style="text-transform: uppercase;">
+                <p style="font-size: 11px; color: var(--ink-soft); margin-top: 5px;">Mã gồm 6 chữ số/chữ cái do giáo viên lớp của bạn cung cấp.</p>
+            </div>
+            <button class="btn-primary" onclick="simulateJoinClass()">Tham gia ngay</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Data mockup for classes
+    const classData = {
+        'sat-advanced-2026': {
+            title: 'SAT Advanced 2026 - T1',
+            desc: 'Lớp nâng cao tập trung nâng điểm SAT từ 1350 lên 1500+. Luyện đề thi và bổ trợ từ vựng khó.',
+            stats: { completed: '3 / 5', avg: '1440', docs: '4 tài liệu', classmates: '18 bạn' },
+            counts: { assign: 5, docs: 4 },
+            dueNote: `
+                <h3 class="handwriting" style="font-size: 15px; color: #782E2E;">Sắp đến hạn! 📌</h3>
+                <div class="digest-line">
+                    ⚠️ <strong>SAT Full Test #4</strong>
+                    <div style="margin-left: 12px; font-size: 11.5px; color: var(--manila-soft);">Hạn nộp: Hôm nay lúc 23:59</div>
+                </div>
+                <div class="digest-line">
+                    ⏳ <strong>Weekly Math Drill</strong>
+                    <div style="margin-left: 12px; font-size: 11.5px; color: var(--manila-soft);">Hạn nộp: 20/07 (còn 3 ngày)</div>
+                </div>
+            `,
+            assignments: `
+                <div class="assignment-card">
+                    <div class="card-due overdue">Hạn chót: Hôm nay lúc 23:59</div>
+                    <div class="card-title">SAT Full Test #4 (Adaptive Simulation)</div>
+                    <div class="card-subtitle">Test đầy đủ cả 2 phần · 134 phút</div>
+                    <div class="card-footer">
+                        <span class="status-pill in-progress">Đang làm dở</span>
+                        <a href="#" class="card-action-btn" onclick="alert('Bắt đầu làm bài test...')">
+                            Tiếp tục
+                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg>
+                        </a>
+                    </div>
+                </div>
+                <div class="assignment-card">
+                    <div class="card-due">Hạn chót: 20 thg 7, 2026</div>
+                    <div class="card-title">Weekly Math Drill: Hard Bluebook Module 2</div>
+                    <div class="card-subtitle">Chỉ phần Math Section · 35 phút</div>
+                    <div class="card-footer">
+                        <span class="status-pill not-started">Chưa bắt đầu</span>
+                        <a href="#" class="card-action-btn" onclick="alert('Bắt đầu làm bài test...')">
+                            Làm bài
+                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg>
+                        </a>
+                    </div>
+                </div>
+                <div class="assignment-card">
+                    <div class="card-due">Hoàn thành lúc 15:40 - 16/07</div>
+                    <div class="card-title">Reading & Writing Mini Quiz #2</div>
+                    <div class="card-subtitle">Chỉ phần R&W Section · 20 phút</div>
+                    <div class="card-footer">
+                        <div style="display: flex; flex-direction: column; gap: 2px;">
+                            <span class="status-pill completed">Hoàn thành</span>
+                            <span class="mono" style="font-size: 11px; font-weight:700; color:var(--green); margin-top:2px;">Điểm: 740 / 800</span>
+                        </div>
+                        <a href="#" class="card-action-btn" style="color: var(--green);" onclick="alert('Chuyển hướng đến trang review...')">
+                            Xem kết quả
+                        </a>
+                    </div>
+                </div>
+            `,
+            docs: `
+                <tr>
+                    <td class="name-cell">
+                        <div class="avatar-sm">PDF</div>
+                        <div>
+                            <div class="cell-title">SAT Vocabulary Builder - 500 Essential Words</div>
+                            <div class="cell-subtitle">Tập hợp từ vựng hay gặp trong phần Reading & Writing (14.2 MB)</div>
+                        </div>
+                    </td>
+                    <td><span class="tag file-pdf">PDF Document</span></td>
+                    <td>15/07/2026</td>
+                    <td style="text-align: right;">
+                        <a href="#" class="action-link" onclick="alert('Đang mở file PDF...')">Mở</a>
+                    </td>
+                </tr>
+            `
+        },
+        'sat-math-target-800': {
+            title: 'Target 800 Math SAT',
+            desc: 'Lớp chuyên sâu phần thi Toán. Cung cấp các công thức toán SAT nâng cao, học cách giải nhanh hình học và đại số tuyến tính.',
+            stats: { completed: '1 / 3', avg: '780', docs: '2 tài liệu', classmates: '12 bạn' },
+            counts: { assign: 3, docs: 2 },
+            dueNote: `
+                <h3 class="handwriting" style="font-size: 15px; color: #782E2E;">Sắp đến hạn! 📌</h3>
+                <div class="digest-line">
+                    ⏳ <strong>Grid-in Questions Practice</strong>
+                    <div style="margin-left: 12px; font-size: 11.5px; color: var(--manila-soft);">Hạn nộp: 25/07</div>
+                </div>
+            `,
+            assignments: `
+                <div class="assignment-card">
+                    <div class="card-due">Hạn chót: 25 thg 7, 2026</div>
+                    <div class="card-title">Grid-in Questions Practice</div>
+                    <div class="card-subtitle">Chỉ phần Math Section · 45 phút</div>
+                    <div class="card-footer">
+                        <span class="status-pill not-started">Chưa bắt đầu</span>
+                        <a href="#" class="card-action-btn" onclick="alert('Bắt đầu làm bài test...')">
+                            Làm bài
+                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg>
+                        </a>
+                    </div>
+                </div>
+                <div class="assignment-card">
+                    <div class="card-due text-red-500 overdue">Hạn chót: Đã trễ hạn (15/07)</div>
+                    <div class="card-title">Algebra and Function Advanced Quiz</div>
+                    <div class="card-subtitle">Chỉ phần Math Section · 30 phút</div>
+                    <div class="card-footer">
+                        <span class="status-pill overdue">Quá hạn</span>
+                        <a href="#" class="card-action-btn" style="color: var(--red);" onclick="alert('Liên hệ giáo viên để mở lại bài test này.')">
+                            Đã khoá
+                        </a>
+                    </div>
+                </div>
+                <div class="assignment-card">
+                    <div class="card-due">Hoàn thành lúc 09:30 - 10/07</div>
+                    <div class="card-title">Diagnostic Math Assessment</div>
+                    <div class="card-subtitle">Chỉ phần Math Section · 70 phút</div>
+                    <div class="card-footer">
+                        <div style="display: flex; flex-direction: column; gap: 2px;">
+                            <span class="status-pill completed">Hoàn thành</span>
+                            <span class="mono" style="font-size: 11px; font-weight:700; color:var(--green); margin-top:2px;">Điểm: 780 / 800</span>
+                        </div>
+                        <a href="#" class="card-action-btn" style="color: var(--green);" onclick="alert('Xem kết quả...')">
+                            Xem kết quả
+                        </a>
+                    </div>
+                </div>
+            `,
+            docs: `
+                <tr>
+                    <td class="name-cell">
+                        <div class="avatar-sm">PDF</div>
+                        <div>
+                            <div class="cell-title">All Advanced Math Formulas Cheat Sheet</div>
+                            <div class="cell-subtitle">Toàn bộ công thức quan trọng cần nhớ trong phòng thi (2.4 MB)</div>
+                        </div>
+                    </td>
+                    <td><span class="tag file-pdf">PDF Document</span></td>
+                    <td>08/07/2026</td>
+                    <td style="text-align: right;">
+                        <a href="#" class="action-link" onclick="alert('Đang tải file...')">Tải về</a>
+                    </td>
+                </tr>
+            `
+        },
+        'sat-summer-intensive': {
+            title: 'SAT Summer Intensive (Archived)',
+            desc: 'Khóa học ôn hè toàn diện đã kết thúc ngày 30/08/2025. Lưu trữ để xem lại điểm và tài liệu.',
+            stats: { completed: '12 / 12', avg: '1380', docs: '8 tài liệu', classmates: '25 bạn' },
+            counts: { assign: 12, docs: 8 },
+            dueNote: `
+                <h3 class="handwriting" style="font-size: 15px; color: var(--manila-soft);">Không có bài tập mới 📌</h3>
+                <p class="cork-empty">Lớp học đã được giáo viên lưu trữ.</p>
+            `,
+            assignments: `
+                <div class="assignment-card" style="opacity: 0.85;">
+                    <div class="card-due">Hoàn thành lúc 15:40 - 28/08/2025</div>
+                    <div class="card-title">Final SAT Exam Mock #3</div>
+                    <div class="card-subtitle">Test đầy đủ 2 phần · 134 phút</div>
+                    <div class="card-footer">
+                        <span class="status-pill completed">Hoàn thành</span>
+                        <span class="mono" style="font-size: 11.5px; font-weight:700; color:var(--green);">1420 / 1600</span>
+                    </div>
+                </div>
+            `,
+            docs: `
+                <tr>
+                    <td class="name-cell">
+                        <div class="avatar-sm">DOC</div>
+                        <div>
+                            <div class="cell-title">Lộ trình tự học SAT 1500+ trong 3 tháng</div>
+                            <div class="cell-subtitle">Tài liệu phân chia giai đoạn tự học của trung tâm</div>
+                        </div>
+                    </td>
+                    <td><span class="tag file-doc">DOCX Word</span></td>
+                    <td>01/06/2025</td>
+                    <td style="text-align: right;">
+                        <a href="#" class="action-link" onclick="alert('Mở tài liệu lưu trữ...')">Mở</a>
+                    </td>
+                </tr>
+            `
+        }
+    };
+
+    // Active tab state
+    let activeTab = 'assign';
+    let currentClassId = 'sat-advanced-2026';
+    let currentFilter = 'all';
+
+    // Tab Switching Logic
+    function switchTab(tabId, el) {
+        activeTab = tabId;
+        
+        // Remove active class from all buttons
+        document.querySelectorAll('.class-tabs .seg-btn').forEach(btn => {
+            btn.classList.remove('active');
+        });
+        
+        // Add active to current button
+        el.classList.add('active');
+        
+        // Hide all panels
+        document.querySelectorAll('.section-panel').forEach(panel => {
+            panel.classList.remove('active');
+        });
+        
+        // Show current panel
+        document.getElementById(`panel-${tabId}`).classList.add('active');
+    }
+
+    // Select Classroom Logic
+    function selectClass(classId, el) {
+        currentClassId = classId;
+        
+        // Remove selection from all items
+        document.querySelectorAll('.class-item').forEach(item => {
+            item.classList.remove('selected');
+        });
+        
+        // Select clicked item
+        el.classList.add('selected');
+        
+        // Load data
+        const data = classData[classId];
+        if (data) {
+            document.getElementById('class-title-display').innerHTML = data.title + 
+                (classId.includes('intensive') ? ' <span class="handwriting" style="color: var(--ink-soft); font-size:16px;">"Lưu trữ"</span>' : ' <span class="handwriting" style="color: var(--accent); font-size:16px;">"Đang học"</span>');
+            document.getElementById('class-desc-display').innerText = data.desc;
+            
+            // Stats
+            document.getElementById('stat-completed').innerText = data.stats.completed;
+            document.getElementById('stat-avg').innerText = data.stats.avg;
+            document.getElementById('stat-docs').innerText = data.stats.docs;
+            document.getElementById('stat-classmates').innerText = data.stats.classmates;
+            
+            // Tab counts
+            document.getElementById('tab-assign-count').innerText = data.counts.assign;
+            document.getElementById('tab-docs-count').innerText = data.counts.docs;
+            
+            // Corkboard due note
+            document.getElementById('cork-note-due').innerHTML = data.dueNote;
+            
+            // Lists content
+            if (data.assignments.trim()) {
+                document.getElementById('assignments-list-el').innerHTML = data.assignments;
+            } else {
+                document.getElementById('assignments-list-el').innerHTML = '<div style="grid-column: 1/-1; text-align:center; padding:24px; color:var(--ink-soft);">Không có bài tập nào.</div>';
+            }
+            
+            if (data.docs.trim()) {
+                document.getElementById('docs-list-el').innerHTML = data.docs;
+            } else {
+                document.getElementById('docs-list-el').innerHTML = '<tr><td colspan="4" style="text-align:center; padding:24px; color:var(--ink-soft);">Không có tài liệu nào.</td></tr>';
+            }
+        }
+    }
+
+    // Modal Control
+    function openJoinModal() {
+        document.getElementById('join-modal').classList.add('open');
+    }
+
+    // Close Modal
+    function closeJoinModal() {
+        document.getElementById('join-modal').classList.remove('open');
+    }
+
+    // Simulate join class
+    function simulateJoinClass() {
+        const codeInput = document.getElementById('class-code');
+        const code = codeInput.value.trim().toUpperCase();
+        if (code.length < 5) {
+            alert('Vui lòng nhập mã mời hợp lệ (từ 5-6 ký tự).');
+            return;
+        }
+        
+        alert(`Gửi yêu cầu tham gia lớp bằng mã: ${code}. Lớp học sẽ hiển thị sau khi Giáo viên phê duyệt yêu cầu của bạn!`);
+        closeJoinModal();
+        codeInput.value = '';
+    }
+
+    // Leave Class action
+    function confirmLeaveClass() {
+        if(confirm('Bạn có chắc chắn muốn rời khỏi lớp học này? Mọi lịch sử làm bài tập và điểm số vẫn được ghi nhận trong báo cáo của giáo viên, nhưng bạn sẽ mất quyền truy cập tài liệu lớp.')) {
+            alert('Đã gửi yêu cầu rời lớp.');
+        }
+    }
+
+    // Filter Logic
+    function switchFilter(status, el) {
+        currentFilter = status;
+        
+        // Active chip style
+        document.querySelectorAll('.filter-chip').forEach(chip => {
+            chip.classList.remove('active');
+        });
+        el.classList.add('active');
+        
+        // Filter elements
+        const items = document.querySelectorAll('.class-item');
+        let visibleCount = 0;
+        
+        items.forEach(item => {
+            const itemStatus = item.getAttribute('data-status');
+            if (status === 'all' || itemStatus === status) {
+                item.style.display = 'flex';
+                visibleCount++;
+            } else {
+                item.style.display = 'none';
+            }
+        });
+        
+        document.getElementById('class-count').innerText = `${visibleCount} lớp học hiển thị`;
+    }
+
+    // Search Logic
+    function filterClasses(query) {
+        const cleanedQuery = query.toLowerCase().trim();
+        const items = document.querySelectorAll('.class-item');
+        let visibleCount = 0;
+        
+        items.forEach(item => {
+            const className = item.querySelector('.ci-name').innerText.toLowerCase();
+            const teacherName = item.querySelector('.ci-meta').innerText.toLowerCase();
+            const matchesQuery = className.includes(cleanedQuery) || teacherName.includes(cleanedQuery);
+            const matchesFilter = currentFilter === 'all' || item.getAttribute('data-status') === currentFilter;
+            
+            if (matchesQuery && matchesFilter) {
+                item.style.display = 'flex';
+                visibleCount++;
+            } else {
+                item.style.display = 'none';
+            }
+        });
+        
+        document.getElementById('class-count').innerText = `${visibleCount} lớp học được tìm thấy`;
+    }
+</script>
+
+</body>
+</html>
