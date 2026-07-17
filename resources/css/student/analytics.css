@@ -1,27 +1,5 @@
 .ds-home-shell {
-    --ds-ink: oklch(24% 0.045 255);
-    --ds-ink-strong: oklch(18% 0.055 255);
-    --ds-muted: oklch(48% 0.035 255);
-    --ds-muted-strong: oklch(41% 0.04 255);
-    --ds-surface: oklch(100% 0 0);
-    --ds-surface-soft: oklch(98% 0.008 255);
-    --ds-surface-raised: oklch(99% 0.005 255);
-    --ds-border: oklch(89% 0.025 255);
-    --ds-border-strong: oklch(80% 0.045 255);
-    --ds-primary: oklch(38% 0.13 258);
-    --ds-primary-hover: oklch(32% 0.13 258);
-    --ds-primary-soft: oklch(94.5% 0.035 258);
-    --ds-primary-line: oklch(78% 0.075 258);
-    --ds-progress: oklch(63% 0.125 183);
-    --ds-progress-strong: oklch(43% 0.105 183);
-    --ds-progress-soft: oklch(96% 0.035 183);
-    --ds-progress-line: oklch(82% 0.07 183);
-    --ds-warning: oklch(62% 0.09 73);
-    --ds-warning-strong: oklch(39% 0.075 73);
-    --ds-warning-soft: oklch(98% 0.015 73);
-    --ds-danger: oklch(58% 0.16 24);
-    --ds-danger-soft: oklch(95% 0.035 24);
-    --ds-focus: oklch(70% 0.14 258 / 0.35);
+    /* --ds-* tokens now come from resources/css/design-tokens.css (global :root) */
     min-height: 100%;
     background: linear-gradient(
         180deg,
@@ -1535,4 +1513,84 @@
 
 .ds-alert.hidden {
     display: none !important;
+}
+
+/* ---------- Performance bar charts (weak-area / difficulty / pacing) ---------- */
+.ds-bar-list {
+    display: grid;
+    gap: 0.85rem;
+}
+
+.ds-bar-row {
+    display: grid;
+    grid-template-columns: minmax(9rem, 1fr) minmax(0, 2.4fr) 3.5rem;
+    align-items: center;
+    gap: 0.85rem;
+}
+
+.ds-bar-row__label {
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: var(--ds-ink-strong);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.ds-bar-row__label small {
+    display: block;
+    font-weight: 500;
+    color: var(--ds-muted);
+    font-size: 0.72rem;
+}
+
+.ds-bar-track {
+    position: relative;
+    height: 0.6rem;
+    border-radius: 999px;
+    background: var(--ds-border);
+    overflow: hidden;
+}
+
+.ds-bar-fill {
+    display: block;
+    height: 100%;
+    border-radius: inherit;
+    background: var(--ds-progress-strong);
+}
+
+.ds-bar-fill.is-medium {
+    background: var(--ds-warning-strong);
+}
+
+.ds-bar-fill.is-low {
+    background: var(--ds-danger);
+}
+
+.ds-bar-fill.is-pace {
+    background: var(--ds-primary);
+}
+
+.ds-bar-track__tick {
+    position: absolute;
+    top: -2px;
+    bottom: -2px;
+    width: 2px;
+    background: var(--ds-ink-strong);
+    opacity: 0.35;
+}
+
+.ds-bar-row__value {
+    font-size: 0.82rem;
+    font-weight: 700;
+    color: var(--ds-ink-strong);
+    text-align: right;
+    font-variant-numeric: tabular-nums;
+}
+
+.ds-bar-row__value small {
+    display: block;
+    font-weight: 500;
+    color: var(--ds-muted);
+    font-size: 0.68rem;
 }

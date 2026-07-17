@@ -19,7 +19,8 @@ export default defineConfig({
                 'resources/js/app.js',
                 'resources/js/auth.js',
                 'resources/js/test.js',
-                'resources/js/test-dashboard.js'
+                'resources/js/test-dashboard.js',
+                'resources/js/student/scores-katex.js'
             ],
             refresh: true,
         }),

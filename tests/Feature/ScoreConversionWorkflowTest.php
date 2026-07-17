@@ -133,7 +133,7 @@ class ScoreConversionWorkflowTest extends TestCase
             'score_conversion_set_id' => $set->id,
         ]);
 
-        $this->actingAs($student)->get(route('my-practice.score', $attempt))
+        $this->actingAs($student)->get(route('student.scores.show', $attempt))
             ->assertOk()
             ->assertSee('Estimated practice score')
             ->assertSee('Not an official College Board score.');
@@ -155,7 +155,7 @@ class ScoreConversionWorkflowTest extends TestCase
             'score_estimate_kind' => 'normal_generic',
         ]);
 
-        $this->actingAs($student)->get(route('my-practice.score', $attempt))
+        $this->actingAs($student)->get(route('student.scores.show', $attempt))
             ->assertOk()
             ->assertSee('Estimated practice score · Normal conversion')
             ->assertSee('This estimate uses all the questions you answered, converted with our standard scoring table.')

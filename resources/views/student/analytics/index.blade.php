@@ -131,7 +131,7 @@
 
             <div class="ds-workspace-actions" aria-label="Primary progress actions">
                 @if($latestCompleted)
-                    <x-ui.button href="{{ route('my-practice.score', $latestCompleted) }}" variant="primary">
+                    <x-ui.button href="{{ route('student.scores.show', $latestCompleted) }}" variant="primary">
                         Review latest score
                     </x-ui.button>
                 @else
@@ -164,7 +164,7 @@
                     <x-ui.button href="{{ route('home.practice') }}" variant="secondary">Choose practice</x-ui.button>
                 @elseif($latestCompleted)
                     <p>Your latest score is ready. Review missed questions before choosing the next practice block.</p>
-                    <x-ui.button href="{{ route('my-practice', $latestCompleted) }}" variant="secondary">Open score
+                    <x-ui.button href="{{ route('student.scores.show', $latestCompleted) }}" variant="secondary">Open score
                         report</x-ui.button>
                 @else
                     <p>Take a quick look at the digital test interface first, then start your first full-length baseline.
@@ -315,7 +315,7 @@
                         @endif
                     </div>
                     @if($latestCompleted)
-                        <a href="{{ route('my-practice.score', $latestCompleted) }}" class="ds-link">Open score report</a>
+                        <a href="{{ route('student.scores.show', $latestCompleted) }}" class="ds-link">Open score report</a>
                     @endif
                 </div>
 
@@ -391,7 +391,7 @@
                             <li>
                                 <span>{{ optional($attempt->completed_at)->format('M j') ?? 'Completed' }}</span>
                                 <strong>{{ $attempt->total_score }}</strong>
-                                <a href="{{ route('my-practice.score', $attempt) }}" class="ds-link">Review</a>
+                                <a href="{{ route('student.scores.show', $attempt) }}" class="ds-link">Review</a>
                             </li>
                         @endforeach
                     </ol>
@@ -400,6 +400,104 @@
                         <h4>No completed practice yet</h4>
                         <p>Finish a full-length practice test and your score trend will appear here.</p>
                         <x-ui.button href="{{ route('home.practice') }}" variant="primary">Start first practice</x-ui.button>
+                    </div>
+                @endif
+            </article>
+        </section>
+
+        <section class="ds-dashboard-grid">
+            <article class="ds-card" aria-labelledby="weak-areas-title">
+                <div class="ds-card__header">
+                    <div>
+                        <h3 id="weak-areas-title" class="ds-card-title">Weak areas by domain</h3>
+                        <p class="text-sm text-slate-600">Accuracy across every completed test, weakest first.</p>
+                    </div>
+                </div>
+
+                @if(count($weakAreaSummaries ?? []))
+                    <div class="ds-bar-list">
+                        @foreach($weakAreaSummaries as $row)
+                            @php
+                                $fillClass = $row['performance'] === 'High' ? '' : ($row['performance'] === 'Medium' ? 'is-medium' : 'is-low');
+                            @endphp
+                            <div class="ds-bar-row">
+                                <span class="ds-bar-row__label">{{ $row['domain'] }}<small>{{ $row['section'] }}</small></span>
+                                <span class="ds-bar-track" role="progressbar" aria-valuenow="{{ $row['percentCorrect'] }}" aria-valuemin="0" aria-valuemax="100" aria-label="{{ $row['domain'] }} accuracy {{ $row['percentCorrect'] }}%">
+                                    <span class="ds-bar-fill {{ $fillClass }}" style="width: {{ $row['percentCorrect'] }}%"></span>
+                                </span>
+                                <span class="ds-bar-row__value">{{ $row['percentCorrect'] }}%<small>{{ $row['correct'] }}/{{ $row['total'] }}</small></span>
+                            </div>
+                        @endforeach
+                    </div>
+                @else
+                    <div class="ds-empty ds-empty--compact">
+                        <h4>No domain data yet</h4>
+                        <p>Complete a practice test to see accuracy broken down by content domain.</p>
+                    </div>
+                @endif
+            </article>
+        </section>
+
+        <section class="ds-dashboard-grid ds-dashboard-grid--secondary">
+            <article class="ds-card" aria-labelledby="difficulty-title">
+                <div class="ds-card__header">
+                    <div>
+                        <h3 id="difficulty-title" class="ds-card-title">Difficulty breakdown</h3>
+                        <p class="text-sm text-slate-600">Accuracy by question difficulty, all completed tests.</p>
+                    </div>
+                </div>
+
+                @if(count($difficultyPerformanceSummaries ?? []))
+                    <div class="ds-bar-list">
+                        @foreach($difficultyPerformanceSummaries as $row)
+                            @php
+                                $fillClass = $row['performance'] === 'High' ? '' : ($row['performance'] === 'Medium' ? 'is-medium' : 'is-low');
+                            @endphp
+                            <div class="ds-bar-row">
+                                <span class="ds-bar-row__label">{{ $row['label'] }}</span>
+                                <span class="ds-bar-track" role="progressbar" aria-valuenow="{{ $row['percentCorrect'] }}" aria-valuemin="0" aria-valuemax="100" aria-label="{{ $row['label'] }} accuracy {{ $row['percentCorrect'] }}%">
+                                    <span class="ds-bar-fill {{ $fillClass }}" style="width: {{ $row['percentCorrect'] }}%"></span>
+                                </span>
+                                <span class="ds-bar-row__value">{{ $row['percentCorrect'] }}%<small>{{ $row['correct'] }}/{{ $row['total'] }}</small></span>
+                            </div>
+                        @endforeach
+                    </div>
+                @else
+                    <div class="ds-empty ds-empty--compact">
+                        <h4>No difficulty data yet</h4>
+                        <p>Complete a practice test to see accuracy by difficulty tier.</p>
+                    </div>
+                @endif
+            </article>
+
+            <article class="ds-card" aria-labelledby="pacing-title">
+                <div class="ds-card__header">
+                    <div>
+                        <h3 id="pacing-title" class="ds-card-title">Pacing</h3>
+                        <p class="text-sm text-slate-600">Average time spent vs. expected time, by difficulty.</p>
+                    </div>
+                </div>
+
+                @if(count($pacingSummaries ?? []))
+                    <div class="ds-bar-list">
+                        @foreach($pacingSummaries as $row)
+                            @php
+                                $scaledWidth = min($row['pacePercent'], 150) / 150 * 100;
+                            @endphp
+                            <div class="ds-bar-row">
+                                <span class="ds-bar-row__label">{{ $row['label'] }}<small>{{ $row['pace'] }}</small></span>
+                                <span class="ds-bar-track" role="img" aria-label="{{ $row['label'] }} average {{ $row['avgTimeSpent'] }} seconds versus {{ $row['avgExpectedTime'] }} seconds expected">
+                                    <span class="ds-bar-fill is-pace" style="width: {{ $scaledWidth }}%"></span>
+                                    <span class="ds-bar-track__tick" style="left: 66.67%" title="On-pace baseline"></span>
+                                </span>
+                                <span class="ds-bar-row__value">{{ $row['avgTimeSpent'] }}s<small>vs {{ $row['avgExpectedTime'] }}s</small></span>
+                            </div>
+                        @endforeach
+                    </div>
+                @else
+                    <div class="ds-empty ds-empty--compact">
+                        <h4>No pacing data yet</h4>
+                        <p>Complete a practice test to see how your timing compares to expected pace.</p>
                     </div>
                 @endif
             </article>
@@ -445,7 +543,7 @@
                     <div style="display: flex; gap: 1rem; align-items: center;">
                         <a href="{{ route('student.scores.merge') }}" class="ds-link" style="font-weight: 600; color: #2563eb;">Consolidate Sections</a>
                         @if($completedTests->isNotEmpty())
-                            <a href="{{ route('my-practice', $completedTests->first()) }}" class="ds-link">See all</a>
+                            <a href="{{ route('student.scores.show', $completedTests->first()) }}" class="ds-link">See all</a>
                         @endif
                     </div>
                 </div>
@@ -458,7 +556,7 @@
                         </div>
                         <div class="ds-attempt-row__score">
                             <strong>{{ $attempt->total_score ?? '--' }}</strong>
-                            <a href="{{ route('my-practice.score', $attempt) }}" class="ds-link">Review</a>
+                            <a href="{{ route('student.scores.show', $attempt) }}" class="ds-link">Review</a>
                         </div>
                     </div>
                 @empty

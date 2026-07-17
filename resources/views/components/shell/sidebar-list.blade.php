@@ -3,9 +3,13 @@
     'countText' => '',
     'searchPlaceholder' => '',
     'items' => [],
+    'filters' => [
+        ['value' => 'active', 'label' => 'Active'],
+        ['value' => 'archived', 'label' => 'Archived'],
+    ],
 ])
 
-{{-- Expects an ancestor with x-data containing: searchQuery (string), statusFilter ('active'|'archived') --}}
+{{-- Expects an ancestor with x-data containing: searchQuery (string), statusFilter (matches one of the filters' values) --}}
 <div class="class-col">
     <div class="class-col-head">
         <h1>{{ $title }}</h1>
@@ -19,10 +23,10 @@
         <input type="text" placeholder="{{ $searchPlaceholder }}" x-model="searchQuery">
     </div>
     <div class="filter-row">
-        <button class="filter-chip" :class="{ 'active': statusFilter === 'active' }"
-            @click="statusFilter = 'active'">Active</button>
-        <button class="filter-chip" :class="{ 'active': statusFilter === 'archived' }"
-            @click="statusFilter = 'archived'">Archived</button>
+        @foreach ($filters as $filter)
+            <button class="filter-chip" :class="{ 'active': statusFilter === '{{ $filter['value'] }}' }"
+                @click="statusFilter = '{{ $filter['value'] }}'">{{ $filter['label'] }}</button>
+        @endforeach
     </div>
 
     {{ $primaryAction ?? '' }}

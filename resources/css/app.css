@@ -1,7 +1,17 @@
 @import "tailwindcss" important;
+@import "./design-tokens.css";
 @import "@fontsource/roboto/400.css";
 @import "@fontsource/roboto/500.css";
 @import "@fontsource/roboto/700.css";
+@import "@fontsource/plus-jakarta-sans/400.css";
+@import "@fontsource/plus-jakarta-sans/500.css";
+@import "@fontsource/plus-jakarta-sans/600.css";
+@import "@fontsource/plus-jakarta-sans/700.css";
+@import "@fontsource/plus-jakarta-sans/800.css";
+@import "@fontsource/ibm-plex-mono/400.css";
+@import "@fontsource/ibm-plex-mono/500.css";
+@import "@fontsource/ibm-plex-mono/600.css";
+@import "@fontsource/architects-daughter/400.css";
 /* @import './root.css';
 @import './auth.css'; */
 
@@ -13,13 +23,13 @@
 @theme {
     --font-sans: "Roboto", ui-sans-serif, system-ui, sans-serif;
     --font-geist: "Geist Sans", sans-serif;
-    --color-brand: #2D439A;
-    --color-brand-hover: #24367B;
-    --color-brand-soft: color-mix(in oklab, var(--color-brand) 12%, white);
-    --color-danger: var(--color-rose-600);
-    --color-success: var(--color-emerald-600);
-    --color-warning: var(--color-amber-600);
-    --color-neutral: var(--color-slate-500);
+    --color-brand: var(--ds-primary);
+    --color-brand-hover: var(--ds-primary-hover);
+    --color-brand-soft: var(--ds-primary-soft);
+    --color-danger: var(--ds-danger);
+    --color-success: var(--ds-progress-strong);
+    --color-warning: var(--ds-warning);
+    --color-neutral: var(--ds-muted);
     --animate-float: float 3s ease-in-out infinite;
 
     @keyframes float {

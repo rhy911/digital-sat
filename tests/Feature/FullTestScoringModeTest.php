@@ -116,7 +116,7 @@ class FullTestScoringModeTest extends TestCase
             'score_conversion_version' => 'provisional_irt_v1', 'score_estimate_kind' => 'adaptive_irt_provisional',
         ]);
 
-        $this->actingAs($student)->get(route('my-practice.score', $attempt))
+        $this->actingAs($student)->get(route('student.scores.show', $attempt))
             ->assertOk()->assertSee('Estimated practice score')->assertSee('1170 and 1310')->assertSee('The scaled score mapping for this route is still provisional');
     }
 

@@ -63,7 +63,7 @@
                                 <x-scoring.estimate-label compact />
                             @endif
                             @if ($attempt->status === 'completed')
-                                <a href="{{ route('my-practice.score', $attempt) }}">Review result</a>
+                                <a href="{{ route('student.scores.show', $attempt) }}">Review result</a>
                             @endif
                         </div>
                     </div>

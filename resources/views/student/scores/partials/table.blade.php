@@ -33,6 +33,7 @@
                     <th>Result</th>
                     <th>Domain</th>
                     <th>Difficulty</th>
+                    <th>Time</th>
                     <th>Review</th>
                 </tr>
             </thead>
@@ -98,6 +99,17 @@
                             @endif
                         </td>
                         <td>
+                            @if (($row['expectedTime'] ?? 0) > 0)
+                                @php($isSlow = $row['timeSpent'] > $row['expectedTime'] * 1.2)
+                                <span class="sd-domain-tag {{ $isSlow ? 'text-rose-600 font-semibold' : '' }}"
+                                    title="Expected {{ $row['expectedTime'] }}s">
+                                    {{ $row['timeSpent'] }}s / {{ $row['expectedTime'] }}s
+                                </span>
+                            @else
+                                <span class="sd-domain-tag">{{ $row['timeSpent'] }}s</span>
+                            @endif
+                        </td>
+                        <td>
                             <button class="sd-review-btn js-review-btn"
                                 data-question="{{ json_encode($row['questionData']) }}">
                                 <svg width="12" height="12" viewBox="0 0 24 24" fill="none"
@@ -111,13 +123,13 @@
                     </tr>
                 @empty
                     <tr>
-                        <td colspan="8" style="text-align:center;padding:2rem;color:#94a3b8;font-style:italic;">No
+                        <td colspan="9" style="text-align:center;padding:2rem;color:#94a3b8;font-style:italic;">No
                             questions found.</td>
                     </tr>
                 @endforelse
                 @if (count($answers) > 0)
                     <tr class="sd-no-results-row" hidden>
-                        <td colspan="8" style="text-align:center;padding:2rem;color:#94a3b8;font-style:italic;">No
+                        <td colspan="9" style="text-align:center;padding:2rem;color:#94a3b8;font-style:italic;">No
                             questions match this filter.</td>
                     </tr>
                 @endif

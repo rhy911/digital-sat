@@ -1,10 +1,6 @@
-<x-layouts.student :user="$user" header-type="progress" title="Score Details - {{ $userTest->test->title }}" :cancel-route="route('home')">
-    <x-slot name="head">
-        @vite(['resources/css/student/analytics.css', 'resources/css/student/scores.css'])
-        <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css">
-        <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js"></script>
-        <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/auto-render.min.js"></script>
-    </x-slot>
+{{-- Relocated content of the score report — shell-wrapped only, internals unchanged.
+     See design/global_design_direction.md section 7 (step 3). --}}
+<div class="scores-embed">
 
     {{-- ══════════════════════════════════════════════
          HERO BANNER
@@ -101,7 +97,7 @@
                     </svg>
                     Practice Weak Areas
                 </button>
-                <a class="sd-hero-pill" href="{{ ($isMerged ?? false) ? route('student.scores.merged.export-pdf', [$rwAttempt->ulid, $mathAttempt->ulid]) : route('my-practice.score.export-pdf', $userTest) }}">
+                <a class="sd-hero-pill" href="{{ ($isMerged ?? false) ? route('student.scores.merged.export-pdf', [$rwAttempt->ulid, $mathAttempt->ulid]) : route('student.scores.export-pdf', $userTest) }}">
                     <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor"
                         stroke-width="2.5">
                         <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
@@ -114,23 +110,7 @@
         </div>
     </div>
 
-    {{-- ══════════════════════════════════════════════
-         BREADCRUMB
-    ══════════════════════════════════════════════ --}}
-    <div class="sd-breadcrumb">
-        <div class="sd-hero-inner" style="display:flex;align-items:center;">
-            <a href="{{ route('my-practice', $userTest) }}">My Tests</a>
-            <span class="sd-breadcrumb-sep">›</span>
-            <span class="sd-breadcrumb-current">
-                {{ $userTest->test->title }}
-                @if ($userTest->completed_at)
-                    — {{ $userTest->completed_at->format('M j, Y') }}
-                @endif
-            </span>
-        </div>
-    </div>
-
-    {{-- Sticky sentinel — sits right below the breadcrumb --}}
+    {{-- Sticky sentinel — sits right below the hero --}}
     <div id="sd-tabs-sentinel" aria-hidden="true" style="height:1px;"></div>
 
     {{-- ══════════════════════════════════════════════
@@ -203,6 +183,8 @@
             </div>
         @endif
 
+        @include('student.scores.partials.difficulty-summary', compact('difficultySummaries'))
+
         {{-- ── QUESTION REVIEW ── --}}
         <h2 class="text-3xl font-bold">Question Review</h2>
         <p class="sd-section-sub">Detailed results for every question from this practice test.</p>
@@ -237,60 +219,48 @@
 
     </div>{{-- /sd-container --}}
 
+</div>{{-- /scores-embed --}}
 
+{{-- ══════════════════════════════════════════════
+     REVIEW MODAL
+══════════════════════════════════════════════ --}}
+<div id="reviewModal" class="sd-modal-backdrop hidden" role="dialog" aria-modal="true">
+    <div class="sd-modal">
+        <div class="sd-modal-header">
+            <span class="sd-modal-title">Question Review</span>
+            <button class="sd-modal-close" id="reviewModalCloseBtn" aria-label="Close">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                    stroke-width="2.5">
+                    <line x1="18" y1="6" x2="6" y2="18" />
+                    <line x1="6" y1="6" x2="18" y2="18" />
+                </svg>
+            </button>
+        </div>
+        <div class="sd-modal-body">
+            <div class="sd-modal-section-label">Question</div>
+            <div class="sd-modal-question-box" id="modalQuestionStem"></div>
 
+            <div class="sd-modal-section-label js-mc-label" style="display:none;margin-top:1.25rem;">Answer
+                Choices</div>
+            <div class="sd-modal-choices-list js-mc-list" id="modalChoicesList"
+                style="display:none;margin-bottom:1.5rem;"></div>
 
-    {{-- ══════════════════════════════════════════════
-         REVIEW MODAL
-    ══════════════════════════════════════════════ --}}
-    <div id="reviewModal" class="sd-modal-backdrop hidden" role="dialog" aria-modal="true">
-        <div class="sd-modal">
-            <div class="sd-modal-header">
-                <span class="sd-modal-title">Question Review</span>
-                <button class="sd-modal-close" id="reviewModalCloseBtn" aria-label="Close">
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                        stroke-width="2.5">
-                        <line x1="18" y1="6" x2="6" y2="18" />
-                        <line x1="6" y1="6" x2="18" y2="18" />
-                    </svg>
-                </button>
-            </div>
-            <div class="sd-modal-body">
-                <div class="sd-modal-section-label">Question</div>
-                <div class="sd-modal-question-box" id="modalQuestionStem"></div>
-
-                <div class="sd-modal-section-label js-mc-label" style="display:none;margin-top:1.25rem;">Answer
-                    Choices</div>
-                <div class="sd-modal-choices-list js-mc-list" id="modalChoicesList"
-                    style="display:none;margin-bottom:1.5rem;"></div>
-
-                <div class="sd-modal-answer-row">
-                    <div class="sd-modal-answer-box your-answer" id="modalYourAnswerBox">
-                        <div class="sd-modal-answer-label">Your Answer</div>
-                        <div class="sd-modal-answer-val" id="modalYourAnswer"></div>
-                    </div>
-                    <div class="sd-modal-answer-box correct-answer">
-                        <div class="sd-modal-answer-label">Correct Answer</div>
-                        <div class="sd-modal-answer-val" id="modalCorrectAnswer"></div>
-                    </div>
+            <div class="sd-modal-answer-row">
+                <div class="sd-modal-answer-box your-answer" id="modalYourAnswerBox">
+                    <div class="sd-modal-answer-label">Your Answer</div>
+                    <div class="sd-modal-answer-val" id="modalYourAnswer"></div>
                 </div>
+                <div class="sd-modal-answer-box correct-answer">
+                    <div class="sd-modal-answer-label">Correct Answer</div>
+                    <div class="sd-modal-answer-val" id="modalCorrectAnswer"></div>
+                </div>
+            </div>
 
-                <div class="sd-modal-section-label">Explanation</div>
-                <div class="sd-modal-expl-box" id="modalExplanation"></div>
-            </div>
-            <div class="sd-modal-footer">
-                <button class="sd-modal-btn-close" id="reviewModalCloseBtn2">Close</button>
-            </div>
+            <div class="sd-modal-section-label">Explanation</div>
+            <div class="sd-modal-expl-box" id="modalExplanation"></div>
+        </div>
+        <div class="sd-modal-footer">
+            <button class="sd-modal-btn-close" id="reviewModalCloseBtn2">Close</button>
         </div>
     </div>
-
-    <x-slot name="scripts">
-        <script>
-            document.addEventListener('DOMContentLoaded', () => {
-                if (typeof window.initScoreDetailsPage === 'function') {
-                    window.initScoreDetailsPage();
-                }
-            });
-        </script>
-    </x-slot>
-</x-layouts.student>
+</div>

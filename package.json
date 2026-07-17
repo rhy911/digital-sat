@@ -17,8 +17,12 @@
     },
     "dependencies": {
         "@alpinejs/morph": "^3.15.12",
+        "@fontsource/architects-daughter": "^5.2.7",
+        "@fontsource/ibm-plex-mono": "^5.2.7",
+        "@fontsource/plus-jakarta-sans": "^5.2.8",
         "@fontsource/roboto": "^5.2.10",
         "alpinejs": "^3.15.12",
-        "flatpickr": "^4.6.13"
+        "flatpickr": "^4.6.13",
+        "katex": "^0.16.47"
     }
 }

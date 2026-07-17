@@ -89,7 +89,7 @@ class TestTypeProgressionTest extends TestCase
         $this->assertNull($attempt->total_score);
         $this->assertNull($attempt->score_math);
         $this->assertNotNull($attempt->math_theta);
-        $this->actingAs($student)->get(route('my-practice.score', $attempt))
+        $this->actingAs($student)->get(route('student.scores.show', $attempt))
             ->assertOk()->assertSee('Practice performance, not a calibrated SAT score.');
     }
 

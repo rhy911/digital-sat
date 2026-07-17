@@ -1,9 +1,5 @@
 <x-layouts.student :user="$user" :title="$classroom->name" header-type="none">
     @push('styles')
-        <link rel="preconnect" href="https://fonts.googleapis.com">
-        <link
-            href="https://fonts.googleapis.com/css2?family=Architects+Daughter&family=IBM+Plex+Mono:wght@400;500;600&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap"
-            rel="stylesheet">
         @vite(['resources/css/classroom-workspace.css'])
     @endpush
 
@@ -22,7 +18,7 @@
     }">
 
         <!-- COLUMN 1: ICON RAIL -->
-        <x-classroom.icon-rail :logo-href="route('home')" :avatar-label="$userInitials" :items="[
+        <x-shell.icon-rail :logo-href="route('home')" :avatar-label="$userInitials" :items="[
             [
                 'route' => route('home'),
                 'label' => __('classroom.nav_dashboard'),
@@ -40,14 +36,14 @@
                 'icon' => '<svg viewBox=\'0 0 24 24\' fill=\'none\' stroke=\'currentColor\' stroke-width=\'1.8\'><path d=\'M4 19.5A2.5 2.5 0 0 1 6.5 17H20V4H6.5A2.5 2.5 0 0 0 4 6.5v13Z\' stroke-linejoin=\'round\' /><path d=\'M4 17h16\' /></svg>',
             ],
             [
-                'route' => route('home.progress'),
+                'route' => route('student.scores.index'),
                 'label' => __('classroom.nav_progress_scores'),
                 'icon' => '<svg viewBox=\'0 0 24 24\' fill=\'none\' stroke=\'currentColor\' stroke-width=\'1.8\'><line x1=\'18\' y1=\'20\' x2=\'18\' y2=\'10\'/><line x1=\'12\' y1=\'20\' x2=\'12\' y2=\'4\'/><line x1=\'6\' y1=\'20\' x2=\'6\' y2=\'14\'/></svg>',
             ],
         ]" />
 
         <!-- COLUMN 2: CLASS LIST COLUMN -->
-        <x-classroom.sidebar-list title="{{ __('classroom.my_classes') }}"
+        <x-shell.sidebar-list title="{{ __('classroom.my_classes') }}"
             count-text="{{ $activeClassroomsCount }} active · {{ $archivedClassroomsCount }} archived"
             search-placeholder="{{ __('classroom.search_placeholder') }}" :items="$classrooms
                 ->map(
@@ -66,7 +62,7 @@
             <x-slot:primaryAction>
                 <button class="new-class-btn" @click="$dispatch('open-modal', 'modal-join-class')">{{ __('classroom.join_class_cta') }}</button>
             </x-slot:primaryAction>
-        </x-classroom.sidebar-list>
+        </x-shell.sidebar-list>
 
         <!-- COLUMN 3: LEDGER PANE (main workspace + corkboard) -->
         <div class="ledger-pane">
@@ -85,7 +81,7 @@
                     </div>
                 </div>
 
-                <x-classroom.stat-row :stats="[
+                <x-shell.stat-row :stats="[
                     ['value' => $completedCount . '/' . $classroom->assignments->count(), 'label' => __('classroom.stat_completed')],
                     ['value' => $latestScore ?? '—', 'label' => __('classroom.stat_latest_score')],
                     ['value' => $classroom->documents_count, 'label' => __('classroom.stat_documents')],
@@ -93,7 +89,7 @@
                 ]" />
 
                 <!-- PINNED TAB BAR -->
-                <x-classroom.tab-bar :tabs="[
+                <x-shell.tab-bar :tabs="[
                     ['key' => 'assign', 'label' => __('classroom.tab_assignments'), 'count' => $classroom->assignments->count()],
                     ['key' => 'docs', 'label' => __('classroom.tab_documents'), 'count' => $classroom->documents_count],
                     ['key' => 'team', 'label' => __('classroom.tab_team'), 'count' => 1 + $classroom->coTeachers->count()],
@@ -327,7 +323,7 @@
             </div>
 
             <!-- CORKBOARD -->
-            <x-classroom.corkboard header="{{ __('classroom.pinned_header') }}">
+            <x-shell.corkboard header="{{ __('classroom.pinned_header') }}">
                 <div x-show="activeTab === 'assign'" class="cork-note">
                     <h3>{{ __('classroom.due_soon_header') }}</h3>
                     @if ($dueSoon->isNotEmpty())
@@ -387,7 +383,7 @@
                         <p class="cork-empty">{{ __('classroom.no_note_yet') }}</p>
                     @endif
                 </div>
-            </x-classroom.corkboard>
+            </x-shell.corkboard>
         </div>
     </div>
 

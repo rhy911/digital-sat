@@ -41,7 +41,7 @@ class UserTestResultSecurityTest extends TestCase
 
         $this->actingAs($user)
             ->get(route('my-practice', $userTest))
-            ->assertOk();
+            ->assertRedirect(route('student.scores.show', $userTest));
     }
 
     public function test_other_user_cannot_view_practice_result_by_ulid(): void
@@ -104,7 +104,7 @@ class UserTestResultSecurityTest extends TestCase
         $attempt = $this->scoredAttempt($user);
 
         $response = $this->actingAs($user)
-            ->get(route('my-practice.score.export-pdf', $attempt))
+            ->get(route('student.scores.export-pdf', $attempt))
             ->assertOk()
             ->assertHeader('content-type', 'application/pdf');
 
@@ -121,7 +121,7 @@ class UserTestResultSecurityTest extends TestCase
         $attempt = $this->scoredAttempt($owner);
 
         $this->actingAs($intruder)
-            ->get(route('my-practice.score.export-pdf', $attempt))
+            ->get(route('student.scores.export-pdf', $attempt))
             ->assertForbidden();
     }
 
@@ -154,17 +154,17 @@ class UserTestResultSecurityTest extends TestCase
         $attempt = $this->scoredAttempt($student, $test, ['assignment_id' => $assignment->id, 'attempt_number' => 1]);
 
         $this->actingAs($teacher)
-            ->get(route('my-practice.score.export-pdf', $attempt))
+            ->get(route('student.scores.export-pdf', $attempt))
             ->assertOk()
             ->assertHeader('content-type', 'application/pdf');
 
         $this->actingAs($coTeacher)
-            ->get(route('my-practice.score.export-pdf', $attempt))
+            ->get(route('student.scores.export-pdf', $attempt))
             ->assertOk()
             ->assertHeader('content-type', 'application/pdf');
 
         $this->actingAs($admin)
-            ->get(route('my-practice.score.export-pdf', $attempt))
+            ->get(route('student.scores.export-pdf', $attempt))
             ->assertOk()
             ->assertHeader('content-type', 'application/pdf');
     }

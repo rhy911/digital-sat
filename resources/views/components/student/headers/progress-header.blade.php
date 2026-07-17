@@ -21,7 +21,7 @@
             [
                 'label' => 'Progress',
                 'href' => route('home'),
-                'active' => request()->routeIs('home', 'my-practice', 'my-practice.score', 'engine.submit-status'),
+                'active' => request()->routeIs('home', 'my-practice', 'student.scores.*', 'engine.submit-status'),
                 'current' => request()->routeIs('home'),
             ],
             [

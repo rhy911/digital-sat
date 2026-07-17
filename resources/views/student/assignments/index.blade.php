@@ -107,7 +107,7 @@
                                                     <x-scoring.estimate-label compact class="attempt-row__score-label" />
                                                 @endif
                                                 @if ($attempt->status === 'completed')
-                                                    <a class="attempt-row__review" href="{{ route('my-practice.score', $attempt) }}">Review result</a>
+                                                    <a class="attempt-row__review" href="{{ route('student.scores.show', $attempt) }}">Review result</a>
                                                 @endif
                                             </div>
                                         </div>

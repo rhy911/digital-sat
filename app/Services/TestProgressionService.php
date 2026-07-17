@@ -81,7 +81,7 @@ class TestProgressionService
                 'status' => 'success',
                 'test_completed' => true,
                 'redirect_url' => route('home'),
-                'results_url' => route('my-practice.score', $attempt),
+                'results_url' => route('student.scores.show', $attempt),
                 'message' => 'Section completed.',
             ];
         }
@@ -99,7 +99,7 @@ class TestProgressionService
             'status' => 'success',
             'test_completed' => true,
             'redirect_url' => route('home'),
-            'results_url' => route('my-practice.score', $attempt),
+            'results_url' => route('student.scores.show', $attempt),
             'message' => 'Test completed.',
         ];
     }

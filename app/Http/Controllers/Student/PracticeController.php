@@ -27,21 +27,9 @@ class PracticeController extends Controller
 
     public function show(UserTest $userTest)
     {
-        $user = Auth::user();
         $this->authorize('view', $userTest);
-        $userTest->load(['test', 'user']);
 
-        $allCompletedTests = UserTest::with('test')
-            ->where('user_id', $user->id)
-            ->where('status', 'completed')
-            ->orderBy('completed_at', 'desc')
-            ->get();
-
-        return view('student.practice.show', [
-            'user' => $user,
-            'userTest' => $userTest,
-            'completedTests' => $allCompletedTests,
-        ]);
+        return redirect()->route('student.scores.show', $userTest);
     }
 
     public function preview()

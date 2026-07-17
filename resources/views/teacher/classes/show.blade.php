@@ -1,9 +1,5 @@
 <x-layouts.student :user="auth()->user()" :title="$classroom->name" header-type="none">
     @push('styles')
-        <link rel="preconnect" href="https://fonts.googleapis.com">
-        <link
-            href="https://fonts.googleapis.com/css2?family=Architects+Daughter&family=IBM+Plex+Mono:wght@400;500;600&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap"
-            rel="stylesheet">
         @vite(['resources/css/classroom-workspace.css'])
     @endpush
 
@@ -36,7 +32,7 @@
     }">
 
         <!-- COLUMN 1: ICON RAIL -->
-        <x-classroom.icon-rail :logo-href="route('teacher.progress')" :avatar-label="$userInitials" :items="[
+        <x-shell.icon-rail :logo-href="route('teacher.progress')" :avatar-label="$userInitials" :items="[
             [
                 'route' => route('teacher.progress'),
                 'label' => 'Progress',
@@ -67,7 +63,7 @@
         ]" />
 
         <!-- COLUMN 2: CLASS LIST COLUMN (folder tabs) -->
-        <x-classroom.sidebar-list title="{{ __('classroom.my_classes') }}"
+        <x-shell.sidebar-list title="{{ __('classroom.my_classes') }}"
             count-text="{{ $activeClassroomsCount }} active · {{ $archivedClassroomsCount }} archived"
             search-placeholder="{{ __('classroom.search_placeholder') }}" :items="$classrooms
                 ->map(
@@ -101,7 +97,7 @@
                     </form>
                 </div>
             </x-slot:primaryAction>
-        </x-classroom.sidebar-list>
+        </x-shell.sidebar-list>
 
         <!-- COLUMN 3: LEDGER PANE (main workspace + corkboard) -->
         <div class="ledger-pane">
@@ -119,7 +115,7 @@
                     </div>
                 </div>
 
-                <x-classroom.stat-row :stats="[
+                <x-shell.stat-row :stats="[
                     ['value' => $classroom->activeMemberships->count(), 'label' => 'Students'],
                     ['value' => $classroom->pending_memberships_count, 'label' => 'Pending'],
                     ['value' => 1 + $classroom->co_teachers_count, 'label' => 'Teachers'],
@@ -128,7 +124,7 @@
                 ]" />
 
                 <!-- PINNED TAB BAR (Teams-style: swaps the whole panel below, lazy via x-show) -->
-                <x-classroom.tab-bar :tabs="[
+                <x-shell.tab-bar :tabs="[
                     ['key' => 'roster', 'label' => 'Roster', 'count' => $classroom->activeMemberships->count()],
                     ['key' => 'team', 'label' => 'Teaching team', 'count' => 1 + $classroom->co_teachers_count],
                     ['key' => 'docs', 'label' => 'Documents', 'count' => $classroom->documents_count],
@@ -548,7 +544,7 @@
             </div>
 
             <!-- CORKBOARD: glanceable digest per tab + shortcuts, follows the active tab -->
-            <x-classroom.corkboard header="{{ __('classroom.pinned_header') }}">
+            <x-shell.corkboard header="{{ __('classroom.pinned_header') }}">
                     @if ($classroom->status === 'active')
                         <div x-show="activeTab === 'roster'" class="cork-note">
                             <h3>{{ __('classroom.recent_activity') }}</h3>
@@ -640,7 +636,7 @@
                                 resources, co-teachers, or assignments.</p>
                         </div>
                     @endif
-            </x-classroom.corkboard>
+            </x-shell.corkboard>
         </div>
 
     </div>

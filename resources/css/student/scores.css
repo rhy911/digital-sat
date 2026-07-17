@@ -2,6 +2,7 @@
    Score Details Page — score-details.css
    Premium analytics UI for Digital SAT practice results
    ============================================================ */
+@import "katex/dist/katex.min.css";
 
 /* ---------- Hero Banner ---------- */
 .sd-hero {
@@ -20,8 +21,6 @@
 .sd-hero-inner {
     position: relative;
     z-index: 1;
-    max-width: 1100px;
-    margin: 0 auto;
     padding: 0 1.5rem;
 }
 .sd-hero-score {
@@ -110,36 +109,34 @@
     transform: translateY(-1px);
 }
 
-/* ---------- Breadcrumb ---------- */
-.sd-breadcrumb {
-    background: #f4f7fb;
-    border-bottom: 1px solid #e2e8f0;
-    padding: 0.75rem 0;
-    font-size: 1rem;
-    color: #64748b;
-}
-.sd-breadcrumb a {
-    color: #0077c8;
-    text-decoration: none;
-    font-weight: 500;
-    transition: text-decoration 0.15s;
-}
-.sd-breadcrumb a:hover {
-    text-decoration: underline;
-}
-.sd-breadcrumb-sep {
-    margin: 0 0.5rem;
-}
-.sd-breadcrumb-current {
-    font-weight: 600;
-    color: #1e293b;
-}
-
 /* ---------- Layout Container ---------- */
 .sd-container {
-    max-width: 1100px;
-    margin: 0 auto;
-    padding: 2.5rem 1.5rem 5rem;
+    padding: 2.5rem 0 2rem;
+}
+
+/* ---------- Embedded-in-shell overrides ----------
+   classroom-workspace.css styles bare table/thead th/tbody/tbody td
+   elements (ledger paper texture, borders, shadow). Neutralize that
+   bleed-through now that the report is nested inside .binder-panel. */
+.scores-embed table.sd-table {
+    background: none;
+    border: none;
+    border-radius: 0;
+    box-shadow: none;
+    overflow: visible;
+}
+.scores-embed table.sd-table thead th {
+    background: transparent;
+    border-bottom: none;
+}
+.scores-embed table.sd-table tbody {
+    background-image: none;
+}
+.scores-embed table.sd-table tbody td {
+    border-bottom: none;
+}
+.scores-embed table.sd-table tbody tr:hover td {
+    background: transparent;
 }
 
 /* ---------- Section Stats Row ---------- */
@@ -252,8 +249,6 @@
     border-color: #c7dff7;
 }
 .sd-tabs-bar-inner {
-    max-width: 1100px;
-    margin: 0 auto;
     padding: 0 1.5rem;
     display: flex;
     align-items: center;

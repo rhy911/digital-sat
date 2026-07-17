@@ -97,12 +97,20 @@ class ScoreMergeController extends Controller
 
         $reportData = $this->mergedScoreReportData($mergedAttempt);
 
-        return view('student.scores.index', array_merge(
+        $attempts = UserTest::with(['test', 'assignment.classroom'])
+            ->where('user_id', $user->id)
+            ->where('status', 'completed')
+            ->orderBy('completed_at', 'desc')
+            ->get();
+
+        return view('student.scores.show', array_merge(
             [
                 'user' => $user,
                 'isMerged' => true,
                 'rwAttempt' => UserTest::where('ulid', $rw_attempt_ulid)->firstOrFail(),
                 'mathAttempt' => UserTest::where('ulid', $math_attempt_ulid)->firstOrFail(),
+                'attempts' => $attempts,
+                'selectedUlid' => null,
             ],
             $reportData
         ));
@@ -193,7 +201,8 @@ class ScoreMergeController extends Controller
                     'total' => 0, 'correct' => 0,
                     'domains' => []
                 ]
-            ]
+            ],
+            'difficulty' => [],
         ];
 
         foreach ($userTest->userAnswers as $answer) {
@@ -202,14 +211,20 @@ class ScoreMergeController extends Controller
 
             $section = $q->section_type === 'math' ? 'math' : 'reading_and_writing';
             $domain  = $q->skill_domain ?? 'Other';
+            $difficulty = strtolower($q->difficulty ?? 'unknown');
 
             if (!isset($stats['sections'][$section]['domains'][$domain])) {
                 $stats['sections'][$section]['domains'][$domain] = ['total' => 0, 'correct' => 0];
             }
 
+            if (!isset($stats['difficulty'][$difficulty])) {
+                $stats['difficulty'][$difficulty] = ['total' => 0, 'correct' => 0];
+            }
+
             $stats['total']['questions']++;
             $stats['sections'][$section]['total']++;
             $stats['sections'][$section]['domains'][$domain]['total']++;
+            $stats['difficulty'][$difficulty]['total']++;
 
             if ($answer->selected_answer === null || $answer->selected_answer === '') {
                 $stats['total']['omitted']++;
@@ -217,6 +232,7 @@ class ScoreMergeController extends Controller
                 $stats['total']['correct']++;
                 $stats['sections'][$section]['correct']++;
                 $stats['sections'][$section]['domains'][$domain]['correct']++;
+                $stats['difficulty'][$difficulty]['correct']++;
             } else {
                 $stats['total']['incorrect']++;
             }
@@ -250,6 +266,7 @@ class ScoreMergeController extends Controller
             'accuracyPercent' => $accuracyPercent,
             'isScaledSatResult' => true,
             'domainSummaries' => $this->domainSummaries($stats),
+            'difficultySummaries' => $this->difficultySummaries($stats),
         ];
     }
 
@@ -282,6 +299,8 @@ class ScoreMergeController extends Controller
                 'correctAnswer' => $correctAnswer,
                 'domainLabel' => $formattedDomain,
                 'difficulty' => $question->difficulty ?? 'N/A',
+                'timeSpent' => $answer->time_spent,
+                'expectedTime' => $question->expected_time,
                 'questionData' => [
                     'stem' => $this->markdown($question->stem ?? ''),
                     'explanation' => $this->markdown($question->explanation?->explanation ?? 'No explanation available.'),
@@ -351,6 +370,29 @@ class ScoreMergeController extends Controller
                 ];
             }
         }
+
+        return $rows;
+    }
+
+    private function difficultySummaries(array $stats): array
+    {
+        $order = ['easy' => 0, 'medium' => 1, 'hard' => 2, 'unknown' => 3];
+        $rows = [];
+
+        foreach ($stats['difficulty'] as $difficulty => $data) {
+            $percentCorrect = $data['total'] > 0 ? (int) round(($data['correct'] / $data['total']) * 100) : 0;
+
+            $rows[] = [
+                'difficulty' => $difficulty,
+                'label' => ucfirst($difficulty),
+                'correct' => $data['correct'],
+                'total' => $data['total'],
+                'percentCorrect' => $percentCorrect,
+                'performance' => $percentCorrect >= 80 ? 'High' : ($percentCorrect >= 50 ? 'Medium' : 'Low'),
+            ];
+        }
+
+        usort($rows, fn ($a, $b) => ($order[$a['difficulty']] ?? 99) <=> ($order[$b['difficulty']] ?? 99));
 
         return $rows;
     }
