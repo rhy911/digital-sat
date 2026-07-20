@@ -1,0 +1,800 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Profile Settings Layout Review - Cozy & Friendly</title>
+    <!-- Google Fonts for premium modern typography -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    
+    <style>
+        :root {
+            /* Warm, cozy, approachable color tokens */
+            --bg-canvas: #f6f5f0; /* Cozy warm oatmeal canvas */
+            --bg-surface: #ffffff;
+            --bg-surface-soft: #fcfbfa; /* Soft creamy white */
+            --border-light: #e8e6df;
+            --border-focus: #d8d5cc;
+            
+            --text-dark: #2d2a26; /* Soft charcoal instead of harsh black */
+            --text-medium: #4a4743;
+            --text-muted: #8c8880;
+            
+            /* Cozy warm accents */
+            --accent: #d97706; /* Warm amber/honey */
+            --accent-hover: #b45309;
+            --accent-soft: #fef3c7; /* Warm honey glow */
+            --accent-glow: rgba(217, 119, 6, 0.12);
+            
+            --radius-lg: 20px; /* Generous, friendly curved corners */
+            --radius-md: 12px;
+            --radius-sm: 8px;
+            
+            --transition-smooth: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            padding: 60px 20px;
+            background-color: var(--bg-canvas);
+            font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
+            color: var(--text-medium);
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            min-height: 100vh;
+        }
+
+        /* Clean Settings Layout Grid */
+        .settings-grid-layout {
+            width: 100%;
+            max-width: 900px;
+            display: grid;
+            grid-template-columns: 280px 1fr;
+            gap: 2rem;
+            align-items: start;
+        }
+
+        /* Left Sidebar Stack */
+        .left-sidebar-stack {
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+        }
+
+        /* Profile Welcome Card Component */
+        .id-badge-card {
+            position: relative;
+            background: var(--bg-surface);
+            border: 2px solid var(--border-light);
+            border-radius: var(--radius-lg);
+            padding: 2rem 1.5rem;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            text-align: center;
+            box-shadow: 0 8px 16px rgba(45, 42, 38, 0.03);
+            overflow: hidden;
+            transition: var(--transition-smooth);
+        }
+
+        .id-badge-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 12px 24px rgba(45, 42, 38, 0.06);
+            border-color: var(--border-focus);
+        }
+
+        /* Soft warm lighting glare on hover */
+        .id-badge-card::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: radial-gradient(circle at var(--mouse-x, 50%) var(--mouse-y, 50%), rgba(217, 119, 6, 0.05) 0%, transparent 65%);
+            pointer-events: none;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .id-badge-card:hover::before {
+            opacity: 1;
+        }
+
+        /* Avatar Container Details */
+        .avatar-frame {
+            width: 76px;
+            height: 76px;
+            background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #fff;
+            font-family: 'Outfit', sans-serif;
+            font-size: 2rem;
+            font-weight: 800;
+            margin-bottom: 1.25rem;
+            box-shadow: 0 6px 12px rgba(217, 119, 6, 0.2);
+            transition: transform 0.3s ease;
+            border: 4px solid #fff;
+        }
+
+        .id-badge-card:hover .avatar-frame {
+            transform: scale(1.05);
+        }
+
+        .user-name-title {
+            font-family: 'Outfit', sans-serif;
+            font-size: 1.35rem;
+            font-weight: 800;
+            color: var(--text-dark);
+            margin: 0;
+            letter-spacing: -0.01em;
+            display: flex;
+            align-items: center;
+            gap: 0.35rem;
+        }
+
+        .user-handle-sub {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            margin: 0.25rem 0 0.85rem;
+            font-weight: 500;
+        }
+
+        .role-badge-pill {
+            font-size: 0.65rem;
+            font-weight: 800;
+            padding: 0.2rem 0.6rem;
+            border-radius: var(--radius-sm);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            background: var(--accent-soft);
+            color: var(--accent);
+            border: 1px solid rgba(217, 119, 6, 0.2);
+        }
+
+        /* Navigation Tab Links */
+        .settings-desk-nav {
+            background: var(--bg-surface);
+            border: 2px solid var(--border-light);
+            border-radius: var(--radius-lg);
+            padding: 0.75rem;
+            box-shadow: 0 6px 12px rgba(45, 42, 38, 0.02);
+            display: flex;
+            flex-direction: column;
+            gap: 0.35rem;
+            position: relative;
+        }
+
+        /* Animated active sliding background indicator pill */
+        .nav-active-indicator {
+            position: absolute;
+            left: 0.75rem;
+            width: calc(100% - 1.5rem);
+            height: 38px;
+            background: var(--accent-soft);
+            border-radius: var(--radius-md);
+            transition: transform 0.28s cubic-bezier(0.4, 0, 0.2, 1);
+            pointer-events: none;
+            z-index: 1;
+            transform: translateY(0);
+        }
+
+        .nav-tab-link {
+            position: relative;
+            width: 100%;
+            background: transparent;
+            border: 0;
+            border-radius: var(--radius-md);
+            padding: 0.65rem 0.85rem;
+            color: var(--text-muted);
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            font-size: 0.875rem;
+            font-weight: 700;
+            text-align: left;
+            cursor: pointer;
+            transition: color 0.2s ease;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            z-index: 2;
+        }
+
+        .nav-tab-link svg {
+            transition: transform 0.2s ease;
+        }
+
+        .nav-tab-link:hover {
+            color: var(--text-dark);
+        }
+
+        .nav-tab-link:hover svg {
+            transform: translateX(2px);
+        }
+
+        .nav-tab-link.active {
+            color: var(--accent);
+        }
+
+        /* Right Content Columns */
+        .settings-pages-stack {
+            background: var(--bg-surface);
+            border: 2px solid var(--border-light);
+            border-radius: var(--radius-lg);
+            padding: 2.5rem;
+            box-shadow: 0 8px 24px rgba(45, 42, 38, 0.03);
+            position: relative;
+            min-height: 440px;
+        }
+
+        .desk-notebook-sheet {
+            display: none;
+            opacity: 0;
+            transform: translateY(8px);
+            transition: opacity 0.35s cubic-bezier(0.4, 0, 0.2, 1), transform 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .desk-notebook-sheet.active {
+            display: block;
+        }
+
+        /* Fade class added by JS */
+        .desk-notebook-sheet.show-active {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        .notebook-header-title {
+            font-family: 'Outfit', sans-serif;
+            font-size: 1.4rem;
+            font-weight: 800;
+            color: var(--text-dark);
+            margin: 0 0 0.35rem;
+        }
+
+        .sheet-intro-desc {
+            font-size: 0.875rem;
+            color: var(--text-muted);
+            margin: 0 0 2rem;
+            line-height: 1.55;
+            border-bottom: 2px dashed var(--border-light);
+            padding-bottom: 1.25rem;
+        }
+
+        /* Inputs Layout & styling details */
+        .form-grid-2col {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .field-box {
+            display: flex;
+            flex-direction: column;
+            gap: 0.45rem;
+        }
+
+        .field-box.full-width {
+            grid-column: 1 / -1;
+        }
+
+        label {
+            font-size: 0.85rem;
+            font-weight: 750;
+            color: var(--text-dark);
+        }
+
+        .field-sublabel {
+            font-size: 0.8rem;
+            font-weight: 500;
+            color: var(--text-muted);
+            margin-top: 0.1rem;
+            line-height: 1.45;
+        }
+
+        /* Cozy Rounded Inputs & Focus States */
+        input[type="text"],
+        input[type="email"],
+        input[type="password"] {
+            background: var(--bg-surface-soft);
+            border: 2px solid var(--border-light);
+            border-radius: var(--radius-md);
+            padding: 0.75rem 1rem;
+            font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
+            font-size: 0.925rem;
+            color: var(--text-dark);
+            transition: var(--transition-smooth);
+            width: 100%;
+        }
+
+        input[type="text"]:focus,
+        input[type="email"]:focus,
+        input[type="password"]:focus {
+            border-color: var(--accent);
+            background: #fff;
+            box-shadow: 0 0 0 4px var(--accent-glow);
+            outline: none;
+        }
+
+        /* Friendly read-only verification lock */
+        .lock-input-container {
+            position: relative;
+            display: flex;
+            align-items: center;
+        }
+
+        .lock-input-container input {
+            width: 100%;
+            background: var(--bg-canvas) !important;
+            color: var(--text-muted);
+            cursor: not-allowed;
+            padding-right: 2.75rem;
+            border-color: var(--border-light);
+        }
+
+        .lock-svg-icon {
+            position: absolute;
+            right: 14px;
+            color: var(--text-muted);
+            pointer-events: none;
+            width: 16px;
+            height: 16px;
+        }
+
+        .readonly-tag {
+            font-size: 0.75rem;
+            color: var(--accent);
+            background: var(--accent-soft);
+            padding: 0.1rem 0.4rem;
+            border-radius: 4px;
+            font-weight: 700;
+            margin-left: 0.35rem;
+            display: inline-block;
+        }
+
+        /* Password reveal eye wrapper detail */
+        .password-reveal-container {
+            position: relative;
+            display: flex;
+            align-items: center;
+        }
+
+        .password-reveal-container input {
+            padding-right: 2.75rem;
+        }
+
+        .password-toggle-btn {
+            position: absolute;
+            right: 10px;
+            background: transparent;
+            border: 0;
+            color: var(--text-muted);
+            cursor: pointer;
+            padding: 6px;
+            border-radius: var(--radius-sm);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: var(--transition-smooth);
+        }
+
+        .password-toggle-btn:hover {
+            color: var(--text-dark);
+            background: var(--border-light);
+        }
+
+        /* Friendly Cozy Toggle Card Control */
+        .toggle-card-option {
+            display: flex;
+            align-items: flex-start;
+            gap: 1.15rem;
+            background: var(--bg-surface-soft);
+            border: 2px solid var(--border-light);
+            border-radius: var(--radius-md);
+            padding: 1.35rem 1.6rem;
+            cursor: pointer;
+            transition: var(--transition-smooth);
+        }
+
+        .toggle-card-option:hover {
+            border-color: var(--border-focus);
+            background: #fff;
+            box-shadow: 0 4px 12px rgba(45, 42, 38, 0.02);
+        }
+
+        .switch-control {
+            position: relative;
+            width: 46px;
+            height: 26px;
+            flex-shrink: 0;
+            margin-top: 2px;
+        }
+
+        .switch-control input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+        .slider-control {
+            position: absolute;
+            inset: 0;
+            background-color: var(--border-focus);
+            border-radius: 24px;
+            transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            cursor: pointer;
+        }
+
+        .slider-control:before {
+            position: absolute;
+            content: "";
+            height: 18px;
+            width: 18px;
+            left: 4px;
+            bottom: 4px;
+            background-color: white;
+            border-radius: 50%;
+            transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            box-shadow: 0 2px 4px rgba(45, 42, 38, 0.1);
+        }
+
+        input:checked + .slider-control {
+            background-color: var(--accent);
+        }
+
+        input:checked + .slider-control:before {
+            transform: translateX(20px);
+        }
+
+        .toggle-title-txt {
+            font-size: 0.925rem;
+            font-weight: 750;
+            color: var(--text-dark);
+            line-height: 1.45;
+        }
+
+        .toggle-title-txt small {
+            display: block;
+            font-size: 0.825rem;
+            font-weight: 500;
+            color: var(--text-muted);
+            margin-top: 0.35rem;
+            line-height: 1.5;
+        }
+
+        /* Cozy buttons footer */
+        .notebook-footer {
+            margin-top: 2rem;
+            padding-top: 1.5rem;
+            border-top: 2px dashed var(--border-light);
+            display: flex;
+            justify-content: flex-end;
+            gap: 1rem;
+        }
+
+        .btn-action {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: var(--radius-md);
+            padding: 0.75rem 1.75rem;
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            font-size: 0.875rem;
+            font-weight: 750;
+            cursor: pointer;
+            transition: var(--transition-smooth);
+        }
+
+        .btn-action-primary {
+            background: var(--accent);
+            color: #fff;
+            border: 0;
+            box-shadow: 0 4px 10px rgba(217, 119, 6, 0.2);
+        }
+
+        .btn-action-primary:hover {
+            background: var(--accent-hover);
+            box-shadow: 0 6px 16px rgba(217, 119, 6, 0.3);
+            transform: translateY(-1px);
+        }
+
+        .btn-action-primary:active {
+            transform: translateY(0);
+        }
+
+        .btn-action-secondary {
+            background: transparent;
+            color: var(--text-medium);
+            border: 2px solid var(--border-light);
+        }
+
+        .btn-action-secondary:hover {
+            background: var(--bg-surface-soft);
+            border-color: var(--border-focus);
+        }
+
+        /* Success Toast Banner Alert */
+        .toast-popup {
+            position: fixed;
+            bottom: 24px;
+            right: 24px;
+            background: var(--text-dark);
+            color: #ffffff;
+            padding: 1rem 1.5rem;
+            border-radius: var(--radius-md);
+            box-shadow: 0 10px 25px rgba(45, 42, 38, 0.15);
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            font-size: 0.875rem;
+            font-weight: 600;
+            transform: translateY(100px) scale(0.9);
+            opacity: 0;
+            transition: all 0.35s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            z-index: 100;
+            pointer-events: none;
+        }
+
+        .toast-popup.active {
+            transform: translateY(0) scale(1);
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        .toast-popup svg {
+            color: #f59e0b; /* Friendly amber checkmark */
+        }
+
+        @media (max-width: 768px) {
+            .settings-grid-layout {
+                grid-template-columns: 1fr;
+                gap: 1.5rem;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="settings-grid-layout">
+        
+        <!-- Left Sidebar Column -->
+        <div class="left-sidebar-stack">
+            
+            <!-- User Welcome card with glow interaction -->
+            <div class="id-badge-card" id="idBadgeCard">
+                <div class="avatar-frame">AM</div>
+                <h2 class="user-name-title">Alex Mercer <span style="font-size: 1.15rem;">👋</span></h2>
+                <div class="user-handle-sub">@alexm</div>
+                <span class="role-badge-pill">Student Member</span>
+            </div>
+
+            <!-- Cozy tab navigation with sliding marker -->
+            <div class="settings-desk-nav" id="tabNavMenu">
+                <div class="nav-active-indicator" id="activeIndicator"></div>
+                
+                <button class="nav-tab-link active" onclick="switchTab(event, 'account', 0)">
+                    <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2M12 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8z" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                    My Profile Details
+                </button>
+                <button class="nav-tab-link" onclick="switchTab(event, 'security', 1)">
+                    <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                    Sign-In & Passwords
+                </button>
+                <button class="nav-tab-link" onclick="switchTab(event, 'privacy', 2)">
+                    <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                    Sharing Privacy
+                </button>
+            </div>
+
+        </div>
+
+        <!-- Right Content Column -->
+        <div class="settings-pages-stack">
+            
+            <!-- Tab 1: Profile details -->
+            <div id="account" class="desk-notebook-sheet active">
+                <h3 class="notebook-header-title">My Profile Details</h3>
+                <p class="sheet-intro-desc">Change your visible nickname and platform handle, and check system details.</p>
+                
+                <form onsubmit="saveProfileForm(event, 'Profile saved successfully!');">
+                    <div class="form-grid-2col">
+                        <div class="field-box">
+                            <label for="name">Visible Name</label>
+                            <input type="text" id="name" value="Alex Mercer">
+                            <span class="field-sublabel">Your name as visible to classmates and teachers.</span>
+                        </div>
+                        <div class="field-box">
+                            <label for="username">Username Handle</label>
+                            <input type="text" id="username" value="alexm">
+                            <span class="field-sublabel">Your unique tag on active classroom boards.</span>
+                        </div>
+                        <div class="field-box full-width">
+                            <label for="email">Primary Email Address <span class="readonly-tag">Verified & Secure</span></label>
+                            <div class="lock-input-container" style="margin-top: 0.2rem;">
+                                <input type="email" id="email" value="alex.mercer@academy.org" readonly>
+                                <svg class="lock-svg-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                    <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+                                    <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+                                </svg>
+                            </div>
+                            <span class="field-sublabel">For credentials security, email updates must go through support.</span>
+                        </div>
+                    </div>
+                    
+                    <div class="notebook-footer">
+                        <button type="button" class="btn-action btn-action-secondary">Cancel</button>
+                        <button type="submit" class="btn-action btn-action-primary">Save Details</button>
+                    </div>
+                </form>
+            </div>
+
+            <!-- Tab 2: Security settings -->
+            <div id="security" class="desk-notebook-sheet">
+                <h3 class="notebook-header-title">Sign-In Security Gate</h3>
+                <p class="sheet-intro-desc">Ensure your account and training records are fully secured by updating passwords.</p>
+                
+                <form onsubmit="saveProfileForm(event, 'Password updated successfully!');">
+                    <div class="form-grid-2col">
+                        <div class="field-box full-width">
+                            <label for="current_password">Current Password</label>
+                            <div class="password-reveal-container">
+                                <input type="password" id="current_password" placeholder="••••••••••••">
+                                <button type="button" class="password-toggle-btn" onclick="togglePasswordVisibility('current_password', this);">
+                                    <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                                </button>
+                            </div>
+                        </div>
+                        <div class="field-box">
+                            <label for="new_password">New Password</label>
+                            <div class="password-reveal-container">
+                                <input type="password" id="new_password" placeholder="Min. 8 characters">
+                                <button type="button" class="password-toggle-btn" onclick="togglePasswordVisibility('new_password', this);">
+                                    <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                                </button>
+                            </div>
+                        </div>
+                        <div class="field-box">
+                            <label for="confirm_password">Confirm New Password</label>
+                            <div class="password-reveal-container">
+                                <input type="password" id="confirm_password" placeholder="Verify password">
+                                <button type="button" class="password-toggle-btn" onclick="togglePasswordVisibility('confirm_password', this);">
+                                    <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="notebook-footer">
+                        <button type="submit" class="btn-action btn-action-primary">Update Password</button>
+                    </div>
+                </form>
+            </div>
+
+            <!-- Tab 3: Privacy sharing -->
+            <div id="privacy" class="desk-notebook-sheet">
+                <h3 class="notebook-header-title">Sharing Privacy Details</h3>
+                <p class="sheet-intro-desc">Configure who has access to your self-guided practice outcomes and charts.</p>
+                
+                <form onsubmit="saveProfileForm(event, 'Privacy preferences updated!');">
+                    <div class="field-box full-width">
+                        <label class="toggle-card-option">
+                            <span class="switch-control">
+                                <input type="checkbox" id="share_practice" checked>
+                                <span class="slider-control"></span>
+                            </span>
+                            <span class="toggle-title-txt">
+                                Share my independent practice test metrics with instructors
+                                <small>When active, classroom teachers can review your self-initiated (non-assigned) SAT practice modules to provide better target study recommendations.</small>
+                            </span>
+                        </label>
+                    </div>
+                    
+                    <div class="notebook-footer">
+                        <button type="submit" class="btn-action btn-action-primary">Save Privacy Options</button>
+                    </div>
+                </form>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- Success Toast Alert -->
+    <div class="toast-popup" id="toastFeedback">
+        <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M20 6L9 17l-5-5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        <span id="toastMessage">Details updated successfully!</span>
+    </div>
+
+    <!-- Cozy Interactions Javascript -->
+    <script>
+        // 1. Cozy radial lighting mask on hover
+        const card = document.getElementById('idBadgeCard');
+        card.addEventListener('mousemove', e => {
+            const rect = card.getBoundingClientRect();
+            const x = e.clientX - rect.left;
+            const y = e.clientY - rect.top;
+            card.style.setProperty('--mouse-x', `${x}px`);
+            card.style.setProperty('--mouse-y', `${y}px`);
+        });
+
+        // 2. Sliding active tab indicator & content transition animations
+        function switchTab(evt, tabId, index) {
+            // Reposition sliding active indicator pill
+            const indicator = document.getElementById("activeIndicator");
+            const tabHeight = 38 + 5.6; // button height + gap spacing
+            indicator.style.transform = `translateY(${index * tabHeight}px)`;
+
+            // Remove active classes
+            const tabs = document.getElementsByClassName("nav-tab-link");
+            for (let i = 0; i < tabs.length; i++) {
+                tabs[i].classList.remove("active");
+            }
+            evt.currentTarget.classList.add("active");
+
+            // Hide old content with smooth transition
+            const sheets = document.getElementsByClassName("desk-notebook-sheet");
+            let activeSheet = null;
+
+            for (let i = 0; i < sheets.length; i++) {
+                if (sheets[i].classList.contains("active")) {
+                    activeSheet = sheets[i];
+                }
+            }
+
+            if (activeSheet) {
+                activeSheet.classList.remove("show-active");
+                setTimeout(() => {
+                    activeSheet.classList.remove("active");
+                    
+                    // Show new tab page content
+                    const newSheet = document.getElementById(tabId);
+                    newSheet.classList.add("active");
+                    setTimeout(() => {
+                        newSheet.classList.add("show-active");
+                    }, 50);
+                }, 150);
+            } else {
+                const newSheet = document.getElementById(tabId);
+                newSheet.classList.add("active");
+                setTimeout(() => {
+                    newSheet.classList.add("show-active");
+                }, 50);
+            }
+        }
+
+        // Trigger animation for the initial active sheet on load
+        window.addEventListener('DOMContentLoaded', () => {
+            document.querySelector('.desk-notebook-sheet.active').classList.add('show-active');
+        });
+
+        // 3. Eye toggle password visibility
+        function togglePasswordVisibility(inputId, btn) {
+            const input = document.getElementById(inputId);
+            if (input.type === "password") {
+                input.type = "text";
+                btn.style.color = "var(--accent)";
+            } else {
+                input.type = "password";
+                btn.style.color = "var(--text-muted)";
+            }
+        }
+
+        // 4. Form Submit Toast trigger
+        function saveProfileForm(e, message) {
+            e.preventDefault();
+            const toast = document.getElementById("toastFeedback");
+            document.getElementById("toastMessage").innerText = message;
+            toast.classList.add("active");
+            setTimeout(() => {
+                toast.classList.remove("active");
+            }, 3000);
+        }
+    </script>
+</body>
+</html>

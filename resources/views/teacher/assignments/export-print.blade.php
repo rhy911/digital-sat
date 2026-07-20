@@ -92,10 +92,10 @@
                 <th>Student</th>
                 <th>Status</th>
                 <th>Attempts</th>
-                <th>Best estimate</th>
+                <th>Best score</th>
                 @if ($assignment->assign_type !== 'section')
-                    <th>Est. R&amp;W</th>
-                    <th>Est. Math</th>
+                    <th>R&amp;W Score</th>
+                    <th>Math Score</th>
                 @endif
             </tr>
         </thead>

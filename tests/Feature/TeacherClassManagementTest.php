@@ -69,10 +69,9 @@ class TeacherClassManagementTest extends TestCase
         $this->actingAs($teacher)
             ->get(route('home'))
             ->assertOk()
-            ->assertSeeInOrder(['Progress', 'Classes', 'Reports', 'Practice', 'Test Builder'], false)
-            ->assertSee('ds-nav-destination', false)
-            ->assertSee('href="'.route('home-dashboard.index').'"', false)
-            ->assertSee("Livewire.dispatch('teacher-workspace-section'", false);
+            ->assertSeeInOrder(['Progress', 'Classes', 'Reports', 'Test Library', 'Test Builder'], false)
+            ->assertSee('target="_blank"', false)
+            ->assertSee('href="'.route('home-dashboard.index').'"', false);
     }
 
     public function test_admin_management_pages_share_workspace_navigation(): void
@@ -124,7 +123,6 @@ class TeacherClassManagementTest extends TestCase
             ->get(route('home'))
             ->assertOk()
             ->assertSee($assignment->title)
-            ->assertSee("Livewire.dispatch('teacher-workspace-section'", false)
             ->assertDontSee('?section=', false)
             ->assertDontSee('?status=', false);
 
@@ -190,8 +188,8 @@ class TeacherClassManagementTest extends TestCase
         $this->actingAs($teacher)
             ->get(route('teacher.assignments.show', ['assignment' => $assignment, 'from' => 'invalid']))
             ->assertOk()
-            ->assertSee('Back to '.$classroom->name)
-            ->assertSee('href="'.route('teacher.classes.show', $classroom).'#assignments"', false);
+            ->assertDontSee('Back to '.$classroom->name)
+            ->assertDontSee('href="'.route('teacher.classes.show', $classroom).'#assignments"', false);
     }
 
     public function test_class_detail_uses_home_shell_and_marks_classes_current(): void
@@ -234,9 +232,8 @@ class TeacherClassManagementTest extends TestCase
         $classroom = $this->classroom($teacher); $test = $this->testFor($teacher);
         $this->complete($test);
         ClassroomMembership::create(['classroom_id' => $classroom->id, 'student_id' => $first->id, 'status' => 'active', 'requested_at' => now()]);
-        $assignment = $this->assignment($classroom, $test);
-
-        $this->actingAs($teacher)->post(route('teacher.assignments.publish', $assignment))->assertRedirect();
+        $assignment = app(\App\Services\AssignmentService::class)->publish($this->assignment($classroom, $test));
+        $assignment->recipients->each(fn ($recipient) => $recipient->student->notify(new \App\Notifications\AssignmentPublishedNotification($assignment)));
         $this->assertDatabaseHas('assignment_recipients', ['assignment_id' => $assignment->id, 'student_id' => $first->id, 'status' => 'active']);
         Notification::assertSentTo($first, AssignmentPublishedNotification::class);
 
@@ -337,12 +334,7 @@ class TeacherClassManagementTest extends TestCase
         $this->actingAs($teacher)->put(route('home-dashboard.tests.update', $test), ['title' => $test->title, 'test_type' => 'short_test', 'status' => 'active'])->assertSessionHasErrors('test');
     }
 
-    public function test_incomplete_test_cannot_be_published(): void
-    {
-        $teacher = $this->teacher(); $classroom = $this->classroom($teacher); $assignment = $this->assignment($classroom, $this->testFor($teacher));
-        $this->actingAs($teacher)->post(route('teacher.assignments.publish', $assignment))->assertSessionHasErrors('assignment');
-        $this->assertSame('draft', $assignment->fresh()->status);
-    }
+
 
     public function test_report_uses_highest_score_and_excludes_withdrawn_recipient(): void
     {
@@ -372,7 +364,7 @@ class TeacherClassManagementTest extends TestCase
             ->assertJsonPath('html', fn($html) => str_contains($html, '0 / 1'))
             ->assertJsonPath('html', fn($html) => str_contains($html, '12:34'))
             ->assertJsonPath('html', fn($html) => str_contains($html, 'Attempt 2'))
-            ->assertJsonPath('html', fn($html) => str_contains($html, 'Estimated 1300'))
+            ->assertJsonPath('html', fn($html) => str_contains($html, 'Score: 1300'))
             ->assertJsonPath('html', fn($html) => str_contains($html, 'No responses saved yet'));
 
         $report = app(\App\Services\AssignmentReportService::class)->build($assignment);

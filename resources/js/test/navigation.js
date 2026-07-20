@@ -395,7 +395,7 @@ export async function submitModule(options = {}) {
       await showCustomAlert("Test Preview completed! Redirecting home...", "success", "Test Completed");
       showLoadingScreen("Completing test preview...");
       window.isNavigatingLegitimately = true;
-      window.location.href = window.homeUrl || '/student/progress';
+      window.location.href = window.homeUrl || '/home';
     }
     return;
   }
@@ -457,7 +457,7 @@ export async function submitModule(options = {}) {
       let secondsLeft = 5;
       let completionTimer;
       let hasNavigated = false;
-      const homeUrl = data.redirect_url || window.homeUrl || '/student/progress';
+      const homeUrl = data.redirect_url || window.homeUrl || '/home';
       const doNavigateHome = () => {
         if (hasNavigated) return;
         hasNavigated = true;

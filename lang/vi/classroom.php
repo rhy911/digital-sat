@@ -35,10 +35,11 @@ return [
     'modal_create_assignment_title' => 'Giao bài tập mới',
 
     // Student rail nav
-    'nav_dashboard' => 'Tổng quan',
+    'nav_dashboard' => 'Trang chủ',
     'nav_my_classes' => 'Lớp của tôi',
-    'nav_practice' => 'Luyện tập',
-    'nav_progress_scores' => 'Tiến độ & Điểm số',
+    'nav_practice' => 'Thư viện đề',
+    'nav_progress' => 'Tiến độ',
+    'nav_scores' => 'Điểm số',
 
     // Student tabs
     'tab_assignments' => 'Bài tập',

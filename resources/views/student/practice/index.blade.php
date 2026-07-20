@@ -1,194 +1,238 @@
-<x-layouts.student :user="$user" header-type="progress" title="Choose Practice" :cancel-route="route('home')">
+<x-layouts.student :user="$user" title="Test Library" header-type="none">
     @push('styles')
-        @vite(['resources/css/student/analytics.css', 'resources/css/student/practice.css'])
+        @vite(['resources/css/classroom-workspace.css', 'resources/css/student/practice.css', 'resources/css/student/analytics.css'])
     @endpush
 
-    <div class="ds-home ds-practice-page">
-        <section class="ds-workspace-head" aria-labelledby="choose-practice-title">
-            <div class="ds-profile-panel">
-                <div>
-                    <h1 id="choose-practice-title">Choose a full-length practice test</h1>
-                    <p class="ds-workspace-copy">
-                        Pick an active practice test, then continue an unfinished attempt or start fresh.
-                    </p>
-                </div>
-            </div>
+    @php
+        $inProgressAttempts = $tests
+            ->flatMap(fn($t) => $t->userTests)
+            ->where('status', 'in_progress')
+            ->sortByDesc('updated_at');
 
-            <div class="ds-workspace-actions">
-                <x-ui.button href="{{ route('test.preview') }}" variant="secondary">
-                    Preview test format
-                </x-ui.button>
-            </div>
-        </section>
+        $isTeacher = $user->role === 'teacher';
+        $libraryIcon = '<svg viewBox=\'0 0 24 24\' fill=\'none\' stroke=\'currentColor\' stroke-width=\'1.8\'><path d=\'M12 6.5c-1.6-1.2-3.7-1.8-6-1.8-.7 0-1.4.05-2 .15v13.5c.6-.1 1.3-.15 2-.15 2.3 0 4.4.6 6 1.8m0-13.5c1.6-1.2 3.7-1.8 6-1.8.7 0 1.4.05 2 .15v13.5c-.6-.1-1.3-.15-2-.15-2.3 0-4.4.6-6 1.8m0-13.5v13.5\' stroke-linecap=\'round\' stroke-linejoin=\'round\' /></svg>';
 
-        <div id="ajaxErrorContainer" class="ds-alert hidden" role="alert" style="margin-bottom: 1.25rem;">
-            <div class="ds-alert__content" style="display: flex; align-items: center; gap: 0.75rem;">
-                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5"
-                    stroke="currentColor" style="width: 1.25rem; height: 1.25rem; flex-shrink: 0;" aria-hidden="true">
-                    <path stroke-linecap="round" stroke-linejoin="round"
-                        d="M12 9v3.75m9-.75a9 9 0 11-18 0 9 9 0 0118 0zm-9 3.75h.008v.008H12v-.008z" />
-                </svg>
-                <span id="ajaxErrorMessage"></span>
-            </div>
-        </div>
+        $railItems = $isTeacher ? [
+            [
+                'route' => route('teacher.progress'),
+                'label' => 'Progress',
+                'icon' => '<svg viewBox=\'0 0 24 24\' fill=\'none\' stroke=\'currentColor\' stroke-width=\'1.8\'><path d=\'M4 19V5M4 19h16M8 15l3-4 3 3 5-7\' stroke-linecap=\'round\' stroke-linejoin=\'round\' /></svg>',
+            ],
+            [
+                'route' => route('teacher.classes.index'),
+                'label' => 'Classes',
+                'icon' => '<svg viewBox=\'0 0 24 24\' fill=\'none\' stroke=\'currentColor\' stroke-width=\'1.8\'><rect x=\'3.5\' y=\'5\' width=\'17\' height=\'14\' rx=\'2\' /><path d=\'M3.5 9.5h17M8 5v-1M16 5v-1\' stroke-linecap=\'round\' /></svg>',
+            ],
+            [
+                'route' => route('teacher.assignments.index'),
+                'label' => 'Reports',
+                'icon' => '<svg viewBox=\'0 0 24 24\' fill=\'none\' stroke=\'currentColor\' stroke-width=\'1.8\'><path d=\'M5 3v18h16\' stroke-linecap=\'round\' /><rect x=\'8\' y=\'12\' width=\'3\' height=\'6\' /><rect x=\'13\' y=\'8\' width=\'3\' height=\'10\' /><rect x=\'18\' y=\'5\' width=\'3\' height=\'13\' /></svg>',
+            ],
+            [
+                'route' => route('home.practice'),
+                'label' => 'Test Library',
+                'active' => true,
+                'icon' => $libraryIcon,
+            ],
+            [
+                'route' => route('home-dashboard.index'),
+                'label' => 'Test Builder',
+                'target' => '_blank',
+                'icon' => '<svg viewBox=\'0 0 24 24\' fill=\'none\' stroke=\'currentColor\' stroke-width=\'1.8\'><path d=\'M14.7 6.3a3 3 0 0 0 4 4L14 15l-4 1 1-4Z\' stroke-linejoin=\'round\' /></svg>',
+            ],
+        ] : [
+            [
+                'route' => route('home'),
+                'label' => __('classroom.nav_dashboard'),
+                'icon' => '<svg viewBox=\'0 0 24 24\' fill=\'none\' stroke=\'currentColor\' stroke-width=\'1.8\'><path d=\'m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z\'/><polyline points=\'9 22 9 12 15 12 15 22\'/></svg>',
+            ],
+            [
+                'route' => route('student.classes.index'),
+                'label' => __('classroom.nav_my_classes'),
+                'icon' => '<svg viewBox=\'0 0 24 24\' fill=\'none\' stroke=\'currentColor\' stroke-width=\'1.8\'><rect x=\'3.5\' y=\'5\' width=\'17\' height=\'14\' rx=\'2\' /><path d=\'M3.5 9.5h17M8 5v-1M16 5v-1\' stroke-linecap=\'round\' /></svg>',
+            ],
+            [
+                'route' => route('student.assignments.index'),
+                'label' => 'Assignments',
+                'icon' => '<svg viewBox=\'0 0 24 24\' fill=\'none\' stroke=\'currentColor\' stroke-width=\'1.8\'><rect x=\'3\' y=\'4\' width=\'18\' height=\'16\' rx=\'2\' /><path d=\'M7 8h10M7 12h10M7 16h6\' stroke-linecap=\'round\' /></svg>',
+            ],
+            [
+                'route' => route('student.progress'),
+                'label' => __('classroom.nav_progress'),
+                'icon' => '<svg viewBox=\'0 0 24 24\' fill=\'none\' stroke=\'currentColor\' stroke-width=\'1.8\'><path d=\'M4 19V5M4 19h16M8 15l3-4 3 3 5-7\' stroke-linecap=\'round\' stroke-linejoin=\'round\' /></svg>',
+            ],
+            [
+                'route' => route('home.practice'),
+                'label' => __('classroom.nav_practice'),
+                'active' => true,
+                'icon' => $libraryIcon,
+            ],
+            [
+                'route' => route('student.scores.index'),
+                'label' => __('classroom.nav_scores'),
+                'icon' => '<svg viewBox=\'0 0 24 24\' fill=\'none\' stroke=\'currentColor\' stroke-width=\'1.8\'><line x1=\'18\' y1=\'20\' x2=\'18\' y2=\'10\'/><line x1=\'12\' y1=\'20\' x2=\'12\' y2=\'4\'/><line x1=\'6\' y1=\'20\' x2=\'6\' y2=\'14\'/></svg>',
+            ],
+        ];
+    @endphp
 
-        @php
-            $inProgressAttempts = $tests
-                ->flatMap(fn($t) => $t->userTests)
-                ->where('status', 'in_progress')
-                ->sortByDesc('updated_at');
-        @endphp
+    <div class="app-shell app-shell--no-list">
+        <!-- COLUMN 1: ICON RAIL -->
+        <x-shell.icon-rail :logo-href="$isTeacher ? route('teacher.progress') : route('home')" :avatar-label="$user->initials" :items="$railItems" />
 
-        @if ($inProgressAttempts->isNotEmpty())
-            <section class="ds-resume-section" aria-labelledby="active-work-title">
-                <h2 id="active-work-title" class="ds-section-heading">Continue where you left off</h2>
-                <div class="ds-resume-grid">
-                    @foreach ($inProgressAttempts as $attempt)
-                        @php
-                            $moduleUlid =
-                                $attempt->currentModule?->ulid ??
-                                $attempt->test?->sections?->first()?->modules?->first()?->ulid;
-                            $currentModule = $attempt->currentModule;
-                            $currentSection = $currentModule?->section;
-                        @endphp
-                        <article class="ds-resume-card">
-                            <div class="ds-resume-card__body">
-                                <div class="ds-resume-card__info">
-                                    <div class="ds-resume-card__icon-wrapper" aria-hidden="true">
-                                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
-                                            stroke-width="2" stroke="currentColor" class="w-6 h-6">
-                                            <path stroke-linecap="round" stroke-linejoin="round"
-                                                d="M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
-                                            <path stroke-linecap="round" stroke-linejoin="round"
-                                                d="M15.91 11.672a.375.375 0 0 1 0 .656l-5.603 3.113a.375.375 0 0 1-.557-.328V8.887c0-.286.307-.466.557-.327l5.603 3.112Z" />
-                                        </svg>
-                                    </div>
-                                    <div>
-                                        <h3 class="ds-resume-card__title">{{ $attempt->test->title }}</h3>
-                                        <p class="ds-resume-card__status">
-                                            @if ($currentModule && $currentSection)
-                                                Currently on: {{ $currentSection->name }} • Module
-                                                {{ $currentModule->module_number }}
-                                            @else
-                                                Ready to start: Section 1, Module 1
-                                            @endif
-                                        </p>
-                                        <span class="ds-resume-card__meta">
-                                            Last active {{ $attempt->updated_at->diffForHumans() }}
-                                        </span>
-                                    </div>
-                                </div>
+        <!-- COLUMN 2: CONTENT -->
+        <div class="shell-content">
+            <x-ui.flash />
 
-                                <div class="ds-resume-card__action-wrapper">
-                                    @if ($moduleUlid)
-                                        <x-ui.button href="{{ route('engine.session', ['ulid' => $moduleUlid]) }}?attempt={{ $attempt->ulid }}"
-                                            variant="primary" class="ds-resume-card__button">
-                                            Resume Practice
-                                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
-                                                stroke-width="2.5" stroke="currentColor" class="w-4 h-4 ml-2"
-                                                aria-hidden="true"
-                                                style="margin-right: -0.25rem; display: inline-block; width: 1rem; height: 1rem; vertical-align: text-bottom; margin-left: 0.5rem;">
-                                                <path stroke-linecap="round" stroke-linejoin="round"
-                                                    d="M13.5 4.5 21 12m0 0-7.5 7.5M21 12H3" />
-                                            </svg>
-                                        </x-ui.button>
-                                    @else
-                                        <x-ui.button variant="secondary" disabled>
-                                            Unavailable
-                                        </x-ui.button>
-                                    @endif
-                                </div>
-                            </div>
-                        </article>
-                    @endforeach
-                </div>
-            </section>
-        @endif
-
-        <section class="ds-dashboard-grid" aria-labelledby="practice-library-title">
-            <article class="ds-card ds-practice-library">
-                <div class="ds-card__header">
-                    <div>
-                        <h2 id="practice-library-title" class="ds-card-title">Available tests</h2>
+            <div class="binder-panel">
+                <div class="ledger-header">
+                    <div class="dh-left">
+                        <h2>{{ __('classroom.nav_practice') }} <span class="handwriting status-quote">"Practice makes perfect"</span></h2>
+                        <div class="dh-desc">
+                            Pick an active practice test, then continue an unfinished attempt or start fresh.
+                        </div>
                     </div>
-                    @if ($tests->isNotEmpty())
-                        <span class="ds-card-note">{{ $tests->count() }}
-                            {{ \Illuminate\Support\Str::plural('test', $tests->count()) }}</span>
-                    @endif
+                    <div>
+                        <a href="{{ route('test.preview') }}" class="btn-outline">Preview test format</a>
+                    </div>
                 </div>
 
-                @if ($tests->isNotEmpty())
-                    <div class="ds-test-grid">
-                        @foreach ($tests as $test)
-                            @php
-                                $sections = $test->sections;
-                                $modules = $sections->flatMap->modules->unique('id');
-                                $duration =
-                                    $test->total_duration_minutes ?:
-                                    $sections->sum(
-                                        fn($section) => $section->modules
-                                            ->unique('module_number')
-                                            ->sum('duration_minutes'),
-                                    );
+                <div id="ajaxErrorContainer" class="toast toast-error hidden" role="alert" style="margin-top: 18px;">
+                    <span id="ajaxErrorMessage"></span>
+                </div>
 
-                                $inProgressAttempt = $test->userTests->firstWhere('status', 'in_progress');
-                                $latestCompletedAttempt = $test->userTests->firstWhere('status', 'completed');
-                            @endphp
-                            <article class="ds-test-card {{ $inProgressAttempt ? 'ds-test-card--in-progress' : '' }}"
-                                aria-labelledby="test-card-{{ $test->id }}-title">
-                                <div class="ds-test-card__body">
-                                    <div class="ds-test-card__topline">
-                                        <span>{{ $test->test_type ? \Illuminate\Support\Str::headline($test->test_type) : 'Full-length' }}</span>
-                                        @if ($inProgressAttempt)
-                                            <x-ui.status-badge status="brand">In Progress</x-ui.status-badge>
-                                        @elseif($latestCompletedAttempt)
-                                            <x-ui.status-badge status="success">Completed
-                                                @if($latestCompletedAttempt->total_score !== null)
-                                                    &bull; Estimated {{ $latestCompletedAttempt->total_score }}
+                @if ($inProgressAttempts->isNotEmpty())
+                    <section class="library-section" aria-labelledby="active-work-title">
+                        <div class="library-section-head">
+                            <h3 id="active-work-title" class="library-section-heading">Continue where you left off</h3>
+                        </div>
+                        <div class="library-resume-grid">
+                            @foreach ($inProgressAttempts as $attempt)
+                                @php
+                                    $moduleUlid =
+                                        $attempt->currentModule?->ulid ??
+                                        $attempt->test?->sections?->first()?->modules?->first()?->ulid;
+                                    $currentModule = $attempt->currentModule;
+                                    $currentSection = $currentModule?->section;
+                                @endphp
+                                <article class="library-resume-card">
+                                    <div class="library-resume-card__info">
+                                        <div class="library-resume-icon" aria-hidden="true">
+                                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+                                                <path d="M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" stroke-linecap="round" stroke-linejoin="round" />
+                                                <path d="M15.91 11.672a.375.375 0 0 1 0 .656l-5.603 3.113a.375.375 0 0 1-.557-.328V8.887c0-.286.307-.466.557-.327l5.603 3.112Z" stroke-linecap="round" stroke-linejoin="round" />
+                                            </svg>
+                                        </div>
+                                        <div>
+                                            <span class="library-resume-card__title">{{ $attempt->test->title }}</span>
+                                            <span class="library-resume-card__status">
+                                                @if ($currentModule && $currentSection)
+                                                    Currently on: {{ $currentSection->name }} &bull; Module {{ $currentModule->module_number }}
+                                                @else
+                                                    Ready to start: Section 1, Module 1
                                                 @endif
-                                            </x-ui.status-badge>
+                                            </span>
+                                            <span class="library-resume-card__meta">
+                                                Last active {{ $attempt->updated_at->diffForHumans() }}
+                                            </span>
+                                        </div>
+                                    </div>
+
+                                    <div class="library-resume-card__action">
+                                        @if ($moduleUlid)
+                                            <a href="{{ route('engine.session', ['ulid' => $moduleUlid]) }}?attempt={{ $attempt->ulid }}"
+                                                class="library-btn-primary">
+                                                Resume
+                                            </a>
                                         @else
-                                            <x-ui.status-badge status="warning">New</x-ui.status-badge>
+                                            <span class="library-btn-outline" aria-disabled="true">Unavailable</span>
                                         @endif
                                     </div>
-                                    <h3 id="test-card-{{ $test->id }}-title">{{ $test->title }}</h3>
-                                    @if ($test->description)
-                                        <p>{{ \Illuminate\Support\Str::limit($test->description, 140) }}</p>
-                                    @else
-                                        <p>Complete a scored digital SAT practice session and review your results
-                                            afterward.</p>
-                                    @endif
-                                </div>
-
-                                <div class="ds-test-card__meta-flat">
-                                    <span>{{ $duration ?: '--' }} min</span>
-                                    <span class="ds-meta-dot" aria-hidden="true">•</span>
-                                    <span>{{ $sections->count() ?: '--' }} sections</span>
-                                    <span class="ds-meta-dot" aria-hidden="true">•</span>
-                                    <span>{{ $modules->count() ?: '--' }} modules</span>
-                                </div>
-
-                                <x-ui.button type="button" variant="primary" class="ds-test-card__action"
-                                    data-test-id="{{ $test->id }}">
-                                    @if ($inProgressAttempt)
-                                        Resume practice
-                                    @elseif($latestCompletedAttempt)
-                                        Retake Test
-                                    @else
-                                        Start practice
-                                    @endif
-                                </x-ui.button>
-                            </article>
-                        @endforeach
-                    </div>
-                @else
-                    <div class="ds-empty ds-empty--compact">
-                        <h4>No active practice tests</h4>
-                        <p>Ask a teacher to publish a practice test, then return here to begin.</p>
-                    </div>
+                                </article>
+                            @endforeach
+                        </div>
+                    </section>
                 @endif
-            </article>
-        </section>
+
+                <section class="library-section" aria-labelledby="practice-library-title">
+                    <div class="library-section-head">
+                        <h3 id="practice-library-title" class="library-section-heading">Available tests</h3>
+                        @if ($tests->isNotEmpty())
+                            <span class="library-count">{{ $tests->count() }}
+                                {{ \Illuminate\Support\Str::plural('test', $tests->count()) }}</span>
+                        @endif
+                    </div>
+
+                    @if ($tests->isNotEmpty())
+                        <div class="tests-grid">
+                            @foreach ($tests as $test)
+                                @php
+                                    $sections = $test->sections;
+                                    $modules = $sections->flatMap->modules->unique('id');
+                                    $duration =
+                                        $test->total_duration_minutes ?:
+                                        $sections->sum(
+                                            fn($section) => $section->modules
+                                                ->unique('module_number')
+                                                ->sum('duration_minutes'),
+                                        );
+
+                                    $inProgressAttempt = $test->userTests->firstWhere('status', 'in_progress');
+                                    $latestCompletedAttempt = $test->userTests->firstWhere('status', 'completed');
+                                @endphp
+                                <article class="index-card test-index-card {{ $inProgressAttempt ? 'is-in-progress' : '' }}"
+                                    aria-labelledby="test-card-{{ $test->id }}-title">
+                                    <div class="test-card-top">
+                                        <span class="type-tag">{{ $test->test_type ? \Illuminate\Support\Str::headline($test->test_type) : 'Full-length' }}</span>
+                                        @if ($inProgressAttempt)
+                                            <span class="status-pill pending"><span class="d"></span>In Progress</span>
+                                        @elseif($latestCompletedAttempt)
+                                            <span class="status-pill ok"><span class="d"></span>Completed</span>
+                                        @else
+                                            <span class="status-pill new"><span class="d"></span>New</span>
+                                        @endif
+                                    </div>
+                                    <div class="card-title" id="test-card-{{ $test->id }}-title">{{ $test->title }}</div>
+                                    @if ($test->description)
+                                        <p class="test-card-desc">{{ \Illuminate\Support\Str::limit($test->description, 140) }}</p>
+                                    @else
+                                        <p class="test-card-desc">Complete a scored digital SAT practice session and review your results afterward.</p>
+                                    @endif
+
+                                    <div class="test-card-meta-flat">
+                                        <span>{{ $duration ?: '--' }} min</span>
+                                        <span class="dot-sep" aria-hidden="true">&bull;</span>
+                                        <span>{{ $sections->count() ?: '--' }} sections</span>
+                                        <span class="dot-sep" aria-hidden="true">&bull;</span>
+                                        <span>{{ $modules->count() ?: '--' }} modules</span>
+                                        @if ($latestCompletedAttempt?->total_score !== null)
+                                            <span class="dot-sep" aria-hidden="true">&bull;</span>
+                                            <span>Best {{ $latestCompletedAttempt->total_score }}</span>
+                                        @endif
+                                    </div>
+
+                                    <div class="test-card-action">
+                                        <button type="button" class="library-btn-primary" data-test-id="{{ $test->id }}">
+                                            @if ($inProgressAttempt)
+                                                Resume practice
+                                            @elseif($latestCompletedAttempt)
+                                                Retake test
+                                            @else
+                                                Start practice
+                                            @endif
+                                        </button>
+                                    </div>
+                                </article>
+                            @endforeach
+                        </div>
+                    @else
+                        <div class="empty-grid-cell">
+                            <strong>No active practice tests</strong>
+                            <p style="margin-top: 4px;">Ask a teacher to publish a practice test, then return here to begin.</p>
+                        </div>
+                    @endif
+                </section>
+            </div>
+        </div>
     </div>
 
     <div id="attemptModal" class="ds-modal" aria-modal="true" role="dialog" aria-labelledby="attemptModalTitle">
@@ -415,7 +459,7 @@
             }
 
             document.addEventListener('DOMContentLoaded', function() {
-                const testActions = document.querySelectorAll('.ds-test-card__action[data-test-id]');
+                const testActions = document.querySelectorAll('.test-index-card [data-test-id]');
 
                 testActions.forEach(action => {
                     action.addEventListener('click', async function() {

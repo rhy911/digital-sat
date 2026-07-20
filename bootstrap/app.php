@@ -22,7 +22,7 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->redirectUsersTo(fn (\Illuminate\Http\Request $request) => 
             ($request->user() && $request->hasCookie(\Illuminate\Support\Facades\Auth::getRecallerName()))
                 ? '/'
-                : '/student/progress'
+                : '/home'
         );
     })
     ->withExceptions(function (Exceptions $exceptions): void {

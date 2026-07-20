@@ -35,10 +35,11 @@ return [
     'modal_create_assignment_title' => 'New assignment',
 
     // Student rail nav
-    'nav_dashboard' => 'Dashboard',
+    'nav_dashboard' => 'Home',
     'nav_my_classes' => 'My Classes',
-    'nav_practice' => 'Practice',
-    'nav_progress_scores' => 'Progress & Scores',
+    'nav_practice' => 'Test Library',
+    'nav_progress' => 'Progress',
+    'nav_scores' => 'Scores',
 
     // Student tabs
     'tab_assignments' => 'Assignments',

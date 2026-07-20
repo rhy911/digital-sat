@@ -13,7 +13,7 @@
             ['label' => 'Progress', 'tab' => 'progress', 'href' => route('teacher.progress'), 'active' => false],
             ['label' => 'Classes', 'tab' => 'classes', 'href' => route('teacher.classes.index'), 'active' => request()->routeIs('teacher.classes.*'), 'current' => request()->routeIs('teacher.classes.show')],
             ['label' => 'Reports', 'tab' => 'reports', 'href' => route('teacher.assignments.index'), 'active' => request()->routeIs('teacher.assignments.*'), 'current' => request()->routeIs('teacher.assignments.show')],
-            ['label' => 'Practice', 'href' => route('home.practice'), 'active' => request()->routeIs('home.practice', 'test.preview', 'engine.session', 'engine.test.attempt-options')],
+            ['label' => 'Test Library', 'href' => route('home.practice'), 'active' => request()->routeIs('home.practice', 'test.preview', 'engine.session', 'engine.test.attempt-options')],
             ['label' => 'Test Builder', 'href' => route('home-dashboard.index'), 'active' => request()->routeIs('home-dashboard.*'), 'external' => true],
         ];
     } else {
@@ -25,7 +25,7 @@
                 'current' => request()->routeIs('home'),
             ],
             [
-                'label' => 'Practice',
+                'label' => 'Test Library',
                 'href' => route('home.practice'),
                 'active' => request()->routeIs('home.practice', 'test.preview', 'engine.session', 'engine.test.attempt-options'),
                 'current' => request()->routeIs('home.practice'),

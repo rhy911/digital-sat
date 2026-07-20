@@ -12,9 +12,13 @@ $domainLabels = [
     'geometry_and_trigonometry' => 'Geometry and Trigonometry',
 ];
 ?>
-<div class="attempt-monitor" style="max-height: 70vh; overflow-y: auto;" x-data="{ activeAttempt: {{ $initialAttempt->id }} }" data-attempt-monitor
+<div class="attempt-monitor" 
+     @if(empty($hideHeader)) style="max-height: 70vh; overflow-y: auto;" @endif 
+     x-data="{ activeAttempt: {{ $initialAttempt->id }} }" 
+     data-attempt-monitor
     data-poll-url="{{ route('teacher.assignments.attempt-monitor', [$assignment, $row['recipient']->student]) }}"
     data-active-attempt="{{ $initialAttempt->id }}">
+    @if(empty($hideHeader))
     <header class="attempt-monitor__student">
         <div>
             <p>{{ $row['recipient']->student->email }}</p>
@@ -30,6 +34,7 @@ $domainLabels = [
             <small data-monitor-update-status aria-live="polite">Live updates</small>
         </div>
     </header>
+    @endif
 
     <nav class="attempt-monitor__tabs" role="tablist" aria-label="Student attempts">
         @foreach ($row['attempts'] as $attempt)
@@ -39,7 +44,7 @@ $domainLabels = [
                 x-bind:aria-selected="activeAttempt === {{ $attempt->id }}"
                 x-bind:class="{ 'is-active': activeAttempt === {{ $attempt->id }} }">
                 <span>Attempt {{ $attempt->attempt_number }}</span>
-                <small>{{ $attempt->status === 'in_progress' ? 'Active now' : ($attempt->total_score ? 'Estimated ' . $attempt->total_score : ucfirst(str_replace('_', ' ', $attempt->status))) }}</small>
+                <small>{{ $attempt->status === 'in_progress' ? 'Active now' : ($attempt->total_score ? 'Score: ' . $attempt->total_score : ucfirst(str_replace('_', ' ', $attempt->status))) }}</small>
             </button>
         @endforeach
     </nav>
@@ -135,7 +140,7 @@ $domainLabels = [
                             </dd>
                         </div>
                         <div>
-                            <dt>{{ $isInProgress ? 'Started' : 'Estimated practice score' }}</dt>
+                            <dt>{{ $isInProgress ? 'Started' : 'Score' }}</dt>
                             <dd>
                                 @if ($isInProgress)
                                     {{ $attempt->created_at->format('M j, g:i A') }}
@@ -173,10 +178,8 @@ $domainLabels = [
                 </div>
 
                 <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 mt-6 border-t border-slate-100 pt-6">
-                    <!-- Force Tailwind compile: lg:col-span-8 lg:col-span-12 lg:col-span-4 -->
-                    <!-- Left column: Grouped list of questions (Takes full width if no selection, 8/12 if selected) -->
-                    <div :class="{ 'lg:col-span-8': selectedAnswerId, 'lg:col-span-12': !selectedAnswerId }"
-                         class="flex flex-col gap-4 transition-all duration-300">
+                    <!-- Left column: Grouped list of questions (Takes full width) -->
+                    <div class="lg:col-span-12 flex flex-col gap-4">
                         <div class="attempt-monitor__responses-heading flex justify-between items-center mb-2">
                             <h5 class="text-base font-semibold text-slate-800 m-0">{{ $isInProgress ? 'Saved responses' : 'Response review' }}</h5>
                             <span class="text-xs text-slate-500">{{ $savedResponses }} {{ \Illuminate\Support\Str::plural('question', $savedResponses) }}</span>
@@ -241,7 +244,17 @@ $domainLabels = [
                                         <div x-show="!collapsedModules['{{ $moduleId }}']">
                                             <ol class="divide-y divide-slate-100 list-none p-0 m-0">
                                                 @foreach ($answers as $answer)
-                                                    <?php $correct = $answer->question?->sprCorrectAnswers->pluck('answer')->implode(', ') ?: $answer->question?->answerChoices->firstWhere('is_correct', true)?->label; ?>
+                                                    <?php 
+                                                        $correct = $answer->question?->sprCorrectAnswers->pluck('answer')->implode(', ') ?: $answer->question?->answerChoices->firstWhere('is_correct', true)?->label; 
+                                                        $timeSpent = (int) ($answer->time_spent ?? 0);
+                                                        if ($timeSpent >= 60) {
+                                                            $minutes = floor($timeSpent / 60);
+                                                            $seconds = $timeSpent % 60;
+                                                            $timeString = "{$minutes}m" . ($seconds > 0 ? " {$seconds}s" : "");
+                                                        } else {
+                                                            $timeString = "{$timeSpent}s";
+                                                        }
+                                                    ?>
                                                     <li class="p-0 border-b border-slate-100 last:border-b-0" data-answer-id="{{ $answer->id }}">
                                                         <button type="button" 
                                                             class="w-full text-left px-4 py-3 flex items-center justify-between transition-colors focus:outline-none"
@@ -280,6 +293,13 @@ $domainLabels = [
                                                                                 {{ ucfirst($answer->question->difficulty) }}
                                                                             </span>
                                                                         @endif
+
+                                                                        <span class="text-[10px] font-medium px-1.5 py-0.5 rounded bg-slate-100 text-slate-600 border border-slate-200 flex items-center gap-1">
+                                                                            <svg class="w-3 h-3 text-slate-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                                                            </svg>
+                                                                            {{ $timeString }}
+                                                                        </span>
                                                                     </div>
                                                                 </div>
                                                             </div>
@@ -308,37 +328,85 @@ $domainLabels = [
                         @endif
                     </div>
 
-                    <!-- Right column: Question preview pane (Only displayed when a question is selected) -->
-                    <div x-show="selectedAnswerId" x-cloak
-                         :class="{ 'hidden': !selectedAnswerId, 'lg:col-span-4': selectedAnswerId }"
-                         class="flex flex-col transition-all duration-300 relative sticky top-4 self-start max-h-[500px] h-[500px]">
-                        <!-- Close button ('X' icon) -->
-                        <button type="button" 
-                            class="absolute top-2.5 right-3 text-slate-400 hover:text-slate-600 transition-colors focus:outline-none z-10 p-1.5 rounded-full hover:bg-slate-200/50"
-                            @click="selectedAnswerId = null; previewHtml = ''"
-                            aria-label="Close question preview">
-                            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-                            </svg>
-                        </button>
-                        <!-- Loading State -->
-                        <div x-show="loading" :class="{ 'hidden': !loading }" class="flex flex-col gap-4 p-5 border border-slate-200 rounded-lg bg-white shadow-sm h-full animate-pulse flex-1">
-                            <div class="flex justify-between items-center pb-3 border-b border-slate-100">
-                                <div class="h-4 bg-slate-200 rounded w-1/4"></div>
-                                <div class="h-4 bg-slate-200 rounded w-12"></div>
+                    <!-- Question Detail Modal Overlay -->
+                    <div x-show="selectedAnswerId" 
+                         x-cloak 
+                         style="display: none;"
+                         class="fixed inset-0 z-50 items-center justify-center p-4"
+                         :class="selectedAnswerId ? 'flex' : 'hidden'"
+                         role="dialog"
+                         aria-modal="true">
+                        <!-- Backdrop -->
+                        <div class="fixed inset-0 bg-slate-900/50 transition-opacity" 
+                             x-show="selectedAnswerId"
+                             x-transition:enter="ease-out duration-150"
+                             x-transition:enter-start="opacity-0"
+                             x-transition:enter-end="opacity-100"
+                             x-transition:leave="ease-in duration-100"
+                             x-transition:leave-start="opacity-100"
+                             x-transition:leave-end="opacity-0"
+                             @click="selectedAnswerId = null; previewHtml = ''"></div>
+
+                        <!-- Modal Content Container -->
+                        <div class="relative bg-white rounded-xl shadow-2xl border border-slate-200 w-full max-w-4xl max-h-[90vh] flex flex-col overflow-hidden transform-gpu"
+                             x-show="selectedAnswerId"
+                             x-transition:enter="ease-out duration-200"
+                             x-transition:enter-start="opacity-0 translate-y-3"
+                             x-transition:enter-end="opacity-100 translate-y-0"
+                             x-transition:leave="ease-in duration-150"
+                             x-transition:leave-start="opacity-100 translate-y-0"
+                             x-transition:leave-end="opacity-0 translate-y-3">
+                             
+                            <!-- Modal Header -->
+                            <div class="px-6 py-4 border-b border-slate-100 flex items-center justify-between bg-slate-50">
+                                <h3 class="text-base font-semibold text-slate-900 m-0">Question Detail</h3>
+                                <button type="button" 
+                                    class="text-slate-400 hover:text-slate-600 transition-colors focus:outline-none p-1.5 rounded-full hover:bg-slate-200/50"
+                                    @click="selectedAnswerId = null; previewHtml = ''"
+                                    aria-label="Close question preview">
+                                    <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                                    </svg>
+                                </button>
                             </div>
-                            <div class="space-y-2 mt-2">
-                                <div class="h-3 bg-slate-200 rounded w-full"></div>
-                                <div class="h-3 bg-slate-200 rounded w-5/6"></div>
+
+                            <!-- Modal Body (Scrollable) -->
+                            <div class="p-6 overflow-y-auto flex-1 bg-[#FCFBF7]">
+                                <!-- Loading State -->
+                                <div x-show="loading" 
+                                     :class="loading ? 'flex flex-col gap-4' : 'hidden'"
+                                     class="animate-pulse h-full">
+                                    <div class="flex justify-between items-center pb-3 border-b border-slate-100">
+                                        <div class="h-4 bg-slate-200 rounded w-1/4"></div>
+                                        <div class="h-4 bg-slate-200 rounded w-12"></div>
+                                    </div>
+                                    <div class="space-y-2 mt-2">
+                                        <div class="h-3 bg-slate-200 rounded w-full"></div>
+                                        <div class="h-3 bg-slate-200 rounded w-5/6"></div>
+                                    </div>
+                                    <div class="space-y-2 mt-4">
+                                        <div class="h-10 bg-slate-100 rounded w-full"></div>
+                                        <div class="h-10 bg-slate-100 rounded w-full"></div>
+                                    </div>
+                                </div>
+
+                                <!-- Rendered Preview Content -->
+                                <div x-show="!loading" 
+                                     :class="!loading ? 'block' : 'hidden'"
+                                     x-html="previewHtml" 
+                                     class="min-h-0" 
+                                     data-morph-skip></div>
                             </div>
-                            <div class="space-y-2 mt-4">
-                                <div class="h-10 bg-slate-100 rounded w-full"></div>
-                                <div class="h-10 bg-slate-100 rounded w-full"></div>
+                            
+                            <!-- Modal Footer -->
+                            <div class="px-6 py-3 border-t border-slate-100 bg-slate-50 flex justify-end">
+                                <button type="button" 
+                                    class="px-4 py-2 text-xs font-semibold text-slate-700 bg-white border border-slate-200 rounded-lg hover:bg-slate-50 transition-colors"
+                                    @click="selectedAnswerId = null; previewHtml = ''">
+                                    Close
+                                </button>
                             </div>
                         </div>
-
-                        <!-- Rendered Preview Content -->
-                        <div x-show="selectedAnswerId && !loading" :class="{ 'hidden': !selectedAnswerId || loading }" x-html="previewHtml" class="min-h-0" data-morph-skip></div>
                     </div>
                 </div>
             </section>

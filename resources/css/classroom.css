@@ -2195,7 +2195,6 @@
     grid-template-columns: repeat(4, 1fr);
     gap: 1px;
     margin: 20px 0 0;
-    background: var(--cw-line);
 }
 
 .attempt-monitor__metrics div {

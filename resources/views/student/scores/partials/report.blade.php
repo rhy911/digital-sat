@@ -12,13 +12,14 @@
                     {{ $userTest->section_type === 'reading_writing' ? 'Reading & Writing Section Score' : 'Math Section Score' }}
                 </p>
                 <div>
-                    <span class="sd-hero-score">{{ $userTest->section_type === 'reading_writing' ? ($userTest->score_reading_writing ?? '—') : ($userTest->score_math ?? '—') }}</span>
+                    <span
+                        class="sd-hero-score">{{ $userTest->section_type === 'reading_writing' ? $userTest->score_reading_writing ?? '—' : $userTest->score_math ?? '—' }}</span>
                     <span class="sd-hero-score-range">/ 800</span>
                 </div>
                 <p class="sd-score-disclosure">
-                    @if($userTest->score_estimate_kind === 'adaptive_irt_provisional')
+                    @if ($userTest->score_estimate_kind === 'adaptive_irt_provisional')
                         This is an estimate based on the questions you saw. Your score is likely between
-                        {{ $userTest->section_type === 'reading_writing' ? ($userTest->score_reading_writing_lower . ' and ' . $userTest->score_reading_writing_upper) : ($userTest->score_math_lower . ' and ' . $userTest->score_math_upper) }}.
+                        {{ $userTest->section_type === 'reading_writing' ? $userTest->score_reading_writing_lower . ' and ' . $userTest->score_reading_writing_upper : $userTest->score_math_lower . ' and ' . $userTest->score_math_upper }}.
                     @else
                         This estimate uses all the questions you answered in this section.
                     @endif
@@ -27,10 +28,13 @@
                 <details class="sd-score-explainer">
                     <summary>How is this calculated?</summary>
                     <p>
-                        @if($userTest->score_estimate_kind === 'adaptive_irt_provisional')
-                            This section used an adaptive route, so question difficulty adjusted based on your answers. We use a statistical model (EAP 3PL) to estimate your ability from the questions you actually saw, which is why the result is shown as a range rather than one exact number.
+                        @if ($userTest->score_estimate_kind === 'adaptive_irt_provisional')
+                            This section used an adaptive route, so question difficulty adjusted based on your answers.
+                            We use a statistical model (EAP 3PL) to estimate your ability from the questions you
+                            actually saw, which is why the result is shown as a range rather than one exact number.
                         @else
-                            This section was scored using all the questions you answered, without adjusting for adaptive difficulty.
+                            This section was scored using all the questions you answered, without adjusting for adaptive
+                            difficulty.
                         @endif
                     </p>
                 </details>
@@ -38,30 +42,99 @@
                 <p class="sd-score-context">
                     {{ $userTest->score_estimate_kind === 'adaptive_irt_provisional' ? 'Estimated practice score' : 'Estimated practice score · Normal conversion' }}
                 </p>
-                <div>
-                    <span class="sd-hero-score">{{ $userTest->total_score }}</span>
-                    <span class="sd-hero-score-range">/ 1600</span>
+                <div
+                    style="display: flex; gap: 3rem; align-items: center; margin-top: 1rem; margin-bottom: 1.5rem; flex-wrap: wrap;">
+                    <div>
+                        <span class="sd-hero-score">{{ $userTest->total_score }}</span>
+                        <span class="sd-hero-score-range">/ 1600</span>
+                    </div>
+
+                    @if (($userTest->score_reading_writing ?? null) !== null || ($userTest->score_math ?? null) !== null)
+                        <div
+                            style="display: flex; gap: 2rem; align-items: center; border-left: 1.5px solid rgba(255,255,255,0.15); padding-left: 2rem; flex-wrap: wrap;">
+                            @if ($userTest->score_reading_writing !== null)
+                                <div style="display: flex; align-items: center; gap: 0.8rem;">
+                                    <div
+                                        style="position: relative; width: 48px; height: 48px; display: flex; align-items: center; justify-content: center;">
+                                        <svg width="48" height="48" viewBox="0 0 36 36"
+                                            style="transform: rotate(-90deg); filter: drop-shadow(0 2px 4px rgba(0,0,0,0.15));">
+                                            <circle cx="18" cy="18" r="16" fill="none"
+                                                stroke="rgba(255,255,255,0.12)" stroke-width="3"></circle>
+                                            <circle cx="18" cy="18" r="16" fill="none" stroke="#60a5fa"
+                                                stroke-width="3"
+                                                stroke-dasharray="{{ max(2, min(100, (($userTest->score_reading_writing - 200) / 600) * 100)) }}, 100"
+                                                stroke-linecap="round"></circle>
+                                        </svg>
+                                        <span
+                                            style="position: absolute; font-size: 0.65rem; font-weight: 800; color: #fff; letter-spacing: 0.02em;">R&W</span>
+                                    </div>
+                                    <div>
+                                        <div
+                                            style="font-size: 1.35rem; font-weight: 800; color: #fff; line-height: 1.1;">
+                                            {{ $userTest->score_reading_writing }}</div>
+                                        <div
+                                            style="font-size: 0.725rem; color: #93c5fd; font-weight: 600; text-transform: uppercase; letter-spacing: 0.03em;">
+                                            Reading & Writing</div>
+                                    </div>
+                                </div>
+                            @endif
+
+                            @if ($userTest->score_math !== null)
+                                <div style="display: flex; align-items: center; gap: 0.8rem;">
+                                    <div
+                                        style="position: relative; width: 48px; height: 48px; display: flex; align-items: center; justify-content: center;">
+                                        <svg width="48" height="48" viewBox="0 0 36 36"
+                                            style="transform: rotate(-90deg); filter: drop-shadow(0 2px 4px rgba(0,0,0,0.15));">
+                                            <circle cx="18" cy="18" r="16" fill="none"
+                                                stroke="rgba(255,255,255,0.12)" stroke-width="3"></circle>
+                                            <circle cx="18" cy="18" r="16" fill="none" stroke="#34d399"
+                                                stroke-width="3"
+                                                stroke-dasharray="{{ max(2, min(100, (($userTest->score_math - 200) / 600) * 100)) }}, 100"
+                                                stroke-linecap="round"></circle>
+                                        </svg>
+                                        <span
+                                            style="position: absolute; font-size: 0.65rem; font-weight: 800; color: #fff; letter-spacing: 0.02em;">MATH</span>
+                                    </div>
+                                    <div>
+                                        <div
+                                            style="font-size: 1.35rem; font-weight: 800; color: #fff; line-height: 1.1;">
+                                            {{ $userTest->score_math }}</div>
+                                        <div
+                                            style="font-size: 0.725rem; color: #a7f3d0; font-weight: 600; text-transform: uppercase; letter-spacing: 0.03em;">
+                                            Math</div>
+                                    </div>
+                                </div>
+                            @endif
+                        </div>
+                    @endif
                 </div>
                 <p class="sd-score-disclosure">
-                    @if($userTest->score_estimate_kind === 'adaptive_irt_provisional')
+                    @if ($userTest->score_estimate_kind === 'adaptive_irt_provisional')
                         This is an estimate based on the questions you saw. Your score is likely between
                         {{ $userTest->total_score_lower }} and {{ $userTest->total_score_upper }}.
                     @elseif($userTest->score_estimate_kind === 'normal_generic')
                         This estimate uses all the questions you answered, converted with our standard scoring table.
                     @else
-                        This estimate uses all the questions you answered, converted with the official scoring table for this test.
+                        This estimate uses all the questions you answered, converted with the official scoring table for
+                        this test.
                     @endif
                     Not an official College Board score.
                 </p>
                 <details class="sd-score-explainer">
                     <summary>How is this calculated?</summary>
                     <p>
-                        @if($userTest->score_estimate_kind === 'adaptive_irt_provisional')
-                            This test used an adaptive route, so question difficulty adjusted based on your answers. We use a statistical model (EAP 3PL) to estimate your ability from the questions you actually saw. The scaled score mapping for this route is still provisional, which is why the result is shown as a range.
+                        @if ($userTest->score_estimate_kind === 'adaptive_irt_provisional')
+                            This test used an adaptive route, so question difficulty adjusted based on your answers. We
+                            use a statistical model (EAP 3PL) to estimate your ability from the questions you actually
+                            saw. The scaled score mapping for this route is still provisional, which is why the result
+                            is shown as a range.
                         @elseif($userTest->score_estimate_kind === 'normal_generic')
-                            Your raw score was converted to a 400–1600 scale using our standard conversion table (v{{ $userTest->score_conversion_version }}). A form-specific conversion table, once available, may give a slightly more precise result.
+                            Your raw score was converted to a 400–1600 scale using our standard conversion table
+                            (v{{ $userTest->score_conversion_version }}). A form-specific conversion table, once
+                            available, may give a slightly more precise result.
                         @else
-                            Your raw score was converted to a 400–1600 scale using the official conversion table for this test form (v{{ $userTest->scoreConversionSet?->version ?? 'legacy' }}).
+                            Your raw score was converted to a 400–1600 scale using the official conversion table for
+                            this test form (v{{ $userTest->scoreConversionSet?->version ?? 'legacy' }}).
                         @endif
                     </p>
                 </details>
@@ -70,7 +143,7 @@
                     <span class="sd-hero-score">{{ $correct }}</span>
                     <span class="sd-hero-score-range">/ {{ $totalQ }} correct</span>
                 </div>
-                <p class="mt-2 max-w-2xl text-sm font-semibold text-slate-700">
+                <p class="mt-2 max-w-2xl text-sm text-white">
                     {{ $stats['total']['correct'] }} of {{ $stats['total']['questions'] }} scored questions correct.
                     Practice performance, not a calibrated SAT score.
                     This test type does not produce a full SAT scaled estimate.
@@ -97,7 +170,8 @@
                     </svg>
                     Practice Weak Areas
                 </button>
-                <a class="sd-hero-pill" href="{{ ($isMerged ?? false) ? route('student.scores.merged.export-pdf', [$rwAttempt->ulid, $mathAttempt->ulid]) : route('student.scores.export-pdf', $userTest) }}">
+                <a class="sd-hero-pill"
+                    href="{{ $isMerged ?? false ? route('student.scores.merged.export-pdf', [$rwAttempt->ulid, $mathAttempt->ulid]) : route('student.scores.export-pdf', $userTest) }}">
                     <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor"
                         stroke-width="2.5">
                         <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
@@ -137,47 +211,160 @@
         <p class="sd-section-sub">View your performance across the 8 content domains measured on the SAT.</p>
 
         {{-- ── DOMAIN GROUPS — rendered once, filtered by JS ── --}}
-        @if (! count($stats['sections']['reading_and_writing']['domains']) && ! count($stats['sections']['math']['domains']))
+        @php
+            $rwDomainSummaries = collect($domainSummaries)->where('sectionKey', 'rw');
+            $mathDomainSummaries = collect($domainSummaries)->where('sectionKey', 'math');
+        @endphp
+
+        @if (!count($rwDomainSummaries) && !count($mathDomainSummaries))
             <p class="sd-section-sub">No scored domains available for this attempt.</p>
         @endif
 
-        @if (count($stats['sections']['reading_and_writing']['domains']))
-            <div class="sd-domain-group" data-section="rw">
+        @if ($rwDomainSummaries->isNotEmpty())
+            <div class="sd-domain-group" data-section="rw" style="margin-bottom: 2rem;">
                 <h4 class="sd-domain-section-label !font-bold">Reading and Writing</h4>
                 <div class="sd-domains-grid">
-                    @foreach ($stats['sections']['reading_and_writing']['domains'] as $domain => $data)
+                    @foreach ($rwDomainSummaries as $row)
                         @php
-                            $pct = $data['total'] > 0 ? $data['correct'] / $data['total'] : 0;
+                            $pct = $row['percentCorrect'] / 100;
                             $filled = max(1, round($pct * 7));
-                            $perfLabel = $pct >= 0.8 ? 'High' : ($pct >= 0.5 ? 'Medium' : 'Low');
-                            $barClass = $pct >= 0.8 ? '' : ($pct >= 0.5 ? 'medium' : 'low');
+                            $perfLabel = $row['performance'];
+                            $barClass = $perfLabel === 'High' ? '' : ($perfLabel === 'Medium' ? 'medium' : 'low');
                             $badgeClass = strtolower($perfLabel);
-                            $secPct = $rwTotal > 0 ? round(($data['total'] / $rwTotal) * 100) : 0;
+                            $skills = $row['skills'];
                         @endphp
-                        @include(
-                            'student.scores.partials.domain',
-                            compact('domain', 'data', 'filled', 'barClass', 'badgeClass', 'perfLabel', 'secPct'))
+                        <div class="sd-domain-card">
+                            <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+                                <div>
+                                    <div class="sd-domain-title">{{ $row['domain'] }}</div>
+                                    <div class="sd-domain-sub">({{ $row['coveragePercent'] }}% of test section,
+                                        {{ $row['total'] }} questions)</div>
+                                </div>
+                                <span class="sd-perf-badge {{ $badgeClass }}">
+                                    @if ($perfLabel === 'High')
+                                        <svg width="10" height="10" viewBox="0 0 24 24" fill="none"
+                                            stroke="currentColor" stroke-width="3">
+                                            <polyline points="20 6 9 17 4 12" />
+                                        </svg>
+                                    @elseif($perfLabel === 'Medium')
+                                        <svg width="10" height="10" viewBox="0 0 24 24" fill="none"
+                                            stroke="currentColor" stroke-width="3">
+                                            <line x1="5" y1="12" x2="19" y2="12" />
+                                        </svg>
+                                    @else
+                                        <svg width="10" height="10" viewBox="0 0 24 24" fill="none"
+                                            stroke="currentColor" stroke-width="3">
+                                            <polyline points="23 18 13.5 8.5 8.5 13.5 1 6" />
+                                        </svg>
+                                    @endif
+                                    {{ $perfLabel }}
+                                </span>
+                            </div>
+                            <div class="sd-bars" style="margin-top: 0.5rem; margin-bottom: 0.8rem;">
+                                @for ($i = 1; $i <= 7; $i++)
+                                    <div class="sd-bar {{ $i <= $filled ? 'filled ' . $barClass : 'empty' }}"></div>
+                                @endfor
+                            </div>
+
+                            @if (!empty($skills))
+                                <div class="sd-subskills-list"
+                                    style="margin-top: 0.8rem; border-top: 1px dashed #e2e8f0; padding-top: 0.8rem; display: flex; flex-wrap: wrap; gap: 0.5rem;">
+                                    @foreach ($skills as $skill)
+                                        @php
+                                            $sPct = $skill['percentCorrect'];
+                                            $tagBg = $sPct >= 80 ? '#f0fdf4' : ($sPct >= 50 ? '#f5f3ff' : '#fef2f2');
+                                            $tagBorder =
+                                                $sPct >= 80 ? '#bbf7d0' : ($sPct >= 50 ? '#ddd6fe' : '#fecaca');
+                                            $tagColor = $sPct >= 80 ? '#15803d' : ($sPct >= 50 ? '#6d28d9' : '#b91c1c');
+                                        @endphp
+                                        <div class="sd-subskill-tag"
+                                            style="display: inline-flex; align-items: center; gap: 0.35rem; font-size: 0.775rem; font-weight: 700; padding: 0.25rem 0.6rem; border-radius: 6px; background: {{ $tagBg }}; border: 1px solid {{ $tagBorder }}; color: {{ $tagColor }};">
+                                            <span>{{ $skill['name'] }}</span>
+                                            <span style="opacity: 0.6;">·</span>
+                                            <span
+                                                style="font-weight: 800;">{{ $skill['correct'] }}/{{ $skill['total'] }}
+                                                ({{ $sPct }}%)
+                                            </span>
+                                        </div>
+                                    @endforeach
+                                </div>
+                            @endif
+                        </div>
                     @endforeach
                 </div>
             </div>
         @endif
 
-        @if (count($stats['sections']['math']['domains']))
-            <div class="sd-domain-group" data-section="math">
+        @if ($mathDomainSummaries->isNotEmpty())
+            <div class="sd-domain-group" data-section="math" style="margin-bottom: 2rem;">
                 <h4 class="sd-domain-section-label !font-bold">Math</h4>
                 <div class="sd-domains-grid">
-                    @foreach ($stats['sections']['math']['domains'] as $domain => $data)
+                    @foreach ($mathDomainSummaries as $row)
                         @php
-                            $pct = $data['total'] > 0 ? $data['correct'] / $data['total'] : 0;
+                            $pct = $row['percentCorrect'] / 100;
                             $filled = max(1, round($pct * 7));
-                            $perfLabel = $pct >= 0.8 ? 'High' : ($pct >= 0.5 ? 'Medium' : 'Low');
-                            $barClass = $pct >= 0.8 ? '' : ($pct >= 0.5 ? 'medium' : 'low');
+                            $perfLabel = $row['performance'];
+                            $barClass = $perfLabel === 'High' ? '' : ($perfLabel === 'Medium' ? 'medium' : 'low');
                             $badgeClass = strtolower($perfLabel);
-                            $secPct = $mTotal > 0 ? round(($data['total'] / $mTotal) * 100) : 0;
+                            $skills = $row['skills'];
                         @endphp
-                        @include(
-                            'student.scores.partials.domain',
-                            compact('domain', 'data', 'filled', 'barClass', 'badgeClass', 'perfLabel', 'secPct'))
+                        <div class="sd-domain-card">
+                            <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+                                <div>
+                                    <div class="sd-domain-title">{{ $row['domain'] }}</div>
+                                    <div class="sd-domain-sub">({{ $row['coveragePercent'] }}% of test section,
+                                        {{ $row['total'] }} questions)</div>
+                                </div>
+                                <span class="sd-perf-badge {{ $badgeClass }}">
+                                    @if ($perfLabel === 'High')
+                                        <svg width="10" height="10" viewBox="0 0 24 24" fill="none"
+                                            stroke="currentColor" stroke-width="3">
+                                            <polyline points="20 6 9 17 4 12" />
+                                        </svg>
+                                    @elseif($perfLabel === 'Medium')
+                                        <svg width="10" height="10" viewBox="0 0 24 24" fill="none"
+                                            stroke="currentColor" stroke-width="3">
+                                            <line x1="5" y1="12" x2="19" y2="12" />
+                                        </svg>
+                                    @else
+                                        <svg width="10" height="10" viewBox="0 0 24 24" fill="none"
+                                            stroke="currentColor" stroke-width="3">
+                                            <polyline points="23 18 13.5 8.5 8.5 13.5 1 6" />
+                                        </svg>
+                                    @endif
+                                    {{ $perfLabel }}
+                                </span>
+                            </div>
+                            <div class="sd-bars" style="margin-top: 0.5rem; margin-bottom: 0.8rem;">
+                                @for ($i = 1; $i <= 7; $i++)
+                                    <div class="sd-bar {{ $i <= $filled ? 'filled ' . $barClass : 'empty' }}"></div>
+                                @endfor
+                            </div>
+
+                            @if (!empty($skills))
+                                <div class="sd-subskills-list"
+                                    style="margin-top: 0.8rem; border-top: 1px dashed #e2e8f0; padding-top: 0.8rem; display: flex; flex-wrap: wrap; gap: 0.5rem;">
+                                    @foreach ($skills as $skill)
+                                        @php
+                                            $sPct = $skill['percentCorrect'];
+                                            $tagBg = $sPct >= 80 ? '#f0fdf4' : ($sPct >= 50 ? '#f5f3ff' : '#fef2f2');
+                                            $tagBorder =
+                                                $sPct >= 80 ? '#bbf7d0' : ($sPct >= 50 ? '#ddd6fe' : '#fecaca');
+                                            $tagColor = $sPct >= 80 ? '#15803d' : ($sPct >= 50 ? '#6d28d9' : '#b91c1c');
+                                        @endphp
+                                        <div class="sd-subskill-tag"
+                                            style="display: inline-flex; align-items: center; gap: 0.35rem; font-size: 0.775rem; font-weight: 700; padding: 0.25rem 0.6rem; border-radius: 6px; background: {{ $tagBg }}; border: 1px solid {{ $tagBorder }}; color: {{ $tagColor }};">
+                                            <span>{{ $skill['name'] }}</span>
+                                            <span style="opacity: 0.6;">·</span>
+                                            <span
+                                                style="font-weight: 800;">{{ $skill['correct'] }}/{{ $skill['total'] }}
+                                                ({{ $sPct }}%)
+                                            </span>
+                                        </div>
+                                    @endforeach
+                                </div>
+                            @endif
+                        </div>
                     @endforeach
                 </div>
             </div>
@@ -188,6 +375,114 @@
         {{-- ── QUESTION REVIEW ── --}}
         <h2 class="text-3xl font-bold">Question Review</h2>
         <p class="sd-section-sub">Detailed results for every question from this practice test.</p>
+
+        {{-- Attempt Diagnostic Timeline Grid --}}
+        <div class="sd-timeline-section" style="margin-top: 1.5rem; margin-bottom: 2.25rem;">
+            <h3 style="font-size: 1.25rem; font-weight: 700; color: #0f172a; margin-bottom: 0.4rem;">Attempt Diagnostic
+                Timeline</h3>
+            <p style="font-size: 0.875rem; color: #64748b; margin-bottom: 1.25rem;">Click any question node below to
+                open its review details instantly. Pacing indicator lines are shown underneath each circle.</p>
+
+            <div class="sd-timeline-container" style="display: flex; flex-direction: column; gap: 1.25rem;">
+                @foreach (['rw' => 'Reading & Writing', 'math' => 'Math'] as $secType => $secLabel)
+                    @php
+                        $modules = collect($allAnswers)->where('sectionType', $secType)->groupBy('moduleNumber');
+                    @endphp
+                    @if ($modules->isNotEmpty())
+                        <div class="sd-timeline-section-row" data-timeline-section="{{ $secType }}"
+                            style="background: #f8fafc; border: 1.5px solid #e2e8f0; border-radius: 12px; padding: 1.25rem; box-shadow: inset 0 1px 2px rgba(0,0,0,0.015);">
+                            <div
+                                style="font-weight: 800; font-size: 0.85rem; color: #475569; margin-bottom: 1rem; text-transform: uppercase; letter-spacing: 0.08em; display: flex; align-items: center; gap: 0.5rem;">
+                                <span
+                                    style="display: inline-block; width: 6px; height: 6px; border-radius: 50%; background-color: {{ $secType === 'rw' ? '#3b82f6' : '#10b981' }};"></span>
+                                {{ $secLabel }}
+                            </div>
+                            <div style="display: flex; flex-direction: column; gap: 1.25rem;">
+                                @foreach ($modules as $modNum => $modAnswers)
+                                    <div style="display: flex; align-items: center; gap: 1rem; flex-wrap: wrap;">
+                                        <div
+                                            style="font-weight: 700; font-size: 0.85rem; color: #64748b; min-width: 85px; text-transform: uppercase; letter-spacing: 0.02em;">
+                                            Module {{ $modNum }}:
+                                        </div>
+                                        <div style="display: flex; align-items: center; gap: 0.6rem; flex-wrap: wrap;">
+                                            @foreach ($modAnswers as $row)
+                                                @php
+                                                    $isCorrect = $row['statusKey'] === 'correct';
+                                                    $isOmitted = $row['statusKey'] === 'omitted';
+
+                                                    // Node Color styling
+                                                    $nodeBg = $isCorrect
+                                                        ? '#d1fae5'
+                                                        : ($isOmitted
+                                                            ? '#f1f5f9'
+                                                            : '#fee2e2');
+                                                    $nodeColor = $isCorrect
+                                                        ? '#065f46'
+                                                        : ($isOmitted
+                                                            ? '#64748b'
+                                                            : '#991b1b');
+                                                    $nodeBorder = $isCorrect
+                                                        ? '#a7f3d0'
+                                                        : ($isOmitted
+                                                            ? '#cbd5e1'
+                                                            : '#fca5a5');
+
+                                                    // Pacing line styling
+                                                    $time = $row['timeSpent'];
+                                                    $expected = $row['expectedTime'] ?? 0;
+
+                                                    if ($time > 90) {
+                                                        $paceColor = '#ef4444'; // Red (Stuck / Slow)
+                                                        $paceLabel = 'Stuck (>90s)';
+                                                    } elseif ($time < 15 && $isCorrect) {
+                                                        $paceColor = '#f59e0b'; // Amber (Rushed)
+                                                        $paceLabel = 'Rushed (<15s)';
+                                                    } else {
+                                                        $paceColor = '#3b82f6'; // Blue (Optimal)
+                                                        $paceLabel = 'Optimal';
+                                                    }
+                                                @endphp
+                                                <div class="sd-timeline-node-wrapper"
+                                                    style="display: flex; flex-direction: column; align-items: center; gap: 0.25rem;">
+                                                    <button class="js-review-btn"
+                                                        data-question="{{ json_encode($row['questionData']) }}"
+                                                        title="Question {{ $row['idx'] }} · {{ ucfirst($row['statusKey']) }} · Spent {{ $time }}s ({{ $paceLabel }})"
+                                                        style="width: 28px; height: 28px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 0.75rem; font-weight: 800; background: {{ $nodeBg }}; color: {{ $nodeColor }}; border: 1.5px solid {{ $nodeBorder }}; cursor: pointer; transition: all 0.15s ease-in-out; box-shadow: 0 1px 2px rgba(0,0,0,0.05);"
+                                                        onmouseover="this.style.transform='scale(1.15)'; this.style.boxShadow='0 4px 10px rgba(0,0,0,0.1)';"
+                                                        onmouseout="this.style.transform='scale(1)'; this.style.boxShadow='0 1px 2px rgba(0,0,0,0.05)';"
+                                                        type="button">
+                                                        {{ $row['idx'] }}
+                                                    </button>
+                                                    <div style="width: 14px; height: 3px; border-radius: 99px; background: {{ $paceColor }};"
+                                                        title="{{ $paceLabel }}"></div>
+                                                </div>
+                                            @endforeach
+                                        </div>
+                                    </div>
+                                @endforeach
+                            </div>
+                        </div>
+                    @endif
+                @endforeach
+            </div>
+
+            {{-- Pacing Legend indicator bar --}}
+            <div
+                style="display: flex; align-items: center; gap: 1.25rem; margin-top: 0.8rem; font-size: 0.75rem; color: #64748b; font-weight: 600; padding-left: 0.5rem;">
+                <div style="display: flex; align-items: center; gap: 0.35rem;">
+                    <div style="width: 10px; height: 3px; background: #3b82f6; border-radius: 99px;"></div>
+                    <span>Optimal Pace</span>
+                </div>
+                <div style="display: flex; align-items: center; gap: 0.35rem;">
+                    <div style="width: 10px; height: 3px; background: #f59e0b; border-radius: 99px;"></div>
+                    <span>Rushed (<15s)< /span>
+                </div>
+                <div style="display: flex; align-items: center; gap: 0.35rem;">
+                    <div style="width: 10px; height: 3px; background: #ef4444; border-radius: 99px;"></div>
+                    <span>Stuck / Slow (>90s)</span>
+                </div>
+            </div>
+        </div>
 
         {{-- Stats — values updated by JS on tab switch --}}
         <div class="sd-stat-row">

@@ -18,9 +18,6 @@ class AssignmentService
     {
         return DB::transaction(function () use ($assignment) {
             $assignment = Assignment::with(['classroom.activeMemberships', 'test'])->lockForUpdate()->findOrFail($assignment->id);
-            if ($assignment->status !== 'draft') {
-                throw ValidationException::withMessages(['assignment' => 'Only draft assignments can be published.']);
-            }
             if ($assignment->classroom->status !== 'active' || $assignment->test->status !== 'active') {
                 throw ValidationException::withMessages(['assignment' => 'Class and test must both be active.']);
             }

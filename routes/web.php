@@ -24,7 +24,6 @@ Route::get('/landing-new', function () {
 Route::get('/media/{filename}', [MediaController::class, 'show'])
     ->where('filename', '[A-Za-z0-9]{20}\.(?:jpe?g|png|gif|webp|svg)')
     ->name('media.show');
-Route::redirect('/home', '/student/progress');
 
 // Guest auth routes
 Route::middleware('guest')->group(function () {
@@ -58,11 +57,21 @@ Route::middleware('auth')->group(function () {
 Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/profile', [\App\Http\Controllers\ProfileController::class, 'show'])->name('profile');
     Route::post('/profile', [\App\Http\Controllers\ProfileController::class, 'update'])->name('profile.update');
+    Route::put('/profile/sharing', [\App\Http\Controllers\ProfileController::class, 'updateSharing'])->name('profile.sharing.update');
 });
 
 Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/class-documents/{document}/open', [\App\Http\Controllers\ClassroomDocumentAccessController::class, 'open'])->name('class-documents.open');
     Route::get('/class-documents/{document}/download', [\App\Http\Controllers\ClassroomDocumentAccessController::class, 'download'])->name('class-documents.download');
+
+    Route::get('/home', \App\Http\Controllers\Student\AnalyticsController::class)->name('home');
+
+    Route::get('/blog', [\App\Http\Controllers\BlogController::class, 'index'])->name('blog.index');
+    Route::get('/blog/{blogPost:ulid}', [\App\Http\Controllers\BlogController::class, 'show'])->name('blog.show');
+    Route::get('/forum', [\App\Http\Controllers\ForumController::class, 'index'])->name('forum.index');
+    Route::get('/forum/{forumThread:ulid}', [\App\Http\Controllers\ForumController::class, 'show'])->name('forum.show');
+    Route::post('/forum', [\App\Http\Controllers\ForumController::class, 'store'])->middleware('throttle:10,1')->name('forum.store');
+    Route::post('/forum/{forumThread:ulid}/replies', [\App\Http\Controllers\ForumController::class, 'storeReply'])->middleware('throttle:15,1')->name('forum.replies.store');
 });
 
 Route::middleware(['auth', 'verified'])->get('/dashboard', function () {
@@ -77,8 +86,7 @@ Route::middleware(['auth', 'verified'])->get('/dashboard', function () {
 // Verified Student routes
 Route::middleware(['auth', 'verified'])->prefix('student')->group(function () {
     Route::get('/dashboard', \App\Http\Controllers\Student\DashboardController::class)->name('home.legacy');
-    Route::get('/progress', \App\Http\Controllers\Student\AnalyticsController::class)->name('home');
-    Route::get('/progress-detail', \App\Http\Controllers\Student\AnalyticsController::class)->name('home.progress');
+    Route::get('/progress-analytics', \App\Http\Controllers\Student\ProgressController::class)->name('student.progress');
 
     Route::get('/practice', [\App\Http\Controllers\Student\PracticeController::class, 'index'])->name('home.practice');
     Route::get('/practice/preview', [\App\Http\Controllers\Student\PracticeController::class, 'preview'])->name('test.preview');
@@ -126,6 +134,7 @@ Route::middleware(['auth', 'verified', 'role:admin,teacher'])->prefix('teacher')
         Route::post('/classes/{classroom}/documents', [\App\Http\Controllers\Teacher\ClassroomDocumentController::class, 'store'])->name('classes.documents.store');
         Route::delete('/classes/{classroom}/documents/{document}', [\App\Http\Controllers\Teacher\ClassroomDocumentController::class, 'destroy'])->name('classes.documents.destroy');
         Route::put('/classes/{classroom}/note', [\App\Http\Controllers\Teacher\ClassroomController::class, 'noteUpdate'])->name('classes.note.update');
+        Route::get('/classes/{classroom}/students/{student}/progress', \App\Http\Controllers\Teacher\StudentProgressController::class)->name('classes.students.progress');
         Route::post('/memberships/{membership}/approve', [\App\Http\Controllers\Teacher\MembershipController::class, 'approve'])->name('memberships.approve');
         Route::post('/memberships/{membership}/reject', [\App\Http\Controllers\Teacher\MembershipController::class, 'reject'])->name('memberships.reject');
         Route::post('/memberships/{membership}/remove', [\App\Http\Controllers\Teacher\MembershipController::class, 'remove'])->name('memberships.remove');
@@ -222,4 +231,8 @@ Route::middleware(['auth', 'verified', 'role:admin,teacher', 'teacher.approved']
 
 if (app()->environment('local')) {
     Route::get('/dev/ui-kit', fn () => view('dev.ui-kit'))->name('dev.ui-kit');
+    Route::get('/dev/login-student3', function() {
+        auth()->login(\App\Models\User::where('email', 'student3@gmail.com')->first());
+        return redirect()->route('student.progress');
+    });
 }

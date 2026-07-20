@@ -24,7 +24,7 @@
 
     <div class="app-shell" x-data="{
         searchQuery: '',
-        statusFilter: 'active',
+        statusFilter: 'all',
         newClassOpen: false,
         activeTab: new URLSearchParams(location.search).get('assign_page') ? 'assign'
             : new URLSearchParams(location.search).get('docs_page') ? 'docs'
@@ -51,8 +51,8 @@
             ],
             [
                 'route' => route('home.practice'),
-                'label' => 'Practice',
-                'icon' => '<svg viewBox=\'0 0 24 24\' fill=\'none\' stroke=\'currentColor\' stroke-width=\'1.8\'><path d=\'M4 19.5A2.5 2.5 0 0 1 6.5 17H20V4H6.5A2.5 2.5 0 0 0 4 6.5v13Z\' stroke-linejoin=\'round\' /><path d=\'M4 17h16\' /></svg>',
+                'label' => 'Test Library',
+                'icon' => '<svg viewBox=\'0 0 24 24\' fill=\'none\' stroke=\'currentColor\' stroke-width=\'1.8\'><path d=\'M12 6.5c-1.6-1.2-3.7-1.8-6-1.8-.7 0-1.4.05-2 .15v13.5c.6-.1 1.3-.15 2-.15 2.3 0 4.4.6 6 1.8m0-13.5c1.6-1.2 3.7-1.8 6-1.8.7 0 1.4.05 2 .15v13.5c-.6-.1-1.3-.15-2-.15-2.3 0-4.4.6-6 1.8m0-13.5v13.5\' stroke-linecap=\'round\' stroke-linejoin=\'round\' /></svg>',
             ],
             [
                 'route' => route('home-dashboard.index'),
@@ -62,10 +62,15 @@
             ],
         ]" />
 
-        <!-- COLUMN 2: CLASS LIST COLUMN (folder tabs) -->
         <x-shell.sidebar-list title="{{ __('classroom.my_classes') }}"
             count-text="{{ $activeClassroomsCount }} active · {{ $archivedClassroomsCount }} archived"
-            search-placeholder="{{ __('classroom.search_placeholder') }}" :items="$classrooms
+            search-placeholder="{{ __('classroom.search_placeholder') }}"
+            :filters="[
+                ['value' => 'all', 'label' => 'All'],
+                ['value' => 'active', 'label' => 'Active'],
+                ['value' => 'archived', 'label' => 'Archived'],
+            ]"
+            :items="$classrooms
                 ->map(
                     fn($c) => [
                         'route' => route('teacher.classes.show', $c),
@@ -211,6 +216,7 @@
                             <tr>
                                 <th>Student</th>
                                 <th>Joined</th>
+                                <th></th>
                                 @if ($classroom->status === 'active')
                                     <th class="text-right">Actions</th>
                                 @endif
@@ -231,6 +237,9 @@
                                     </td>
                                     <td>{{ $membership->decided_at?->format('d/m/Y') ?? $membership->created_at->format('d/m/Y') }}
                                     </td>
+                                    <td>
+                                        <a href="{{ route('teacher.classes.students.progress', [$classroom, $membership->student]) }}" class="link-action">View progress</a>
+                                    </td>
                                     @if ($classroom->status === 'active')
                                         <td class="text-right">
                                             <form method="POST"
@@ -245,7 +254,7 @@
                                 </tr>
                             @empty
                                 <tr>
-                                    <td colspan="{{ $classroom->status === 'active' ? 3 : 2 }}" class="empty-row">
+                                    <td colspan="{{ $classroom->status === 'active' ? 4 : 3 }}" class="empty-row">
                                         No active students. Share code <strong>{{ $classroom->join_code }}</strong>.
                                     </td>
                                 </tr>

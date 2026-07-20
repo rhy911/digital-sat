@@ -13,11 +13,11 @@ use App\Models\UserTestAnswer;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
-class StudentAnalyticsDashboardTest extends TestCase
+class StudentProgressPageTest extends TestCase
 {
     use RefreshDatabase;
 
-    public function test_progress_dashboard_shows_weak_area_difficulty_and_pacing_charts(): void
+    public function test_progress_page_shows_weak_area_difficulty_and_pacing_charts(): void
     {
         $student = User::factory()->student()->create();
 
@@ -82,24 +82,35 @@ class StudentAnalyticsDashboardTest extends TestCase
         ]);
 
         $this->actingAs($student)
-            ->get(route('home'))
+            ->get(route('student.progress'))
             ->assertOk()
             ->assertSee('Weak areas by domain')
             ->assertSee('Difficulty breakdown')
             ->assertSee('Pacing')
             ->assertSee('Algebra')
             ->assertSee('Easy');
+
+        // Regression guard: the dashboard no longer renders this content.
+        $this->actingAs($student)
+            ->get(route('home'))
+            ->assertOk()
+            ->assertDontSee('Weak areas by domain');
     }
 
-    public function test_progress_dashboard_shows_empty_states_with_no_completed_tests(): void
+    public function test_progress_page_shows_empty_states_with_no_completed_tests(): void
     {
         $student = User::factory()->student()->create();
 
         $this->actingAs($student)
-            ->get(route('home'))
+            ->get(route('student.progress'))
             ->assertOk()
             ->assertSee('No domain data yet')
             ->assertSee('No difficulty data yet')
             ->assertSee('No pacing data yet');
+
+        $this->actingAs($student)
+            ->get(route('home'))
+            ->assertOk()
+            ->assertDontSee('No domain data yet');
     }
 }

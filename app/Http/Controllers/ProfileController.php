@@ -33,4 +33,13 @@ class ProfileController extends Controller
 
         return redirect()->back()->with('success', 'Profile updated successfully.');
     }
+
+    public function updateSharing(Request $request)
+    {
+        $request->user()->update([
+            'share_independent_practice' => $request->boolean('share_independent_practice'),
+        ]);
+
+        return redirect()->back()->with('success', 'Privacy preference saved.');
+    }
 }

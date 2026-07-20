@@ -101,4 +101,31 @@ class UserTest extends Model
     {
         return $this->hasMany(UserTestScoreRevision::class);
     }
+
+    /**
+     * Scope to attempts a given teacher is allowed to see: assignment-linked
+     * attempts in a classroom they own/co-teach, or (if the student opted in)
+     * independent practice attempts, still gated by an active shared classroom.
+     * Mirrors the assignment-linked condition already enforced in UserTestPolicy::view.
+     */
+    public function scopeVisibleToTeacher($query, User $teacher)
+    {
+        return $query->where(function ($outer) use ($teacher) {
+            $outer->where(function ($assignmentLinked) use ($teacher) {
+                $assignmentLinked->whereNotNull('assignment_id')
+                    ->whereHas('assignment.classroom', fn ($classroom) => $classroom
+                        ->where('owner_id', $teacher->id)
+                        ->orWhereHas('coTeachers', fn ($teachers) => $teachers->whereKey($teacher->id)));
+            })->orWhere(function ($sharedIndependent) use ($teacher) {
+                $sharedIndependent->whereNull('assignment_id')
+                    ->whereHas('user', fn ($student) => $student
+                        ->where('share_independent_practice', true)
+                        ->whereHas('classroomMemberships', fn ($membership) => $membership
+                            ->where('status', 'active')
+                            ->whereHas('classroom', fn ($classroom) => $classroom
+                                ->where('owner_id', $teacher->id)
+                                ->orWhereHas('coTeachers', fn ($teachers) => $teachers->whereKey($teacher->id)))));
+            });
+        });
+    }
 }

@@ -35,6 +35,7 @@ class User extends Authenticatable implements MustVerifyEmail
         'teacher_reviewed_by',
         'teacher_reviewed_at',
         'teacher_rejection_reason',
+        'share_independent_practice',
     ];
 
     /**
@@ -60,6 +61,7 @@ class User extends Authenticatable implements MustVerifyEmail
             'password' => 'hashed',
             'is_2FA_enabled' => 'boolean',
             'is_active' => 'boolean',
+            'share_independent_practice' => 'boolean',
             'two_factor_expired_at' => 'datetime',
             'teacher_reviewed_at' => 'datetime',
         ];

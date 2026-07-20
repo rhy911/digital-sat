@@ -20,6 +20,7 @@ class DatabaseSeeder extends Seeder
             $this->call([
                 DigitalSatMockSeeder::class,
                 UserTestSeeder::class,
+                BlogForumSeeder::class,
             ]);
         }
     }

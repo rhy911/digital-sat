@@ -17,12 +17,33 @@ use Illuminate\Validation\ValidationException;
 
 class AssignmentController extends Controller
 {
+    private function getTeacherAssignmentsQuery(User $user)
+    {
+        return Assignment::query()
+            ->whereHas('classroom', function ($query) use ($user) {
+                $query->when($user->role !== 'admin', fn ($q) => $q->where(fn ($scope) => $scope
+                    ->where('owner_id', $user->id)
+                    ->orWhereHas('coTeachers', fn ($teachers) => $teachers->whereKey($user->id))));
+            });
+    }
+
     public function index()
     {
         session(['teacher_workspace.section' => 'assignments']);
         session(['teacher_home.tab' => 'reports']);
 
-        return redirect()->route('home');
+        $user = auth()->user();
+        $assignment = $this->getTeacherAssignmentsQuery($user)->latest('updated_at')->first();
+
+        if ($assignment) {
+            return redirect()->route('teacher.assignments.show', $assignment);
+        }
+
+        $assignments = collect();
+        $report = null;
+        $origin = 'workspace';
+
+        return view('teacher.assignments.show', compact('assignment', 'assignments', 'report', 'origin'));
     }
 
     public function store(StoreAssignmentRequest $request, Classroom $classroom, AssignmentService $service)
@@ -53,9 +74,20 @@ class AssignmentController extends Controller
     public function show(Assignment $assignment, AssignmentReportService $reports)
     {
         $this->authorize('view', $assignment);
+
+        session(['teacher_workspace.section' => 'assignments']);
+        session(['teacher_home.tab' => 'reports']);
+
+        $user = auth()->user();
+        $assignments = $this->getTeacherAssignmentsQuery($user)
+            ->with(['classroom', 'test'])
+            ->withCount('attempts')
+            ->latest('updated_at')
+            ->get();
+
         $report = $reports->build($assignment);
         $origin = request('from') === 'workspace' ? 'workspace' : 'class';
-        return view('teacher.assignments.show', compact('assignment', 'report', 'origin'));
+        return view('teacher.assignments.show', compact('assignment', 'assignments', 'report', 'origin'));
     }
 
     public function exportCsv(Assignment $assignment, AssignmentReportService $reports)
@@ -152,8 +184,15 @@ class AssignmentController extends Controller
         $prevStudentId = $currentIndex !== false && $currentIndex > 0 ? $orderedStudentIds[$currentIndex - 1] : null;
         $nextStudentId = $currentIndex !== false && $currentIndex < $orderedStudentIds->count() - 1 ? $orderedStudentIds[$currentIndex + 1] : null;
 
+        $user = auth()->user();
+        $assignments = $this->getTeacherAssignmentsQuery($user)
+            ->with(['classroom', 'test'])
+            ->withCount('attempts')
+            ->latest('updated_at')
+            ->get();
+
         return view('teacher.assignments.student-attempt', compact(
-            'assignment', 'row', 'initialAttempt', 'attemptModalId', 'student', 'prevStudentId', 'nextStudentId'
+            'assignment', 'assignments', 'row', 'initialAttempt', 'attemptModalId', 'student', 'prevStudentId', 'nextStudentId'
         ));
     }
 

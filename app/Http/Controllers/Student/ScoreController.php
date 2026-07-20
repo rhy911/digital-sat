@@ -95,10 +95,15 @@ class ScoreController extends Controller
 
             $section = $q->section_type === 'math' ? 'math' : 'reading_and_writing';
             $domain  = $q->skill_domain ?? 'Other';
+            $subdomain = $q->skill_subdomain ?? 'Other';
             $difficulty = strtolower($q->difficulty ?? 'unknown');
 
             if (!isset($stats['sections'][$section]['domains'][$domain])) {
-                $stats['sections'][$section]['domains'][$domain] = ['total' => 0, 'correct' => 0];
+                $stats['sections'][$section]['domains'][$domain] = ['total' => 0, 'correct' => 0, 'skills' => []];
+            }
+
+            if (!isset($stats['sections'][$section]['domains'][$domain]['skills'][$subdomain])) {
+                $stats['sections'][$section]['domains'][$domain]['skills'][$subdomain] = ['total' => 0, 'correct' => 0];
             }
 
             if (!isset($stats['difficulty'][$difficulty])) {
@@ -108,6 +113,7 @@ class ScoreController extends Controller
             $stats['total']['questions']++;
             $stats['sections'][$section]['total']++;
             $stats['sections'][$section]['domains'][$domain]['total']++;
+            $stats['sections'][$section]['domains'][$domain]['skills'][$subdomain]['total']++;
             $stats['difficulty'][$difficulty]['total']++;
 
             if ($answer->selected_answer === null || $answer->selected_answer === '') {
@@ -116,6 +122,7 @@ class ScoreController extends Controller
                 $stats['total']['correct']++;
                 $stats['sections'][$section]['correct']++;
                 $stats['sections'][$section]['domains'][$domain]['correct']++;
+                $stats['sections'][$section]['domains'][$domain]['skills'][$subdomain]['correct']++;
                 $stats['difficulty'][$difficulty]['correct']++;
             } else {
                 $stats['total']['incorrect']++;
@@ -244,14 +251,30 @@ class ScoreController extends Controller
                 $percentCorrect = $data['total'] > 0 ? (int) round(($data['correct'] / $data['total']) * 100) : 0;
                 $coveragePercent = $sectionTotal > 0 ? (int) round(($data['total'] / $sectionTotal) * 100) : 0;
 
+                $skillsList = [];
+                if (isset($data['skills'])) {
+                    foreach ($data['skills'] as $subdomain => $sData) {
+                        $sPct = $sData['total'] > 0 ? (int) round(($sData['correct'] / $sData['total']) * 100) : 0;
+                        $skillsList[] = [
+                            'name' => Str::of($subdomain)->replace('_', ' ')->title()->toString(),
+                            'total' => $sData['total'],
+                            'correct' => $sData['correct'],
+                            'percentCorrect' => $sPct,
+                        ];
+                    }
+                    usort($skillsList, fn ($a, $b) => $a['percentCorrect'] <=> $b['percentCorrect']);
+                }
+
                 $rows[] = [
                     'section' => $sectionLabel,
+                    'sectionKey' => $sectionKey === 'math' ? 'math' : 'rw',
                     'domain' => $this->domainLabel($domain),
                     'correct' => $data['correct'],
                     'total' => $data['total'],
                     'percentCorrect' => $percentCorrect,
                     'coveragePercent' => $coveragePercent,
                     'performance' => $percentCorrect >= 80 ? 'High' : ($percentCorrect >= 50 ? 'Medium' : 'Low'),
+                    'skills' => $skillsList,
                 ];
             }
         }

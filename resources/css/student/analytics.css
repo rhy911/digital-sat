@@ -261,165 +261,7 @@
     padding: 1.25rem;
 }
 
-.ds-command-grid {
-    display: grid;
-    grid-template-columns: minmax(0, 1.05fr) minmax(20rem, 0.95fr);
-    grid-template-areas:
-        "next score"
-        "split stats";
-    gap: 1.25rem;
-}
 
-.ds-command-grid .ds-next-card {
-    grid-area: next;
-}
-
-.ds-command-grid .ds-hero-score {
-    grid-area: score;
-}
-
-.ds-command-grid > article[aria-labelledby="section-split-title"] {
-    grid-area: split;
-}
-
-.ds-command-grid > article[aria-labelledby="summary-title"] {
-    grid-area: stats;
-}
-
-.ds-hero-score {
-    display: grid;
-    grid-template-columns: minmax(0, 1fr) auto;
-    align-items: center;
-    gap: 1.25rem;
-    border-color: oklch(44% 0.12 258);
-    background: linear-gradient(
-        135deg,
-        oklch(28% 0.1 258) 0%,
-        oklch(24% 0.075 245) 58%,
-        oklch(29% 0.085 205) 100%
-    );
-    color: var(--ds-surface);
-}
-
-.ds-card.ds-hero-score .ds-card-label,
-.ds-card.ds-hero-score h2,
-.ds-card.ds-hero-score p {
-    color: var(--ds-surface);
-}
-
-.ds-hero-score h2 {
-    margin: 0;
-    font-size: 2rem;
-    line-height: 1;
-    font-weight: 850;
-    letter-spacing: -0.02em;
-}
-
-.ds-card.ds-hero-score p {
-    max-width: 23rem;
-    margin: 0.75rem 0 0;
-    color: oklch(91% 0.025 255);
-    line-height: 1.55;
-}
-
-.ds-hero-score--empty {
-    border-color: var(--ds-primary-line);
-    background: linear-gradient(
-        135deg,
-        var(--ds-surface) 0%,
-        var(--ds-primary-soft) 100%
-    );
-    color: var(--ds-ink);
-}
-
-.ds-card.ds-hero-score.ds-hero-score--empty .ds-card-label {
-    color: var(--ds-primary);
-}
-
-.ds-card.ds-hero-score.ds-hero-score--empty h2 {
-    color: var(--ds-ink-strong);
-}
-
-.ds-card.ds-hero-score.ds-hero-score--empty p {
-    color: var(--ds-muted-strong);
-}
-
-.ds-score-change {
-    min-height: 1.85rem;
-    display: inline-flex;
-    align-items: center;
-    border-radius: 999px;
-    margin-top: 1rem;
-    padding: 0 0.7rem;
-    font-size: 0.82rem;
-    font-weight: 800;
-}
-
-.ds-score-change.is-positive {
-    background: oklch(82% 0.085 183 / 0.18);
-    color: oklch(92% 0.08 183);
-}
-
-.ds-score-change.is-negative {
-    background: oklch(74% 0.12 24 / 0.16);
-    color: oklch(91% 0.07 24);
-}
-
-.ds-score-change.is-pending {
-    background: var(--ds-primary-soft);
-    color: var(--ds-primary);
-}
-
-.ds-score-ring,
-.ds-score-placeholder {
-    width: 5.75rem;
-    height: 5.75rem;
-    display: grid;
-    place-items: center;
-    border-radius: 999px;
-}
-
-.ds-score-visual {
-    display: grid;
-    justify-items: center;
-    gap: 0.45rem;
-}
-
-.ds-score-ring {
-    --score-progress: 0%;
-    background:
-        radial-gradient(
-            circle at center,
-            oklch(25% 0.08 255) 58%,
-            transparent 59%
-        ),
-        conic-gradient(
-            var(--ds-progress) var(--score-progress),
-            oklch(100% 0 0 / 0.14) 0
-        );
-}
-
-.ds-score-placeholder {
-    border: 1px dashed var(--ds-primary-line);
-    background: var(--ds-surface);
-}
-
-.ds-score-ring span,
-.ds-score-placeholder span {
-    color: var(--ds-surface);
-    font-size: 1.25rem;
-    font-weight: 850;
-}
-
-.ds-hero-score--empty .ds-score-placeholder span {
-    color: var(--ds-primary);
-}
-
-.ds-score-range {
-    color: oklch(86% 0.025 255);
-    font-size: 0.78rem;
-    font-weight: 750;
-}
 
 .ds-next-card {
     background: var(--ds-surface);
@@ -482,236 +324,11 @@
     font-weight: 800;
 }
 
-.ds-section-score,
 .ds-attempt-row {
     display: flex;
     align-items: center;
     justify-content: space-between;
     gap: 1rem;
-}
-
-.ds-section-card {
-    display: flex;
-    flex-direction: column;
-}
-
-.ds-section-overview {
-    display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 0.75rem;
-}
-
-.ds-section-metric {
-    display: grid;
-    gap: 0.35rem;
-    border: 1px solid var(--ds-border);
-    border-radius: 0.65rem;
-    background: var(--ds-surface-raised);
-    padding: 0.8rem;
-}
-
-.ds-section-metric span {
-    color: var(--ds-muted-strong);
-    font-size: 0.82rem;
-    font-weight: 750;
-}
-
-.ds-section-metric strong {
-    color: var(--ds-ink-strong);
-    font-size: 1.45rem;
-    line-height: 1;
-    font-weight: 850;
-}
-
-.ds-section-metric small,
-.ds-section-metric em {
-    color: var(--ds-muted);
-    font-size: 0.78rem;
-    font-style: normal;
-    font-weight: 650;
-}
-
-.ds-domain-breakdown {
-    display: grid;
-    gap: 0.65rem;
-    margin-top: 0.9rem;
-}
-
-.ds-domain-section,
-.ds-domain-row {
-    border: 1px solid var(--ds-border);
-    border-radius: 0.65rem;
-    background: var(--ds-surface);
-}
-
-.ds-domain-section[open] {
-    border-color: var(--ds-primary-line);
-    background: var(--ds-primary-soft);
-}
-
-.ds-domain-section summary,
-.ds-domain-row summary {
-    display: grid;
-    grid-template-columns: auto minmax(0, 1fr) auto auto;
-    align-items: center;
-    gap: 0.65rem;
-    cursor: pointer;
-    list-style: none;
-}
-
-.ds-domain-section summary::-webkit-details-marker,
-.ds-domain-row summary::-webkit-details-marker {
-    display: none;
-}
-
-.ds-domain-section > summary {
-    padding: 0.75rem 0.8rem;
-}
-
-.ds-domain-row > summary {
-    padding: 0.65rem 0.75rem;
-}
-
-.ds-domain-section summary::before,
-.ds-domain-row summary::before {
-    content: "";
-    width: 0.45rem;
-    height: 0.45rem;
-    border-right: 2px solid currentColor;
-    border-bottom: 2px solid currentColor;
-    transform: rotate(-45deg);
-    transition: transform 150ms ease;
-}
-
-.ds-domain-section[open] > summary::before,
-.ds-domain-row[open] > summary::before {
-    transform: rotate(45deg);
-}
-
-.ds-domain-section summary span,
-.ds-domain-row summary span,
-.ds-subdomain-row span {
-    min-width: 0;
-    color: var(--ds-ink-strong);
-    font-size: 0.86rem;
-    font-weight: 750;
-}
-
-.ds-domain-section summary strong,
-.ds-domain-row summary strong,
-.ds-subdomain-row strong {
-    color: var(--ds-ink-strong);
-    font-weight: 850;
-}
-
-.ds-domain-row summary small,
-.ds-subdomain-row small {
-    color: var(--ds-muted);
-    font-size: 0.78rem;
-    font-weight: 700;
-}
-
-.ds-domain-section > .ds-domain-row,
-.ds-domain-section > .ds-card-note {
-    margin: 0 0.65rem 0.65rem;
-}
-
-.ds-domain-row {
-    background: var(--ds-surface);
-}
-
-.ds-subdomain-list {
-    display: grid;
-    gap: 0.35rem;
-    padding: 0 0.65rem 0.65rem;
-}
-
-.ds-subdomain-row {
-    display: grid;
-    grid-template-columns: minmax(0, 1fr) auto auto;
-    gap: 0.6rem;
-    align-items: center;
-    border-radius: 0.5rem;
-    background: var(--ds-surface-soft);
-    padding: 0.55rem 0.65rem;
-}
-
-.ds-section-bars {
-    display: grid;
-    gap: 1rem;
-}
-
-.ds-section-row {
-    display: grid;
-    gap: 0.45rem;
-}
-
-.ds-section-score {
-    color: var(--ds-muted-strong);
-    font-weight: 650;
-}
-
-.ds-section-score strong {
-    color: var(--ds-ink-strong);
-    font-size: 1.1rem;
-    font-weight: 800;
-}
-
-.ds-stat-grid {
-    display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 0.65rem;
-}
-
-.ds-stat-tile {
-    border: 1px solid var(--ds-border);
-    border-radius: 0.65rem;
-    background: var(--ds-surface-raised);
-    padding: 0.85rem;
-}
-
-.ds-stat-tile span {
-    display: block;
-    color: var(--ds-muted);
-    font-size: 0.82rem;
-    font-weight: 700;
-}
-
-.ds-stat-tile strong {
-    display: block;
-    margin-top: 0.25rem;
-    color: var(--ds-ink-strong);
-    font-size: 1.25rem;
-    font-weight: 850;
-}
-
-.ds-meter-container {
-    margin-bottom: 0;
-}
-
-.ds-meter {
-    height: 0.5rem;
-    overflow: hidden;
-    border-radius: 999px;
-    background: oklch(91.5% 0.02 255);
-}
-
-.ds-meter span {
-    display: block;
-    height: 100%;
-    border-radius: inherit;
-    background: var(--ds-progress);
-}
-
-.ds-card .ds-section-insight {
-    margin: auto 0 0;
-    border-radius: 0.65rem;
-    background: var(--ds-progress-soft);
-    padding: 0.85rem;
-    color: var(--ds-progress-strong);
-    font-size: 0.92rem;
-    font-weight: 650;
-    line-height: 1.45;
 }
 
 .ds-card-note {
@@ -880,223 +497,6 @@
     grid-template-columns: repeat(2, minmax(0, 1fr));
 }
 
-.ds-trend-card {
-    min-height: 0;
-}
-
-.ds-trend-body {
-    display: grid;
-    grid-template-columns: minmax(0, 1fr) minmax(14rem, 0.35fr);
-    align-items: stretch;
-    gap: 1rem;
-}
-
-.ds-trend-panel {
-    border: 1px solid var(--ds-border);
-    border-radius: 0.7rem;
-    background: linear-gradient(
-        180deg,
-        var(--ds-surface-raised) 0%,
-        var(--ds-surface) 100%
-    );
-    padding: 1rem 1rem 0.85rem;
-}
-
-.ds-baseline-card {
-    display: grid;
-    align-content: center;
-    border: 1px solid var(--ds-border);
-    border-radius: 0.7rem;
-    background: linear-gradient(
-        135deg,
-        var(--ds-surface-raised) 0%,
-        var(--ds-surface) 100%
-    );
-    padding: 1.2rem;
-}
-
-.ds-baseline-card span {
-    color: var(--ds-muted);
-    font-size: 0.8rem;
-    font-weight: 800;
-}
-
-.ds-baseline-card strong {
-    margin-top: 0.25rem;
-    color: var(--ds-ink-strong);
-    font-size: 2.25rem;
-    font-weight: 850;
-    line-height: 1;
-}
-
-.ds-baseline-card small {
-    margin-top: 0.45rem;
-    color: var(--ds-muted-strong);
-    font-size: 0.9rem;
-    font-weight: 650;
-}
-
-.ds-trend-chart {
-    display: grid;
-    gap: 0.75rem;
-}
-
-.ds-trend-chart__plot {
-    position: relative;
-    height: 10rem;
-    border-radius: 0.6rem;
-    background:
-        linear-gradient(to bottom, var(--ds-border) 1px, transparent 1px) 0 0 /
-            100% 50%,
-        linear-gradient(
-            180deg,
-            oklch(97.5% 0.012 255) 0%,
-            var(--ds-surface) 100%
-        );
-    overflow: hidden;
-}
-
-.ds-trend-chart__plot svg {
-    position: absolute;
-    inset: 1.5rem 2.5rem 1.25rem;
-    width: calc(100% - 5rem);
-    height: calc(100% - 2.75rem);
-    overflow: visible;
-}
-
-.ds-trend-chart__plot polyline {
-    fill: none;
-    stroke: var(--ds-primary);
-    stroke-width: 3.25;
-    stroke-linecap: round;
-    stroke-linejoin: round;
-    vector-effect: non-scaling-stroke;
-}
-
-.ds-trend-chart__axis {
-    position: absolute;
-    left: 0.75rem;
-    color: var(--ds-muted);
-    font-size: 0.72rem;
-    font-weight: 750;
-}
-
-.ds-trend-chart__axis.is-top {
-    top: 0.55rem;
-}
-
-.ds-trend-chart__axis.is-bottom {
-    bottom: 0.45rem;
-}
-
-.ds-trend-chart__point {
-    position: absolute;
-    left: calc(2.5rem + (var(--x) / 100) * (100% - 5rem));
-    top: calc(1.5rem + (var(--y) / 100) * (100% - 2.75rem));
-    width: 0.75rem;
-    height: 0.75rem;
-    border: 2px solid var(--ds-surface);
-    border-radius: 999px;
-    background: var(--ds-primary);
-    box-shadow: 0 0 0 2px var(--ds-primary-line);
-    transform: translate(-50%, -50%);
-}
-
-.ds-trend-chart__labels {
-    display: grid;
-    grid-template-columns: repeat(var(--history-count, 5), minmax(4.5rem, 1fr));
-    gap: 0.75rem;
-}
-
-.ds-trend-chart__label {
-    min-width: 0;
-    color: var(--ds-muted);
-    text-align: center;
-}
-
-.ds-trend-chart__label strong {
-    display: block;
-    color: var(--ds-ink-strong);
-    font-size: 0.9rem;
-    font-weight: 800;
-}
-
-.ds-trend-chart__label small {
-    color: var(--ds-muted);
-    font-size: 0.75rem;
-    font-weight: 650;
-}
-
-.ds-trend-insight {
-    display: grid;
-    align-content: center;
-    border: 1px solid var(--ds-primary-line);
-    border-radius: 0.7rem;
-    background: var(--ds-primary-soft);
-    padding: 1rem;
-}
-
-.ds-trend-insight span {
-    color: var(--ds-primary);
-    font-size: 0.78rem;
-    font-weight: 800;
-}
-
-.ds-trend-insight strong {
-    margin-top: 0.15rem;
-    color: var(--ds-ink-strong);
-    font-size: 1.6rem;
-    font-weight: 850;
-    line-height: 1;
-}
-
-.ds-trend-insight p {
-    margin: 0.7rem 0 0;
-    color: var(--ds-muted-strong);
-    font-size: 0.92rem;
-    line-height: 1.45;
-}
-
-.ds-history-list {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(9.5rem, 1fr));
-    gap: 0.6rem;
-    margin: 1.25rem 0 0;
-    padding: 0;
-    list-style: none;
-}
-
-.ds-history-list li {
-    display: grid;
-    grid-template-columns: 1fr auto;
-    align-items: center;
-    gap: 0.2rem 0.8rem;
-    border: 1px solid var(--ds-border);
-    border-radius: 0.65rem;
-    background: var(--ds-surface-raised);
-    padding: 0.75rem;
-}
-
-.ds-history-list li:first-child {
-    border-color: var(--ds-primary-line);
-    background: var(--ds-primary-soft);
-}
-
-.ds-history-list span {
-    color: var(--ds-muted);
-    font-size: 0.82rem;
-    font-weight: 650;
-}
-
-.ds-history-list strong {
-    color: var(--ds-ink-strong);
-    font-weight: 850;
-}
-
-.ds-history-list .ds-link {
-    grid-column: 1 / -1;
-}
-
 .ds-empty {
     display: grid;
     gap: 0.5rem;
@@ -1174,17 +574,8 @@
     }
 
     .ds-workspace-head,
-    .ds-command-grid,
     .ds-dashboard-grid--secondary {
         grid-template-columns: 1fr;
-    }
-
-    .ds-command-grid {
-        grid-template-areas:
-            "next"
-            "score"
-            "split"
-            "stats";
     }
 
     .ds-workspace-head {
@@ -1194,10 +585,6 @@
 
     .ds-workspace-actions {
         justify-content: flex-start;
-    }
-
-    .ds-trend-body {
-        grid-template-columns: 1fr;
     }
 }
 
@@ -1220,31 +607,9 @@
         font-size: 1.45rem;
     }
 
-    .ds-hero-score {
-        grid-template-columns: 1fr;
-    }
-
-    .ds-score-ring,
-    .ds-score-placeholder {
-        width: 5.25rem;
-        height: 5.25rem;
-    }
-
     .ds-workspace-actions,
     .ds-button {
         width: 100%;
-    }
-
-    .ds-trend-chart__plot {
-        height: 8rem;
-    }
-
-    .ds-trend-chart__labels {
-        gap: 0.45rem;
-        grid-template-columns: repeat(
-            var(--history-count, 5),
-            minmax(3.25rem, 1fr)
-        );
     }
 
     .ds-attempt-row {
@@ -1515,82 +880,604 @@
     display: none !important;
 }
 
-/* ---------- Performance bar charts (weak-area / difficulty / pacing) ---------- */
-.ds-bar-list {
-    display: grid;
-    gap: 0.85rem;
+/* ==========================================================================
+   Tactile Study Desk: Custom Premium Booklet & Postcard Styles
+   ========================================================================== */
+
+/* Full-Screen Workspace Overrides */
+.ds-desk-workspace-view {
+    grid-template-columns: 1fr !important;
+    padding: 0 !important;
+    gap: 0 !important;
+    background: var(--wood-back) !important;
+    overflow-y: auto;
 }
 
-.ds-bar-row {
+.ds-desk-board {
+    background-color: var(--cork-tan);
+    background-image:
+        radial-gradient(rgba(0, 0, 0, 0.15) 15%, transparent 16%),
+        radial-gradient(rgba(0, 0, 0, 0.15) 15%, transparent 16%);
+    background-size: 8px 8px;
+    background-position: 0 0, 4px 4px;
+    border: 14px solid var(--wood-border);
+    border-radius: 8px;
+    box-shadow: inset 0 6px 15px rgba(0, 0, 0, 0.7);
+    margin: 20px;
+    padding: 30px;
+    min-height: calc(100vh - 40px);
+    display: flex;
+    flex-direction: column;
+    gap: 1.75rem;
+}
+
+/* Thumbtacks */
+.ds-thumbtack {
+    position: absolute;
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    box-shadow: 0 3px 5px rgba(0, 0, 0, 0.35);
+    z-index: 10;
+}
+
+.ds-thumbtack.green {
+    background: radial-gradient(circle at 35% 30%, #10b981, #065f46);
+}
+.ds-thumbtack.red {
+    background: radial-gradient(circle at 35% 30%, #ef4444, #7f1d1d);
+}
+.ds-thumbtack.blue {
+    background: radial-gradient(circle at 35% 30%, #3b82f6, #1d4ed8);
+}
+
+.ds-thumbtack.left {
+    top: -7px;
+    left: 24px;
+}
+.ds-thumbtack.right {
+    top: -7px;
+    right: 24px;
+}
+.ds-thumbtack.center {
+    top: -7px;
+    left: 50%;
+    transform: translateX(-50%);
+}
+
+/* Pinned Header Manila Sheet */
+.ds-desk-header-sheet {
+    position: relative;
+    background: var(--manila);
+    border: 1px solid var(--binder-border);
+    border-radius: 8px;
+    padding: 1.5rem 2rem;
+    box-shadow: 2px 5px 15px rgba(0,0,0,0.15);
+    margin-bottom: 0.25rem;
+}
+
+/* Desk Grid layout */
+.ds-desk-grid {
     display: grid;
-    grid-template-columns: minmax(9rem, 1fr) minmax(0, 2.4fr) 3.5rem;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 460px), 1fr));
+    gap: 2.25rem;
+    align-items: start;
+}
+
+/* Spiral Notebook */
+.ds-spiral-notebook {
+    position: relative;
+    background: #fafaf9;
+    border: 1px solid #d6d3d1;
+    border-radius: 8px;
+    padding: 2rem 2.25rem 2rem 3rem;
+    box-shadow: 3px 6px 18px rgba(0,0,0,0.06);
+    background-image: linear-gradient(rgba(226, 232, 240, 0.4) 1px, transparent 1px);
+    background-size: 100% 2rem;
+    line-height: 2rem;
+}
+
+.ds-spiral-spine {
+    position: absolute;
+    left: 8px;
+    top: 1.5rem;
+    bottom: 1.5rem;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    width: 16px;
+    z-index: 15;
+}
+
+.ds-spiral-ring {
+    width: 22px;
+    height: 8px;
+    background: linear-gradient(180deg, #d1d5db 0%, #9ca3af 50%, #4b5563 100%);
+    border-radius: 4px;
+    box-shadow: 1px 2px 2px rgba(0,0,0,0.15);
+    margin-left: -8px;
+}
+
+/* 3D Booklet Container & perspective */
+.ds-booklet-container {
+    perspective: 1200px;
+    width: 100%;
+}
+
+.ds-booklet {
+    position: relative;
+    background: #fdfdfb;
+    border: 1px solid #dcdad0;
+    border-radius: 12px;
+    padding: 2.25rem 2rem;
+    box-shadow: -5px 5px 15px rgba(0,0,0,0.06), 0 2px 4px rgba(0,0,0,0.03);
+    transition: transform 0.5s cubic-bezier(0.25, 0.8, 0.25, 1), box-shadow 0.5s ease;
+    transform-style: preserve-3d;
+    overflow: hidden;
+}
+
+/* Left spine texture simulating physical binding */
+.ds-booklet::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    bottom: 0;
+    width: 22px;
+    background: linear-gradient(90deg, #d4af37 0%, #aa8c2c 30%, #ffd700 70%, #8b7500 100%);
+    border-top-left-radius: 11px;
+    border-bottom-left-radius: 11px;
+    box-shadow: inset -2px 0 5px rgba(0,0,0,0.15), 1px 0 2px rgba(255,255,255,0.2);
+    z-index: 10;
+}
+
+/* Page edge lines simulating stacked book paper pages */
+.ds-booklet::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    width: 6px;
+    background: repeating-linear-gradient(180deg, #fff 0px, #fff 2px, #e2e8f0 3px, #e2e8f0 4px);
+    border-top-right-radius: 11px;
+    border-bottom-right-radius: 11px;
+    box-shadow: inset 1px 0 2px rgba(0,0,0,0.1);
+    z-index: 5;
+}
+
+.ds-booklet:hover {
+    transform: rotateY(-8deg) rotateX(4deg) translateZ(12px);
+    box-shadow: -20px 20px 35px rgba(26,20,5,0.12), -5px 5px 15px rgba(0,0,0,0.06);
+}
+
+.ds-booklet-inner {
+    padding-left: 1.5rem;
+    z-index: 2;
+    position: relative;
+}
+
+.ds-booklet-title {
+    font-family: var(--font-body);
+    font-size: 1.85rem;
+    font-weight: 850;
+    color: #0f172a;
+    letter-spacing: -0.01em;
+    margin-bottom: 0.5rem;
+}
+
+/* Decorative Stamp Seal on Booklet Cover */
+.ds-booklet-seal {
+    width: 68px;
+    height: 68px;
+    border: 2px dashed rgba(212, 175, 55, 0.8);
+    border-radius: 50%;
+    display: flex;
     align-items: center;
-    gap: 0.85rem;
+    justify-content: center;
+    position: absolute;
+    top: 2rem;
+    right: 2rem;
+    transform: rotate(12deg);
+    opacity: 0.85;
 }
 
-.ds-bar-row__label {
+.ds-booklet-seal-inner {
+    width: 58px;
+    height: 58px;
+    border: 1.5px solid rgba(212, 175, 55, 0.6);
+    border-radius: 50%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.55rem;
+    font-weight: 800;
+    color: #b59410;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    line-height: 1.2;
+}
+
+/* Resume Widget with spine and pulsing active indicator */
+.ds-resume-widget {
+    background: linear-gradient(135deg, #fef9c3 0%, #fef08a 100%);
+    border: 1px dashed #eab308;
+    border-radius: 12px;
+    padding: 1.25rem 1.5rem;
+    margin-bottom: 1.5rem;
+    box-shadow: 0 4px 6px rgba(234, 179, 8, 0.04);
+    position: relative;
+    overflow: hidden;
+}
+
+.ds-resume-widget::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    bottom: 0;
+    width: 6px;
+    background: #eab308;
+}
+
+.ds-pulse-dot {
+    width: 8px;
+    height: 8px;
+    background-color: #ef4444;
+    border-radius: 50%;
+    display: inline-block;
+    animation: ds-pulse 1.8s infinite ease-in-out;
+}
+
+@keyframes ds-pulse {
+    0% {
+        transform: scale(0.85);
+        box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7);
+    }
+    70% {
+        transform: scale(1);
+        box-shadow: 0 0 0 8px rgba(239, 68, 68, 0);
+    }
+    100% {
+        transform: scale(0.85);
+        box-shadow: 0 0 0 0 rgba(239, 68, 68, 0);
+    }
+}
+
+/* Pinned Postcard Card adjustments */
+.ds-postcard {
+    position: relative;
+    background: #fff !important;
+    border: 1px solid var(--binder-border) !important;
+    border-radius: 12px !important;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.02) !important;
+    transition: transform 0.3s ease, box-shadow 0.3s ease !important;
+}
+
+.ds-postcard:hover {
+    transform: rotate(0deg) translateY(-2px) !important;
+    box-shadow: 0 10px 20px rgba(0,0,0,0.06) !important;
+}
+
+/* Double Binder Spine Coil effect on resume widget */
+.ds-resume-widget-spine {
+    position: absolute;
+    left: -8px;
+    top: 50%;
+    transform: translateY(-50%);
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    z-index: 20;
+}
+
+.ds-resume-coil {
+    width: 14px;
+    height: 8px;
+    border-radius: 4px;
+    background: linear-gradient(180deg, #d1d5db 0%, #9ca3af 50%, #4b5563 100%);
+    box-shadow: 1px 2px 2px rgba(0,0,0,0.15);
+}
+
+/* Custom Teacher Postmark Stamp styling */
+.ds-postmark {
+    width: 58px;
+    height: 58px;
+    border: 2px dashed rgba(220, 38, 38, 0.65);
+    border-radius: 4px;
+    padding: 2px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    color: rgba(220, 38, 38, 0.7);
+    font-size: 0.525rem;
+    font-weight: 900;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    transform: rotate(-10deg);
+    line-height: 1.25;
+    background: rgba(254, 242, 242, 0.4);
+    box-shadow: 0 0 0 2px rgba(254, 242, 242, 0.5);
+    flex-shrink: 0;
+}
+
+/* ==========================================================================
+   Home "Discover" desk — refined layer
+   Calmer chrome + a small paper-tuned palette so markup stops carrying
+   hundreds of inline styles. Scoped to .ds-desk-board so classroom-workspace
+   (which shares .cork-note / .ds-booklet base rules) is untouched.
+   ========================================================================== */
+.ds-desk-board {
+    --paper: #fdfdfb;
+    --paper-line: var(--binder-border);
+    --ink-1: #1e293b;
+    --ink-2: #475569;
+    --ink-3: #64748b;
+    --ink-accent: #3730a3;
+    --gold: #aa8c2c;
+}
+
+/* Grid columns (were inline flex-column gap:2rem) */
+.ds-desk-col {
+    display: flex;
+    flex-direction: column;
+    gap: 2rem;
+}
+
+/* Pinned header sheet */
+.ds-desk-header__row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 1.5rem;
+}
+
+.ds-desk-title {
+    font-family: var(--font-hand);
+    color: var(--ink-1);
+    margin: 0.2rem 0 0;
+    font-size: 1.75rem;
+    line-height: 1.15;
+    font-weight: 700;
+}
+
+.ds-desk-subtitle {
+    margin: 0.35rem 0 0;
+    font-size: 0.9rem;
+    color: var(--ink-2);
+    max-width: 46ch;
+    line-height: 1.5;
+}
+
+.ds-desk-header__actions {
+    display: flex;
+    gap: 0.625rem;
+    align-items: center;
+    flex-wrap: wrap;
+}
+
+.ds-desk-header__actions .btn-outline {
+    background: var(--panel);
+}
+
+/* Shared hand-lettered card titles */
+.ds-hand-title {
+    font-family: var(--font-hand);
+    font-weight: 700;
+    color: var(--ink-1);
+    margin: 0 0 0.5rem;
+    font-size: 1.2rem;
+    line-height: 1.2;
+}
+
+/* Spiral notebook (ledger / resume) */
+.ds-notebook-lead {
+    font-size: 0.9rem;
+    color: var(--ink-2);
+    margin: 0.5rem 0;
+    line-height: 1.6;
+}
+
+.ds-ledger-list {
+    list-style: none;
+    padding: 0;
+    margin: 0.5rem 0 0.9rem;
+    font-size: 0.9rem;
+    color: #334155;
+    line-height: 1.9;
+}
+
+.ds-ledger-list strong {
+    color: #0f172a;
+}
+
+.ds-notebook-resume {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin-top: 1rem;
+}
+
+.ds-btn-paper {
+    text-decoration: none;
+    padding: 0.5rem 1.1rem;
+    font-size: 0.8rem;
+}
+
+/* Recommended booklet — drop the wax seal + heavy 3D tilt, keep the spine */
+.ds-desk-board .ds-booklet {
+    box-shadow: -3px 4px 12px rgba(0, 0, 0, 0.05);
+}
+
+.ds-desk-board .ds-booklet:hover {
+    transform: translateY(-3px);
+    box-shadow: -4px 10px 22px rgba(26, 20, 5, 0.1);
+}
+
+.ds-booklet-tag {
+    display: inline-block;
+    margin-bottom: 0.75rem;
+    padding: 0.15rem 0.5rem;
+    border: 1px solid rgba(212, 175, 55, 0.25);
+    border-radius: 4px;
+    background: rgba(212, 175, 55, 0.12);
+    color: var(--gold);
+    font-size: 0.72rem;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.ds-booklet-meta {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+    margin: 0.4rem 0 0.8rem;
     font-size: 0.85rem;
     font-weight: 600;
-    color: var(--ds-ink-strong);
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
+    color: var(--ink-2);
 }
 
-.ds-bar-row__label small {
+.ds-booklet-meta .ds-chip {
+    background: #e2e8f0;
+    padding: 0.15rem 0.45rem;
+    border-radius: 4px;
+    color: var(--ink-2);
+}
+
+.ds-booklet-desc {
+    font-size: 0.85rem;
+    color: var(--ink-3);
+    line-height: 1.5;
+    margin-bottom: 1rem;
+}
+
+/* Postcards — remove tilt, keep a single thumbtack (set on markup) */
+.ds-desk-board .ds-postcard {
+    margin-top: 0;
+}
+
+.ds-postcard__lead {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 1rem;
+    padding-bottom: 12px;
+    margin-bottom: 12px;
+    border-bottom: 1px dashed var(--border-strong);
+}
+
+.ds-postcard__lead-title {
     display: block;
-    font-weight: 500;
-    color: var(--ds-muted);
-    font-size: 0.72rem;
+    color: var(--ink);
+    text-decoration: none;
+    font-weight: 800;
+    font-size: 14px;
+    line-height: 1.3;
 }
 
-.ds-bar-track {
-    position: relative;
-    height: 0.6rem;
-    border-radius: 999px;
-    background: var(--ds-border);
-    overflow: hidden;
+.ds-postcard__lead-excerpt {
+    font-size: 12px;
+    color: var(--ink-soft);
+    margin: 4px 0 0.4rem;
+    line-height: 1.4;
 }
 
-.ds-bar-fill {
-    display: block;
-    height: 100%;
-    border-radius: inherit;
-    background: var(--ds-progress-strong);
+.ds-postcard__byline {
+    font-size: 11px;
+    color: var(--ink-faint);
+    font-weight: 600;
 }
 
-.ds-bar-fill.is-medium {
-    background: var(--ds-warning-strong);
+/* Footer note grid — one responsive grid replacing two centered flex rows */
+.ds-note-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 260px), 1fr));
+    gap: 1.5rem;
+    margin-top: 1.5rem;
 }
 
-.ds-bar-fill.is-low {
-    background: var(--ds-danger);
+/* Calmer notes: no rotation, single consistent thumbtack from .cork-note::before,
+   color variants for tone without the multi-colour thumbtack clutter */
+.ds-desk-board .cork-note {
+    box-shadow: 2px 4px 10px rgba(0, 0, 0, 0.12);
 }
 
-.ds-bar-fill.is-pace {
-    background: var(--ds-primary);
+.cork-note--yellow {
+    background: #fef9c3;
 }
 
-.ds-bar-track__tick {
-    position: absolute;
-    top: -2px;
-    bottom: -2px;
-    width: 2px;
-    background: var(--ds-ink-strong);
-    opacity: 0.35;
+.cork-note--indigo {
+    background: #e0e7ff;
 }
 
-.ds-bar-row__value {
-    font-size: 0.82rem;
+.ds-note__title {
+    font-family: var(--font-hand);
+    font-size: 1.1rem;
     font-weight: 700;
-    color: var(--ds-ink-strong);
-    text-align: right;
-    font-variant-numeric: tabular-nums;
+    color: var(--ink-1);
+    margin: 0.25rem 0 0.5rem;
+    padding-top: 0;
+    text-transform: none;
+    letter-spacing: normal;
 }
 
-.ds-bar-row__value small {
-    display: block;
-    font-weight: 500;
-    color: var(--ds-muted);
-    font-size: 0.68rem;
+.cork-note--yellow .ds-note__title {
+    color: #854d0e;
 }
+
+.cork-note--indigo .ds-note__title {
+    color: #312e81;
+}
+
+.ds-note__body {
+    font-size: 0.85rem;
+    line-height: 1.55;
+    color: var(--ink-2);
+    margin: 0;
+}
+
+.ds-note__body em {
+    font-style: italic;
+}
+
+.cork-note--yellow .ds-note__body {
+    color: #713f12;
+}
+
+.cork-note--indigo .ds-note__body {
+    color: #3730a3;
+}
+
+.ds-note__link {
+    font-weight: 800;
+    text-decoration: underline;
+    margin-top: 0.35rem;
+    display: inline-block;
+}
+
+.cork-note--yellow .ds-note__link {
+    color: #a16207;
+}
+
+@media (max-width: 640px) {
+    .ds-desk-board {
+        margin: 10px;
+        padding: 18px;
+        border-width: 8px;
+    }
+
+    .ds-desk-header__actions {
+        width: 100%;
+    }
+
+    .ds-desk-header__actions .btn-outline {
+        flex: 1;
+        text-align: center;
+    }
+}
+

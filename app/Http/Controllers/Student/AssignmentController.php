@@ -12,28 +12,58 @@ class AssignmentController extends Controller
 {
     public function index(Request $request)
     {
+        $user = $request->user();
         $classroom = null;
 
         if ($request->filled('classroom')) {
             $classroom = Classroom::query()
                 ->whereKey($request->integer('classroom'))
                 ->whereHas('memberships', fn ($query) => $query
-                    ->where('student_id', $request->user()->id)
+                    ->where('student_id', $user->id)
                     ->where('status', 'active'))
                 ->firstOrFail();
         }
 
-        $assignments = Assignment::whereHas('recipients', fn ($query) => $query->where('student_id', $request->user()->id)->where('status', 'active'))
+        $assignments = Assignment::whereHas('recipients', fn ($query) => $query->where('student_id', $user->id)->where('status', 'active'))
             ->when($classroom, fn ($query) => $query->where('classroom_id', $classroom->id))
-            ->with(['classroom', 'test', 'attempts' => fn ($query) => $query->where('user_id', $request->user()->id)])
-            ->whereIn('status', ['published', 'closed'])->latest('published_at')->paginate(20);
-        return view('student.assignments.index', ['user' => $request->user(), 'assignments' => $assignments, 'classroom' => $classroom]);
+            ->whereIn('status', ['published', 'closed'])
+            ->with(['classroom', 'test', 'attempts' => fn ($query) => $query->where('user_id', $user->id)])
+            ->latest('published_at')
+            ->get();
+
+        $assignment = $assignments->first();
+        if ($assignment) {
+            $assignment->load(['classroom', 'test.sections.modules', 'attempts' => fn ($query) => $query->where('user_id', $user->id)->latest()]);
+        }
+
+        return view('student.assignments.show', compact('user', 'assignment', 'assignments', 'classroom'));
     }
     public function show(Request $request, Assignment $assignment)
     {
         $this->authorize('view', $assignment);
-        $assignment->load(['classroom', 'test.sections.modules', 'attempts' => fn ($query) => $query->where('user_id', $request->user()->id)->latest()]);
-        return view('student.assignments.show', ['user' => $request->user(), 'assignment' => $assignment]);
+
+        $user = $request->user();
+        $classroom = null;
+
+        if ($request->filled('classroom')) {
+            $classroom = Classroom::query()
+                ->whereKey($request->integer('classroom'))
+                ->whereHas('memberships', fn ($query) => $query
+                    ->where('student_id', $user->id)
+                    ->where('status', 'active'))
+                ->firstOrFail();
+        }
+
+        $assignments = Assignment::whereHas('recipients', fn ($query) => $query->where('student_id', $user->id)->where('status', 'active'))
+            ->when($classroom, fn ($query) => $query->where('classroom_id', $classroom->id))
+            ->whereIn('status', ['published', 'closed'])
+            ->with(['classroom', 'test', 'attempts' => fn ($query) => $query->where('user_id', $user->id)])
+            ->latest('published_at')
+            ->get();
+
+        $assignment->load(['classroom', 'test.sections.modules', 'attempts' => fn ($query) => $query->where('user_id', $user->id)->latest()]);
+
+        return view('student.assignments.show', compact('user', 'assignment', 'assignments', 'classroom'));
     }
     public function start(Assignment $assignment, AssignmentAttemptService $service)
     {

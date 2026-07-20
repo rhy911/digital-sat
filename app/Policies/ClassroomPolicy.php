@@ -23,4 +23,10 @@ class ClassroomPolicy
     {
         return $user->role === 'admin' || (int) $classroom->owner_id === (int) $user->id;
     }
+
+    public function viewStudent(User $user, Classroom $classroom, User $student): bool
+    {
+        return ($user->role === 'admin' || $classroom->hasTeacher($user))
+            && $classroom->activeMemberships()->where('student_id', $student->id)->exists();
+    }
 }

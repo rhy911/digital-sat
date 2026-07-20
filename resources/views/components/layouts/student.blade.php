@@ -1,10 +1,7 @@
 @props([
     'user',
     'title' => 'Digital SAT',
-    'headerType' => 'default', // 'default' or 'progress'
-    'headerClass' => '',
-    'logoClass' => '',
-    'userClass' => '',
+    'headerType' => 'none', // 'progress' or 'none'
     'bodyClass' => null,
     'cancelRoute' => null,
 ])
@@ -34,8 +31,6 @@
 
     @if ($headerType === 'progress')
         <x-student.headers.progress-header :user="$user" />
-    @elseif ($headerType !== 'none')
-        <x-student.headers.user-header :user="$user" :header-class="$headerClass" :logo-class="$logoClass" :user-class="$userClass" />
     @endif
 
     @if ($headerType !== 'none')
