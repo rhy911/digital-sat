@@ -17,7 +17,7 @@ class TestManagementServiceTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
-        $this->service = new TestManagementService;
+        $this->service = app(TestManagementService::class);
     }
 
     public function test_generate_full_sat_structure()

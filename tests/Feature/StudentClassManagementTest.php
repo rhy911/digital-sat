@@ -123,10 +123,14 @@ class StudentClassManagementTest extends TestCase
             ->put(route('teacher.classes.note.update', $classroom), ['body' => 'Read chapter 3 before Friday.'])
             ->assertRedirect();
 
-        $this->actingAs($student)
+        $studentRes = $this->actingAs($student)
             ->get(route('student.classes.show', $classroom))
             ->assertOk()
             ->assertSee('Read chapter 3 before Friday.');
+
+        // Verify note is rendered un-scoped (not bound to x-show="activeTab === 'settings'")
+        $this->assertStringNotContainsString('x-show="activeTab === \'settings\'"', $studentRes->getContent() . 'Read chapter 3 before Friday.');
+        $this->assertMatchesRegularExpression('/<p class="digest-line whitespace-pre-wrap">\s*Read chapter 3 before Friday\.\s*<\/p>/', $studentRes->getContent());
 
         $this->actingAs($teacher)
             ->put(route('teacher.classes.note.update', $classroom), ['body' => 'Updated note.'])

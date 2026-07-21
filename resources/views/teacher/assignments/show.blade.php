@@ -13,35 +13,8 @@
         activeTab: 'results'
     }">
         <!-- COLUMN 1: ICON RAIL -->
-        <x-shell.icon-rail :logo-href="route('teacher.progress')" :avatar-label="$userInitials" :items="[
-            [
-                'route' => route('teacher.progress'),
-                'label' => 'Progress',
-                'icon' => '<svg viewBox=\'0 0 24 24\' fill=\'none\' stroke=\'currentColor\' stroke-width=\'1.8\'><path d=\'M4 19V5M4 19h16M8 15l3-4 3 3 5-7\' stroke-linecap=\'round\' stroke-linejoin=\'round\' /></svg>',
-            ],
-            [
-                'route' => route('teacher.classes.index'),
-                'label' => 'Classes',
-                'icon' => '<svg viewBox=\'0 0 24 24\' fill=\'none\' stroke=\'currentColor\' stroke-width=\'1.8\'><rect x=\'3.5\' y=\'5\' width=\'17\' height=\'14\' rx=\'2\' /><path d=\'M3.5 9.5h17M8 5v-1M16 5v-1\' stroke-linecap=\'round\' /></svg>',
-            ],
-            [
-                'route' => route('teacher.assignments.index'),
-                'label' => 'Reports',
-                'active' => true,
-                'icon' => '<svg viewBox=\'0 0 24 24\' fill=\'none\' stroke=\'currentColor\' stroke-width=\'1.8\'><path d=\'M5 3v18h16\' stroke-linecap=\'round\' /><rect x=\'8\' y=\'12\' width=\'3\' height=\'6\' /><rect x=\'13\' y=\'8\' width=\'3\' height=\'10\' /><rect x=\'18\' y=\'5\' width=\'3\' height=\'13\' /></svg>',
-            ],
-            [
-                'route' => route('home.practice'),
-                'label' => 'Test Library',
-                'icon' => '<svg viewBox=\'0 0 24 24\' fill=\'none\' stroke=\'currentColor\' stroke-width=\'1.8\'><path d=\'M12 6.5c-1.6-1.2-3.7-1.8-6-1.8-.7 0-1.4.05-2 .15v13.5c.6-.1 1.3-.15 2-.15 2.3 0 4.4.6 6 1.8m0-13.5c1.6-1.2 3.7-1.8 6-1.8.7 0 1.4.05 2 .15v13.5c-.6-.1-1.3-.15-2-.15-2.3 0-4.4.6-6 1.8m0-13.5v13.5\' stroke-linecap=\'round\' stroke-linejoin=\'round\' /></svg>',
-            ],
-            [
-                'route' => route('home-dashboard.index'),
-                'label' => 'Test Builder',
-                'target' => '_blank',
-                'icon' => '<svg viewBox=\'0 0 24 24\' fill=\'none\' stroke=\'currentColor\' stroke-width=\'1.8\'><path d=\'M14.7 6.3a3 3 0 0 0 4 4L14 15l-4 1 1-4Z\' stroke-linejoin=\'round\' /></svg>',
-            ],
-        ]" />
+        <x-shell.icon-rail :logo-href="route('teacher.progress')" :avatar-label="$userInitials"
+            :items="\App\Support\NavRail::teacher('reports')" />
 
         <!-- COLUMN 2: SIDEBAR LIST -->
         <x-shell.sidebar-list title="Assignments"
@@ -68,7 +41,7 @@
                 ->all()" />
 
         <!-- COLUMN 3: LEDGER PANE -->
-        <div class="ledger-pane">
+        <div class="ledger-pane" :class="{ 'no-corkboard': activeTab === 'analysis' }">
             <x-ui.flash />
 
             <!-- MAIN LEDGER COLUMN -->
@@ -143,13 +116,9 @@
                                 @forelse($report['rows'] as $row)
                                     <tr>
                                         <td class="name-cell">
-                                            <div class="flex-name">
-                                                <div class="avatar-sm">{{ $row['recipient']->student->initials }}</div>
-                                                <div>
-                                                    <div class="n">{{ $row['recipient']->student->name }}</div>
-                                                    <div class="m">{{ $row['recipient']->student->email }}</div>
-                                                </div>
-                                            </div>
+                                            <x-ui.person-cell :name="$row['recipient']->student->name"
+                                                :email="$row['recipient']->student->email"
+                                                :initials="$row['recipient']->student->initials" />
                                         </td>
                                         <td>
                                             <span class="status-pill {{ $row['recipient']->status === 'withdrawn' ? 'pending' : ($row['in_progress'] ? 'pending' : ($row['best'] ? 'ok' : 'pending')) }}">
@@ -196,77 +165,362 @@
                     </div>
 
                     <!-- ANALYSIS PANEL -->
-                    <div class="section-panel" :class="{ 'active': activeTab === 'analysis' }">
-                        <div class="sp-head">
-                            <div>
-                                <p>Identify which questions students found most challenging. Ordered by incorrect rate descending.</p>
+                    @php
+                        $analysisList = $report['questionAnalysis'] ?? [];
+                        $analysisJsonData = collect($analysisList)->map(function($item) {
+                            $q = $item['question'];
+                            return [
+                                'id' => $q->id,
+                                'position' => $item['position'],
+                                'module_label' => $item['module_label'],
+                                'module_number' => $item['module_number'],
+                                'difficulty_level' => $item['difficulty_level'],
+                                'difficulty' => strtolower($q->difficulty ?? 'standard'),
+                                'domain' => $q->skill_domain ?? 'General Domain',
+                                'section_label' => $item['section_label'],
+                                'question_type' => $q->question_type,
+                                'stem' => $q->stem,
+                                'passage_title' => $q->passage?->title,
+                                'passage_body' => $q->passage?->body,
+                                'correct_answer' => $item['correct_answer'],
+                                'incorrect_rate' => $item['incorrect_rate'],
+                                'total_presented' => $item['total_presented'],
+                                'correct_count' => $item['correct_count'],
+                                'incorrect_count' => count($item['incorrect_students']),
+                                'choices' => $q->answerChoices->map(fn($c) => [
+                                    'label' => $c->label,
+                                    'content' => $c->content,
+                                    'is_correct' => (bool)$c->is_correct,
+                                ])->values()->all(),
+                                'spr_answers' => $q->sprCorrectAnswers->pluck('answer')->all(),
+                                'explanation' => [
+                                    'text' => $q->explanation?->explanation,
+                                    'strategy_tip' => $q->explanation?->strategy_tip,
+                                    'common_mistakes' => $q->explanation?->common_mistakes,
+                                ],
+                                'students' => collect($item['incorrect_students'])->map(fn($st) => [
+                                    'id' => $st['student']->id,
+                                    'name' => $st['student']->name,
+                                    'email' => $st['student']->email,
+                                    'initials' => $st['student']->initials ?? strtoupper(substr($st['student']->name, 0, 1)),
+                                    'status' => $st['status'],
+                                    'selected' => $st['selected'],
+                                ])->values()->all(),
+                            ];
+                        })->values();
+
+                        $uniqueModules = collect($analysisJsonData)->pluck('module_label')->unique()->values();
+                        $uniqueDomains = collect($analysisJsonData)->pluck('domain')->filter()->unique()->values();
+                        $avgErrorRate = count($analysisJsonData) > 0 ? (int) round(collect($analysisJsonData)->avg('incorrect_rate')) : 0;
+                        $mostChallenging = collect($analysisJsonData)->sortByDesc('incorrect_rate')->first();
+                    @endphp
+
+                    <div class="section-panel" :class="{ 'active': activeTab === 'analysis' }" x-data="{
+                        searchQuery: '',
+                        selectedModule: 'all',
+                        selectedDifficulty: 'all',
+                        selectedDomain: 'all',
+                        questions: {{ Js::from($analysisJsonData) }},
+                        activeQuestion: null,
+
+                        openInspection(q) {
+                            this.activeQuestion = q;
+                            $dispatch('open-modal', 'modal-inspect-question');
+                            $nextTick(() => {
+                                if (window.smartRenderMath) {
+                                    window.smartRenderMath();
+                                }
+                            });
+                        },
+
+                        get filteredQuestions() {
+                            return this.questions.filter(q => {
+                                const query = this.searchQuery.toLowerCase().trim();
+                                const matchesSearch = !query ||
+                                    q.stem.toLowerCase().includes(query) ||
+                                    ('q' + q.position).includes(query) ||
+                                    q.domain.toLowerCase().includes(query) ||
+                                    q.correct_answer.toLowerCase().includes(query);
+
+                                const matchesModule = this.selectedModule === 'all' || q.module_label === this.selectedModule;
+                                const matchesDifficulty = this.selectedDifficulty === 'all' || q.difficulty === this.selectedDifficulty;
+                                const matchesDomain = this.selectedDomain === 'all' || q.domain === this.selectedDomain;
+
+                                return matchesSearch && matchesModule && matchesDifficulty && matchesDomain;
+                            });
+                        }
+                    }">
+
+                        <!-- Summary Stat Cards -->
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+                            <div class="p-4 rounded-xl bg-slate-900/4 border border-slate-900/10 flex items-center gap-3">
+                                <div class="w-10 h-10 rounded-lg bg-indigo-500/10 text-indigo-700 flex items-center justify-center font-bold text-lg">
+                                    {{ count($analysisJsonData) }}
+                                </div>
+                                <div>
+                                    <div class="text-2xs font-bold text-slate-500 uppercase tracking-wider">Questions Analyzed</div>
+                                    <div class="text-xs font-semibold text-slate-800">Across {{ count($uniqueModules) }} {{ Str::plural('module', count($uniqueModules)) }}</div>
+                                </div>
+                            </div>
+
+                            <div class="p-4 rounded-xl bg-slate-900/4 border border-slate-900/10 flex items-center gap-3">
+                                <div class="w-10 h-10 rounded-lg bg-amber-500/10 text-amber-700 flex items-center justify-center font-bold text-lg">
+                                    {{ $avgErrorRate }}%
+                                </div>
+                                <div>
+                                    <div class="text-2xs font-bold text-slate-500 uppercase tracking-wider">Average Error Rate</div>
+                                    <div class="text-xs font-semibold text-slate-800">Overall class difficulty</div>
+                                </div>
+                            </div>
+
+                            <div class="p-4 rounded-xl bg-slate-900/4 border border-slate-900/10 flex items-center gap-3">
+                                <div class="w-10 h-10 rounded-lg bg-rose-500/10 text-rose-700 flex items-center justify-center font-bold text-sm">
+                                    {{ $mostChallenging ? $mostChallenging['incorrect_rate'] . '%' : '—' }}
+                                </div>
+                                <div>
+                                    <div class="text-2xs font-bold text-slate-500 uppercase tracking-wider">Most Challenging Item</div>
+                                    <div class="text-xs font-semibold text-slate-800 truncate max-w-[180px]">
+                                        {{ $mostChallenging ? $mostChallenging['module_label'] . ' · Q' . $mostChallenging['position'] : 'None' }}
+                                    </div>
+                                </div>
                             </div>
                         </div>
 
+                        <!-- Filter & Search Toolbar -->
+                        <div class="flex flex-wrap items-center justify-between gap-3 mb-4 p-3 rounded-xl bg-slate-50 border border-slate-200/80">
+                            <div class="flex flex-wrap items-center gap-2 flex-1 min-w-[280px]">
+                                <div class="relative flex-1 min-w-[160px]">
+                                    <input type="text" x-model="searchQuery" placeholder="Search stem, question #, domain..." class="w-full text-xs py-1.5 pl-7 pr-3 rounded-lg border border-slate-300 focus:outline-none focus:border-indigo-500">
+                                    <svg class="w-3.5 h-3.5 absolute left-2 top-2.5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+                                </div>
+
+                                <select x-model="selectedModule" class="text-xs py-1.5 px-2 rounded-lg border border-slate-300 bg-white text-slate-700 focus:outline-none">
+                                    <option value="all">All Modules</option>
+                                    @foreach($uniqueModules as $mod)
+                                        <option value="{{ $mod }}">{{ $mod }}</option>
+                                    @endforeach
+                                </select>
+
+                                <select x-model="selectedDifficulty" class="text-xs py-1.5 px-2 rounded-lg border border-slate-300 bg-white text-slate-700 focus:outline-none">
+                                    <option value="all">All Difficulties</option>
+                                    <option value="easy">Easy</option>
+                                    <option value="medium">Medium</option>
+                                    <option value="hard">Hard</option>
+                                </select>
+
+                                <select x-model="selectedDomain" class="text-xs py-1.5 px-2 rounded-lg border border-slate-300 bg-white text-slate-700 focus:outline-none">
+                                    <option value="all">All Domains</option>
+                                    @foreach($uniqueDomains as $dom)
+                                        <option value="{{ $dom }}">{{ $dom }}</option>
+                                    @endforeach
+                                </select>
+                            </div>
+
+                            <div class="text-xs text-slate-500 font-medium">
+                                Showing <strong class="text-slate-800" x-text="filteredQuestions.length"></strong> of {{ count($analysisJsonData) }} questions
+                            </div>
+                        </div>
+
+                        <!-- Questions Table -->
                         <table>
                             <thead>
                                 <tr>
-                                    <th style="width: 45%;">Question / Stem</th>
-                                    <th style="width: 15%;">Module</th>
-                                    <th style="width: 15%;">Incorrect Rate</th>
-                                    <th style="width: 25%;">Students with wrong/omitted answers</th>
+                                    <th style="width: 22%;">Item &amp; Attributes</th>
+                                    <th style="width: 38%;">Stem Preview</th>
+                                    <th style="width: 10%;">Answer</th>
+                                    <th style="width: 18%;">Incorrect Rate</th>
+                                    <th class="text-right" style="width: 12%;">Action</th>
                                 </tr>
                             </thead>
                             <tbody>
-                                @forelse($report['questionAnalysis'] as $analysis)
-                                    @php($q = $analysis['question'])
+                                <template x-for="q in filteredQuestions" :key="q.id">
                                     <tr>
-                                        <td>
-                                            <div style="font-weight: 600; color: var(--ink); margin-bottom: 4px;">
-                                                {{ $analysis['module_label'] }} &middot; Question {{ $analysis['position'] }} &middot; <span style="font-weight: normal; font-size: 11.5px; color: var(--ink-soft);">{{ ucfirst($q->difficulty) }}</span>
+                                        <td class="name-cell" style="vertical-align: top; padding: 12px 10px;">
+                                            <div class="flex items-center gap-1.5 mb-1.5 flex-wrap">
+                                                <span class="inline-flex items-center px-2 py-0.5 rounded bg-slate-900 text-white font-mono font-bold text-xs" x-text="'Q' + q.position"></span>
+                                                <span class="inline-flex items-center px-2 py-0.5 rounded bg-slate-100 text-slate-800 border border-slate-300 font-semibold text-2xs whitespace-nowrap" x-text="q.module_label"></span>
                                             </div>
-                                            <div style="font-size: 12.5px; color: var(--ink); line-height: 1.4; max-height: 4.2em; overflow: hidden; text-overflow: ellipsis; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical;">
-                                                {{ Str::limit(strip_tags($q->stem), 160) }}
+                                            <div class="flex items-center gap-1.5 flex-wrap">
+                                                <span class="inline-flex items-center px-1.5 py-0.5 rounded text-3xs font-bold uppercase tracking-wider whitespace-nowrap"
+                                                    :class="{
+                                                        'bg-emerald-100 text-emerald-800 border border-emerald-300': q.difficulty === 'easy',
+                                                        'bg-amber-100 text-amber-800 border border-amber-300': q.difficulty === 'medium' || q.difficulty === 'standard',
+                                                        'bg-rose-100 text-rose-800 border border-rose-300': q.difficulty === 'hard'
+                                                    }"
+                                                    x-text="q.difficulty"></span>
+                                                <span class="inline-flex items-center text-3xs font-medium text-slate-600 bg-slate-100/90 px-1.5 py-0.5 rounded border border-slate-200 truncate max-w-[130px]" :title="q.domain" x-text="q.domain"></span>
                                             </div>
-                                            <small style="color: var(--ink-soft); margin-top: 4px; display: block;">
-                                                Domain: {{ $q->skill_domain }} &middot; Correct Answer: <strong>{{ $analysis['correct_answer'] }}</strong>
-                                            </small>
                                         </td>
-                                        <td>
-                                            <span class="role-tag">{{ $analysis['module_label'] }}</span>
+                                        <td style="vertical-align: top; padding: 12px 10px;">
+                                            <div class="text-xs text-slate-800 font-medium leading-relaxed" style="display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;" x-text="q.stem.replace(/<[^>]*>?/gm, '').substring(0, 140)"></div>
                                         </td>
-                                        <td>
-                                            <strong style="color: {{ $analysis['incorrect_rate'] >= 60 ? 'var(--red)' : ($analysis['incorrect_rate'] >= 30 ? 'var(--amber)' : 'var(--green)') }}; font-size: 15px;">
-                                                {{ $analysis['incorrect_rate'] }}%
-                                            </strong>
-                                            <small style="display: block; color: var(--ink-soft); font-size: 11px;">
-                                                {{ count($analysis['incorrect_students']) }} / {{ $analysis['total_presented'] }} students
-                                            </small>
+                                        <td style="vertical-align: top; padding: 12px 10px;">
+                                            <span class="inline-flex items-center font-mono font-bold text-xs px-2.5 py-1 rounded bg-emerald-50 text-emerald-900 border border-emerald-200" x-text="q.correct_answer"></span>
                                         </td>
-                                        <td>
-                                            @if(count($analysis['incorrect_students']) > 0)
-                                                <details class="action-disclosure" style="font-size: 12.5px; margin: 0;">
-                                                    <summary style="font-weight: 600; color: var(--accent); cursor: pointer; padding: 4px 0;">
-                                                        View list ({{ count($analysis['incorrect_students']) }})
-                                                    </summary>
-                                                    <ul style="list-style: none; padding-left: 4px; margin-top: 8px; margin-bottom: 0; display: flex; flex-direction: column; gap: 4px;">
-                                                        @foreach($analysis['incorrect_students'] as $item)
-                                                            <li style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border); padding-bottom: 4px;">
-                                                                <span style="font-weight: 550; color: var(--ink);">{{ $item['student']->name }}</span>
-                                                                <span class="status-pill {{ $item['status'] === 'omitted' ? 'pending' : 'error' }}">
-                                                                    <span class="d"></span>{{ $item['status'] === 'omitted' ? 'Omit' : 'Wrong (' . $item['selected'] . ')' }}
-                                                                </span>
-                                                            </li>
-                                                        @endforeach
-                                                    </ul>
-                                                </details>
-                                            @else
-                                                <span style="color: var(--green); font-weight: 600; font-size: 12.5px;">All correct!</span>
-                                            @endif
+                                        <td style="vertical-align: top; padding: 12px 10px;">
+                                            <div class="space-y-1.5">
+                                                <div class="flex items-center justify-between text-xs gap-1">
+                                                    <strong class="font-bold whitespace-nowrap text-xs" :class="{
+                                                        'text-rose-600': q.incorrect_rate >= 50,
+                                                        'text-amber-600': q.incorrect_rate >= 25 && q.incorrect_rate < 50,
+                                                        'text-emerald-600': q.incorrect_rate < 25
+                                                    }" x-text="q.incorrect_rate + '% incorrect'"></strong>
+                                                    <span class="text-2xs text-slate-500 font-medium whitespace-nowrap" x-text="q.incorrect_count + '/' + q.total_presented + ' students'"></span>
+                                                </div>
+                                                <div class="w-full bg-slate-200/80 h-2 rounded-full overflow-hidden flex">
+                                                    <div class="h-full transition-all duration-300"
+                                                        :class="{
+                                                            'bg-rose-500': q.incorrect_rate >= 50,
+                                                            'bg-amber-500': q.incorrect_rate >= 25 && q.incorrect_rate < 50,
+                                                            'bg-emerald-500': q.incorrect_rate < 25
+                                                        }"
+                                                        :style="'width: ' + q.incorrect_rate + '%'"></div>
+                                                </div>
+                                            </div>
+                                        </td>
+                                        <td class="text-right whitespace-nowrap" style="vertical-align: top; padding: 12px 10px;">
+                                            <button type="button" @click="openInspection(q)" class="btn-sm-primary btn-compact text-2xs font-semibold whitespace-nowrap" style="padding: 5px 10px;">
+                                                Inspect Question
+                                            </button>
                                         </td>
                                     </tr>
-                                @empty
+                                </template>
+                                <template x-if="filteredQuestions.length === 0">
                                     <tr>
-                                        <td colspan="4" class="empty-row">No item analysis available.</td>
+                                        <td colspan="5" class="empty-row text-center py-8">
+                                            No questions match the selected filters.
+                                        </td>
                                     </tr>
-                                @endforelse
+                                </template>
                             </tbody>
                         </table>
+
+                        <!-- Modal for Question Inspection -->
+                        <x-ui.modal id="modal-inspect-question" maxWidth="5xl">
+                            <template x-if="activeQuestion">
+                                <div class="space-y-6">
+                                    <!-- Modal Header Bar -->
+                                    <div class="pb-4 border-b border-slate-200 flex flex-wrap items-center justify-between gap-3">
+                                        <div>
+                                            <div class="flex items-center gap-2 mb-1">
+                                                <span class="px-2 py-0.5 rounded bg-slate-900 text-white font-mono font-bold text-xs" x-text="'Question ' + activeQuestion.position"></span>
+                                                <span class="text-xs font-semibold px-2 py-0.5 rounded bg-slate-100 text-slate-700 border border-slate-300" x-text="activeQuestion.module_label"></span>
+                                            </div>
+                                            <div class="text-xs text-slate-500 flex items-center gap-2">
+                                                <span>Domain: <strong class="text-slate-800" x-text="activeQuestion.domain"></strong></span>
+                                                <span>&middot;</span>
+                                                <span>Difficulty: <strong class="capitalize text-slate-800" x-text="activeQuestion.difficulty"></strong></span>
+                                            </div>
+                                        </div>
+
+                                        <div class="flex items-center gap-3">
+                                            <div class="text-right">
+                                                <div class="text-sm font-bold" :class="activeQuestion.incorrect_rate >= 50 ? 'text-rose-600' : 'text-amber-600'" x-text="activeQuestion.incorrect_rate + '% Incorrect'"></div>
+                                                <div class="text-2xs text-slate-500" x-text="activeQuestion.incorrect_count + ' / ' + activeQuestion.total_presented + ' students missed'"></div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <!-- Modal Body: 2-Column Split -->
+                                    <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+                                        <!-- Left Column: Passage, Question & Choices & Explanation -->
+                                        <div class="lg:col-span-7 space-y-4">
+                                            <!-- Passage if available -->
+                                            <template x-if="activeQuestion.passage_body">
+                                                <div class="p-4 rounded-xl bg-amber-50/60 border border-amber-200/80 text-xs text-slate-800 space-y-2">
+                                                    <div class="font-bold text-amber-900 text-2xs uppercase tracking-wider" x-text="activeQuestion.passage_title || 'Reading Passage'"></div>
+                                                    <div class="leading-relaxed prose prose-sm max-w-none text-slate-800" x-html="activeQuestion.passage_body"></div>
+                                                </div>
+                                            </template>
+
+                                            <!-- Question Stem -->
+                                            <div class="p-4 rounded-xl bg-slate-50 border border-slate-200">
+                                                <div class="text-2xs font-bold text-slate-400 uppercase tracking-wider mb-2">Question Prompt</div>
+                                                <div class="text-sm font-medium text-slate-900 leading-relaxed math-content" x-html="activeQuestion.stem"></div>
+                                            </div>
+
+                                            <!-- MCQ Options or SPR Answer -->
+                                            <template x-if="activeQuestion.question_type === 'multiple_choice'">
+                                                <div class="space-y-2">
+                                                    <div class="text-2xs font-bold text-slate-400 uppercase tracking-wider">Answer Options</div>
+                                                    <div class="space-y-2">
+                                                        <template x-for="c in activeQuestion.choices" :key="c.label">
+                                                            <div class="p-3 rounded-lg border flex items-start gap-3 transition-colors"
+                                                                :class="c.is_correct ? 'bg-emerald-50 border-emerald-300 text-emerald-950 font-medium' : 'bg-white border-slate-200 text-slate-700'">
+                                                                <span class="w-6 h-6 rounded-full flex items-center justify-center font-mono font-bold text-xs shrink-0"
+                                                                    :class="c.is_correct ? 'bg-emerald-600 text-white' : 'bg-slate-100 text-slate-600'"
+                                                                    x-text="c.label"></span>
+                                                                <div class="text-xs pt-0.5 leading-relaxed flex-1 math-content" x-html="c.content"></div>
+                                                                <template x-if="c.is_correct">
+                                                                    <span class="text-2xs font-bold px-2 py-0.5 rounded bg-emerald-600 text-white shrink-0">Correct Choice</span>
+                                                                </template>
+                                                            </div>
+                                                        </template>
+                                                    </div>
+                                                </div>
+                                            </template>
+
+                                            <template x-if="activeQuestion.question_type === 'student_produced_response'">
+                                                <div class="p-4 rounded-xl bg-emerald-50 border border-emerald-200 space-y-1">
+                                                    <div class="text-2xs font-bold text-emerald-800 uppercase tracking-wider">Accepted SPR Correct Answers</div>
+                                                    <div class="font-mono font-bold text-sm text-emerald-950" x-text="activeQuestion.correct_answer"></div>
+                                                </div>
+                                            </template>
+
+                                            <!-- Explanation & Strategy Tips -->
+                                            <template x-if="activeQuestion.explanation && (activeQuestion.explanation.text || activeQuestion.explanation.strategy_tip)">
+                                                <div class="p-4 rounded-xl bg-slate-900 text-white space-y-3">
+                                                    <div class="text-2xs font-bold text-indigo-300 uppercase tracking-wider">Answer Explanation & Strategy</div>
+                                                    <template x-if="activeQuestion.explanation.text">
+                                                        <div class="text-xs text-slate-200 leading-relaxed math-content" x-html="activeQuestion.explanation.text"></div>
+                                                    </template>
+                                                    <template x-if="activeQuestion.explanation.strategy_tip">
+                                                        <div class="p-3 rounded-lg bg-indigo-950/80 border border-indigo-700/50 text-xs text-indigo-200 space-y-1">
+                                                            <div class="font-bold text-indigo-400 text-2xs uppercase">Strategy Tip</div>
+                                                            <div x-html="activeQuestion.explanation.strategy_tip"></div>
+                                                        </div>
+                                                    </template>
+                                                </div>
+                                            </template>
+                                        </div>
+
+                                        <!-- Right Column: Student Response Breakdown -->
+                                        <div class="lg:col-span-5 space-y-4">
+                                            <div class="p-4 rounded-xl bg-slate-50 border border-slate-200">
+                                                <div class="flex items-center justify-between mb-3">
+                                                    <h4 class="text-xs font-bold text-slate-900 uppercase tracking-wider">Student Responses</h4>
+                                                    <span class="text-2xs font-bold px-2 py-0.5 rounded bg-rose-100 text-rose-800" x-text="activeQuestion.students.length + ' Missed'"></span>
+                                                </div>
+
+                                                <div class="space-y-2 max-h-[480px] overflow-y-auto pr-1">
+                                                    <template x-for="st in activeQuestion.students" :key="st.id">
+                                                        <div class="p-2.5 rounded-lg bg-white border border-slate-200 flex items-center justify-between text-xs">
+                                                            <div class="flex items-center gap-2">
+                                                                <div class="w-7 h-7 rounded-full bg-slate-800 text-white flex items-center justify-center font-bold text-2xs" x-text="st.initials"></div>
+                                                                <div>
+                                                                    <div class="font-semibold text-slate-900" x-text="st.name"></div>
+                                                                    <div class="text-3xs text-slate-400" x-text="st.email"></div>
+                                                                </div>
+                                                            </div>
+                                                            <div>
+                                                                <span class="text-2xs font-bold px-2 py-0.5 rounded"
+                                                                    :class="st.status === 'omitted' ? 'bg-amber-100 text-amber-800' : 'bg-rose-100 text-rose-800'"
+                                                                    x-text="st.status === 'omitted' ? 'Omitted' : 'Choice ' + st.selected"></span>
+                                                            </div>
+                                                        </div>
+                                                    </template>
+                                                    <template x-if="activeQuestion.students.length === 0">
+                                                        <div class="text-center py-6 text-xs text-emerald-600 font-semibold">
+                                                            All students answered this question correctly!
+                                                        </div>
+                                                    </template>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </template>
+                        </x-ui.modal>
                     </div>
 
                     <!-- SETTINGS PANEL -->
@@ -274,7 +528,7 @@
                         @if ($assignment->classroom->status === 'active')
                             <div class="settings-card" style="margin-bottom: 16px;">
                                 <h3 class="settings-title lg">Edit details</h3>
-                                <form method="POST" action="{{ route('teacher.assignments.update', $assignment) }}" class="flex flex-col gap-10 max-w-420">
+                                <form method="POST" action="{{ route('teacher.assignments.update', $assignment) }}" class="flex flex-col gap-4 max-w-420">
                                     @csrf
                                     @method('PUT')
                                     <input type="hidden" name="test_id" value="{{ $assignment->test_id }}">
@@ -293,7 +547,7 @@
                                     <label class="form-field-label">Due at (Asia/Ho_Chi_Minh)
                                         <input type="datetime-local" name="due_at" value="{{ $assignment->due_at?->format('Y-m-d\\TH:i') }}" class="settings-input w-full mt-4">
                                     </label>
-                                    <button type="submit" class="btn-sm-primary btn-px-16 self-start flex-none w-auto mt-8">Save settings</button>
+                                    <button type="submit" class="btn-sm-primary btn-px-16 self-start flex-none w-auto mt-4">Save settings</button>
                                 </form>
                             </div>
 

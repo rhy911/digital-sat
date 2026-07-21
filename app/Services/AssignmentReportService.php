@@ -110,7 +110,12 @@ class AssignmentReportService
         if ($assignment->assign_type === 'section') {
             $sectionQuery->where('type', $assignment->section_type === 'reading_writing' ? 'reading_writing' : 'math');
         }
-        $sections = $sectionQuery->with(['modules.questions.answerChoices', 'modules.questions.sprCorrectAnswers'])->get();
+        $sections = $sectionQuery->with([
+            'modules.questions.answerChoices',
+            'modules.questions.sprCorrectAnswers',
+            'modules.questions.explanation',
+            'modules.questions.passage',
+        ])->get();
 
         $questionsMap = [];
         foreach ($sections as $sec) {

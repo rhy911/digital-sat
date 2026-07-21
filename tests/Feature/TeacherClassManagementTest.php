@@ -69,7 +69,7 @@ class TeacherClassManagementTest extends TestCase
         $this->actingAs($teacher)
             ->get(route('home'))
             ->assertOk()
-            ->assertSeeInOrder(['Progress', 'Classes', 'Reports', 'Test Library', 'Test Builder'], false)
+            ->assertSeeInOrder(['Home', 'Classes', 'Reports', 'Test Library', 'Test Builder'], false)
             ->assertSee('target="_blank"', false)
             ->assertSee('href="'.route('home-dashboard.index').'"', false);
     }
@@ -82,7 +82,6 @@ class TeacherClassManagementTest extends TestCase
             ->get(route('admin.teacher-applications.index'))
             ->assertOk()
             ->assertSee('Teacher applications')
-            ->assertSee('Applications')
             ->assertSee('Test Builder');
     }
 
@@ -115,7 +114,7 @@ class TeacherClassManagementTest extends TestCase
 
         $this->actingAs($teacher)
             ->get(route('teacher.assignments.index'))
-            ->assertRedirect(route('home'))
+            ->assertRedirect(route('teacher.assignments.show', $assignment))
             ->assertSessionHas('teacher_workspace.section', 'assignments')
             ->assertSessionHas('teacher_home.tab', 'reports');
 

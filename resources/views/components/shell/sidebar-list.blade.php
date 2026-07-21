@@ -33,9 +33,9 @@
 
     <div class="class-list">
         @foreach ($items as $item)
-            <a href="{{ $item['route'] }}" class="class-item {{ !empty($item['selected']) ? 'selected' : '' }}"
-                x-show="(statusFilter === 'all' || '{{ $item['status'] }}' === statusFilter) && ('{{ strtolower(addslashes($item['name'])) }}'.includes(searchQuery.toLowerCase()))"
-                style="text-decoration: none; color: inherit; display: block;">
+            <a href="{{ $item['route'] }}"
+                class="class-item {{ !empty($item['selected']) ? 'selected' : '' }} block! text-inherit no-underline"
+                x-show="(statusFilter === 'all' || '{{ $item['status'] }}' === statusFilter) && ('{{ strtolower(addslashes($item['name'])) }}'.includes(searchQuery.toLowerCase()))">
                 <div class="ci-top">
                     <span class="ci-name">{{ $item['name'] }}</span>
                 </div>

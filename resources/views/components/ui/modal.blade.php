@@ -21,13 +21,13 @@
     <template x-teleport="body">
         <div id="{{ $id }}" data-modal-dialog="{{ $id }}" x-show="show"
             class="fixed inset-0 z-50 overflow-y-auto" aria-labelledby="modal-title-{{ $id }}" role="dialog"
-            aria-modal="true" :aria-hidden="show ? 'false' : 'true'" style="display: none;">
+            aria-modal="true" :aria-hidden="show ? 'false' : 'true'" x-cloak>
             <!-- Background overlay -->
             <div x-show="show" x-transition:enter="transition-opacity ease-out duration-200"
                 x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100"
                 x-transition:leave="transition-opacity ease-in duration-200" x-transition:leave-start="opacity-100"
-                x-transition:leave-end="opacity-0" class="fixed inset-0 bg-slate-950/65 transform-gpu"
-                style="will-change: opacity;" data-modal-close
+                x-transition:leave-end="opacity-0" class="fixed inset-0 bg-slate-950/65 transform-gpu will-change-[opacity]"
+                data-modal-close
                 x-on:click="$dispatch('close-modal', '{{ $id }}')" aria-hidden="true"></div>
 
             <!-- Modal panel -->
@@ -38,8 +38,7 @@
                     x-transition:leave="transition-all ease-in duration-200"
                     x-transition:leave-start="opacity-100 translate-y-0 sm:scale-100"
                     x-transition:leave-end="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
-                    class="relative transform overflow-hidden rounded-xl bg-white text-left shadow-xl sm:my-8 sm:w-full {{ $maxWidthClass }} border border-slate-200 transform-gpu"
-                    style="will-change: transform, opacity;">
+                    class="relative transform overflow-hidden rounded-xl bg-white text-left shadow-xl sm:my-8 sm:w-full {{ $maxWidthClass }} border border-slate-200 transform-gpu will-change-[transform,opacity]">
                     @if ($title)
                         <div class="bg-slate-50 px-4 py-3 border-b border-slate-200 flex justify-between items-center">
                             <h3 class="text-lg font-semibold text-slate-900" id="modal-title-{{ $id }}">

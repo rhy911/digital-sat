@@ -26,115 +26,129 @@
         </div>
     @endif
 
-    @if ($section === 'classes')
-        <div class="page-heading">
-            <div>
-                <h1>Classes</h1>
-                <p>Organize students, assign SAT tests, and follow results.</p>
-            </div>
-        </div>
-
-        @if (auth()->user()->role === 'teacher')
-            <section class="class-panel class-create" aria-labelledby="create-class-title">
-                <div class="class-create__intro">
-                    <h2 id="create-class-title">Create a class</h2>
-                    <p>Start with a clear class name. You can share its join code after creation.</p>
+    <div class="binder-panel">
+        @if ($section === 'classes')
+            <div class="ledger-header">
+                <div class="dh-left">
+                    <h2>Classes</h2>
+                    <div class="dh-desc">Organize students, assign SAT tests, and follow results.</div>
                 </div>
-                <form method="POST" action="{{ route('teacher.classes.store') }}" class="inline-form">
-                    @csrf
-                    <label>Class name<input name="name" required maxlength="150"
-                            placeholder="SAT Prep - Summer"></label>
-                    <label>Description<input name="description" maxlength="2000"
-                            placeholder="Optional context for students"></label>
-                    <button type="submit" class="class-button class-button--primary">Create class</button>
-                </form>
-            </section>
-        @endif
-
-        <div class="class-tabs" role="tablist" aria-label="Class status" x-data
-            @keydown.left.prevent="$refs.activeTab.click(); $refs.activeTab.focus()"
-            @keydown.right.prevent="$refs.archivedTab.click(); $refs.archivedTab.focus()">
-            <button x-ref="activeTab" type="button" role="tab" wire:click="showClassStatus('active')"
-                wire:loading.attr="disabled" wire:target="showClassStatus"
-                aria-selected="{{ $classStatus === 'active' ? 'true' : 'false' }}"
-                @class(['is-active' => $classStatus === 'active'])>Active</button>
-            <button x-ref="archivedTab" type="button" role="tab" wire:click="showClassStatus('archived')"
-                wire:loading.attr="disabled" wire:target="showClassStatus"
-                aria-selected="{{ $classStatus === 'archived' ? 'true' : 'false' }}"
-                @class(['is-active' => $classStatus === 'archived'])>Archived</button>
-        </div>
-
-        <div class="section-heading">
-            <h2>{{ auth()->user()->role === 'admin' ? 'All ' . $classStatus . ' classes' : 'Your ' . $classStatus . ' classes' }}
-            </h2><span>{{ $classes->total() }} total</span>
-        </div>
-        @if ($classes->isEmpty())
-            <div class="class-empty">
-                <h2>No {{ $classStatus }} classes</h2>
-                <p>{{ $classStatus === 'active' ? 'Create your first class above, then share its join code with students.' : 'Archived classes remain here with their complete history.' }}
-                </p>
             </div>
+
+            @if (auth()->user()->role === 'teacher')
+                <div class="settings-card mb-16" aria-labelledby="create-class-title">
+                    <h3 class="settings-title lg" id="create-class-title">Create a class</h3>
+                    <p class="settings-help lg">Start with a clear class name. You can share its join code after
+                        creation.</p>
+                    <form method="POST" action="{{ route('teacher.classes.store') }}"
+                        class="flex flex-col gap-4 max-w-420">
+                        @csrf
+                        <label class="form-field-label">Class name
+                            <input name="name" required maxlength="150" placeholder="SAT Prep - Summer"
+                                class="settings-input w-full mt-4">
+                        </label>
+                        <label class="form-field-label">Description
+                            <input name="description" maxlength="2000" placeholder="Optional context for students"
+                                class="settings-input w-full mt-4">
+                        </label>
+                        <button type="submit" class="btn-sm-primary btn-px-16 self-start flex-none w-auto">Create
+                            class</button>
+                    </form>
+                </div>
+            @endif
+
+            <div class="class-tabs" role="tablist" aria-label="Class status" x-data
+                @keydown.left.prevent="$refs.activeTab.click(); $refs.activeTab.focus()"
+                @keydown.right.prevent="$refs.archivedTab.click(); $refs.archivedTab.focus()">
+                <button x-ref="activeTab" type="button" role="tab" class="seg-btn"
+                    wire:click="showClassStatus('active')" wire:loading.attr="disabled" wire:target="showClassStatus"
+                    aria-selected="{{ $classStatus === 'active' ? 'true' : 'false' }}"
+                    @class(['active' => $classStatus === 'active'])>Active</button>
+                <button x-ref="archivedTab" type="button" role="tab" class="seg-btn"
+                    wire:click="showClassStatus('archived')" wire:loading.attr="disabled" wire:target="showClassStatus"
+                    aria-selected="{{ $classStatus === 'archived' ? 'true' : 'false' }}"
+                    @class(['active' => $classStatus === 'archived'])>Archived</button>
+            </div>
+
+            <div class="sp-head">
+                <div>
+                    <p>{{ auth()->user()->role === 'admin' ? 'All ' . $classStatus . ' classes' : 'Your ' . $classStatus . ' classes' }}
+                        &bull; {{ $classes->total() }} total</p>
+                </div>
+            </div>
+
+            @if ($classes->isEmpty())
+                <div class="empty-grid-cell">
+                    No {{ $classStatus }} classes.
+                    {{ $classStatus === 'active' ? 'Create your first class above, then share its join code with students.' : 'Archived classes remain here with their complete history.' }}
+                </div>
+            @else
+                <div class="assignments-grid">
+                    @foreach ($classes as $classroom)
+                        <a class="index-card" href="{{ route('teacher.classes.show', $classroom) }}">
+                            <div class="card-title">{{ $classroom->name }}</div>
+                            <div class="card-sub">
+                                {{ auth()->user()->role === 'admin' ? 'Owner: ' . $classroom->owner->name : ($classroom->description ?: 'No description') }}
+                            </div>
+                            <div class="card-meta">
+                                <span class="type-tag">{{ $classroom->active_memberships_count }} students</span>
+                                <span class="status-pill {{ $classroom->status === 'active' ? 'ok' : 'pending' }}">
+                                    <span class="d"></span>{{ ucfirst($classroom->status) }}
+                                </span>
+                            </div>
+                            <div class="card-meta card-meta-divider">
+                                <span>{{ $classroom->pending_memberships_count }} pending</span>
+                                <span>{{ $classroom->assignments_count }} assignments</span>
+                                <span class="mono text-faint text-2xs">{{ $classroom->join_code }}</span>
+                            </div>
+                        </a>
+                    @endforeach
+                </div>
+                @if ($classes->hasPages())
+                    <div class="mt-12">{{ $classes->links() }}</div>
+                @endif
+            @endif
         @else
-            <div class="class-list">
-                @foreach ($classes as $classroom)
-                    <a class="class-row" href="{{ route('teacher.classes.show', $classroom) }}">
-                        <div class="class-row__identity">
-                            <div class="class-row__title">
-                                <h3>{{ $classroom->name }}</h3><span
-                                    class="status-chip status-chip--{{ $classroom->status }}">{{ ucfirst($classroom->status) }}</span>
-                            </div>
-                            <p>{{ auth()->user()->role === 'admin' ? 'Owner: ' . $classroom->owner->name : ($classroom->description ?: 'No description') }}
-                            </p>
-                        </div>
-                        <dl class="class-row__metrics">
-                            <div>
-                                <dt>Students</dt>
-                                <dd>{{ $classroom->active_memberships_count }}</dd>
-                            </div>
-                            <div>
-                                <dt>Pending</dt>
-                                <dd>{{ $classroom->pending_memberships_count }}</dd>
-                            </div>
-                            <div>
-                                <dt>Assignments</dt>
-                                <dd>{{ $classroom->assignments_count }}</dd>
-                            </div>
-                            <div class="class-row__join-code">
-                                <dt>Join code</dt>
-                                <dd>{{ $classroom->join_code }}</dd>
-                            </div>
-                        </dl>
-                    </a>
-                @endforeach
-            </div>
-            {{ $classes->links() }}
-        @endif
-    @else
-        <div class="page-heading">
-            <div>
-                <h1>Assignments &amp; reports</h1>
-                <p>Track work across every class and open detailed student results.</p>
-            </div>
-        </div>
-
-        @forelse($assignments as $assignment)
-            <a class="assignment-row class-panel"
-                href="{{ route('teacher.assignments.show', ['assignment' => $assignment, 'from' => 'workspace']) }}">
-                <div><span
-                        class="status-chip status-chip--{{ $assignment->status }}">{{ ucfirst($assignment->status) }}</span><strong>{{ $assignment->title }}</strong><span>{{ $assignment->classroom->name }}
-                        · {{ $assignment->test->title }}</span></div>
-                <div><span>{{ $assignment->recipients_count }} students</span><span>{{ $assignment->attempts_count }}
-                        attempts</span><span>{{ $assignment->due_at?->format('M j, g:i A') ?: 'No due time' }}</span>
+            <div class="ledger-header">
+                <div class="dh-left">
+                    <h2>Assignments &amp; reports</h2>
+                    <div class="dh-desc">Track work across every class and open detailed student results.</div>
                 </div>
-            </a>
-        @empty
-            <div class="class-empty">
-                <h2>No assignments yet</h2>
-                <p>Open a class and create its first assignment.</p><button type="button"
-                    class="class-button class-button--primary" wire:click="showSection('classes')"
-                    wire:loading.attr="disabled" wire:target="showSection">Open classes</button>
             </div>
-        @endforelse
-        {{ $assignments->links() }}
-    @endif
+
+            <div class="assignments-grid">
+                @forelse($assignments as $assignment)
+                    <a class="index-card"
+                        href="{{ route('teacher.assignments.show', ['assignment' => $assignment, 'from' => 'workspace']) }}">
+                        <div class="card-due">
+                            {{ $assignment->due_at ? $assignment->due_at->format('D, M j') : 'No due time' }}
+                        </div>
+                        <div class="card-title">{{ $assignment->title }}</div>
+                        <div class="card-sub">{{ $assignment->classroom->name }} &middot;
+                            {{ $assignment->test->title }}
+                        </div>
+                        <div class="card-meta">
+                            <span
+                                class="status-pill {{ in_array($assignment->status, ['published', 'completed']) ? 'ok' : 'pending' }}">
+                                <span class="d"></span>{{ ucfirst($assignment->status) }}
+                            </span>
+                        </div>
+                        <div class="card-meta card-meta-divider">
+                            <span>{{ $assignment->recipients_count }} students</span>
+                            <span>{{ $assignment->attempts_count }} attempts</span>
+                        </div>
+                    </a>
+                @empty
+                    <div class="empty-grid-cell">
+                        No assignments yet. Open a class and create its first assignment.
+                        <button type="button" class="btn-sm-primary mt-12" wire:click="showSection('classes')"
+                            wire:loading.attr="disabled" wire:target="showSection">Open classes</button>
+                    </div>
+                @endforelse
+            </div>
+            @if ($assignments->hasPages())
+                <div class="mt-12">{{ $assignments->links() }}</div>
+            @endif
+        @endif
+    </div>
 </div>

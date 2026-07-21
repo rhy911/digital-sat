@@ -33,7 +33,7 @@ class ProfileTest extends TestCase
 
         $response->assertStatus(200);
         $response->assertSee('Profile');
-        $response->assertSee('Information');
+        $response->assertSee('Profile details');
         $response->assertSee('johndoe');
     }
 

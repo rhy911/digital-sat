@@ -85,7 +85,6 @@ Route::middleware(['auth', 'verified'])->get('/dashboard', function () {
 
 // Verified Student routes
 Route::middleware(['auth', 'verified'])->prefix('student')->group(function () {
-    Route::get('/dashboard', \App\Http\Controllers\Student\DashboardController::class)->name('home.legacy');
     Route::get('/progress-analytics', \App\Http\Controllers\Student\ProgressController::class)->name('student.progress');
 
     Route::get('/practice', [\App\Http\Controllers\Student\PracticeController::class, 'index'])->name('home.practice');
@@ -93,10 +92,6 @@ Route::middleware(['auth', 'verified'])->prefix('student')->group(function () {
     Route::get('/practice/{userTest:ulid}', [\App\Http\Controllers\Student\PracticeController::class, 'show'])->name('my-practice');
     Route::delete('/practice/{userTest:ulid}', [\App\Http\Controllers\Student\PracticeController::class, 'destroy'])->name('my-practice.destroy');
     Route::get('/scores', [\App\Http\Controllers\Student\ScoreController::class, 'index'])->name('student.scores.index');
-    Route::get('/scores/merge', [\App\Http\Controllers\Student\ScoreMergeController::class, 'index'])->name('student.scores.merge');
-    Route::post('/scores/merge', [\App\Http\Controllers\Student\ScoreMergeController::class, 'store'])->name('student.scores.merge.store');
-    Route::get('/scores/merged/{rw_attempt:ulid}/{math_attempt:ulid}', [\App\Http\Controllers\Student\ScoreMergeController::class, 'showMerged'])->name('student.scores.merged');
-    Route::get('/scores/merged/{rw_attempt:ulid}/{math_attempt:ulid}/export-pdf', [\App\Http\Controllers\Student\ScoreMergeController::class, 'exportMergedPdf'])->name('student.scores.merged.export-pdf');
     Route::get('/scores/{userTest:ulid}', [\App\Http\Controllers\Student\ScoreController::class, 'show'])->name('student.scores.show');
     Route::get('/scores/{userTest:ulid}/export-pdf', [\App\Http\Controllers\Student\ScoreController::class, 'exportPdf'])->name('student.scores.export-pdf');
     Route::middleware('role:student')->group(function () {

@@ -1,9 +1,11 @@
-import { getPremiumToolbar, compileMarkdownToHtml, processMedia, showAlert, showCustomConfirm, escapeHtml, normalizeQuestionMediaUrl } from '../utils/helpers.js';
+import { getPremiumToolbar } from '../utils/editor-toolbar.js';
+import { compileMarkdownToHtml, processMedia, escapeHtml, normalizeQuestionMediaUrl } from '../utils/text.js';
+import { showAlert, showCustomConfirm } from '../utils/custom-alert.js';
+import { debounce } from '../utils/debounce.js';
 import { MEDIA_UPLOAD_URL, SKILL_DOMAINS, BASE_URL } from '../core/config.js';
 import { icon } from '../../../shared/icons.js';
 
 let editPassageEditor, editStemEditor, editExplanationEditor;
-let editPreviewDebouncer = null;
 
 export function initEditModalEditors() {
     const stemEl = document.getElementById('editQuestionStem');
@@ -54,8 +56,7 @@ export function initEditModalEditors() {
 }
 
 export function debouncedEditQuestionPreview() {
-    if (editPreviewDebouncer) clearTimeout(editPreviewDebouncer);
-    editPreviewDebouncer = setTimeout(() => {
+    debounce('editQuestionPreview', () => {
         updateEditQuestionPreview();
         refreshEditMediaList();
     }, 200);

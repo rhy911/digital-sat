@@ -1,4 +1,6 @@
-import { escapeHtml, capitalizeFirstLetter, showTableLoader, hideTableLoader, showAlert } from '../utils/helpers.js';
+import { escapeHtml, capitalizeFirstLetter } from '../utils/text.js';
+import { showTableLoader, hideTableLoader } from '../utils/table-loader.js';
+import { showAlert } from '../utils/custom-alert.js';
 import { icon } from '../../../shared/icons.js';
 import {
     MODULE_UPDATE_URL_TEMPLATE,

@@ -39,35 +39,8 @@
 
     <div class="app-shell" x-data="{ searchQuery: '', statusFilter: 'active' }">
         <!-- COLUMN 1: ICON RAIL -->
-        <x-shell.icon-rail :logo-href="route('teacher.progress')" :avatar-label="$userInitials" :items="[
-            [
-                'route' => route('teacher.progress'),
-                'label' => 'Progress',
-                'icon' => '<svg viewBox=\'0 0 24 24\' fill=\'none\' stroke=\'currentColor\' stroke-width=\'1.8\'><path d=\'M4 19V5M4 19h16M8 15l3-4 3 3 5-7\' stroke-linecap=\'round\' stroke-linejoin=\'round\' /></svg>',
-            ],
-            [
-                'route' => route('teacher.classes.index'),
-                'label' => 'Classes',
-                'active' => true,
-                'icon' => '<svg viewBox=\'0 0 24 24\' fill=\'none\' stroke=\'currentColor\' stroke-width=\'1.8\'><rect x=\'3.5\' y=\'5\' width=\'17\' height=\'14\' rx=\'2\' /><path d=\'M3.5 9.5h17M8 5v-1M16 5v-1\' stroke-linecap=\'round\' /></svg>',
-            ],
-            [
-                'route' => route('teacher.assignments.index'),
-                'label' => 'Reports',
-                'icon' => '<svg viewBox=\'0 0 24 24\' fill=\'none\' stroke=\'currentColor\' stroke-width=\'1.8\'><path d=\'M5 3v18h16\' stroke-linecap=\'round\' /><rect x=\'8\' y=\'12\' width=\'3\' height=\'6\' /><rect x=\'13\' y=\'8\' width=\'3\' height=\'10\' /><rect x=\'18\' y=\'5\' width=\'3\' height=\'13\' /></svg>',
-            ],
-            [
-                'route' => route('home.practice'),
-                'label' => 'Test Library',
-                'icon' => '<svg viewBox=\'0 0 24 24\' fill=\'none\' stroke=\'currentColor\' stroke-width=\'1.8\'><path d=\'M12 6.5c-1.6-1.2-3.7-1.8-6-1.8-.7 0-1.4.05-2 .15v13.5c.6-.1 1.3-.15 2-.15 2.3 0 4.4.6 6 1.8m0-13.5c1.6-1.2 3.7-1.8 6-1.8.7 0 1.4.05 2 .15v13.5c-.6-.1-1.3-.15-2-.15-2.3 0-4.4.6-6 1.8m0-13.5v13.5\' stroke-linecap=\'round\' stroke-linejoin=\'round\' /></svg>',
-            ],
-            [
-                'route' => route('home-dashboard.index'),
-                'label' => 'Test Builder',
-                'target' => '_blank',
-                'icon' => '<svg viewBox=\'0 0 24 24\' fill=\'none\' stroke=\'currentColor\' stroke-width=\'1.8\'><path d=\'M14.7 6.3a3 3 0 0 0 4 4L14 15l-4 1 1-4Z\' stroke-linejoin=\'round\' /></svg>',
-            ],
-        ]" />
+        <x-shell.icon-rail :logo-href="route('teacher.progress')" :avatar-label="$userInitials"
+            :items="\App\Support\NavRail::teacher('classes')" />
 
         <!-- COLUMN 2: CLASSROOM ROSTER -->
         <x-shell.sidebar-list title="{{ $classroom->name }}" count-text="{{ $rosterItems->count() }} students"

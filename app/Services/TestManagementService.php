@@ -13,12 +13,12 @@ use Illuminate\Validation\ValidationException;
 class TestManagementService
 {
     public function __construct(
-        private ?TestStructureService $structures = null,
-        private ?TestContentCopyService $copies = null,
-    ) {
-        $this->structures ??= app(TestStructureService::class);
-        $this->copies ??= app(TestContentCopyService::class);
-    }
+        private TestStructureService $structures,
+        private TestContentCopyService $copies,
+        private TestContentLockService $contentLock,
+    ) {}
+
+
 
     /**
      * Auto-generate full SAT structure safely using transactions.
@@ -122,50 +122,45 @@ class TestManagementService
     private function defaultBlueprintModules(string $testType): array
     {
         if ($testType === 'module_only') {
-            return [[
-                'section_type' => Section::TYPE_RW,
-                'module_number' => 1,
-                'difficulty_level' => Module::DIFFICULTY_STANDARD,
-                'duration_minutes' => Module::RW_DURATION,
-                'total_questions' => Module::RW_QUESTIONS,
-            ]];
+            return [
+                $this->moduleRow(Section::TYPE_RW, 1, Module::DIFFICULTY_STANDARD, Module::RW_DURATION, Module::RW_QUESTIONS),
+            ];
         }
 
         if ($testType === 'short_test') {
             return [
-                [
-                    'section_type' => Section::TYPE_RW,
-                    'module_number' => 1,
-                    'difficulty_level' => Module::DIFFICULTY_STANDARD,
-                    'duration_minutes' => 20,
-                    'total_questions' => 15,
-                ],
-                [
-                    'section_type' => Section::TYPE_MATH,
-                    'module_number' => 1,
-                    'difficulty_level' => Module::DIFFICULTY_STANDARD,
-                    'duration_minutes' => 20,
-                    'total_questions' => 12,
-                ],
+                $this->moduleRow(Section::TYPE_RW, 1, Module::DIFFICULTY_STANDARD, 20, 15),
+                $this->moduleRow(Section::TYPE_MATH, 1, Module::DIFFICULTY_STANDARD, 20, 12),
             ];
         }
 
         if ($testType === Test::TYPE_FULL) {
             return [
-                ['section_type' => Section::TYPE_RW, 'module_number' => 1, 'difficulty_level' => Module::DIFFICULTY_STANDARD, 'duration_minutes' => Module::RW_DURATION, 'total_questions' => Module::RW_QUESTIONS],
-                ['section_type' => Section::TYPE_RW, 'module_number' => 2, 'difficulty_level' => Module::DIFFICULTY_STANDARD, 'duration_minutes' => Module::RW_DURATION, 'total_questions' => Module::RW_QUESTIONS],
-                ['section_type' => Section::TYPE_MATH, 'module_number' => 1, 'difficulty_level' => Module::DIFFICULTY_STANDARD, 'duration_minutes' => Module::MATH_DURATION, 'total_questions' => Module::MATH_QUESTIONS],
-                ['section_type' => Section::TYPE_MATH, 'module_number' => 2, 'difficulty_level' => Module::DIFFICULTY_STANDARD, 'duration_minutes' => Module::MATH_DURATION, 'total_questions' => Module::MATH_QUESTIONS],
+                $this->moduleRow(Section::TYPE_RW, 1, Module::DIFFICULTY_STANDARD, Module::RW_DURATION, Module::RW_QUESTIONS),
+                $this->moduleRow(Section::TYPE_RW, 2, Module::DIFFICULTY_STANDARD, Module::RW_DURATION, Module::RW_QUESTIONS),
+                $this->moduleRow(Section::TYPE_MATH, 1, Module::DIFFICULTY_STANDARD, Module::MATH_DURATION, Module::MATH_QUESTIONS),
+                $this->moduleRow(Section::TYPE_MATH, 2, Module::DIFFICULTY_STANDARD, Module::MATH_DURATION, Module::MATH_QUESTIONS),
             ];
         }
 
         return [
-            ['section_type' => Section::TYPE_RW, 'module_number' => 1, 'difficulty_level' => Module::DIFFICULTY_STANDARD, 'duration_minutes' => Module::RW_DURATION, 'total_questions' => Module::RW_QUESTIONS],
-            ['section_type' => Section::TYPE_RW, 'module_number' => 2, 'difficulty_level' => Module::DIFFICULTY_EASY, 'duration_minutes' => Module::RW_DURATION, 'total_questions' => Module::RW_QUESTIONS],
-            ['section_type' => Section::TYPE_RW, 'module_number' => 2, 'difficulty_level' => Module::DIFFICULTY_HARD, 'duration_minutes' => Module::RW_DURATION, 'total_questions' => Module::RW_QUESTIONS],
-            ['section_type' => Section::TYPE_MATH, 'module_number' => 1, 'difficulty_level' => Module::DIFFICULTY_STANDARD, 'duration_minutes' => Module::MATH_DURATION, 'total_questions' => Module::MATH_QUESTIONS],
-            ['section_type' => Section::TYPE_MATH, 'module_number' => 2, 'difficulty_level' => Module::DIFFICULTY_EASY, 'duration_minutes' => Module::MATH_DURATION, 'total_questions' => Module::MATH_QUESTIONS],
-            ['section_type' => Section::TYPE_MATH, 'module_number' => 2, 'difficulty_level' => Module::DIFFICULTY_HARD, 'duration_minutes' => Module::MATH_DURATION, 'total_questions' => Module::MATH_QUESTIONS],
+            $this->moduleRow(Section::TYPE_RW, 1, Module::DIFFICULTY_STANDARD, Module::RW_DURATION, Module::RW_QUESTIONS),
+            $this->moduleRow(Section::TYPE_RW, 2, Module::DIFFICULTY_EASY, Module::RW_DURATION, Module::RW_QUESTIONS),
+            $this->moduleRow(Section::TYPE_RW, 2, Module::DIFFICULTY_HARD, Module::RW_DURATION, Module::RW_QUESTIONS),
+            $this->moduleRow(Section::TYPE_MATH, 1, Module::DIFFICULTY_STANDARD, Module::MATH_DURATION, Module::MATH_QUESTIONS),
+            $this->moduleRow(Section::TYPE_MATH, 2, Module::DIFFICULTY_EASY, Module::MATH_DURATION, Module::MATH_QUESTIONS),
+            $this->moduleRow(Section::TYPE_MATH, 2, Module::DIFFICULTY_HARD, Module::MATH_DURATION, Module::MATH_QUESTIONS),
+        ];
+    }
+
+    private function moduleRow(string $sectionType, int $moduleNumber, string $difficultyLevel, int $durationMinutes, int $totalQuestions): array
+    {
+        return [
+            'section_type' => $sectionType,
+            'module_number' => $moduleNumber,
+            'difficulty_level' => $difficultyLevel,
+            'duration_minutes' => $durationMinutes,
+            'total_questions' => $totalQuestions,
         ];
     }
 
@@ -221,7 +216,7 @@ class TestManagementService
     public function cloneModule(int $id, ?int $sectionId = null, ?int $userId = null): Module
     {
         if ($sectionId) {
-            app(TestContentLockService::class)->ensureUnlocked(Section::findOrFail($sectionId)->test);
+            $this->contentLock->ensureUnlocked(Section::findOrFail($sectionId)->test);
         }
 
         return $this->copies->copyModule(Module::findOrFail($id), $sectionId ? Section::findOrFail($sectionId) : null, $userId);
@@ -233,14 +228,11 @@ class TestManagementService
     public function deleteTest(int $id, bool $deleteChildren, bool $forceDeleteAttempts = false): void
     {
         $test = Test::with('sections.modules.questions')->findOrFail($id);
-        
+
         if ($forceDeleteAttempts) {
-            $user = auth()->user();
-            if (!$user || $user->role !== 'admin') {
-                abort(403, 'Only administrators can force-delete tests.');
-            }
+            $this->authorizeForceDelete();
         } else {
-            app(TestContentLockService::class)->ensureUnlocked($test);
+            $this->contentLock->ensureUnlocked($test);
             if (DB::table('user_tests')->where('test_id', $test->id)->exists()) {
                 throw ValidationException::withMessages(['test' => 'Cannot delete test with existing student attempts.']);
             }
@@ -248,74 +240,77 @@ class TestManagementService
 
         DB::transaction(function () use ($test, $deleteChildren, $forceDeleteAttempts) {
             if ($forceDeleteAttempts) {
-                // Get all component IDs to delete dependencies
-                $sectionIds = DB::table('sections')->where('test_id', $test->id)->pluck('id');
-                $moduleIds = DB::table('modules')->whereIn('section_id', $sectionIds)->pluck('id');
-                
-                $questionIds = collect();
-                if ($moduleIds->isNotEmpty()) {
-                    $questionIds = DB::table('module_questions')->whereIn('module_id', $moduleIds)->pluck('question_id');
-                }
-
-                $userTestIds = DB::table('user_tests')->where('test_id', $test->id)->pluck('id');
-
-                // 1. Explicitly delete user test answers pointing to this test's questions
-                if ($questionIds->isNotEmpty()) {
-                    DB::table('user_test_answers')->whereIn('question_id', $questionIds)->delete();
-                }
-
-                // 2. Explicitly delete related answers, submissions, and score revisions by attempt ID
-                if ($userTestIds->isNotEmpty()) {
-                    DB::table('user_test_answers')->whereIn('user_test_id', $userTestIds)->delete();
-                    DB::table('user_test_module_submissions')->whereIn('user_test_id', $userTestIds)->delete();
-                    DB::table('user_test_score_revisions')->whereIn('user_test_id', $userTestIds)->delete();
-                }
-
-                // 3. Explicitly delete submissions pointing to this test's modules (as module_id or next_module_id)
-                if ($moduleIds->isNotEmpty()) {
-                    DB::table('user_test_module_submissions')->whereIn('module_id', $moduleIds)->delete();
-                    DB::table('user_test_module_submissions')->whereIn('issued_next_module_id', $moduleIds)->delete();
-                }
-
-                // 4. Delete user tests
-                if ($userTestIds->isNotEmpty()) {
-                    DB::table('user_tests')->whereIn('id', $userTestIds)->delete();
-                }
-
-                // 5. Delete all assignments referencing this test
-                $assignmentIds = DB::table('assignments')->where('test_id', $test->id)->pluck('id');
-                if ($assignmentIds->isNotEmpty()) {
-                    DB::table('assignment_recipients')->whereIn('assignment_id', $assignmentIds)->delete();
-                    DB::table('assignments')->where('test_id', $test->id)->delete();
-                }
-
-                if ($deleteChildren) {
-                    foreach ($test->sections as $section) {
-                        foreach ($section->modules as $module) {
-                            foreach ($module->questions as $question) {
-                                $question->forceDelete();
-                            }
-                            $module->forceDelete();
-                        }
-                        $section->forceDelete();
-                    }
-                }
-                $test->forceDelete();
-            } else {
-                if ($deleteChildren) {
-                    foreach ($test->sections as $section) {
-                        foreach ($section->modules as $module) {
-                            foreach ($module->questions as $question) {
-                                $question->delete();
-                            }
-                            $module->delete();
-                        }
-                        $section->delete();
-                    }
-                }
-                $test->delete();
+                $this->purgeTestDependencies($test);
             }
+
+            if ($deleteChildren) {
+                $this->cascadeDeleteTestChildren($test, $forceDeleteAttempts);
+            }
+
+            $forceDeleteAttempts ? $test->forceDelete() : $test->delete();
         });
+    }
+
+    private function authorizeForceDelete(): void
+    {
+        $user = auth()->user();
+        if (!$user || $user->role !== 'admin') {
+            abort(403, 'Only administrators can force-delete tests.');
+        }
+    }
+
+    /**
+     * Explicitly strip rows that block a hard delete but aren't covered by cascading FKs.
+     */
+    private function purgeTestDependencies(Test $test): void
+    {
+        $sectionIds = DB::table('sections')->where('test_id', $test->id)->pluck('id');
+        $moduleIds = DB::table('modules')->whereIn('section_id', $sectionIds)->pluck('id');
+
+        $questionIds = collect();
+        if ($moduleIds->isNotEmpty()) {
+            $questionIds = DB::table('module_questions')->whereIn('module_id', $moduleIds)->pluck('question_id');
+        }
+
+        $userTestIds = DB::table('user_tests')->where('test_id', $test->id)->pluck('id');
+
+        if ($questionIds->isNotEmpty()) {
+            DB::table('user_test_answers')->whereIn('question_id', $questionIds)->delete();
+        }
+
+        if ($userTestIds->isNotEmpty()) {
+            DB::table('user_test_answers')->whereIn('user_test_id', $userTestIds)->delete();
+            DB::table('user_test_module_submissions')->whereIn('user_test_id', $userTestIds)->delete();
+            DB::table('user_test_score_revisions')->whereIn('user_test_id', $userTestIds)->delete();
+        }
+
+        if ($moduleIds->isNotEmpty()) {
+            DB::table('user_test_module_submissions')->whereIn('module_id', $moduleIds)->delete();
+            DB::table('user_test_module_submissions')->whereIn('issued_next_module_id', $moduleIds)->delete();
+        }
+
+        if ($userTestIds->isNotEmpty()) {
+            DB::table('user_tests')->whereIn('id', $userTestIds)->delete();
+        }
+
+        $assignmentIds = DB::table('assignments')->where('test_id', $test->id)->pluck('id');
+        if ($assignmentIds->isNotEmpty()) {
+            DB::table('assignment_recipients')->whereIn('assignment_id', $assignmentIds)->delete();
+            DB::table('assignments')->where('test_id', $test->id)->delete();
+        }
+    }
+
+    private function cascadeDeleteTestChildren(Test $test, bool $force): void
+    {
+        foreach ($test->sections as $section) {
+            foreach ($section->modules as $module) {
+                foreach ($module->questions as $question) {
+                    $force ? $question->forceDelete() : $question->delete();
+                }
+                $force ? $module->forceDelete() : $module->delete();
+            }
+            $force ? $section->forceDelete() : $section->delete();
+        }
     }
 
     /**
@@ -325,7 +320,7 @@ class TestManagementService
     {
         $section = Section::with(['test', 'modules.questions'])->findOrFail($id);
         $test = $section->test;
-        app(TestContentLockService::class)->ensureUnlocked($test);
+        $this->contentLock->ensureUnlocked($test);
 
         if ($test && DB::table('user_tests')->where('test_id', $test->id)->exists()) {
             throw ValidationException::withMessages(['section' => 'Cannot delete section of a test with existing student attempts.']);
@@ -355,7 +350,7 @@ class TestManagementService
     {
         $module = Module::with(['section.test', 'questions'])->findOrFail($id);
         $test = $module->section->test ?? null;
-        app(TestContentLockService::class)->ensureModuleUnlocked($module);
+        $this->contentLock->ensureModuleUnlocked($module);
 
         if ($test && DB::table('user_tests')->where('test_id', $test->id)->exists()) {
             throw ValidationException::withMessages(['module' => 'Cannot delete module of a test with existing student attempts.']);

@@ -1,8 +1,13 @@
-<x-layouts.student :user="$user" header-type="progress" title="My Scores - Digital SAT" :cancel-route="route('home')">
+<x-layouts.student :user="$user" header-type="none" title="My Scores - Digital SAT" :cancel-route="route('home')">
     @push('styles')
-        @vite(['resources/css/student/analytics.css'])
+        @vite(['resources/css/classroom-workspace.css', 'resources/css/student/analytics.css'])
     @endpush
 
+    <div class="app-shell app-shell--no-list">
+        <x-shell.icon-rail :logo-href="route('home')" :avatar-label="$user->initials"
+            :items="\App\Support\NavRail::student('scores')" />
+
+        <div class="shell-content">
     <div class="ds-home">
         <section class="ds-workspace-head" aria-labelledby="scores-title">
             <div class="ds-profile-panel">
@@ -20,11 +25,13 @@
             <h4>No completed tests yet</h4>
             <p>Complete a full-length practice test to see your score report, domain breakdown, and correct
                 answers.</p>
-            <div style="margin-top: 1.25rem;">
-                <x-ui.button href="{{ route('home.practice') }}" variant="primary" style="display: inline-flex;">
+            <div class="mt-5">
+                <x-ui.button href="{{ route('home.practice') }}" variant="primary">
                     Start a Practice Test
                 </x-ui.button>
             </div>
+        </div>
+    </div>
         </div>
     </div>
 </x-layouts.student>

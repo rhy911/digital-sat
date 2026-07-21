@@ -1,5 +1,5 @@
 import { BASE_URL } from '../core/config.js';
-import { showAlert } from '../utils/helpers.js';
+import { showAlert } from '../utils/custom-alert.js';
 import { icon } from '../../../shared/icons.js';
 
 const WORKFLOWS = {

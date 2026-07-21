@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Teacher;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Teacher\NoteUpdateRequest;
 use App\Http\Requests\Teacher\StoreClassroomRequest;
 use App\Http\Requests\Teacher\UpdateClassroomRequest;
 use App\Models\Classroom;
@@ -11,7 +12,6 @@ use App\Models\User;
 use App\Services\ClassroomService;
 use App\Support\ClassroomLeaderboard;
 use App\Support\ClassroomRosterStats;
-use Illuminate\Http\Request;
 
 class ClassroomController extends Controller
 {
@@ -23,8 +23,8 @@ class ClassroomController extends Controller
         $user = auth()->user();
 
         if ($user->role !== 'admin') {
-            $classroom = $this->teacherClassroomsQuery($user)->where('status', 'active')->latest('updated_at')->first()
-                ?? $this->teacherClassroomsQuery($user)->latest('updated_at')->first();
+            $classroom = $this->scopeToTeacher(Classroom::query(), $user)->where('status', 'active')->latest('updated_at')->first()
+                ?? $this->scopeToTeacher(Classroom::query(), $user)->latest('updated_at')->first();
 
             if ($classroom) {
                 return redirect()->route('teacher.classes.show', $classroom);
@@ -34,9 +34,9 @@ class ClassroomController extends Controller
         return redirect()->route('home');
     }
 
-    private function teacherClassroomsQuery(User $user)
+    private function scopeToTeacher($query, User $user)
     {
-        return Classroom::query()->where(fn ($scope) => $scope
+        return $query->where(fn ($scope) => $scope
             ->where('owner_id', $user->id)
             ->orWhereHas('coTeachers', fn ($teachers) => $teachers->whereKey($user->id)));
     }
@@ -82,9 +82,7 @@ class ClassroomController extends Controller
 
         $user = auth()->user();
         $classrooms = Classroom::query()
-            ->when($user->role !== 'admin', fn ($query) => $query->where(fn ($scope) => $scope
-                ->where('owner_id', $user->id)
-                ->orWhereHas('coTeachers', fn ($teachers) => $teachers->whereKey($user->id))))
+            ->when($user->role !== 'admin', fn ($query) => $this->scopeToTeacher($query, $user))
             ->withCount([
                 'activeMemberships',
                 'assignments',
@@ -141,13 +139,12 @@ class ClassroomController extends Controller
         ));
     }
 
-    public function noteUpdate(Request $request, Classroom $classroom)
+    public function noteUpdate(NoteUpdateRequest $request, Classroom $classroom): \Illuminate\Http\RedirectResponse
     {
         $this->authorize('manage', $classroom);
-        $data = $request->validate(['body' => 'nullable|string|max:2000']);
 
         $note = $classroom->note()->firstOrNew([]);
-        $note->body = $data['body'] ?? '';
+        $note->body = trim($request->validated()['body'] ?? '');
         $note->created_by ??= $request->user()->id;
         $note->save();
 

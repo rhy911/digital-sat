@@ -26,51 +26,19 @@
         searchQuery: '',
         statusFilter: 'all',
         newClassOpen: false,
-        activeTab: new URLSearchParams(location.search).get('assign_page') ? 'assign'
-            : new URLSearchParams(location.search).get('docs_page') ? 'docs'
-            : 'roster'
+        activeTab: new URLSearchParams(location.search).get('assign_page') ? 'assign' : new URLSearchParams(location.search).get('docs_page') ? 'docs' : 'roster'
     }">
 
         <!-- COLUMN 1: ICON RAIL -->
-        <x-shell.icon-rail :logo-href="route('teacher.progress')" :avatar-label="$userInitials" :items="[
-            [
-                'route' => route('teacher.progress'),
-                'label' => 'Progress',
-                'icon' => '<svg viewBox=\'0 0 24 24\' fill=\'none\' stroke=\'currentColor\' stroke-width=\'1.8\'><path d=\'M4 19V5M4 19h16M8 15l3-4 3 3 5-7\' stroke-linecap=\'round\' stroke-linejoin=\'round\' /></svg>',
-            ],
-            [
-                'route' => route('teacher.classes.index'),
-                'label' => 'Classes',
-                'active' => true,
-                'icon' => '<svg viewBox=\'0 0 24 24\' fill=\'none\' stroke=\'currentColor\' stroke-width=\'1.8\'><rect x=\'3.5\' y=\'5\' width=\'17\' height=\'14\' rx=\'2\' /><path d=\'M3.5 9.5h17M8 5v-1M16 5v-1\' stroke-linecap=\'round\' /></svg>',
-            ],
-            [
-                'route' => route('teacher.assignments.index'),
-                'label' => 'Reports',
-                'icon' => '<svg viewBox=\'0 0 24 24\' fill=\'none\' stroke=\'currentColor\' stroke-width=\'1.8\'><path d=\'M5 3v18h16\' stroke-linecap=\'round\' /><rect x=\'8\' y=\'12\' width=\'3\' height=\'6\' /><rect x=\'13\' y=\'8\' width=\'3\' height=\'10\' /><rect x=\'18\' y=\'5\' width=\'3\' height=\'13\' /></svg>',
-            ],
-            [
-                'route' => route('home.practice'),
-                'label' => 'Test Library',
-                'icon' => '<svg viewBox=\'0 0 24 24\' fill=\'none\' stroke=\'currentColor\' stroke-width=\'1.8\'><path d=\'M12 6.5c-1.6-1.2-3.7-1.8-6-1.8-.7 0-1.4.05-2 .15v13.5c.6-.1 1.3-.15 2-.15 2.3 0 4.4.6 6 1.8m0-13.5c1.6-1.2 3.7-1.8 6-1.8.7 0 1.4.05 2 .15v13.5c-.6-.1-1.3-.15-2-.15-2.3 0-4.4.6-6 1.8m0-13.5v13.5\' stroke-linecap=\'round\' stroke-linejoin=\'round\' /></svg>',
-            ],
-            [
-                'route' => route('home-dashboard.index'),
-                'label' => 'Test Builder',
-                'target' => '_blank',
-                'icon' => '<svg viewBox=\'0 0 24 24\' fill=\'none\' stroke=\'currentColor\' stroke-width=\'1.8\'><path d=\'M14.7 6.3a3 3 0 0 0 4 4L14 15l-4 1 1-4Z\' stroke-linejoin=\'round\' /></svg>',
-            ],
-        ]" />
+        <x-shell.icon-rail :logo-href="route('teacher.progress')" :avatar-label="$userInitials" :items="\App\Support\NavRail::teacher('classes')" />
 
         <x-shell.sidebar-list title="{{ __('classroom.my_classes') }}"
             count-text="{{ $activeClassroomsCount }} active · {{ $archivedClassroomsCount }} archived"
-            search-placeholder="{{ __('classroom.search_placeholder') }}"
-            :filters="[
+            search-placeholder="{{ __('classroom.search_placeholder') }}" :filters="[
                 ['value' => 'all', 'label' => 'All'],
                 ['value' => 'active', 'label' => 'Active'],
                 ['value' => 'archived', 'label' => 'Archived'],
-            ]"
-            :items="$classrooms
+            ]" :items="$classrooms
                 ->map(
                     fn($c) => [
                         'route' => route('teacher.classes.show', $c),
@@ -177,7 +145,8 @@
                                             @endif
                                             <div>
                                                 <strong>{{ $membership->student->name }}</strong>
-                                                <span class="pending-row-email">({{ $membership->student->email }})</span>
+                                                <span
+                                                    class="pending-row-email">({{ $membership->student->email }})</span>
                                             </div>
                                         </div>
                                         @if ($classroom->status === 'active')
@@ -226,19 +195,13 @@
                             @forelse($rosterPage as $membership)
                                 <tr>
                                     <td class="name-cell">
-                                        <div class="flex-name">
-                                            <div class="avatar-sm">{{ $membership->student->initials }}</div>
-                                            <div>
-                                                <div class="n">{{ $membership->student->name }}</div>
-                                                <div class="m">
-                                                    {{ $membership->student->email }}</div>
-                                            </div>
-                                        </div>
+                                        <x-ui.person-cell :name="$membership->student->name" :email="$membership->student->email" :initials="$membership->student->initials" />
                                     </td>
                                     <td>{{ $membership->decided_at?->format('d/m/Y') ?? $membership->created_at->format('d/m/Y') }}
                                     </td>
                                     <td>
-                                        <a href="{{ route('teacher.classes.students.progress', [$classroom, $membership->student]) }}" class="link-action">View progress</a>
+                                        <a href="{{ route('teacher.classes.students.progress', [$classroom, $membership->student]) }}"
+                                            class="link-action">View progress</a>
                                     </td>
                                     @if ($classroom->status === 'active')
                                         <td class="text-right">
@@ -247,7 +210,8 @@
                                                 onsubmit="return confirm('Remove this student? Result history will remain.');"
                                                 class="d-inline">
                                                 @csrf
-                                                <button type="submit" class="link-action danger btn-link-plain font-bold text-xs-plus">Remove</button>
+                                                <button type="submit"
+                                                    class="link-action danger btn-link-plain font-bold text-xs-plus">Remove</button>
                                             </form>
                                         </td>
                                     @endif
@@ -287,14 +251,7 @@
                         <tbody>
                             <tr>
                                 <td class="name-cell">
-                                    <div class="flex-name">
-                                        <div class="avatar-sm">{{ $classroom->owner->initials }}</div>
-                                        <div>
-                                            <div class="n">{{ $classroom->owner->name }}</div>
-                                            <div class="m">
-                                                {{ $classroom->owner->email }}</div>
-                                        </div>
-                                    </div>
+                                    <x-ui.person-cell :name="$classroom->owner->name" :email="$classroom->owner->email" :initials="$classroom->owner->initials" />
                                 </td>
                                 <td><span class="role-tag">Owner</span></td>
                                 <td>{{ $classroom->created_at->format('d/m/Y') }}</td>
@@ -306,14 +263,7 @@
                             @foreach ($classroom->coTeachers as $teacher)
                                 <tr>
                                     <td class="name-cell">
-                                        <div class="flex-name">
-                                            <div class="avatar-sm">{{ $teacher->initials }}</div>
-                                            <div>
-                                                <div class="n">{{ $teacher->name }}</div>
-                                                <div class="m">
-                                                    {{ $teacher->email }}</div>
-                                            </div>
-                                        </div>
+                                        <x-ui.person-cell :name="$teacher->name" :email="$teacher->email" :initials="$teacher->initials" />
                                     </td>
                                     <td><span class="role-tag">Co-teacher</span></td>
                                     <td>{{ $teacher->pivot->created_at?->format('d/m/Y') ?? '—' }}</td>
@@ -325,7 +275,8 @@
                                                     onsubmit="return confirm('Remove this co-teacher from the class?');"
                                                     class="d-inline">
                                                     @csrf @method('DELETE')
-                                                    <button type="submit" class="link-action danger btn-link-plain font-bold text-xs-plus">Remove</button>
+                                                    <button type="submit"
+                                                        class="link-action danger btn-link-plain font-bold text-xs-plus">Remove</button>
                                                 </form>
                                             @endcan
                                         </td>
@@ -377,8 +328,7 @@
                                     </td>
                                     <td class="num">{{ $document->created_at->format('d/m/Y') }}</td>
                                     <td class="text-right">
-                                        <div data-row-menu class="row-menu-wrap" x-data="{ menuOpen: false, top: 0, left: 0 }"
-                                            @click.stop>
+                                        <div data-row-menu class="row-menu-wrap" x-data="{ menuOpen: false, top: 0, left: 0 }" @click.stop>
                                             <button type="button" class="row-menu-btn" title="Actions"
                                                 @click="const r = $el.getBoundingClientRect(); top = r.bottom + 4; left = r.right - 140; menuOpen = !menuOpen">
                                                 <svg viewBox="0 0 24 24" fill="currentColor">
@@ -388,8 +338,8 @@
                                                 </svg>
                                             </button>
                                             <template x-teleport="body">
-                                                <div class="row-menu-popover" x-show="menuOpen" x-cloak
-                                                    :style="`position:fixed; top:${top}px; left:${left}px;`"
+                                                <div class="row-menu-popover fixed" x-show="menuOpen" x-cloak
+                                                    :style="`top:${top}px; left:${left}px;`"
                                                     @click.away="menuOpen = false" @click="menuOpen = false">
                                                     @if ($document->isFile())
                                                         <a href="{{ route('class-documents.download', $document) }}"
@@ -464,7 +414,8 @@
                                 <div class="card-meta card-meta-divider">
                                     <span>{{ $assignment->attempt_limit }}
                                         attempt{{ $assignment->attempt_limit === 1 ? '' : 's' }}</span>
-                                    <span class="mono text-faint text-2xs">{{ $assignment->due_at?->format('g:i A') ?: '' }}</span>
+                                    <span
+                                        class="mono text-faint text-2xs">{{ $assignment->due_at?->format('g:i A') ?: '' }}</span>
                                 </div>
                             </a>
                         @empty
@@ -499,7 +450,7 @@
                                     </svg>
                                 </button>
                             </div>
-                            <div class="sub-actions justify-start mt-12">
+                            <div class="sub-actions justify-start mt-6">
                                 @if ($classroom->status === 'active')
                                     <form method="POST"
                                         action="{{ route('teacher.classes.rotate-code', $classroom) }}"
@@ -513,7 +464,8 @@
                                             class="d-inline"
                                             onsubmit="return confirm('Archive class and close published assignments?');">
                                             @csrf
-                                            <button type="submit" class="link-action danger btn-link-plain">Archive</button>
+                                            <button type="submit"
+                                                class="link-action danger btn-link-plain">Archive</button>
                                         </form>
                                     @endcan
                                 @else
@@ -534,7 +486,7 @@
                             <h3 class="settings-title lg">Edit
                                 class details</h3>
                             <form method="POST" action="{{ route('teacher.classes.update', $classroom) }}"
-                                class="flex flex-col gap-10 max-w-420">
+                                class="flex flex-col gap-4 max-w-420">
                                 @csrf @method('PUT')
                                 <label class="form-field-label">Class
                                     name
@@ -545,7 +497,8 @@
                                     <input name="description" value="{{ $classroom->description }}" maxlength="2000"
                                         class="settings-input w-full mt-4">
                                 </label>
-                                <button type="submit" class="btn-sm-primary btn-px-16 self-start flex-none w-auto">Save</button>
+                                <button type="submit"
+                                    class="btn-sm-primary btn-px-16 self-start flex-none w-auto">Save</button>
                             </form>
                         </div>
                     @endif
@@ -554,97 +507,104 @@
 
             <!-- CORKBOARD: glanceable digest per tab + shortcuts, follows the active tab -->
             <x-shell.corkboard header="{{ __('classroom.pinned_header') }}">
-                    @if ($classroom->status === 'active')
-                        <div x-show="activeTab === 'roster'" class="cork-note">
-                            <h3>{{ __('classroom.recent_activity') }}</h3>
-                            @if ($recentJoins->isNotEmpty())
-                                <div class="digest-stack">
-                                    @foreach ($recentJoins as $m)
-                                        <div class="digest-line">
-                                            <strong>{{ $m->student->name }}</strong>
-                                            {{ __('classroom.joined_class') }}
-                                            <span class="digest-meta">·
-                                                {{ ($m->decided_at ?? $m->created_at)->format('d/m') }}</span>
-                                        </div>
-                                    @endforeach
-                                </div>
-                            @else
-                                <p class="cork-empty">{{ __('classroom.no_students_yet') }}</p>
-                            @endif
-                        </div>
-
-                        <div x-show="activeTab === 'team'" x-cloak class="cork-note">
-                            <h3>{{ __('classroom.teaching_team') }}</h3>
-                            <p class="digest-line">
-                                {{ __('classroom.teachers_managing', ['count' => 1 + $classroom->co_teachers_count]) }}
-                            </p>
-                            @if ($lastCoTeacher)
-                                <p class="cork-empty mt-4">{{ __('classroom.latest') }}:
-                                    {{ $lastCoTeacher->name }} ·
-                                    {{ $lastCoTeacher->pivot->created_at?->format('d/m/Y') }}
-                                </p>
-                            @endif
-                            @can('manageTeam', $classroom)
-                                <button type="button" class="btn-sm-primary btn-pin"
-                                    @click="$dispatch('open-modal', 'modal-add-co-teacher')">{{ __('classroom.add_co_teacher') }}</button>
-                            @endcan
-                        </div>
-
-                        <div x-show="activeTab === 'docs'" x-cloak class="cork-note">
-                            <h3>{{ __('classroom.shared_documents') }}</h3>
-                            @if ($lastDocument)
-                                <p class="digest-line"><strong>{{ Str::limit($lastDocument->title, 32) }}</strong>
-                                </p>
-                                <p class="cork-empty mt-2">
-                                    {{ __('classroom.posted_on', ['date' => $lastDocument->created_at->format('d/m/Y'), 'count' => $classroom->documents_count]) }}
-                                </p>
-                            @else
-                                <p class="cork-empty">{{ __('classroom.no_documents_yet') }}</p>
-                            @endif
-                            <button type="button" class="btn-sm-primary btn-pin"
-                                @click="$dispatch('open-modal', 'modal-add-resource')">{{ __('classroom.add_document') }}</button>
-                        </div>
-
-                        <div x-show="activeTab === 'assign'" x-cloak class="cork-note">
-                            <h3>{{ __('classroom.top_score') }}</h3>
-                            @if ($topScore)
-                                <p class="digest-line">
-                                    {{ __('classroom.leads_with_score', ['name' => $topScore['name'], 'score' => $topScore['score']]) }}
-                                </p>
-                            @else
-                                <p class="cork-empty">{{ __('classroom.no_scores_yet') }}</p>
-                            @endif
-                            <p class="cork-empty mt-6">
-                                {{ __('classroom.assignments_given', ['count' => $classroom->assignments_count]) }}{{ $dueSoon->isNotEmpty() ? __('classroom.due_soon_suffix', ['count' => $dueSoon->count()]) : '' }}.
-                            </p>
-                            <button type="button" class="btn-sm-primary btn-pin"
-                                @click="$dispatch('open-modal', 'modal-create-assignment')">{{ __('classroom.create_assignment') }}</button>
-                        </div>
-
-                        <div x-show="activeTab === 'settings'" x-cloak class="cork-note">
-                            <h3>Class settings</h3>
-                            <p class="cork-empty">Rotate the join code if it leaked, or archive the class to close
-                                published assignments. Both live in the Settings tab.</p>
-                        </div>
-
-                        <div x-show="activeTab === 'settings'" x-cloak class="cork-note mt-neg4">
-                            <h3>Note to class</h3>
-                            <form method="POST" action="{{ route('teacher.classes.note.update', $classroom) }}">
-                                @csrf @method('PUT')
-                                <div class="field">
-                                    <textarea name="body" rows="3" maxlength="2000"
-                                        placeholder="Pinned message students will see on their corkboard...">{{ $classroom->note?->body }}</textarea>
-                                </div>
-                                <button type="submit" class="btn-sm-primary btn-full mt-8">Save note</button>
-                            </form>
-                        </div>
-                    @else
+                @if ($classroom->status === 'active')
+                    @if (filled($classroom->note?->body))
                         <div class="cork-note">
-                            <h3>Class archived</h3>
-                            <p class="cork-empty">This class is archived. Restore it from the Settings tab to add
-                                resources, co-teachers, or assignments.</p>
+                            <h3>Note to class (Pinned)</h3>
+                            <p class="digest-line whitespace-pre-wrap">{{ $classroom->note->body }}</p>
                         </div>
                     @endif
+
+                    <div x-show="activeTab === 'roster'" class="cork-note">
+                        <h3>{{ __('classroom.recent_activity') }}</h3>
+                        @if ($recentJoins->isNotEmpty())
+                            <div class="digest-stack">
+                                @foreach ($recentJoins as $m)
+                                    <div class="digest-line">
+                                        <strong>{{ $m->student->name }}</strong>
+                                        {{ __('classroom.joined_class') }}
+                                        <span class="digest-meta">·
+                                            {{ ($m->decided_at ?? $m->created_at)->format('d/m') }}</span>
+                                    </div>
+                                @endforeach
+                            </div>
+                        @else
+                            <p class="cork-empty">{{ __('classroom.no_students_yet') }}</p>
+                        @endif
+                    </div>
+
+                    <div x-show="activeTab === 'team'" x-cloak class="cork-note">
+                        <h3>{{ __('classroom.teaching_team') }}</h3>
+                        <p class="digest-line">
+                            {{ __('classroom.teachers_managing', ['count' => 1 + $classroom->co_teachers_count]) }}
+                        </p>
+                        @if ($lastCoTeacher)
+                            <p class="cork-empty mt-4">{{ __('classroom.latest') }}:
+                                {{ $lastCoTeacher->name }} ·
+                                {{ $lastCoTeacher->pivot->created_at?->format('d/m/Y') }}
+                            </p>
+                        @endif
+                        @can('manageTeam', $classroom)
+                            <button type="button" class="btn-sm-primary btn-pin"
+                                @click="$dispatch('open-modal', 'modal-add-co-teacher')">{{ __('classroom.add_co_teacher') }}</button>
+                        @endcan
+                    </div>
+
+                    <div x-show="activeTab === 'docs'" x-cloak class="cork-note">
+                        <h3>{{ __('classroom.shared_documents') }}</h3>
+                        @if ($lastDocument)
+                            <p class="digest-line"><strong>{{ Str::limit($lastDocument->title, 32) }}</strong>
+                            </p>
+                            <p class="cork-empty mt-2">
+                                {{ __('classroom.posted_on', ['date' => $lastDocument->created_at->format('d/m/Y'), 'count' => $classroom->documents_count]) }}
+                            </p>
+                        @else
+                            <p class="cork-empty">{{ __('classroom.no_documents_yet') }}</p>
+                        @endif
+                        <button type="button" class="btn-sm-primary btn-pin"
+                            @click="$dispatch('open-modal', 'modal-add-resource')">{{ __('classroom.add_document') }}</button>
+                    </div>
+
+                    <div x-show="activeTab === 'assign'" x-cloak class="cork-note">
+                        <h3>{{ __('classroom.top_score') }}</h3>
+                        @if ($topScore)
+                            <p class="digest-line">
+                                {{ __('classroom.leads_with_score', ['name' => $topScore['name'], 'score' => $topScore['score']]) }}
+                            </p>
+                        @else
+                            <p class="cork-empty">{{ __('classroom.no_scores_yet') }}</p>
+                        @endif
+                        <p class="cork-empty mt-6">
+                            {{ __('classroom.assignments_given', ['count' => $classroom->assignments_count]) }}{{ $dueSoon->isNotEmpty() ? __('classroom.due_soon_suffix', ['count' => $dueSoon->count()]) : '' }}.
+                        </p>
+                        <button type="button" class="btn-sm-primary btn-pin"
+                            @click="$dispatch('open-modal', 'modal-create-assignment')">{{ __('classroom.create_assignment') }}</button>
+                    </div>
+
+                    <div x-show="activeTab === 'settings'" x-cloak class="cork-note">
+                        <h3>Class settings</h3>
+                        <p class="cork-empty">Rotate the join code if it leaked, or archive the class to close
+                            published assignments. Both live in the Settings tab.</p>
+                    </div>
+
+                    <div x-show="activeTab === 'settings'" x-cloak class="cork-note mt-neg4">
+                        <h3>Note to class</h3>
+                        <form method="POST" action="{{ route('teacher.classes.note.update', $classroom) }}">
+                            @csrf @method('PUT')
+                            <div class="field">
+                                <textarea name="body" rows="3" maxlength="2000"
+                                    placeholder="Pinned message students will see on their corkboard...">{{ $classroom->note?->body }}</textarea>
+                            </div>
+                            <button type="submit" class="btn-sm-primary btn-full mt-8">Save note</button>
+                        </form>
+                    </div>
+                @else
+                    <div class="cork-note">
+                        <h3>Class archived</h3>
+                        <p class="cork-empty">This class is archived. Restore it from the Settings tab to add
+                            resources, co-teachers, or assignments.</p>
+                    </div>
+                @endif
             </x-shell.corkboard>
         </div>
 
@@ -685,8 +645,8 @@
                                 </template>
                             </div>
                         </div>
-                        <button type="submit" class="btn-sm-primary btn-full"
-                            :disabled="!selectedId" :class="{ 'is-disabled': !selectedId }">Add
+                        <button type="submit" class="btn-sm-primary btn-full" :disabled="!selectedId"
+                            :class="{ 'is-disabled': !selectedId }">Add
                             teacher</button>
                     </form>
                 </div>
@@ -774,10 +734,12 @@
                         <label>Assign Type</label>
                         <div class="flex gap-16">
                             <label class="radio-inline">
-                                <input type="radio" name="assign_type" value="full" x-model="assignType"> Full Test
+                                <input type="radio" name="assign_type" value="full" x-model="assignType"> Full
+                                Test
                             </label>
                             <label class="radio-inline">
-                                <input type="radio" name="assign_type" value="section" x-model="assignType"> Section Only
+                                <input type="radio" name="assign_type" value="section" x-model="assignType">
+                                Section Only
                             </label>
                         </div>
                     </div>

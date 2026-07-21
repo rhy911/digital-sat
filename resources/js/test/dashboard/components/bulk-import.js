@@ -1,10 +1,9 @@
 import { 
     BULK_PREVIEW_URL, CSV_BULK_PREVIEW_URL, BULK_STORE_URL, CSV_BULK_URL, BASE_URL 
 } from '../core/config.js';
-import {
-    showAlert, showCustomConfirm, getTomSelectValue, humanizeUnderscores,
-    processMedia, captureTomSelectPreservation
-} from '../utils/helpers.js';
+import { showAlert, showCustomConfirm } from '../utils/custom-alert.js';
+import { getTomSelectValue, captureTomSelectPreservation } from '../utils/tomselect.js';
+import { humanizeUnderscores, processMedia } from '../utils/text.js';
 import { icon } from '../../../shared/icons.js';
 
 export function setBulkQuestionsJson(obj) {

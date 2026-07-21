@@ -7,15 +7,15 @@ import {
     dashboardJsonResponse,
     dashboardResourceUrl,
 } from '../core/config.js';
-import {
-    getPremiumToolbar, compileMarkdownToHtml, getTomSelectValue, showAlert, showCustomConfirm,
-    stripTags, humanizeUnderscores, escapeHtml
-} from '../utils/helpers.js';
+import { getPremiumToolbar } from '../utils/editor-toolbar.js';
+import { compileMarkdownToHtml, stripTags, humanizeUnderscores, escapeHtml } from '../utils/text.js';
+import { getTomSelectValue } from '../utils/tomselect.js';
+import { showAlert, showCustomConfirm } from '../utils/custom-alert.js';
+import { debounce } from '../utils/debounce.js';
 import { icon } from '../../../shared/icons.js';
 
 let builderBlockCount = 0;
 const builderEditors = {};
-const debouncers = {};
 
 export function hasUnsavedChanges() {
     const blocks = document.querySelectorAll('.builder-block');
@@ -138,10 +138,7 @@ export function setupBlockBindings(block) {
 
 export function debouncedUpdateLivePreview(block) {
     const index = block.dataset.index;
-    if (debouncers[index]) clearTimeout(debouncers[index]);
-    debouncers[index] = setTimeout(() => {
-        renderLivePreviewCard(block);
-    }, 250);
+    debounce(`builderLivePreview:${index}`, () => renderLivePreviewCard(block), 250);
 }
 
 export function renderLivePreviewCard(block) {
@@ -445,70 +442,7 @@ export function updateSidebarNavigator() {
         navigator.appendChild(existingHeader);
 
         existingQs.forEach((q, i) => {
-            const qId = q.id;
-            // Check if this existing question is loaded in the workspace
-            const loadedBlock = document.querySelector(`.builder-block[data-question-id="${qId}"]`);
-            const isLoaded = !!loadedBlock;
-
-            const item = document.createElement('a');
-            item.href = "javascript:void(0)";
-            item.dataset.navQuestionId = qId;
-            
-            if (isLoaded) {
-                item.className = "list-group-item list-group-item-action border border-brand/30 bg-[var(--color-brand-soft)]/50 rounded-xl p-2.5 flex flex-col gap-1 mb-2 hover:bg-[var(--color-brand-soft)] transition-all duration-150 active-question-item";
-            } else {
-                item.className = "list-group-item list-group-item-action border border-slate-200 bg-white hover:bg-slate-50 rounded-xl p-2.5 flex flex-col gap-1 mb-2 transition-all duration-150";
-            }
-
-            const stemText = stripTags(q.stem || '');
-            const snippet = stemText.length <= 60 ? stemText : stemText.slice(0, 60) + '…';
-
-            const difficultyBadge = q.difficulty
-                ? `<span class="bg-slate-100 text-slate-655 text-slate-600 font-mono text-[9px] px-1.5 py-0.5 rounded capitalize">${q.difficulty}</span>`
-                : '';
-
-            const badgeBg = isLoaded ? 'bg-[var(--color-brand-soft)] bg-[var(--color-brand-soft)] border border-brand/20' : 'bg-slate-100 border border-slate-200';
-            const badgeText = isLoaded ? 'text-brand' : 'text-slate-600';
-
-            item.innerHTML = `
-                <div class="flex items-center justify-between gap-2">
-                    <span class="font-bold text-xs ${isLoaded ? 'text-brand' : 'text-slate-700'}">
-                        Q#${q.question_number || (i + 1)} 
-                        <span class="font-bold px-1 py-0.5 text-[8px] rounded uppercase ${badgeBg} ${badgeText}">
-                            ${isLoaded ? 'Editing' : 'Stored'}
-                        </span>
-                    </span>
-                    <span class="text-[9px] font-mono text-slate-400">ID: ${q.id}</span>
-                </div>
-                <div class="text-[10px] ${isLoaded ? 'text-brand/80' : 'text-slate-500'} truncate mt-0.5" title="${escapeHtml(stemText || '(Empty stem)')}">
-                    ${snippet || '(Empty stem)'}
-                </div>
-                <div class="flex items-center justify-between gap-1 mt-1">
-                    <span class="text-[9px] text-slate-500 truncate max-w-[120px]" title="${escapeHtml(humanizeUnderscores(q.skill_domain || 'No Domain'))}">${humanizeUnderscores(q.skill_domain || 'No Domain')}</span>
-                    ${difficultyBadge}
-                </div>
-            `;
-
-            item.onclick = async function () {
-                if (isLoaded) {
-                    renderLivePreviewCard(loadedBlock);
-                    loadedBlock.scrollIntoView({ behavior: 'smooth', block: 'start' });
-                    syncLivePreviewScroll(loadedBlock);
-                    // Highlight the item
-                    navigator.querySelectorAll('.list-group-item').forEach(el => el.classList.remove('border-brand/50', 'bg-[var(--color-brand-soft)]'));
-                    item.classList.add('border-brand/50', 'bg-[var(--color-brand-soft)]');
-                } else {
-                    item.innerHTML = `
-                        <div class="text-slate-500 text-center py-2 text-xs font-medium">
-                            <div class="animate-spin inline-block w-4 h-4 border-2 border-brand border-t-transparent rounded-full mr-2 align-middle"></div>
-                            <span class="align-middle">Loading details...</span>
-                        </div>
-                    `;
-                    await loadExistingQuestionIntoWorkspace(qId);
-                }
-            };
-
-            navigator.appendChild(item);
+            navigator.appendChild(buildExistingQuestionNavItem(q, i, navigator));
         });
     }
 
@@ -521,53 +455,132 @@ export function updateSidebarNavigator() {
         navigator.appendChild(draftHeader);
 
         newBlocks.forEach((block, i) => {
-            const index = block.dataset.index;
-            const qType = block.querySelector('.builder-format-mcq').checked ? 'MCQ' : 'SPR';
-            const difficulty = block.querySelector('.builder-difficulty').value || 'N/A';
-            const domainVal = block.querySelector('.builder-domain').value || '';
-            const stemVal = builderEditors[`stem_${index}`] ? builderEditors[`stem_${index}`].value() : '';
-            const stemText = stripTags(stemVal || '');
-            const snippet = stemText.length <= 60 ? stemText : stemText.slice(0, 60) + '…';
-
-            let domainLabel = 'No Domain';
-            if (domainVal) {
-                domainLabel = domainVal.split('_').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
-            }
-
-            const item = document.createElement('a');
-            item.href = "javascript:void(0)";
-            item.dataset.navIndex = index;
-            item.className = "list-group-item list-group-item-action border border-slate-200 bg-white hover:bg-slate-50 rounded-xl p-2.5 flex flex-col gap-1 mb-2 transition-all duration-150";
-
-            item.innerHTML = `
-                <div class="flex items-center justify-between gap-2">
-                    <span class="font-bold text-xs text-brand text-brand">
-                        Q#${existingQs.length + i + 1}
-                        <span class="bg-[var(--color-brand-soft)] border border-brand/20 text-brand font-bold px-1 py-0.5 text-[8px] rounded uppercase">Draft</span>
-                    </span>
-                    <span class="badge bg-slate-100 border border-slate-250 text-slate-600 font-mono text-[8px] uppercase">${qType}</span>
-                </div>
-                <div class="text-[10px] text-slate-500 truncate mt-0.5" title="${escapeHtml(stemText || '(Empty stem)')}">
-                    ${snippet || '(Empty stem)'}
-                </div>
-                <div class="flex items-center justify-between gap-1 mt-1">
-                    <span class="text-[9px] text-slate-500 truncate max-w-[120px]" title="${escapeHtml(domainLabel)}">${domainLabel}</span>
-                    <span class="bg-slate-100 border border-slate-250 text-slate-655 text-slate-600 font-mono text-[9px] px-1.5 py-0.5 rounded capitalize">${difficulty}</span>
-                </div>
-            `;
-
-            item.onclick = function () {
-                renderLivePreviewCard(block);
-                block.scrollIntoView({ behavior: 'smooth', block: 'start' });
-                syncLivePreviewScroll(block);
-                navigator.querySelectorAll('.list-group-item').forEach(el => el.classList.remove('border-brand/50', 'bg-[var(--color-brand-soft)]'));
-                item.classList.add('border-brand/50', 'bg-[var(--color-brand-soft)]');
-            };
-
-            navigator.appendChild(item);
+            navigator.appendChild(buildDraftNavItem(block, i, existingQs.length, navigator));
         });
     }
     updateBuilderGridState();
+}
+
+/**
+ * Build one "Module Questions" sidebar entry for an already-saved question.
+ * Clicking it either jumps to the block already loaded in the workspace, or
+ * fetches and loads the question in.
+ */
+function buildExistingQuestionNavItem(q, i, navigator) {
+    const qId = q.id;
+    // Check if this existing question is loaded in the workspace
+    const loadedBlock = document.querySelector(`.builder-block[data-question-id="${qId}"]`);
+    const isLoaded = !!loadedBlock;
+
+    const item = document.createElement('a');
+    item.href = "javascript:void(0)";
+    item.dataset.navQuestionId = qId;
+
+    if (isLoaded) {
+        item.className = "list-group-item list-group-item-action border border-brand/30 bg-[var(--color-brand-soft)]/50 rounded-xl p-2.5 flex flex-col gap-1 mb-2 hover:bg-[var(--color-brand-soft)] transition-all duration-150 active-question-item";
+    } else {
+        item.className = "list-group-item list-group-item-action border border-slate-200 bg-white hover:bg-slate-50 rounded-xl p-2.5 flex flex-col gap-1 mb-2 transition-all duration-150";
+    }
+
+    const stemText = stripTags(q.stem || '');
+    const snippet = stemText.length <= 60 ? stemText : stemText.slice(0, 60) + '…';
+
+    const difficultyBadge = q.difficulty
+        ? `<span class="bg-slate-100 text-slate-655 text-slate-600 font-mono text-[9px] px-1.5 py-0.5 rounded capitalize">${q.difficulty}</span>`
+        : '';
+
+    const badgeBg = isLoaded ? 'bg-[var(--color-brand-soft)] bg-[var(--color-brand-soft)] border border-brand/20' : 'bg-slate-100 border border-slate-200';
+    const badgeText = isLoaded ? 'text-brand' : 'text-slate-600';
+
+    item.innerHTML = `
+        <div class="flex items-center justify-between gap-2">
+            <span class="font-bold text-xs ${isLoaded ? 'text-brand' : 'text-slate-700'}">
+                Q#${q.question_number || (i + 1)}
+                <span class="font-bold px-1 py-0.5 text-[8px] rounded uppercase ${badgeBg} ${badgeText}">
+                    ${isLoaded ? 'Editing' : 'Stored'}
+                </span>
+            </span>
+            <span class="text-[9px] font-mono text-slate-400">ID: ${q.id}</span>
+        </div>
+        <div class="text-[10px] ${isLoaded ? 'text-brand/80' : 'text-slate-500'} truncate mt-0.5" title="${escapeHtml(stemText || '(Empty stem)')}">
+            ${snippet || '(Empty stem)'}
+        </div>
+        <div class="flex items-center justify-between gap-1 mt-1">
+            <span class="text-[9px] text-slate-500 truncate max-w-[120px]" title="${escapeHtml(humanizeUnderscores(q.skill_domain || 'No Domain'))}">${humanizeUnderscores(q.skill_domain || 'No Domain')}</span>
+            ${difficultyBadge}
+        </div>
+    `;
+
+    item.onclick = async function () {
+        if (isLoaded) {
+            renderLivePreviewCard(loadedBlock);
+            loadedBlock.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            syncLivePreviewScroll(loadedBlock);
+            // Highlight the item
+            navigator.querySelectorAll('.list-group-item').forEach(el => el.classList.remove('border-brand/50', 'bg-[var(--color-brand-soft)]'));
+            item.classList.add('border-brand/50', 'bg-[var(--color-brand-soft)]');
+        } else {
+            item.innerHTML = `
+                <div class="text-slate-500 text-center py-2 text-xs font-medium">
+                    <div class="animate-spin inline-block w-4 h-4 border-2 border-brand border-t-transparent rounded-full mr-2 align-middle"></div>
+                    <span class="align-middle">Loading details...</span>
+                </div>
+            `;
+            await loadExistingQuestionIntoWorkspace(qId);
+        }
+    };
+
+    return item;
+}
+
+/**
+ * Build one "New Drafts" sidebar entry for an unsaved block in the workspace.
+ */
+function buildDraftNavItem(block, i, existingCount, navigator) {
+    const index = block.dataset.index;
+    const qType = block.querySelector('.builder-format-mcq').checked ? 'MCQ' : 'SPR';
+    const difficulty = block.querySelector('.builder-difficulty').value || 'N/A';
+    const domainVal = block.querySelector('.builder-domain').value || '';
+    const stemVal = builderEditors[`stem_${index}`] ? builderEditors[`stem_${index}`].value() : '';
+    const stemText = stripTags(stemVal || '');
+    const snippet = stemText.length <= 60 ? stemText : stemText.slice(0, 60) + '…';
+
+    let domainLabel = 'No Domain';
+    if (domainVal) {
+        domainLabel = domainVal.split('_').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
+    }
+
+    const item = document.createElement('a');
+    item.href = "javascript:void(0)";
+    item.dataset.navIndex = index;
+    item.className = "list-group-item list-group-item-action border border-slate-200 bg-white hover:bg-slate-50 rounded-xl p-2.5 flex flex-col gap-1 mb-2 transition-all duration-150";
+
+    item.innerHTML = `
+        <div class="flex items-center justify-between gap-2">
+            <span class="font-bold text-xs text-brand text-brand">
+                Q#${existingCount + i + 1}
+                <span class="bg-[var(--color-brand-soft)] border border-brand/20 text-brand font-bold px-1 py-0.5 text-[8px] rounded uppercase">Draft</span>
+            </span>
+            <span class="badge bg-slate-100 border border-slate-250 text-slate-600 font-mono text-[8px] uppercase">${qType}</span>
+        </div>
+        <div class="text-[10px] text-slate-500 truncate mt-0.5" title="${escapeHtml(stemText || '(Empty stem)')}">
+            ${snippet || '(Empty stem)'}
+        </div>
+        <div class="flex items-center justify-between gap-1 mt-1">
+            <span class="text-[9px] text-slate-500 truncate max-w-[120px]" title="${escapeHtml(domainLabel)}">${domainLabel}</span>
+            <span class="bg-slate-100 border border-slate-250 text-slate-655 text-slate-600 font-mono text-[9px] px-1.5 py-0.5 rounded capitalize">${difficulty}</span>
+        </div>
+    `;
+
+    item.onclick = function () {
+        renderLivePreviewCard(block);
+        block.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        syncLivePreviewScroll(block);
+        navigator.querySelectorAll('.list-group-item').forEach(el => el.classList.remove('border-brand/50', 'bg-[var(--color-brand-soft)]'));
+        item.classList.add('border-brand/50', 'bg-[var(--color-brand-soft)]');
+    };
+
+    return item;
 }
 
 export function addBuilderBlock() {
@@ -639,31 +652,7 @@ export function addBuilderBlock() {
     // Bind all format toggles and inputs via setupBlockBindings helper
     setupBlockBindings(block);
 
-    block.querySelector('.remove-block-btn').onclick = function () {
-        const index = block.dataset.index;
-        if (builderEditors[`stem_${index}`]) { builderEditors[`stem_${index}`].toTextArea(); delete builderEditors[`stem_${index}`]; }
-        if (builderEditors[`passage_${index}`]) { builderEditors[`passage_${index}`].toTextArea(); delete builderEditors[`passage_${index}`]; }
-        block.remove();
-        triggerBuilderAutoSave();
-
-        // Remove preview card
-        const previewCard = document.querySelector(`[data-preview-index="${index}"]`);
-        if (previewCard) previewCard.remove();
-
-        const drawer = document.getElementById('builderLivePreviewDrawer');
-        if (drawer && drawer.querySelectorAll('[data-preview-index]').length === 0) {
-            drawer.innerHTML = `
-                <div class="text-slate-400 text-center py-12 text-xs font-medium">
-                    ${icon('file-earmark-richtext', 'w-9 h-9 block mb-2 text-slate-350')}
-                    Live compilation of STEM and formulas will appear here in real-time
-                </div>
-            `;
-        }
-
-        refreshQuestionBlockNumbers();
-        updateSidebarNavigator();
-        updateBuilderGridState();
-    };
+    bindRemoveBlockButton(block);
 
     updateBuilderGridState();
 }
@@ -704,6 +693,39 @@ export function syncBuilderBlockDomain(block) {
             domainSelect.appendChild(opt);
         });
     }
+}
+
+/**
+ * Wires the block's remove button: tears down its EasyMDE editors, removes the
+ * block and its live-preview card, and refreshes the surrounding UI state.
+ * Shared by addBuilderBlock and loadExistingQuestionIntoWorkspace — both build a
+ * block the same way and need the exact same teardown.
+ */
+function bindRemoveBlockButton(block) {
+    block.querySelector('.remove-block-btn').onclick = function () {
+        const index = block.dataset.index;
+        if (builderEditors[`stem_${index}`]) { builderEditors[`stem_${index}`].toTextArea(); delete builderEditors[`stem_${index}`]; }
+        if (builderEditors[`passage_${index}`]) { builderEditors[`passage_${index}`].toTextArea(); delete builderEditors[`passage_${index}`]; }
+        block.remove();
+        triggerBuilderAutoSave();
+
+        const previewCard = document.querySelector(`[data-preview-index="${index}"]`);
+        if (previewCard) previewCard.remove();
+
+        const drawer = document.getElementById('builderLivePreviewDrawer');
+        if (drawer && drawer.querySelectorAll('[data-preview-index]').length === 0) {
+            drawer.innerHTML = `
+                <div class="text-slate-400 text-center py-12 text-xs font-medium">
+                    ${icon('file-earmark-richtext', 'w-9 h-9 block mb-2 text-slate-350')}
+                    Live compilation of STEM and formulas will appear here in real-time
+                </div>
+            `;
+        }
+
+        refreshQuestionBlockNumbers();
+        updateSidebarNavigator();
+        updateBuilderGridState();
+    };
 }
 
 export function getBuilderEditors() { return builderEditors; }
@@ -920,30 +942,7 @@ export async function loadExistingQuestionIntoWorkspace(qId, autoScroll = true) 
         setupBlockBindings(block);
 
         // Bind remove button (just removes the block from editor workspace, doesn't delete it from database!)
-        block.querySelector('.remove-block-btn').onclick = function () {
-            const index = block.dataset.index;
-            if (builderEditors[`stem_${index}`]) { builderEditors[`stem_${index}`].toTextArea(); delete builderEditors[`stem_${index}`]; }
-            if (builderEditors[`passage_${index}`]) { builderEditors[`passage_${index}`].toTextArea(); delete builderEditors[`passage_${index}`]; }
-            block.remove();
-            triggerBuilderAutoSave();
-
-            const previewCard = document.querySelector(`[data-preview-index="${index}"]`);
-            if (previewCard) previewCard.remove();
-
-            const drawer = document.getElementById('builderLivePreviewDrawer');
-            if (drawer && drawer.querySelectorAll('[data-preview-index]').length === 0) {
-                drawer.innerHTML = `
-                    <div class="text-slate-500 text-center py-12 text-xs font-medium">
-                        ${icon('file-earmark-richtext', 'w-9 h-9 block mb-2 text-slate-655')}
-                        Live compilation of STEM and formulas will appear here in real-time
-                    </div>
-                `;
-            }
-
-            refreshQuestionBlockNumbers();
-            updateSidebarNavigator();
-            updateBuilderGridState();
-        };
+        bindRemoveBlockButton(block);
 
         updateBuilderGridState();
 
@@ -963,6 +962,158 @@ export async function loadExistingQuestionIntoWorkspace(qId, autoScroll = true) 
     }
 }
 
+/**
+ * Read one builder block's form fields into a question-data object, showing a
+ * validation alert and scrolling to the block if something required is missing.
+ * Returns null on validation failure.
+ */
+function extractAndValidateBlockData(block, sectionType) {
+    const index = block.dataset.index;
+    const qId = block.dataset.questionId; // present if existing question
+
+    const stem = builderEditors[`stem_${index}`] ? builderEditors[`stem_${index}`].value().trim() : '';
+    const passageContent = builderEditors[`passage_${index}`] ? builderEditors[`passage_${index}`].value().trim() : '';
+    const difficulty = block.querySelector('.builder-difficulty').value;
+    const skillDomain = block.querySelector('.builder-domain').value;
+    const questionType = block.querySelector('.builder-format-mcq').checked ? 'multiple_choice' : 'student_produced_response';
+    const explanation = block.querySelector('.builder-explanation').value.trim();
+
+    const fail = (message) => {
+        block.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        showAlert('danger', message);
+        return null;
+    };
+
+    if (!stem) {
+        return fail('Question stem is required.');
+    }
+
+    if (sectionType === 'reading_writing' && !passageContent) {
+        return fail('Passage content is required for Reading & Writing questions.');
+    }
+
+    let choices = [];
+    let correctChoice = '';
+    let sprAnswers = '';
+
+    if (questionType === 'multiple_choice') {
+        correctChoice = block.querySelector('.builder-correct-radio:checked')?.value || '';
+        if (!correctChoice) {
+            return fail('Please select the correct choice for MCQ questions.');
+        }
+
+        let missingChoice = false;
+        block.querySelectorAll('.builder-choice-content').forEach(input => {
+            const label = input.getAttribute('data-label');
+            const content = input.value.trim();
+            if (!content) {
+                missingChoice = true;
+            }
+            choices.push({
+                label,
+                content,
+                is_correct: label === correctChoice
+            });
+        });
+
+        if (missingChoice) {
+            return fail('Please fill in all choice options (A, B, C, D) for MCQ questions.');
+        }
+    } else {
+        sprAnswers = block.querySelector('.builder-spr-answers').value.trim();
+        if (!sprAnswers) {
+            return fail('Accepted answers are required for SPR questions.');
+        }
+    }
+
+    if (qId) {
+        return {
+            id: qId,
+            stem,
+            question_type: questionType,
+            difficulty,
+            skill_domain: skillDomain,
+            passage_content: passageContent,
+            explanation,
+            choices,
+            correct_choice: correctChoice,
+            spr_answers: sprAnswers,
+        };
+    }
+
+    // For new questions, the bulk-store endpoint expects spr_correct_answers as array
+    const newQItem = {
+        stem,
+        question_type: questionType,
+        difficulty: difficulty || 'medium',
+        skill_domain: skillDomain || (sectionType === 'math' ? 'algebra' : 'information_and_ideas'),
+        explanation,
+    };
+
+    if (sectionType === 'reading_writing' && passageContent) {
+        newQItem.passage = {
+            content: passageContent,
+            passage_type: 'single',
+            genre: 'humanities',
+        };
+    }
+
+    if (questionType === 'multiple_choice') {
+        newQItem.choices = choices;
+    } else {
+        newQItem.spr_correct_answers = sprAnswers.split(/[|,;]+/).map(a => a.trim()).filter(Boolean);
+    }
+
+    return newQItem;
+}
+
+async function submitExistingQuestionUpdates(existingQuestionsToUpdate, csrfToken) {
+    for (const eq of existingQuestionsToUpdate) {
+        const response = await fetch(dashboardResourceUrl(QUESTION_UPDATE_URL_TEMPLATE, 'questions', eq.id), {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json',
+                'Accept': 'application/json',
+                'X-Requested-With': 'XMLHttpRequest',
+                'X-CSRF-TOKEN': csrfToken
+            },
+            credentials: 'same-origin',
+            body: JSON.stringify(eq)
+        });
+
+        if (!response.ok) {
+            const message = await dashboardJsonResponse(response, 'PUT').catch(error => error.message);
+            throw new Error(`Failed to update existing question ID ${eq.id}: ${message}`);
+        }
+    }
+}
+
+async function submitNewQuestionsBulk(newQuestionsToCreate, moduleId, csrfToken) {
+    if (newQuestionsToCreate.length === 0) return;
+
+    const startPosition = parseInt(document.getElementById('builderStartPosition').value) || 1;
+    const bulkPayload = {
+        module_id: moduleId,
+        start_position: startPosition,
+        items: newQuestionsToCreate
+    };
+
+    const response = await fetch(BULK_STORE_URL, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'Accept': 'application/json',
+            'X-CSRF-TOKEN': csrfToken
+        },
+        body: JSON.stringify(bulkPayload)
+    });
+
+    if (!response.ok) {
+        const result = await response.json();
+        throw new Error(`Failed to save new questions: ${result.message || result.errors ? Object.values(result.errors).flat().join(' ') : response.statusText}`);
+    }
+}
+
 export async function submitBuilderQuestions() {
     const moduleId = getTomSelectValue('builderModuleId');
     if (!moduleId) {
@@ -976,121 +1127,24 @@ export async function submitBuilderQuestions() {
         return;
     }
 
+    const sectionType = document.getElementById('builderModuleId').selectedOptions[0]?.getAttribute('data-section-type');
+
     // Prepare save list
     const existingQuestionsToUpdate = [];
     const newQuestionsToCreate = [];
-
     let hasValidationErrors = false;
 
     blocks.forEach(block => {
-        const index = block.dataset.index;
-        const qId = block.dataset.questionId; // present if existing question
-
-        const stem = builderEditors[`stem_${index}`] ? builderEditors[`stem_${index}`].value().trim() : '';
-        const passageContent = builderEditors[`passage_${index}`] ? builderEditors[`passage_${index}`].value().trim() : '';
-        const difficulty = block.querySelector('.builder-difficulty').value;
-        const skillDomain = block.querySelector('.builder-domain').value;
-        const questionType = block.querySelector('.builder-format-mcq').checked ? 'multiple_choice' : 'student_produced_response';
-        const explanation = block.querySelector('.builder-explanation').value.trim();
-
-        if (!stem) {
-            block.scrollIntoView({ behavior: 'smooth', block: 'center' });
-            showAlert('danger', 'Question stem is required.');
+        const questionData = extractAndValidateBlockData(block, sectionType);
+        if (!questionData) {
             hasValidationErrors = true;
             return;
         }
 
-        const type = document.getElementById('builderModuleId').selectedOptions[0]?.getAttribute('data-section-type');
-        if (type === 'reading_writing' && !passageContent) {
-            block.scrollIntoView({ behavior: 'smooth', block: 'center' });
-            showAlert('danger', 'Passage content is required for Reading & Writing questions.');
-            hasValidationErrors = true;
-            return;
-        }
-
-        let choices = [];
-        let correctChoice = '';
-        let sprAnswers = '';
-
-        if (questionType === 'multiple_choice') {
-            correctChoice = block.querySelector('.builder-correct-radio:checked')?.value || '';
-            if (!correctChoice) {
-                block.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                showAlert('danger', 'Please select the correct choice for MCQ questions.');
-                hasValidationErrors = true;
-                return;
-            }
-
-            let missingChoice = false;
-            block.querySelectorAll('.builder-choice-content').forEach(input => {
-                const label = input.getAttribute('data-label');
-                const content = input.value.trim();
-                if (!content) {
-                    missingChoice = true;
-                }
-                choices.push({
-                    label,
-                    content,
-                    is_correct: label === correctChoice
-                });
-            });
-
-            if (missingChoice) {
-                block.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                showAlert('danger', 'Please fill in all choice options (A, B, C, D) for MCQ questions.');
-                hasValidationErrors = true;
-                return;
-            }
-        } else {
-            sprAnswers = block.querySelector('.builder-spr-answers').value.trim();
-            if (!sprAnswers) {
-                block.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                showAlert('danger', 'Accepted answers are required for SPR questions.');
-                hasValidationErrors = true;
-                return;
-            }
-        }
-
-        const questionData = {
-            stem,
-            question_type: questionType,
-            difficulty,
-            skill_domain: skillDomain,
-            passage_content: passageContent,
-            explanation,
-            choices,
-            correct_choice: correctChoice,
-            spr_answers: sprAnswers
-        };
-
-        if (qId) {
-            questionData.id = qId;
+        if (questionData.id) {
             existingQuestionsToUpdate.push(questionData);
         } else {
-            // For new questions, the bulk-store endpoint expects spr_correct_answers as array
-            const newQItem = {
-                stem,
-                question_type: questionType,
-                difficulty: difficulty || 'medium',
-                skill_domain: skillDomain || (type === 'math' ? 'algebra' : 'information_and_ideas'),
-                explanation
-            };
-
-            if (type === 'reading_writing' && passageContent) {
-                newQItem.passage = {
-                    content: passageContent,
-                    passage_type: 'single',
-                    genre: 'humanities'
-                };
-            }
-
-            if (questionType === 'multiple_choice') {
-                newQItem.choices = choices;
-            } else {
-                newQItem.spr_correct_answers = sprAnswers.split(/[|,;]+/).map(a => a.trim()).filter(Boolean);
-            }
-
-            newQuestionsToCreate.push(newQItem);
+            newQuestionsToCreate.push(questionData);
         }
     });
 
@@ -1105,53 +1159,11 @@ export async function submitBuilderQuestions() {
     try {
         const csrfToken = document.querySelector('meta[name="csrf-token"]').content;
 
-        // 1. Save / Update existing questions
-        for (const eq of existingQuestionsToUpdate) {
-            const response = await fetch(dashboardResourceUrl(QUESTION_UPDATE_URL_TEMPLATE, 'questions', eq.id), {
-                method: 'PUT',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Accept': 'application/json',
-                    'X-Requested-With': 'XMLHttpRequest',
-                    'X-CSRF-TOKEN': csrfToken
-                },
-                credentials: 'same-origin',
-                body: JSON.stringify(eq)
-            });
-
-            if (!response.ok) {
-                const message = await dashboardJsonResponse(response, 'PUT').catch(error => error.message);
-                throw new Error(`Failed to update existing question ID ${eq.id}: ${message}`);
-            }
-        }
-
-        // 2. Save / Create new questions
-        if (newQuestionsToCreate.length > 0) {
-            const startPosition = parseInt(document.getElementById('builderStartPosition').value) || 1;
-            const bulkPayload = {
-                module_id: moduleId,
-                start_position: startPosition,
-                items: newQuestionsToCreate
-            };
-
-            const response = await fetch(BULK_STORE_URL, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Accept': 'application/json',
-                    'X-CSRF-TOKEN': csrfToken
-                },
-                body: JSON.stringify(bulkPayload)
-            });
-
-            if (!response.ok) {
-                const result = await response.json();
-                throw new Error(`Failed to save new questions: ${result.message || result.errors ? Object.values(result.errors).flat().join(' ') : response.statusText}`);
-            }
-        }
+        await submitExistingQuestionUpdates(existingQuestionsToUpdate, csrfToken);
+        await submitNewQuestionsBulk(newQuestionsToCreate, moduleId, csrfToken);
 
         showAlert('success', 'All questions saved successfully!');
-        
+
         // Clear workspace
         clearBuilderWorkspace();
 
@@ -1159,7 +1171,7 @@ export async function submitBuilderQuestions() {
         if (window.refreshTestDashboardData) {
             await window.refreshTestDashboardData();
         }
-        
+
         // Re-fetch module questions to refresh lists
         await fetchModuleQuestions(moduleId);
 

@@ -24,9 +24,6 @@ class BulkQuestionImportService
     /**
      * Import from a ZIP file containing a data file (json/csv) and images.
      */
-    /**
-     * Import from a ZIP file containing a data file (json/csv) and images.
-     */
     public function importFromZip(Request $request): array
     {
         @ini_set('memory_limit', '512M');
@@ -58,7 +55,51 @@ class BulkQuestionImportService
             throw ValidationException::withMessages(['zip_file' => ['Could not open ZIP file.']]);
         }
 
-        // Security check for path traversal and ZIP bombs
+        $this->assertZipIsSafeToExtract($zip);
+
+        $tempDir = 'temp/import_' . Str::random(10);
+        try {
+            $tempPath = $this->extractZipToTempDir($zip, $tempDir);
+            $dataFiles = $this->findZipDataFiles($tempPath);
+
+            if (empty($dataFiles)) {
+                throw new \Exception('No JSON or CSV data files found in ZIP.');
+            }
+
+            $allItems = [];
+            foreach ($dataFiles as $dataFile) {
+                $items = $this->parseZipDataFile($dataFile);
+                if (empty($items)) continue;
+
+                // Process Media relative to THIS data file's folder
+                $items = $this->processZipMedia($items, $dataFile['base']);
+                $allItems = array_merge($allItems, $items);
+            }
+
+            if (empty($allItems)) {
+                throw new \Exception('No valid question items found in ZIP data files.');
+            }
+
+            return $this->import([
+                'module_id' => $moduleId,
+                'start_position' => $startPosition,
+                'items' => $allItems,
+            ]);
+        } catch (\Exception $e) {
+            \Illuminate\Support\Facades\Log::error('ZIP Import Error: ' . $e->getMessage(), [
+                'trace' => $e->getTraceAsString()
+            ]);
+            throw $e;
+        } finally {
+            Storage::deleteDirectory($tempDir);
+        }
+    }
+
+    /**
+     * Guard against ZIP bombs and path traversal before extracting to disk.
+     */
+    private function assertZipIsSafeToExtract(ZipArchive $zip): void
+    {
         $maxFiles = 1000;
         $maxTotalSize = 1024 * 1024 * 200; // 200 MB
         $totalSize = 0;
@@ -71,13 +112,13 @@ class BulkQuestionImportService
         for ($i = 0; $i < $zip->numFiles; $i++) {
             $stat = $zip->statIndex($i);
             if ($stat === false) continue;
-            
+
             $filename = $stat['name'];
             if (str_contains($filename, '..') || str_starts_with($filename, '/') || str_starts_with($filename, '\\')) {
                 $zip->close();
                 throw ValidationException::withMessages(['zip_file' => ['ZIP file contains invalid paths (path traversal risk).']]);
             }
-            
+
             $totalSize += $stat['size'];
         }
 
@@ -85,117 +126,107 @@ class BulkQuestionImportService
             $zip->close();
             throw ValidationException::withMessages(['zip_file' => ['ZIP file uncompressed size is too large.']]);
         }
+    }
 
-        $tempDir = 'temp/import_' . Str::random(10);
-        try {
-            Storage::makeDirectory($tempDir);
-            $tempPath = storage_path('app/' . $tempDir);
-            
-            if (!$zip->extractTo($tempPath)) {
-                throw new \Exception("Failed to extract ZIP to $tempPath");
-            }
-            $zip->close();
+    private function extractZipToTempDir(ZipArchive $zip, string $tempDir): string
+    {
+        Storage::makeDirectory($tempDir);
+        $tempPath = storage_path('app/' . $tempDir);
 
-            // 1. Find all data files (recursively)
-            $allDataFiles = [];
-            $allFiles = new \RecursiveIteratorIterator(
-                new \RecursiveDirectoryIterator($tempPath, \RecursiveDirectoryIterator::SKIP_DOTS),
-                \RecursiveIteratorIterator::LEAVES_ONLY
-            );
-
-            foreach ($allFiles as $fileItem) {
-                if (str_starts_with($fileItem->getFilename(), '.') || str_contains($fileItem->getPathname(), '__MACOSX')) {
-                    continue;
-                }
-
-                if (preg_match('/\.(json|csv)$/i', $fileItem->getFilename())) {
-                    \Illuminate\Support\Facades\Log::info('Found data file in ZIP: ' . $fileItem->getPathname());
-                    $allDataFiles[] = [
-                        'path' => $fileItem->getPathname(),
-                        'base' => $fileItem->getPath(),
-                        'ext' => strtolower($fileItem->getExtension())
-                    ];
-                }
-            }
-
-            if (empty($allDataFiles)) {
-                throw new \Exception('No JSON or CSV data files found in ZIP.');
-            }
-
-            // 2. Load and merge all items
-            $allItems = [];
-            foreach ($allDataFiles as $df) {
-                $items = [];
-                if ($df['ext'] === 'json') {
-                    $raw = file_get_contents($df['path']);
-                    $decoded = json_decode($raw, true);
-                    if (json_last_error() !== JSON_ERROR_NONE) {
-                        \Illuminate\Support\Facades\Log::error('JSON decode failed for file: ' . $df['path'] . ' Error: ' . json_last_error_msg());
-                        continue;
-                    }
-                    
-                    \Illuminate\Support\Facades\Log::info('Decoded JSON keys: ' . implode(', ', array_keys($decoded)));
-                    
-                    if (isset($decoded['items']) && is_array($decoded['items'])) {
-                        $items = $decoded['items'];
-                    } elseif (is_array($decoded) && !empty($decoded)) {
-                        // If it's a list, check if items look like questions
-                        if (array_is_list($decoded)) {
-                            $items = $decoded;
-                        } else {
-                            // Single object with stem?
-                            if (isset($decoded['stem'])) {
-                                $items = [$decoded];
-                            } else {
-                                // Fallback: search for any key that contains a list
-                                foreach ($decoded as $key => $val) {
-                                    if (is_array($val) && array_is_list($val) && !empty($val) && (isset($val[0]['stem']) || isset($val[0]['question_number']))) {
-                                        $items = $val;
-                                        break;
-                                    }
-                                }
-                                // If still no items, maybe the whole object IS a question (non-list array)
-                                if (empty($items) && isset($decoded['stem'])) {
-                                    $items = [$decoded];
-                                }
-                            }
-                        }
-                    }
-                } else {
-                    $raw = file_get_contents($df['path']);
-                    $items = $this->csvImportService->parseCsvToItems($raw);
-                }
-
-                \Illuminate\Support\Facades\Log::info('Items extracted from ' . $df['path'] . ': ' . count($items));
-
-                if (empty($items)) continue;
-
-                // Process Media relative to THIS data file's folder
-                $items = $this->processZipMedia($items, $df['base']);
-                $allItems = array_merge($allItems, $items);
-            }
-
-            if (empty($allItems)) {
-                throw new \Exception('No valid question items found in ZIP data files.');
-            }
-
-            // 3. Build payload
-            $payload = [
-                'module_id' => $moduleId,
-                'start_position' => $startPosition,
-                'items' => $allItems
-            ];
-
-            return $this->import($payload);
-
-        } catch (\Exception $e) {
-            \Illuminate\Support\Facades\Log::error('ZIP Import Error: ' . $e->getMessage(), [
-                'trace' => $e->getTraceAsString()
-            ]);
-            throw $e;
-        } finally {
-            Storage::deleteDirectory($tempDir);
+        if (!$zip->extractTo($tempPath)) {
+            throw new \Exception("Failed to extract ZIP to $tempPath");
         }
+        $zip->close();
+
+        return $tempPath;
+    }
+
+    /**
+     * Recursively find every .json/.csv data file inside the extracted ZIP, skipping
+     * hidden files and macOS resource-fork junk.
+     */
+    private function findZipDataFiles(string $tempPath): array
+    {
+        $dataFiles = [];
+        $allFiles = new \RecursiveIteratorIterator(
+            new \RecursiveDirectoryIterator($tempPath, \RecursiveDirectoryIterator::SKIP_DOTS),
+            \RecursiveIteratorIterator::LEAVES_ONLY
+        );
+
+        foreach ($allFiles as $fileItem) {
+            if (str_starts_with($fileItem->getFilename(), '.') || str_contains($fileItem->getPathname(), '__MACOSX')) {
+                continue;
+            }
+
+            if (preg_match('/\.(json|csv)$/i', $fileItem->getFilename())) {
+                \Illuminate\Support\Facades\Log::info('Found data file in ZIP: ' . $fileItem->getPathname());
+                $dataFiles[] = [
+                    'path' => $fileItem->getPathname(),
+                    'base' => $fileItem->getPath(),
+                    'ext' => strtolower($fileItem->getExtension()),
+                ];
+            }
+        }
+
+        return $dataFiles;
+    }
+
+    /**
+     * Parse one JSON or CSV data file (as found by findZipDataFiles) into a flat list of item arrays.
+     */
+    private function parseZipDataFile(array $dataFile): array
+    {
+        $raw = file_get_contents($dataFile['path']);
+
+        if ($dataFile['ext'] === 'json') {
+            $decoded = json_decode($raw, true);
+            if (json_last_error() !== JSON_ERROR_NONE) {
+                \Illuminate\Support\Facades\Log::error('JSON decode failed for file: ' . $dataFile['path'] . ' Error: ' . json_last_error_msg());
+                return [];
+            }
+
+            \Illuminate\Support\Facades\Log::info('Decoded JSON keys: ' . implode(', ', array_keys($decoded)));
+            $items = $this->extractItemsFromDecodedJson($decoded);
+        } else {
+            $items = $this->csvImportService->parseCsvToItems($raw);
+        }
+
+        \Illuminate\Support\Facades\Log::info('Items extracted from ' . $dataFile['path'] . ': ' . count($items));
+
+        return $items;
+    }
+
+    /**
+     * Locate the question-item list inside a decoded JSON payload, which may arrive as
+     * {"items": [...]}, a bare list, a single question object, or a list nested under an
+     * unknown key — teachers paste AI-generated JSON in whatever shape came out.
+     */
+    private function extractItemsFromDecodedJson($decoded): array
+    {
+        if (isset($decoded['items']) && is_array($decoded['items'])) {
+            return $decoded['items'];
+        }
+
+        if (!is_array($decoded) || empty($decoded)) {
+            return [];
+        }
+
+        if (array_is_list($decoded)) {
+            return $decoded;
+        }
+
+        if (isset($decoded['stem'])) {
+            return [$decoded];
+        }
+
+        // Fallback: search for any key that contains a list of question-shaped items
+        foreach ($decoded as $val) {
+            if (is_array($val) && array_is_list($val) && !empty($val) && (isset($val[0]['stem']) || isset($val[0]['question_number']))) {
+                return $val;
+            }
+        }
+
+        return [];
     }
 
     private function processZipMedia(array $items, string $basePath): array

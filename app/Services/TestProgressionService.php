@@ -76,12 +76,13 @@ class TestProgressionService
     {
         if ($attempt->attempt_type === 'section') {
             $this->finalize($attempt, $test);
+            $finalAttempt = $this->autoMergeIfEligible($attempt, $test);
 
             return [
                 'status' => 'success',
                 'test_completed' => true,
                 'redirect_url' => route('home'),
-                'results_url' => route('student.scores.show', $attempt),
+                'results_url' => route('student.scores.show', $finalAttempt),
                 'message' => 'Section completed.',
             ];
         }
@@ -107,6 +108,125 @@ class TestProgressionService
     private function nextModuleResult(Module $module, string $message): array
     {
         return ['status' => 'success', 'next_module_id' => $module->ulid, 'message' => $message];
+    }
+
+    private function autoMergeIfEligible(UserTest $attempt, Test $test): UserTest
+    {
+        if ($attempt->attempt_type !== 'section' || ! $attempt->section_type) {
+            return $attempt;
+        }
+
+        $oppositeSectionType = $attempt->section_type === 'reading_writing' ? 'math' : 'reading_writing';
+
+        $oppositeAttempt = UserTest::where('user_id', $attempt->user_id)
+            ->where('test_id', $attempt->test_id)
+            ->where('attempt_type', 'section')
+            ->where('section_type', $oppositeSectionType)
+            ->where('status', 'completed')
+            ->where('id', '!=', $attempt->id)
+            ->latest('completed_at')
+            ->first();
+
+        if (! $oppositeAttempt) {
+            return $attempt;
+        }
+
+        $firstAttempt = ($attempt->completed_at && $oppositeAttempt->completed_at && $attempt->completed_at->lt($oppositeAttempt->completed_at))
+            ? $attempt
+            : $oppositeAttempt;
+        $secondAttempt = $firstAttempt->id === $attempt->id ? $oppositeAttempt : $attempt;
+
+        return \Illuminate\Support\Facades\DB::transaction(function () use ($firstAttempt, $secondAttempt, $test) {
+            $first  = UserTest::where('id', $firstAttempt->id)->lockForUpdate()->first();
+            $second = UserTest::where('id', $secondAttempt->id)->lockForUpdate()->first();
+
+            if (! $first || ! $second) {
+                return $firstAttempt;
+            }
+
+            $rwAttempt   = $first->section_type === 'reading_writing' ? $first : $second;
+            $mathAttempt = $first->section_type === 'math' ? $first : $second;
+
+            $rwScore   = $rwAttempt->score_reading_writing;
+            $mathScore = $mathAttempt->score_math;
+
+            $totalScore = ($rwScore !== null && $mathScore !== null) ? ($rwScore + $mathScore) : null;
+            $totalLower = null;
+            $totalUpper = null;
+
+            if ($test->test_type === Test::TYPE_ADAPTIVE_FULL && $rwAttempt->rw_theta !== null && $mathAttempt->math_theta !== null) {
+                $rwConv   = $this->adaptiveConversions->convert($rwAttempt->rw_theta, $rwAttempt->rw_theta_se);
+                $mathConv = $this->adaptiveConversions->convert($mathAttempt->math_theta, $mathAttempt->math_theta_se);
+                if ($rwConv && $mathConv) {
+                    $total = $this->adaptiveConversions->totalRange($rwConv, $mathConv);
+                    $totalScore = $total['score'];
+                    $totalLower = $total['lower'];
+                    $totalUpper = $total['upper'];
+                }
+            }
+
+            $secondAnswers = UserTestAnswer::where('user_test_id', $second->id)->get();
+            foreach ($secondAnswers as $ans) {
+                $exists = UserTestAnswer::where('user_test_id', $first->id)
+                    ->where('module_id', $ans->module_id)
+                    ->where('question_id', $ans->question_id)
+                    ->exists();
+
+                if (! $exists) {
+                    UserTestAnswer::create([
+                        'user_test_id'      => $first->id,
+                        'module_id'         => $ans->module_id,
+                        'question_id'       => $ans->question_id,
+                        'selected_answer'   => $ans->selected_answer,
+                        'is_correct'        => $ans->is_correct,
+                        'question_snapshot' => $ans->question_snapshot,
+                    ]);
+                }
+            }
+
+            $secondSubmissions = \App\Models\UserTestModuleSubmission::where('user_test_id', $second->id)->get();
+            foreach ($secondSubmissions as $sub) {
+                \App\Models\UserTestModuleSubmission::firstOrCreate(
+                    ['user_test_id' => $first->id, 'module_id' => $sub->module_id],
+                    [
+                        'issued_next_module_id' => $sub->issued_next_module_id,
+                        'result'                => $sub->result,
+                        'submitted_at'          => $sub->submitted_at,
+                    ]
+                );
+            }
+
+            $first->forceFill([
+                'attempt_type'                => 'full',
+                'section_type'               => null,
+                'score_reading_writing'       => $rwAttempt->score_reading_writing,
+                'score_reading_writing_lower' => $rwAttempt->score_reading_writing_lower,
+                'score_reading_writing_upper' => $rwAttempt->score_reading_writing_upper,
+                'score_math'                  => $mathAttempt->score_math,
+                'score_math_lower'            => $mathAttempt->score_math_lower,
+                'score_math_upper'            => $mathAttempt->score_math_upper,
+                'total_score'                 => $totalScore,
+                'total_score_lower'           => $totalLower,
+                'total_score_upper'           => $totalUpper,
+                'rw_theta'                    => $rwAttempt->rw_theta,
+                'math_theta'                  => $mathAttempt->math_theta,
+                'rw_theta_se'                 => $rwAttempt->rw_theta_se,
+                'math_theta_se'               => $mathAttempt->math_theta_se,
+                'rw_m2_path'                  => $rwAttempt->rw_m2_path,
+                'math_m2_path'                => $mathAttempt->math_m2_path,
+                'scoring_method'              => $rwAttempt->scoring_method ?? $mathAttempt->scoring_method,
+                'score_conversion_set_id'     => $rwAttempt->score_conversion_set_id ?? $mathAttempt->score_conversion_set_id,
+                'score_conversion_version'    => $rwAttempt->score_conversion_version ?? $mathAttempt->score_conversion_version,
+                'score_estimate_kind'         => $rwAttempt->score_estimate_kind ?? $mathAttempt->score_estimate_kind,
+                'completed_at'                => now(),
+            ])->save();
+
+            if (! $second->assignment_id) {
+                $second->delete();
+            }
+
+            return $first;
+        });
     }
 
     private function finalize(UserTest $attempt, Test $test): void

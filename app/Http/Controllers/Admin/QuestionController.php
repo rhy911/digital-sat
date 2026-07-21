@@ -19,6 +19,8 @@ class QuestionController extends Controller
 {
     private const QUESTIONS_TABLE_PER_PAGE = 30;
 
+    public function __construct(private readonly \App\Services\TestContentLockService $contentLock) {}
+
     public function index(Request $request)
     {
         $perPage = min(100, max(5, (int) $request->input('per_page', self::QUESTIONS_TABLE_PER_PAGE)));
@@ -135,7 +137,7 @@ class QuestionController extends Controller
     public function update(UpdateQuestionRequest $request, $id)
     {
         $question = Question::with(['passage', 'answerChoices', 'explanation'])->findOrFail($id);
-        app(\App\Services\TestContentLockService::class)->ensureQuestionUnlocked($question);
+        $this->contentLock->ensureQuestionUnlocked($question);
 
         $validated = $request->validated();
 
@@ -212,7 +214,7 @@ class QuestionController extends Controller
         $validated = $request->validated();
 
         $module = Module::findOrFail($validated['module_id']);
-        app(\App\Services\TestContentLockService::class)->ensureModuleUnlocked($module);
+        $this->contentLock->ensureModuleUnlocked($module);
 
         $question = Question::visibleTo(auth()->user())->findOrFail($validated['question_id']);
 
@@ -357,11 +359,12 @@ class QuestionController extends Controller
         }
     }
 
-    public function destroy($id)
+    public function destroy($id): \Illuminate\Http\JsonResponse
     {
-        $question = Question::findOrFail($id);
+        // Scope to visibleTo BEFORE findOrFail to prevent ID enumeration via 403 vs 404.
+        $question = Question::visibleTo(auth()->user())->findOrFail($id);
         $this->authorize('delete', $question);
-        app(\App\Services\TestContentLockService::class)->ensureQuestionUnlocked($question);
+        $this->contentLock->ensureQuestionUnlocked($question);
 
         if (DB::table('user_test_answers')->where('question_id', $question->id)->exists()) {
             return response()->json(['status' => 'error', 'message' => 'Cannot delete question with existing student attempts.'], 422);

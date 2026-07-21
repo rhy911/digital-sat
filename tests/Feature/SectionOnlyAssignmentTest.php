@@ -193,10 +193,10 @@ class SectionOnlyAssignmentTest extends TestCase
         $this->assertEquals($mathModule->id, $startModule->id);
     }
 
-    public function test_student_can_merge_separate_completed_section_attempts()
+    public function test_auto_merge_combines_completed_sections_into_first_attempt()
     {
         $student = User::factory()->student()->create();
-        
+
         $test = Test::create([
             'title' => 'SAT Practice Test',
             'test_type' => 'full_length',
@@ -219,33 +219,106 @@ class SectionOnlyAssignmentTest extends TestCase
             'test_id' => $test->id,
             'attempt_type' => 'section',
             'section_type' => 'math',
-            'status' => 'completed',
+            'status' => 'in_progress',
             'attempt_number' => 1,
+        ]);
+
+        // Complete Math section using TestProgressionService
+        $progression = app(\App\Services\TestProgressionService::class);
+        $rwModule = Module::create([
+            'section_id' => Section::create(['test_id' => $test->id, 'name' => 'Math', 'type' => 'math', 'order' => 2])->id,
+            'title' => 'Module 1',
+            'module_number' => 1,
+            'order' => 1,
+        ]);
+
+        // Mock completion fields on Math attempt
+        $attemptMath->update([
+            'status' => 'completed',
             'score_math' => 650,
             'completed_at' => now(),
         ]);
 
-        // Access merge index page
-        $response = $this->actingAs($student)->get(route('student.scores.merge'));
-        $response->assertStatus(200);
+        // Call autoMergeIfEligible via reflection or completion trigger
+        $reflection = new \ReflectionClass($progression);
+        $method = $reflection->getMethod('autoMergeIfEligible');
+        $method->setAccessible(true);
+        $result = $method->invoke($progression, $attemptMath, $test);
 
-        // Submit merge request
-        $response = $this->actingAs($student)->post(route('student.scores.merge.store'), [
-            'rw_attempt_ulid' => $attemptRw->ulid,
-            'math_attempt_ulid' => $attemptMath->ulid,
+        // Verify Attempt RW (the first attempt) has been upgraded to a merged full test result
+        $this->assertEquals($attemptRw->id, $result->id);
+        $this->assertEquals('full', $result->attempt_type);
+        $this->assertNull($result->section_type);
+        $this->assertEquals(600, $result->score_reading_writing);
+        $this->assertEquals(650, $result->score_math);
+        $this->assertEquals(1250, $result->total_score);
+
+        // Verify standalone practice section attemptMath was cleaned up
+        $this->assertDatabaseMissing('user_tests', ['id' => $attemptMath->id]);
+    }
+
+    public function test_auto_merge_preserves_assignment_section_attempt()
+    {
+        $teacher = User::factory()->teacher()->create();
+        $student = User::factory()->student()->create();
+        $classroom = Classroom::create([
+            'owner_id' => $teacher->id,
+            'name' => 'Math Class',
+            'code' => 'MATH101',
+            'status' => 'active',
         ]);
 
-        $response->assertRedirect(route('student.scores.merged', [
-            'rw_attempt' => $attemptRw->ulid,
-            'math_attempt' => $attemptMath->ulid,
-        ]));
+        $test = Test::create([
+            'title' => 'SAT Assignment Test',
+            'test_type' => 'full_length',
+            'status' => 'active',
+        ]);
 
-        // Check merged report view loading
-        $response = $this->actingAs($student)->get(route('student.scores.merged', [
-            'rw_attempt' => $attemptRw->ulid,
-            'math_attempt' => $attemptMath->ulid,
-        ]));
-        $response->assertStatus(200);
-        $response->assertViewHas('isMerged', true);
+        $assignment = Assignment::create([
+            'classroom_id' => $classroom->id,
+            'teacher_id' => $teacher->id,
+            'test_id' => $test->id,
+            'assign_type' => 'section',
+            'section_type' => 'math',
+            'title' => 'Math Homework',
+        ]);
+
+        $attemptRw = UserTest::create([
+            'user_id' => $student->id,
+            'test_id' => $test->id,
+            'attempt_type' => 'section',
+            'section_type' => 'reading_writing',
+            'status' => 'completed',
+            'score_reading_writing' => 620,
+            'completed_at' => now()->subHours(2),
+        ]);
+
+        $attemptMath = UserTest::create([
+            'user_id' => $student->id,
+            'test_id' => $test->id,
+            'assignment_id' => $assignment->id,
+            'attempt_type' => 'section',
+            'section_type' => 'math',
+            'status' => 'completed',
+            'score_math' => 680,
+            'completed_at' => now(),
+        ]);
+
+        $progression = app(\App\Services\TestProgressionService::class);
+        $reflection = new \ReflectionClass($progression);
+        $method = $reflection->getMethod('autoMergeIfEligible');
+        $method->setAccessible(true);
+        $result = $method->invoke($progression, $attemptMath, $test);
+
+        // Merged result is Attempt RW
+        $this->assertEquals($attemptRw->id, $result->id);
+        $this->assertEquals(1300, $result->total_score);
+
+        // Assignment attempt for Math MUST still exist in database for assignment report view
+        $this->assertDatabaseHas('user_tests', [
+            'id' => $attemptMath->id,
+            'assignment_id' => $assignment->id,
+            'score_math' => 680,
+        ]);
     }
 }

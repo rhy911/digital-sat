@@ -3,7 +3,9 @@ import {
     dashboardJsonResponse,
     dashboardResourceUrl,
 } from '../core/config.js';
-import { humanizeUnderscores, showTableLoader, hideTableLoader, escapeHtml, showAlert, formatDateToShort } from '../utils/helpers.js';
+import { humanizeUnderscores, escapeHtml, formatDateToShort } from '../utils/text.js';
+import { showTableLoader, hideTableLoader } from '../utils/table-loader.js';
+import { showAlert } from '../utils/custom-alert.js';
 import { icon } from '../../../shared/icons.js';
 
 let localAllSections = [];

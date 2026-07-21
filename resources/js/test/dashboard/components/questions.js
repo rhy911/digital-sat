@@ -2,11 +2,12 @@ import {
     QUESTIONS_LIST_URL, QUESTIONS_SEARCH_URL, BULK_PREVIEW_URL, CSV_BULK_PREVIEW_URL,
     BULK_STORE_URL, CSV_BULK_URL, MEDIA_UPLOAD_URL, BASE_URL, SKILL_DOMAINS
 } from '../core/config.js';
+import { showAlert, showCustomConfirm } from '../utils/custom-alert.js';
 import {
-    showAlert, showCustomConfirm, escapeHtml, stripTags, capitalizeFirstLetter,
-    humanizeUnderscores, getTomSelectValue, destroyTomSelectIfAny, initTomSelectOn,
+    escapeHtml, stripTags, capitalizeFirstLetter, humanizeUnderscores,
     processMedia, compileMarkdownToHtml
-} from '../utils/helpers.js';
+} from '../utils/text.js';
+import { getTomSelectValue, destroyTomSelectIfAny, initTomSelectOn } from '../utils/tomselect.js';
 import {
     initEditModalEditors, debouncedEditQuestionPreview, updateEditQuestionPreview,
     refreshEditMediaList, getEditStemEditor, getEditPassageEditor, getEditExplanationEditor

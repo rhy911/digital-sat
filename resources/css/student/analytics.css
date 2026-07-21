@@ -1310,11 +1310,45 @@
 /* Recommended booklet — drop the wax seal + heavy 3D tilt, keep the spine */
 .ds-desk-board .ds-booklet {
     box-shadow: -3px 4px 12px rgba(0, 0, 0, 0.05);
+    transition: transform 180ms cubic-bezier(0.16, 1, 0.3, 1), box-shadow 180ms cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .ds-desk-board .ds-booklet:hover {
     transform: translateY(-3px);
     box-shadow: -4px 10px 22px rgba(26, 20, 5, 0.1);
+}
+
+/* Assignments booklet card */
+.ds-assignment-booklet {
+    background: #faf9f6 !important;
+    border-left: 4px solid var(--accent) !important;
+}
+
+.ds-assignment-tag {
+    background: rgba(42, 77, 143, 0.1) !important;
+    color: var(--accent) !important;
+    border-color: rgba(42, 77, 143, 0.25) !important;
+}
+
+.ds-assignment-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    margin-bottom: 1.25rem;
+}
+
+.ds-assignment-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding-bottom: 0.6rem;
+    border-bottom: 1px dashed var(--binder-spine);
+    font-size: 0.85rem;
+}
+
+.ds-assignment-row:last-child {
+    border-bottom: none;
+    padding-bottom: 0;
 }
 
 .ds-booklet-tag {

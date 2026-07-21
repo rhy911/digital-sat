@@ -5,7 +5,9 @@ import {
     dashboardJsonResponse,
     dashboardResourceUrl,
 } from '../core/config.js';
-import { showAlert, escapeHtml, humanizeUnderscores, showTableLoader, hideTableLoader, formatDateToShort } from '../utils/helpers.js';
+import { showAlert } from '../utils/custom-alert.js';
+import { escapeHtml, humanizeUnderscores, formatDateToShort } from '../utils/text.js';
+import { showTableLoader, hideTableLoader } from '../utils/table-loader.js';
 import { icon } from '../../../shared/icons.js';
 
 let localAllTests = [];

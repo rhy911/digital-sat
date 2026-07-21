@@ -33,7 +33,6 @@
     --animate-float: float 3s ease-in-out infinite;
 
     @keyframes float {
-
         0%,
         100% {
             transform: translateY(0);
@@ -285,7 +284,6 @@ u {
 }
 
 @keyframes loading-pulse-icon {
-
     0%,
     100% {
         transform: translate(-50%, -50%) scale(1) translateZ(0);
@@ -299,7 +297,6 @@ u {
 }
 
 @keyframes loading-pulse-text {
-
     0%,
     100% {
         opacity: 0.6;
@@ -347,9 +344,11 @@ header .dropdown-item.logout-btn:hover {
     padding-top: clamp(1.75rem, 3vw, 2.75rem);
     padding-bottom: clamp(1.75rem, 3vw, 2.5rem);
     background:
-        linear-gradient(180deg,
+        linear-gradient(
+            180deg,
             rgba(239, 246, 255, 0.74),
-            rgba(248, 250, 252, 0) 68%),
+            rgba(248, 250, 252, 0) 68%
+        ),
         #f8fafc;
 }
 
@@ -437,8 +436,8 @@ header .dropdown-item.logout-btn:hover {
     margin-top: 1rem;
     background: #fef08a;
     color: #1e293b;
-    box-decoration-break: clone;
     -webkit-box-decoration-break: clone;
+    box-decoration-break: clone;
     line-height: 2;
 }
 
@@ -485,7 +484,7 @@ header .dropdown-item.logout-btn:hover {
     font-weight: 650;
 }
 
-.landing-choice+.landing-choice {
+.landing-choice + .landing-choice {
     margin-top: 0.42rem;
 }
 
@@ -705,7 +704,7 @@ header .dropdown-item.logout-btn:hover {
 }
 
 @media (max-width: 640px) {
-    .landing-hero>div {
+    .landing-hero > div {
         gap: 1.5rem;
     }
 
@@ -741,9 +740,9 @@ header .dropdown-item.logout-btn:hover {
     bottom: 0;
     background: #ffffffb3;
     /* Sleek translucent light background */
-    backdrop-filter: blur(8px);
-    /* Smooth premium glassmorphism blur */
     -webkit-backdrop-filter: blur(8px);
+    /* Smooth premium glassmorphism blur */
+    backdrop-filter: blur(8px);
     z-index: 100;
     display: flex;
     align-items: center;
@@ -811,7 +810,6 @@ header .dropdown-item.logout-btn:hover {
 }
 
 @keyframes table-loader-pulse {
-
     0%,
     100% {
         transform: scale(1) translateZ(0);
@@ -823,7 +821,6 @@ header .dropdown-item.logout-btn:hover {
 }
 
 @keyframes table-text-pulse {
-
     0%,
     100% {
         opacity: 0.6;

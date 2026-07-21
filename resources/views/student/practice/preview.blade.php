@@ -1,8 +1,13 @@
-<x-layouts.student :user="$user" header-type="progress" title="Test Preview" :cancel-route="route('home')">
+<x-layouts.student :user="$user" header-type="none" title="Test Preview" :cancel-route="route('home')">
     @push('styles')
-        @vite(['resources/css/student/analytics.css'])
+        @vite(['resources/css/classroom-workspace.css', 'resources/css/student/analytics.css'])
     @endpush
 
+    <div class="app-shell app-shell--no-list">
+        <x-shell.icon-rail :logo-href="route('home')" :avatar-label="$user->initials"
+            :items="\App\Support\NavRail::student('practice')" />
+
+        <div class="shell-content">
     <div class="ds-home ds-preview-page">
         <section class="ds-workspace-head" aria-labelledby="test-preview-title">
             <div class="ds-profile-panel">
@@ -99,5 +104,7 @@
                 </div>
             </article>
         </section>
+    </div>
+        </div>
     </div>
 </x-layouts.student>

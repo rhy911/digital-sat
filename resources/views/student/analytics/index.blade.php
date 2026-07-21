@@ -1,10 +1,6 @@
 <x-layouts.student :user="$user" title="Home" header-type="none">
     @push('styles')
-        @if($user->role === 'teacher' && $user->isApprovedTeacher())
-            @vite(['resources/css/classroom-workspace.css', 'resources/css/student/analytics.css', 'resources/css/student/progress.css', 'resources/css/classroom.css'])
-        @else
-            @vite(['resources/css/classroom-workspace.css', 'resources/css/student/analytics.css', 'resources/css/student/progress.css'])
-        @endif
+        @vite(['resources/css/classroom-workspace.css', 'resources/css/student/analytics.css', 'resources/css/student/progress.css'])
     @endpush
 
     @php
@@ -23,24 +19,11 @@
         $moreposts = $latestPosts->skip(1);
 
         $isTeacher = $canUseTeacherWorkspace;
-        $railItems = $isTeacher ? [
-            ['route' => route('teacher.progress'), 'label' => 'Progress', 'icon' => '<svg viewBox=\'0 0 24 24\' fill=\'none\' stroke=\'currentColor\' stroke-width=\'1.8\'><path d=\'M4 19V5M4 19h16M8 15l3-4 3 3 5-7\' stroke-linecap=\'round\' stroke-linejoin=\'round\' /></svg>'],
-            ['route' => route('teacher.classes.index'), 'label' => 'Classes', 'icon' => '<svg viewBox=\'0 0 24 24\' fill=\'none\' stroke=\'currentColor\' stroke-width=\'1.8\'><rect x=\'3.5\' y=\'5\' width=\'17\' height=\'14\' rx=\'2\' /><path d=\'M3.5 9.5h17M8 5v-1M16 5v-1\' stroke-linecap=\'round\' /></svg>'],
-            ['route' => route('teacher.assignments.index'), 'label' => 'Reports', 'icon' => '<svg viewBox=\'0 0 24 24\' fill=\'none\' stroke=\'currentColor\' stroke-width=\'1.8\'><path d=\'M5 3v18h16\' stroke-linecap=\'round\' /><rect x=\'8\' y=\'12\' width=\'3\' height=\'6\' /><rect x=\'13\' y=\'8\' width=\'3\' height=\'10\' /><rect x=\'18\' y=\'5\' width=\'3\' height=\'13\' /></svg>'],
-            ['route' => route('home.practice'), 'label' => 'Test Library', 'icon' => '<svg viewBox=\'0 0 24 24\' fill=\'none\' stroke=\'currentColor\' stroke-width=\'1.8\'><path d=\'M12 6.5c-1.6-1.2-3.7-1.8-6-1.8-.7 0-1.4.05-2 .15v13.5c.6-.1 1.3-.15 2-.15 2.3 0 4.4.6 6 1.8m0-13.5c1.6-1.2 3.7-1.8 6-1.8.7 0 1.4.05 2 .15v13.5c-.6-.1-1.3-.15-2-.15-2.3 0-4.4.6-6 1.8m0-13.5v13.5\' stroke-linecap=\'round\' stroke-linejoin=\'round\' /></svg>'],
-            ['route' => route('home-dashboard.index'), 'label' => 'Test Builder', 'target' => '_blank', 'icon' => '<svg viewBox=\'0 0 24 24\' fill=\'none\' stroke=\'currentColor\' stroke-width=\'1.8\'><path d=\'M14.7 6.3a3 3 0 0 0 4 4L14 15l-4 1 1-4Z\' stroke-linejoin=\'round\' /></svg>'],
-        ] : [
-            ['route' => route('home'), 'label' => __('classroom.nav_dashboard'), 'active' => true, 'icon' => '<svg viewBox=\'0 0 24 24\' fill=\'none\' stroke=\'currentColor\' stroke-width=\'1.8\'><path d=\'m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z\'/><polyline points=\'9 22 9 12 15 12 15 22\'/></svg>'],
-            ['route' => route('student.classes.index'), 'label' => __('classroom.nav_my_classes'), 'icon' => '<svg viewBox=\'0 0 24 24\' fill=\'none\' stroke=\'currentColor\' stroke-width=\'1.8\'><rect x=\'3.5\' y=\'5\' width=\'17\' height=\'14\' rx=\'2\' /><path d=\'M3.5 9.5h17M8 5v-1M16 5v-1\' stroke-linecap=\'round\' /></svg>'],
-            ['route' => route('student.assignments.index'), 'label' => 'Assignments', 'icon' => '<svg viewBox=\'0 0 24 24\' fill=\'none\' stroke=\'currentColor\' stroke-width=\'1.8\'><rect x=\'3\' y=\'4\' width=\'18\' height=\'16\' rx=\'2\' /><path d=\'M7 8h10M7 12h10M7 16h6\' stroke-linecap=\'round\' /></svg>'],
-            ['route' => route('student.progress'), 'label' => __('classroom.nav_progress'), 'icon' => '<svg viewBox=\'0 0 24 24\' fill=\'none\' stroke=\'currentColor\' stroke-width=\'1.8\'><path d=\'M4 19V5M4 19h16M8 15l3-4 3 3 5-7\' stroke-linecap=\'round\' stroke-linejoin=\'round\' /></svg>'],
-            ['route' => route('home.practice'), 'label' => __('classroom.nav_practice'), 'icon' => '<svg viewBox=\'0 0 24 24\' fill=\'none\' stroke=\'currentColor\' stroke-width=\'1.8\'><path d=\'M12 6.5c-1.6-1.2-3.7-1.8-6-1.8-.7 0-1.4.05-2 .15v13.5c.6-.1 1.3-.15 2-.15 2.3 0 4.4.6 6 1.8m0-13.5c1.6-1.2 3.7-1.8 6-1.8.7 0 1.4.05 2 .15v13.5c-.6-.1-1.3-.15-2-.15-2.3 0-4.4.6-6 1.8m0-13.5v13.5\' stroke-linecap=\'round\' stroke-linejoin=\'round\' /></svg>'],
-            ['route' => route('student.scores.index'), 'label' => __('classroom.nav_scores'), 'icon' => '<svg viewBox=\'0 0 24 24\' fill=\'none\' stroke=\'currentColor\' stroke-width=\'1.8\'><line x1=\'18\' y1=\'20\' x2=\'18\' y2=\'10\'/><line x1=\'12\' y1=\'20\' x2=\'12\' y2=\'4\'/><line x1=\'6\' y1=\'20\' x2=\'6\' y2=\'14\'/></svg>'],
-        ];
     @endphp
 
     <div class="app-shell app-shell--no-list" x-data="{ tab: '{{ $initialHomeTab }}' }" @teacher-home-tab-requested.window="tab = $event.detail.tab" @teacher-home-tab-changed.window="tab = $event.detail.tab">
-        <x-shell.icon-rail :logo-href="$isTeacher ? route('teacher.progress') : route('home')" :avatar-label="$user->initials" :items="$railItems" />
+        <x-shell.icon-rail :logo-href="\App\Support\NavRail::logoHrefForUser($user)" :avatar-label="$user->initials"
+            :items="\App\Support\NavRail::forUser($user, 'home')" />
 
         <div class="ledger-pane ds-desk-workspace-view" x-show="tab === 'progress'">
             <div class="ds-desk-board">
@@ -107,7 +90,7 @@
                                 <div class="ds-booklet">
                                     <div class="ds-booklet-inner">
                                         <span class="ds-booklet-tag">Recommended pick</span>
-                                        <h2 id="featured-title" class="ds-booklet-title" style="font-size: 1.5rem; line-height: 1.25;">{{ $featuredTest->title }}</h2>
+                                        <h2 id="featured-title" class="ds-booklet-title text-xl font-bold leading-snug">{{ $featuredTest->title }}</h2>
                                         <p class="ds-booklet-meta">
                                             <span class="ds-chip">{{ $featuredTest->test_type ? \Illuminate\Support\Str::headline($featuredTest->test_type) : 'Full-length' }}</span>
                                             <span>&bull;</span>
@@ -124,9 +107,9 @@
                                     </div>
                                 </div>
                             @else
-                                <div class="ds-booklet" style="text-align: center; padding: 2rem;">
+                                <div class="ds-booklet text-center p-8">
                                     <div class="ds-booklet-inner">
-                                        <h2 id="featured-title" class="ds-booklet-title" style="font-size: 1.3rem;">No active tests</h2>
+                                        <h2 id="featured-title" class="ds-booklet-title text-lg">No active tests</h2>
                                         <p class="ds-booklet-desc">Check back soon, or preview the digital interface.</p>
                                         <a href="{{ route('test.preview') }}" class="btn-sm-primary btn-pin ds-btn-paper">
                                             Open test preview
@@ -138,25 +121,25 @@
 
                         {{-- My Assignments Pinned Card --}}
                         @if(!$isTeacher && $assignments->isNotEmpty())
-                            <div class="ds-booklet-container" style="margin-top: 20px;">
-                                <div class="ds-booklet" style="background: #faf9f6; border-left: 4px solid var(--accent); padding: 1.5rem;">
+                            <div class="ds-booklet-container mt-5">
+                                <div class="ds-booklet ds-assignment-booklet">
                                     <div class="ds-booklet-inner">
-                                        <span class="ds-booklet-tag" style="background: var(--accent-soft); color: var(--accent);">My assignments</span>
-                                        <h2 class="ds-booklet-title" style="font-size: 1.3rem; margin-bottom: 0.75rem;">Class assignments</h2>
+                                        <span class="ds-booklet-tag ds-assignment-tag">My assignments</span>
+                                        <h2 class="ds-booklet-title text-lg font-bold mb-3">Class assignments</h2>
                                         
-                                        <div style="display: flex; flex-direction: column; gap: 10px; margin-bottom: 1.25rem;">
+                                        <div class="ds-assignment-list">
                                             @foreach($assignments as $a)
                                                 @php
                                                     $attempts = $a->attempts;
                                                     $resolved = \App\Support\AssignmentStatusResolver::resolve($a, $attempts);
                                                     $state = $resolved['state'];
                                                 @endphp
-                                                <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px dashed var(--ink-faint); padding-bottom: 6px; font-size: 13px;">
+                                                <div class="ds-assignment-row">
                                                     <div>
-                                                        <strong>{{ \Illuminate\Support\Str::limit($a->title, 35) }}</strong>
-                                                        <span style="display: block; font-size: 11px; color: var(--ink-soft);">{{ $a->classroom->name }} &middot; {{ $state }}</span>
+                                                        <strong class="text-slate-900 font-semibold">{{ \Illuminate\Support\Str::limit($a->title, 40) }}</strong>
+                                                        <span class="block text-2xs text-slate-500 mt-0.5">{{ $a->classroom->name }} &middot; {{ $state }}</span>
                                                     </div>
-                                                    <a href="{{ route('student.assignments.show', ['assignment' => $a->ulid]) }}" class="ds-link" style="font-weight: 600;">Open &rarr;</a>
+                                                    <a href="{{ route('student.assignments.show', ['assignment' => $a->ulid]) }}" class="ds-link font-semibold text-xs whitespace-nowrap ml-2">Open &rarr;</a>
                                                 </div>
                                             @endforeach
                                         </div>
@@ -177,15 +160,15 @@
                         <section class="progress-card ds-postcard" aria-labelledby="blog-title">
                             <div class="ds-thumbtack red center" aria-hidden="true"></div>
 
-                            <div class="ds-card__header" style="margin-top: 0.5rem;">
+                            <div class="ds-card__header mt-2">
                                 <div><h2 id="blog-title" class="ds-card-title">From the blog</h2></div>
-                                <a href="{{ route('blog.index') }}" class="ds-link">Browse all</a>
+                                <a href="{{ route('blog.index') }}" class="ds-link text-xs font-semibold">Browse all</a>
                             </div>
                             @if($featuredPost)
                                 <div class="ds-postcard__lead">
-                                    <div style="flex: 1;">
-                                        <span class="type-tag" style="margin-bottom: 4px; display: inline-block;">Latest Post</span>
-                                        <a href="{{ route('blog.show', $featuredPost) }}" class="ds-postcard__lead-title">{{ $featuredPost->title }}</a>
+                                    <div class="flex-1">
+                                        <span class="type-tag mb-1 inline-block">Latest Post</span>
+                                        <a href="{{ route('blog.show', $featuredPost) }}" class="ds-postcard__lead-title hover:text-indigo-700 transition-colors">{{ $featuredPost->title }}</a>
                                         @if($featuredPost->excerpt)
                                             <p class="ds-postcard__lead-excerpt">{{ \Illuminate\Support\Str::limit($featuredPost->excerpt, 110) }}</p>
                                         @endif
@@ -194,16 +177,16 @@
 
                                     {{-- Postage Stamp --}}
                                     <div class="ds-postmark" aria-hidden="true">
-                                        <span style="font-size: 0.425rem; font-weight: 800; opacity: 0.7;">POSTAGE</span>
-                                        <span style="font-size: 0.85rem; font-weight: 900; letter-spacing: -0.02em; margin: 1px 0;">{{ $featuredPost->teacher->initials ?? 'T' }}</span>
-                                        <span style="font-size: 0.4rem; border-top: 1px solid rgba(220, 38, 38, 0.4); padding-top: 1px; width: 100%; text-align: center;">{{ optional($featuredPost->published_at)->format('M d') }}</span>
+                                        <span class="text-3xs font-extrabold opacity-70">POSTAGE</span>
+                                        <span class="text-xs font-black tracking-tight my-0.5">{{ $featuredPost->teacher->initials ?? 'T' }}</span>
+                                        <span class="text-3xs border-t border-red-600/40 pt-0.5 w-full text-center">{{ optional($featuredPost->published_at)->format('M d') }}</span>
                                     </div>
                                 </div>
                                 @foreach($moreposts as $post)
-                                    <div class="ds-attempt-row" style="padding: 0.5rem 0;">
+                                    <div class="ds-attempt-row py-2">
                                         <div>
-                                            <strong><a href="{{ route('blog.show', $post) }}" style="color: inherit; text-decoration: none; font-size: 0.85rem;">{{ $post->title }}</a></strong>
-                                            <span style="font-size: 0.75rem; color: var(--ink-soft); display: block;">by {{ $post->teacher->name }} &bull; {{ optional($post->published_at)->diffForHumans() }}</span>
+                                            <strong><a href="{{ route('blog.show', $post) }}" class="text-xs text-slate-800 font-semibold hover:text-indigo-700 no-underline transition-colors">{{ $post->title }}</a></strong>
+                                            <span class="text-2xs text-slate-500 block mt-0.5">by {{ $post->teacher->name }} &bull; {{ optional($post->published_at)->diffForHumans() }}</span>
                                         </div>
                                     </div>
                                 @endforeach
@@ -219,19 +202,19 @@
                         <section class="progress-card ds-postcard" aria-labelledby="forum-title">
                             <div class="ds-thumbtack blue center" aria-hidden="true"></div>
 
-                            <div class="ds-card__header" style="margin-top: 0.5rem;">
+                            <div class="ds-card__header mt-2">
                                 <div><h2 id="forum-title" class="ds-card-title">Forum highlights</h2></div>
-                                <div style="display: flex; gap: 0.75rem; align-items: center;">
-                                    <button type="button" class="ds-link" style="background: none; border: none; cursor: pointer; padding: 0; font: inherit;" @click="$dispatch('open-modal', 'modal-ask-question')">Ask a question</button>
-                                    <a href="{{ route('forum.index') }}" class="ds-link">Open forum</a>
+                                <div class="flex items-center gap-3">
+                                    <button type="button" class="ds-link font-semibold text-xs cursor-pointer p-0 bg-transparent border-0" @click="$dispatch('open-modal', 'modal-ask-question')">Ask a question</button>
+                                    <a href="{{ route('forum.index') }}" class="ds-link text-xs font-semibold">Open forum</a>
                                 </div>
                             </div>
                             @forelse($latestThreads as $thread)
-                                <div class="ds-attempt-row" style="padding: 0.5rem 0;">
+                                <div class="ds-attempt-row py-2">
                                     <div>
-                                        <span class="type-tag" style="margin-bottom: 2px; display: inline-block; font-size: 0.65rem; padding: 0.05rem 0.35rem;">{{ $thread->category }}</span>
-                                        <strong><a href="{{ route('forum.show', $thread) }}" style="color: inherit; text-decoration: none; font-size: 0.85rem; display: block; margin: 0.15rem 0;">{{ $thread->title }}</a></strong>
-                                        <span style="font-size: 0.75rem; color: var(--ink-soft);">by {{ $thread->user->name }} &bull; {{ $thread->replies_count }} {{ \Illuminate\Support\Str::plural('reply', $thread->replies_count) }}</span>
+                                        <span class="type-tag mb-1 inline-block text-3xs px-1.5 py-0.5">{{ $thread->category }}</span>
+                                        <strong><a href="{{ route('forum.show', $thread) }}" class="text-xs text-slate-800 font-semibold hover:text-indigo-700 no-underline block my-0.5 transition-colors">{{ $thread->title }}</a></strong>
+                                        <span class="text-2xs text-slate-500">by {{ $thread->user->name }} &bull; {{ $thread->replies_count }} {{ \Illuminate\Support\Str::plural('reply', $thread->replies_count) }}</span>
                                     </div>
                                 </div>
                             @empty

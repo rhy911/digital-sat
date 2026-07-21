@@ -67,6 +67,7 @@ class AssignmentController extends Controller
 
             return $service->publish($assignment);
         });
+        $assignment->load('recipients.student');
         $assignment->recipients->each(fn ($recipient) => $recipient->student->notify(new AssignmentPublishedNotification($assignment)));
         return back()->with('success', 'Assignment created. Students were notified.');
     }
@@ -179,7 +180,10 @@ class AssignmentController extends Controller
             ?? $row['attempts']->sortByDesc('attempt_number')->first();
         $attemptModalId = 'attempts-'.$assignment->id.'-'.$student->id;
 
-        $orderedStudentIds = $assignment->recipients()->orderBy('id')->pluck('student_id')->values();
+        $studentIdsWithAttempts = $assignment->attempts()->distinct()->pluck('user_id');
+        $orderedStudentIds = $assignment->recipients()->orderBy('id')->pluck('student_id')->values()
+            ->filter(fn ($id) => $studentIdsWithAttempts->contains($id))
+            ->values();
         $currentIndex = $orderedStudentIds->search($student->id);
         $prevStudentId = $currentIndex !== false && $currentIndex > 0 ? $orderedStudentIds[$currentIndex - 1] : null;
         $nextStudentId = $currentIndex !== false && $currentIndex < $orderedStudentIds->count() - 1 ? $orderedStudentIds[$currentIndex + 1] : null;
@@ -233,16 +237,30 @@ class AssignmentController extends Controller
         return back()->with('success', 'Assignment updated.');
     }
 
-    public function publish(Assignment $assignment, AssignmentService $service)
+    public function publish(Assignment $assignment, AssignmentService $service): \Illuminate\Http\RedirectResponse
     {
         $this->authorize('manage', $assignment);
         $assignment = $service->publish($assignment);
+        $assignment->load('recipients.student');
         $assignment->recipients->each(fn ($recipient) => $recipient->student->notify(new AssignmentPublishedNotification($assignment)));
         return back()->with('success', 'Assignment published. Students were notified.');
     }
-    public function close(Assignment $assignment, AssignmentService $service) { $this->authorize('manage', $assignment); $service->close($assignment); return back()->with('success', 'Assignment closed.'); }
-    public function reopen(Assignment $assignment, AssignmentService $service) { $this->authorize('manage', $assignment); $service->reopen($assignment); return back()->with('success', 'Assignment reopened.'); }
-    public function destroy(Assignment $assignment, AssignmentService $service)
+
+    public function close(Assignment $assignment, AssignmentService $service): \Illuminate\Http\RedirectResponse
+    {
+        $this->authorize('manage', $assignment);
+        $service->close($assignment);
+        return back()->with('success', 'Assignment closed.');
+    }
+
+    public function reopen(Assignment $assignment, AssignmentService $service): \Illuminate\Http\RedirectResponse
+    {
+        $this->authorize('manage', $assignment);
+        $service->reopen($assignment);
+        return back()->with('success', 'Assignment reopened.');
+    }
+
+    public function destroy(Assignment $assignment, AssignmentService $service): \Illuminate\Http\RedirectResponse
     {
         $this->authorize('manage', $assignment);
         abort_if($assignment->classroom->status === 'archived', 409, 'Archived classes are read-only.');
