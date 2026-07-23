@@ -2,13 +2,18 @@
 
 namespace App\Http\Requests\Admin;
 
+use App\Models\Module;
 use Illuminate\Foundation\Http\FormRequest;
 
 class UpdateModuleRequest extends FormRequest
 {
     public function authorize(): bool
     {
-        return true;
+        $module = Module::find($this->route('id'));
+
+        // Defer to the controller's own findOrFail() for a clean 404 when the module
+        // doesn't exist; only enforce the ownership policy when it does.
+        return ! $module || $this->user()->can('update', $module);
     }
 
     public function rules(): array

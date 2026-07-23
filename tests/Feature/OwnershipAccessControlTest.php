@@ -26,12 +26,14 @@ class OwnershipAccessControlTest extends TestCase
 
         $this->teacher1 = User::factory()->create([
             'role' => 'teacher',
+            'teacher_approval_status' => 'approved',
             'email' => 'teacher1@bluebook.com',
             'email_verified_at' => now(),
         ]);
 
         $this->teacher2 = User::factory()->create([
             'role' => 'teacher',
+            'teacher_approval_status' => 'approved',
             'email' => 'teacher2@bluebook.com',
             'email_verified_at' => now(),
         ]);

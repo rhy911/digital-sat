@@ -7,6 +7,7 @@ use App\Models\Section;
 use App\Models\Test;
 use App\Models\UserTest;
 use App\Models\UserTestAnswer;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Schema;
 
 class TestProgressionService
@@ -173,14 +174,19 @@ class TestProgressionService
                     ->exists();
 
                 if (! $exists) {
-                    UserTestAnswer::create([
+                    $copy = new UserTestAnswer([
                         'user_test_id'      => $first->id,
                         'module_id'         => $ans->module_id,
                         'question_id'       => $ans->question_id,
                         'selected_answer'   => $ans->selected_answer,
                         'is_correct'        => $ans->is_correct,
+                        'time_spent'        => $ans->time_spent,
                         'question_snapshot' => $ans->question_snapshot,
                     ]);
+                    $copy->forceFill([
+                        'created_at' => $ans->created_at,
+                        'updated_at' => $ans->updated_at,
+                    ])->save();
                 }
             }
 
@@ -276,8 +282,8 @@ class TestProgressionService
         $isRw = $attempt->attempt_type !== 'section' || $attempt->section_type === 'reading_writing';
         $isMath = $attempt->attempt_type !== 'section' || $attempt->section_type === 'math';
 
-        $rwScore = $isRw ? $this->scoreAdaptiveSection($attempt, $rw, $attempt->rw_m2_path) : null;
-        $mathScore = $isMath ? $this->scoreAdaptiveSection($attempt, $math, $attempt->math_m2_path) : null;
+        $rwScore = $isRw ? $this->tryScoreAdaptiveSection($attempt, $rw, $attempt->rw_m2_path) : null;
+        $mathScore = $isMath ? $this->tryScoreAdaptiveSection($attempt, $math, $attempt->math_m2_path) : null;
 
         $rwConversion = $rwScore ? $this->adaptiveConversions->convert($rwScore['theta'], $rwScore['theta_se']) : null;
         $mathConversion = $mathScore ? $this->adaptiveConversions->convert($mathScore['theta'], $mathScore['theta_se']) : null;
@@ -355,6 +361,30 @@ class TestProgressionService
     private function completionFields(): array
     {
         return ['status' => 'completed', 'completed_at' => now(), 'current_module_id' => null];
+    }
+
+    /**
+     * Score one adaptive section for finalize, completing the attempt with a null
+     * score for this section instead of throwing when a routed module 2 branch or a
+     * response record is missing (mirrors finalizeNormal's defensive completion).
+     */
+    private function tryScoreAdaptiveSection(UserTest $attempt, ?Section $section, ?string $path): ?array
+    {
+        if (! $section) {
+            return null;
+        }
+
+        try {
+            return $this->scoreAdaptiveSection($attempt, $section, $path);
+        } catch (\RuntimeException $e) {
+            Log::warning('Adaptive section could not be scored at finalize; completing without a score for this section.', [
+                'user_test_id' => $attempt->id,
+                'section_id' => $section->id,
+                'error' => $e->getMessage(),
+            ]);
+
+            return null;
+        }
     }
 
     private function scoreAdaptiveSection(UserTest $attempt, Section $section, ?string $path): array

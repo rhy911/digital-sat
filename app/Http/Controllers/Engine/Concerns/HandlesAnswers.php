@@ -41,7 +41,7 @@ trait HandlesAnswers
                 continue;
             }
 
-            if (hash_equals($acceptedText, $submitted)) {
+            if ($acceptedText === $submitted) {
                 return true;
             }
         }

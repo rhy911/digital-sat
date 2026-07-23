@@ -2,13 +2,18 @@
 
 namespace App\Http\Requests\Admin;
 
+use App\Models\Test;
 use Illuminate\Foundation\Http\FormRequest;
 
 class UpdateTestRequest extends FormRequest
 {
     public function authorize(): bool
     {
-        return true;
+        $test = Test::find($this->route('id'));
+
+        // Defer to the controller's own findOrFail() for a clean 404 when the test
+        // doesn't exist; only enforce the ownership policy when it does.
+        return ! $test || $this->user()->can('update', $test);
     }
 
     public function rules(): array

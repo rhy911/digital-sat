@@ -18,7 +18,9 @@ class TestStructureService
 
     public function validate(Test $test, bool $requireQuestions = true): array
     {
-        $test->load('sections.modules.questions');
+        // loadMissing (not load): callers on the module-submit hot path already eager-load
+        // this shape, so this only queries when it's genuinely missing.
+        $test->loadMissing('sections.modules.questions');
         $sections = $test->sections->sortBy('order')->values();
 
         if ($sections->isEmpty()) {

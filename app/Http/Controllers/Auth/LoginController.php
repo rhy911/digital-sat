@@ -95,14 +95,13 @@ class LoginController extends Controller
 
             return redirect()->intended($defaultTarget);
         } catch (\Exception $e) {
-            $message = $e->getMessage();
             if ($e instanceof ValidationException) {
                 $message = $e->validator->errors()->first();
-            }
-
-            if (!($e instanceof \Illuminate\Validation\ValidationException)) {
+            } else {
+                $message = 'Đã xảy ra lỗi khi đăng nhập. Vui lòng thử lại.';
                 Log::error('Login error (Web):', [
-                    'error' => $message,
+                    'error' => $e->getMessage(),
+                    'email' => $request->input('email'),
                 ]);
             }
 
