@@ -163,6 +163,37 @@ class ScoreConversionWorkflowTest extends TestCase
             ->assertSee('Not an official College Board score.');
     }
 
+    public function test_adaptive_override_resolves_by_module_two_path(): void
+    {
+        $test = Test::create(['title' => 'Adaptive Override', 'test_type' => 'adaptive_full_length', 'status' => 'active']);
+        $set = ScoreConversionSet::create([
+            'test_id' => $test->id,
+            'version' => 1,
+            'status' => ScoreConversionSet::STATUS_APPROVED,
+            'source_name' => 'Fixture',
+            'form_checksum' => app(FormScoringAuditService::class)->formChecksum($test),
+        ]);
+        // Same raw score converts differently by path — the Bluebook cap behaviour.
+        $set->rows()->create(['section_type' => Section::TYPE_RW, 'm2_difficulty' => Module::DIFFICULTY_HARD, 'raw_score' => 48, 'scaled_score' => 780]);
+        $set->rows()->create(['section_type' => Section::TYPE_RW, 'm2_difficulty' => Module::DIFFICULTY_EASY, 'raw_score' => 48, 'scaled_score' => 660]);
+
+        $service = app(ScoreConversionService::class);
+
+        $hard = $service->tryApprovedConversion($test, Section::TYPE_RW, Module::DIFFICULTY_HARD, 48);
+        $this->assertSame(780, $hard['scaled_score']);
+        $this->assertSame($set->id, $hard['conversion_set_id']);
+
+        $easy = $service->tryApprovedConversion($test, Section::TYPE_RW, Module::DIFFICULTY_EASY, 48);
+        $this->assertSame(660, $easy['scaled_score']);
+
+        // No row for this raw score -> null (adaptive scoring falls back to the IRT curve).
+        $this->assertNull($service->tryApprovedConversion($test, Section::TYPE_RW, Module::DIFFICULTY_HARD, 12));
+
+        // A changed form invalidates the checksum -> null (stale table cannot apply).
+        $test->sections()->create(['name' => 'Changed', 'type' => Section::TYPE_MATH, 'order' => 1]);
+        $this->assertNull($service->tryApprovedConversion($test->fresh(), Section::TYPE_RW, Module::DIFFICULTY_HARD, 48));
+    }
+
     private function smallFullLength(User $owner): Test
     {
         $test = Test::create(['title' => 'Small', 'test_type' => 'full_length', 'status' => 'draft', 'created_by' => $owner->id]);

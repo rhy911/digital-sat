@@ -48,7 +48,7 @@ class TestProgressionService
     {
         $responses = $this->completeResponsesForModule($attempt, $module);
         $theta = $this->scoring->estimateTheta($responses);
-        $requestedPath = $this->scoring->routeModule2($theta);
+        $requestedPath = $this->scoring->routeModule2($theta, $section->type);
         $next = $section->modules->first(fn ($candidate) => (int) $candidate->module_number === 2 && $candidate->difficulty_level === $requestedPath);
         $usedFallback = false;
         if (! $next && $test->test_type !== Test::TYPE_ADAPTIVE_FULL) {
@@ -156,13 +156,16 @@ class TestProgressionService
             $totalUpper = null;
 
             if ($test->test_type === Test::TYPE_ADAPTIVE_FULL && $rwAttempt->rw_theta !== null && $mathAttempt->math_theta !== null) {
-                $rwConv   = $this->adaptiveConversions->convert($rwAttempt->rw_theta, $rwAttempt->rw_theta_se);
-                $mathConv = $this->adaptiveConversions->convert($mathAttempt->math_theta, $mathAttempt->math_theta_se);
+                $rwConv   = $this->adaptiveConversions->convert((float) $rwAttempt->rw_theta, (float) $rwAttempt->rw_theta_se, Section::TYPE_RW, $rwAttempt->rw_m2_path);
+                $mathConv = $this->adaptiveConversions->convert((float) $mathAttempt->math_theta, (float) $mathAttempt->math_theta_se, Section::TYPE_MATH, $mathAttempt->math_m2_path);
                 if ($rwConv && $mathConv) {
+                    // Keep the stored section-score sum (which respects an approved
+                    // override table); use the IRT curve only for the +/- margin.
                     $total = $this->adaptiveConversions->totalRange($rwConv, $mathConv);
-                    $totalScore = $total['score'];
-                    $totalLower = $total['lower'];
-                    $totalUpper = $total['upper'];
+                    $lowerMargin = $total['score'] - $total['lower'];
+                    $upperMargin = $total['upper'] - $total['score'];
+                    $totalLower = $totalScore !== null ? max(400, $totalScore - $lowerMargin) : null;
+                    $totalUpper = $totalScore !== null ? min(1600, $totalScore + $upperMargin) : null;
                 }
             }
 
@@ -257,8 +260,8 @@ class TestProgressionService
 
         $rwResponses = $this->responsesForSection($attempt, $test->sections->firstWhere('type', Section::TYPE_RW));
         $mathResponses = $this->responsesForSection($attempt, $test->sections->firstWhere('type', Section::TYPE_MATH));
-        $rwAbility = $rwResponses->isEmpty() ? null : $this->scoring->estimateAbility($rwResponses);
-        $mathAbility = $mathResponses->isEmpty() ? null : $this->scoring->estimateAbility($mathResponses);
+        $rwAbility = $this->tryEstimateAbility($attempt, $rwResponses);
+        $mathAbility = $this->tryEstimateAbility($attempt, $mathResponses);
         $attempt->update($this->completionFields() + [
             'score_reading_writing' => null,
             'score_math' => null,
@@ -285,10 +288,18 @@ class TestProgressionService
         $rwScore = $isRw ? $this->tryScoreAdaptiveSection($attempt, $rw, $attempt->rw_m2_path) : null;
         $mathScore = $isMath ? $this->tryScoreAdaptiveSection($attempt, $math, $attempt->math_m2_path) : null;
 
-        $rwConversion = $rwScore ? $this->adaptiveConversions->convert($rwScore['theta'], $rwScore['theta_se']) : null;
-        $mathConversion = $mathScore ? $this->adaptiveConversions->convert($mathScore['theta'], $mathScore['theta_se']) : null;
+        $rwConversion = $this->resolveAdaptiveConversion($test, $rwScore, Section::TYPE_RW, $attempt->rw_m2_path);
+        $mathConversion = $this->resolveAdaptiveConversion($test, $mathScore, Section::TYPE_MATH, $attempt->math_m2_path);
 
-        $total = ($rwConversion && $mathConversion) ? $this->adaptiveConversions->totalRange($rwConversion, $mathConversion) : null;
+        // A total confidence band is only meaningful when both sections came from the
+        // IRT curve (which carries a scaled SE); an approved override table has no band.
+        $total = ($rwConversion && $mathConversion
+            && $rwConversion['scaled_se'] !== null && $mathConversion['scaled_se'] !== null)
+            ? $this->adaptiveConversions->totalRange($rwConversion, $mathConversion)
+            : null;
+        $totalScore = ($rwConversion && $mathConversion)
+            ? $rwConversion['scaled_score'] + $mathConversion['scaled_score']
+            : null;
 
         $fields = $this->completionFields() + [
             'score_reading_writing' => $rwConversion ? $rwConversion['scaled_score'] : null,
@@ -302,14 +313,57 @@ class TestProgressionService
             'rw_theta_se' => $rwScore ? $rwScore['theta_se'] : null,
             'math_theta_se' => $mathScore ? $mathScore['theta_se'] : null,
             'scoring_method' => $rwScore ? $rwScore['method'] : ($mathScore ? $mathScore['method'] : null),
-            'total_score' => $total ? $total['score'] : null,
+            'total_score' => $totalScore,
             'total_score_lower' => $total ? $total['lower'] : null,
             'total_score_upper' => $total ? $total['upper'] : null,
-            'score_conversion_set_id' => null,
+            'score_conversion_set_id' => $rwConversion['conversion_set_id'] ?? ($mathConversion['conversion_set_id'] ?? null),
             'score_conversion_version' => $rwConversion ? $rwConversion['conversion_version'] : ($mathConversion ? $mathConversion['conversion_version'] : null),
             'score_estimate_kind' => $rwConversion ? $rwConversion['estimate_kind'] : ($mathConversion ? $mathConversion['estimate_kind'] : null),
         ];
         $attempt->update($fields);
+    }
+
+    /**
+     * Resolve one adaptive section's scaled score. Prefers the test's approved,
+     * checksum-valid conversion table (routed by the taken Module 2 path) as an
+     * override; falls back to the path-aware IRT curve when no such table applies.
+     * Returns a shape with a null scaled_se when the override table is used (no band).
+     *
+     * @param  array{theta:float,theta_se:float,raw_score:int}|null  $score
+     * @return array{scaled_score:int,lower:?int,upper:?int,scaled_se:?int,conversion_set_id:?int,conversion_version:string,estimate_kind:string}|null
+     */
+    private function resolveAdaptiveConversion(Test $test, ?array $score, string $sectionType, ?string $path): ?array
+    {
+        if (! $score) {
+            return null;
+        }
+
+        $override = $this->conversions->tryApprovedConversion(
+            $test, $sectionType, $path ?? Module::DIFFICULTY_HARD, (int) $score['raw_score']
+        );
+        if ($override) {
+            return [
+                'scaled_score' => $override['scaled_score'],
+                'lower' => null,
+                'upper' => null,
+                'scaled_se' => null,
+                'conversion_set_id' => $override['conversion_set_id'],
+                'conversion_version' => $override['conversion_version'],
+                'estimate_kind' => $override['estimate_kind'],
+            ];
+        }
+
+        $curve = $this->adaptiveConversions->convert($score['theta'], $score['theta_se'], $sectionType, $path);
+
+        return [
+            'scaled_score' => $curve['scaled_score'],
+            'lower' => $curve['lower'],
+            'upper' => $curve['upper'],
+            'scaled_se' => $curve['scaled_se'],
+            'conversion_set_id' => null,
+            'conversion_version' => $curve['conversion_version'],
+            'estimate_kind' => $curve['estimate_kind'],
+        ];
     }
 
     private function finalizeNormal(UserTest $attempt, Test $test): void
@@ -380,6 +434,30 @@ class TestProgressionService
             Log::warning('Adaptive section could not be scored at finalize; completing without a score for this section.', [
                 'user_test_id' => $attempt->id,
                 'section_id' => $section->id,
+                'error' => $e->getMessage(),
+            ]);
+
+            return null;
+        }
+    }
+
+    /**
+     * Estimate a section's ability for the non-full adaptive finalize path, completing
+     * with a null ability (rather than throwing) when a question carries invalid IRT
+     * params. Mirrors tryScoreAdaptiveSection's defensive completion so one bad item
+     * cannot crash the scoring job and leave the polling client spinning.
+     */
+    private function tryEstimateAbility(UserTest $attempt, $responses): ?array
+    {
+        if ($responses->isEmpty()) {
+            return null;
+        }
+
+        try {
+            return $this->scoring->estimateAbility($responses);
+        } catch (\InvalidArgumentException|\RuntimeException $e) {
+            Log::warning('Section ability could not be estimated at finalize; completing without a theta for this section.', [
+                'user_test_id' => $attempt->id,
                 'error' => $e->getMessage(),
             ]);
 

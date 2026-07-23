@@ -66,7 +66,7 @@ class TestTypeProgressionTest extends TestCase
 
         $attempt->refresh();
         $this->assertSame('adaptive_irt_provisional', $attempt->score_estimate_kind);
-        $this->assertSame('provisional_irt_v1', $attempt->score_conversion_version);
+        $this->assertSame('irt_curve_v1', $attempt->score_conversion_version);
         $this->assertNotNull($attempt->rw_theta);
         $this->assertNotNull($attempt->total_score_lower);
         $this->assertGreaterThanOrEqual($attempt->total_score_lower, $attempt->total_score);

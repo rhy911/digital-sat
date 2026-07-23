@@ -1,6 +1,17 @@
 <?php
 
 return [
+    'routing' => [
+        // Module 1 -> Module 2 routing is theta-based (>= cutoff routes to Hard),
+        // NOT number-correct: number-correct is only a sufficient statistic for theta
+        // under Rasch/1PL and loses accuracy under our 3PL (varying a/c). Cutoff is a
+        // global per-section default (no per-form entry, no manual work per test).
+        'theta_cutoff' => [
+            'default' => 0.0,
+            'reading_writing' => 0.0,
+            'math' => 0.0,
+        ],
+    ],
     'normal_conversion' => [
         'version' => 'normal_consensus_v1',
         'source_name' => 'DigiSAT reviewed calculator consensus',
@@ -28,10 +39,50 @@ return [
         ],
     ],
     'adaptive_conversion' => [
-        'version' => 'provisional_irt_v1',
-        'center' => 500,
-        'points_per_theta' => 100,
+        'version' => 'irt_curve_v1',
         'minimum' => 200,
         'maximum' => 800,
+        'round_to' => 10,
+        // Used only to scale the theta standard error into a scaled-score band width
+        // for the total-score quadrature; the point/lower/upper scores come from the
+        // curves below, not from a linear points-per-theta slope.
+        'points_per_theta' => 100,
+
+        // Path-aware, section-specific theta -> scaled-score anchor curves.
+        // Piecewise-linear between ascending [theta, scaled] anchors; clamped to the
+        // first/last anchor outside the range. Calibrated (v1) from public Bluebook
+        // behaviour research, NOT official College Board tables:
+        //   - Easy Module 2 caps a section near ~670 (RW) / ~665 (Math).
+        //   - Hard Module 2 opens the full range to 800 (RW 800 at theta~2.9 to allow
+        //     ~2 wrong; Math kept stricter, 800 at theta~3.0).
+        //   - Easy and hard agree for theta <= 1.0; easy bends toward the cap above that.
+        // Tunable; superseded per question by auto-calibrated IRT params once real
+        // response data exists.
+        'curves' => [
+            'reading_writing' => [
+                'hard' => [
+                    [-4.0, 200], [-3.0, 240], [-2.0, 320], [-1.0, 420], [-0.5, 460],
+                    [0.0, 510], [0.5, 550], [1.0, 600], [1.5, 650], [2.0, 700],
+                    [2.5, 760], [2.9, 800],
+                ],
+                'easy' => [
+                    [-4.0, 200], [-3.0, 240], [-2.0, 320], [-1.0, 420], [-0.5, 460],
+                    [0.0, 510], [0.5, 550], [1.0, 600], [1.5, 640], [2.0, 660],
+                    [2.5, 670],
+                ],
+            ],
+            'math' => [
+                'hard' => [
+                    [-4.0, 200], [-3.0, 240], [-2.0, 310], [-1.0, 410], [-0.5, 460],
+                    [0.0, 500], [0.5, 550], [1.0, 600], [1.5, 660], [2.0, 720],
+                    [2.5, 770], [3.0, 800],
+                ],
+                'easy' => [
+                    [-4.0, 200], [-3.0, 240], [-2.0, 310], [-1.0, 410], [-0.5, 460],
+                    [0.0, 500], [0.5, 550], [1.0, 600], [1.5, 630], [2.0, 650],
+                    [2.5, 660],
+                ],
+            ],
+        ],
     ],
 ];
