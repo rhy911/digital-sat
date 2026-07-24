@@ -291,8 +291,21 @@ class TestProgressionService
         $rwConversion = $this->resolveAdaptiveConversion($test, $rwScore, Section::TYPE_RW, $attempt->rw_m2_path);
         $mathConversion = $this->resolveAdaptiveConversion($test, $mathScore, Section::TYPE_MATH, $attempt->math_m2_path);
 
-        // A total confidence band is only meaningful when both sections came from the
-        // IRT curve (which carries a scaled SE); an approved override table has no band.
+        $attempt->update($this->completeScoreFields($rwScore, $mathScore, $rwConversion, $mathConversion));
+    }
+
+    /**
+     * Build the persisted score fields shared by the adaptive and normal IRT paths.
+     * A total confidence band is only meaningful when both sections came from the IRT
+     * curve (which carries a scaled SE); an approved override table has no band.
+     *
+     * @param  array{theta:float,theta_se:float,raw_score:int,method:string}|null  $rwScore
+     * @param  array{theta:float,theta_se:float,raw_score:int,method:string}|null  $mathScore
+     * @param  array{scaled_score:int,lower:?int,upper:?int,scaled_se:?int,conversion_set_id:?int,conversion_version:string,estimate_kind:string}|null  $rwConversion
+     * @param  array{scaled_score:int,lower:?int,upper:?int,scaled_se:?int,conversion_set_id:?int,conversion_version:string,estimate_kind:string}|null  $mathConversion
+     */
+    private function completeScoreFields(?array $rwScore, ?array $mathScore, ?array $rwConversion, ?array $mathConversion): array
+    {
         $total = ($rwConversion && $mathConversion
             && $rwConversion['scaled_se'] !== null && $mathConversion['scaled_se'] !== null)
             ? $this->adaptiveConversions->totalRange($rwConversion, $mathConversion)
@@ -301,26 +314,25 @@ class TestProgressionService
             ? $rwConversion['scaled_score'] + $mathConversion['scaled_score']
             : null;
 
-        $fields = $this->completionFields() + [
-            'score_reading_writing' => $rwConversion ? $rwConversion['scaled_score'] : null,
-            'score_reading_writing_lower' => $rwConversion ? $rwConversion['lower'] : null,
-            'score_reading_writing_upper' => $rwConversion ? $rwConversion['upper'] : null,
-            'score_math' => $mathConversion ? $mathConversion['scaled_score'] : null,
-            'score_math_lower' => $mathConversion ? $mathConversion['lower'] : null,
-            'score_math_upper' => $mathConversion ? $mathConversion['upper'] : null,
-            'rw_theta' => $rwScore ? $rwScore['theta'] : null,
-            'math_theta' => $mathScore ? $mathScore['theta'] : null,
-            'rw_theta_se' => $rwScore ? $rwScore['theta_se'] : null,
-            'math_theta_se' => $mathScore ? $mathScore['theta_se'] : null,
-            'scoring_method' => $rwScore ? $rwScore['method'] : ($mathScore ? $mathScore['method'] : null),
+        return $this->completionFields() + [
+            'score_reading_writing' => $rwConversion['scaled_score'] ?? null,
+            'score_reading_writing_lower' => $rwConversion['lower'] ?? null,
+            'score_reading_writing_upper' => $rwConversion['upper'] ?? null,
+            'score_math' => $mathConversion['scaled_score'] ?? null,
+            'score_math_lower' => $mathConversion['lower'] ?? null,
+            'score_math_upper' => $mathConversion['upper'] ?? null,
+            'rw_theta' => $rwScore['theta'] ?? null,
+            'math_theta' => $mathScore['theta'] ?? null,
+            'rw_theta_se' => $rwScore['theta_se'] ?? null,
+            'math_theta_se' => $mathScore['theta_se'] ?? null,
+            'scoring_method' => $rwScore['method'] ?? $mathScore['method'] ?? null,
             'total_score' => $totalScore,
-            'total_score_lower' => $total ? $total['lower'] : null,
-            'total_score_upper' => $total ? $total['upper'] : null,
-            'score_conversion_set_id' => $rwConversion['conversion_set_id'] ?? ($mathConversion['conversion_set_id'] ?? null),
-            'score_conversion_version' => $rwConversion ? $rwConversion['conversion_version'] : ($mathConversion ? $mathConversion['conversion_version'] : null),
-            'score_estimate_kind' => $rwConversion ? $rwConversion['estimate_kind'] : ($mathConversion ? $mathConversion['estimate_kind'] : null),
+            'total_score_lower' => $total['lower'] ?? null,
+            'total_score_upper' => $total['upper'] ?? null,
+            'score_conversion_set_id' => $rwConversion['conversion_set_id'] ?? $mathConversion['conversion_set_id'] ?? null,
+            'score_conversion_version' => $rwConversion['conversion_version'] ?? $mathConversion['conversion_version'] ?? null,
+            'score_estimate_kind' => $rwConversion['estimate_kind'] ?? $mathConversion['estimate_kind'] ?? null,
         ];
-        $attempt->update($fields);
     }
 
     /**
@@ -371,45 +383,59 @@ class TestProgressionService
         $isRw = $attempt->attempt_type !== 'section' || $attempt->section_type === 'reading_writing';
         $isMath = $attempt->attempt_type !== 'section' || $attempt->section_type === 'math';
 
-        $rw = $isRw ? $this->allResponsesForSection($attempt, $test->sections->firstWhere('type', Section::TYPE_RW)) : collect();
-        $math = $isMath ? $this->allResponsesForSection($attempt, $test->sections->firstWhere('type', Section::TYPE_MATH)) : collect();
+        $rwSection = $isRw ? $test->sections->firstWhere('type', Section::TYPE_RW) : null;
+        $mathSection = $isMath ? $test->sections->firstWhere('type', Section::TYPE_MATH) : null;
 
-        $fields = $this->completionFields() + [
-            'score_reading_writing' => null, 'score_math' => null, 'total_score' => null,
-            'rw_theta' => null, 'math_theta' => null, 'rw_theta_se' => null, 'math_theta_se' => null,
-            'scoring_method' => 'raw_table_v1', 'score_conversion_set_id' => null,
-            'score_conversion_version' => null, 'score_estimate_kind' => null,
-        ];
-        try {
-            $rwConversion = null;
-            $mathConversion = null;
+        $rwScore = $this->tryScoreLinearSection($attempt, $rwSection);
+        $mathScore = $this->tryScoreLinearSection($attempt, $mathSection);
 
-            if ($isRw && $rw->isNotEmpty()) {
-                $rwConversion = $this->conversions->convert($test, Section::TYPE_RW, $rw->where('is_correct', true)->count(), $rw->count());
-                $fields['score_reading_writing'] = $rwConversion['scaled_score'];
-                $fields['score_conversion_set_id'] = $rwConversion['conversion_set_id'];
-                $fields['score_conversion_version'] = $rwConversion['conversion_version'];
-                $fields['score_estimate_kind'] = $rwConversion['estimate_kind'];
-            }
+        // Normal (non-adaptive) has no routing, so it never applies a path cap: always
+        // the full-range curve. Passing 'standard' keeps override lookups on the
+        // 'standard' rows while AdaptiveScoreConversionService maps through the full
+        // 200-800 curve (it treats any non-easy path as full range).
+        $rwConversion = $this->resolveAdaptiveConversion($test, $rwScore, Section::TYPE_RW, Module::DIFFICULTY_STANDARD);
+        $mathConversion = $this->resolveAdaptiveConversion($test, $mathScore, Section::TYPE_MATH, Module::DIFFICULTY_STANDARD);
 
-            if ($isMath && $math->isNotEmpty()) {
-                $mathConversion = $this->conversions->convert($test, Section::TYPE_MATH, $math->where('is_correct', true)->count(), $math->count());
-                $fields['score_math'] = $mathConversion['scaled_score'];
-                $fields['score_conversion_set_id'] = $mathConversion['conversion_set_id'];
-                $fields['score_conversion_version'] = $mathConversion['conversion_version'];
-                $fields['score_estimate_kind'] = $mathConversion['estimate_kind'];
-            }
+        $attempt->update($this->completeScoreFields($rwScore, $mathScore, $rwConversion, $mathConversion));
+    }
 
-            if ($rwConversion && $mathConversion) {
-                if ($rwConversion['conversion_set_id'] !== $mathConversion['conversion_set_id']) {
-                    throw new \RuntimeException('Sections resolved against different conversion sets.');
-                }
-                $fields['total_score'] = $rwConversion['scaled_score'] + $mathConversion['scaled_score'];
-            }
-        } catch (\RuntimeException) {
-            // Invalid normal forms complete with accuracy data but no manufactured score.
+    /**
+     * Estimate one non-adaptive section's ability over all its scored (non-pretest)
+     * responses. Mirrors tryScoreAdaptiveSection's defensive completion: on invalid or
+     * empty IRT data it logs and returns null so the attempt still completes with that
+     * section's score left null instead of crashing the job.
+     *
+     * @return array{theta:float,theta_se:float,raw_score:int,method:string}|null
+     */
+    private function tryScoreLinearSection(UserTest $attempt, ?Section $section): ?array
+    {
+        if (! $section) {
+            return null;
         }
-        $attempt->update($fields);
+
+        $responses = $this->responsesForSection($attempt, $section);
+        if ($responses->isEmpty()) {
+            return null;
+        }
+
+        try {
+            $ability = $this->scoring->estimateAbility($responses);
+        } catch (\InvalidArgumentException|\RuntimeException $e) {
+            Log::warning('Normal section could not be IRT-scored at finalize; completing without a score for this section.', [
+                'user_test_id' => $attempt->id,
+                'section_id' => $section->id,
+                'error' => $e->getMessage(),
+            ]);
+
+            return null;
+        }
+
+        return [
+            'theta' => round($ability['theta'], 3),
+            'theta_se' => round($ability['se'], 3),
+            'raw_score' => $responses->where('is_correct', true)->count(),
+            'method' => $ability['method'],
+        ];
     }
 
     private function completionFields(): array
@@ -489,15 +515,6 @@ class TestProgressionService
 
         return $section->modules->flatMap(fn ($module) => $this->responsesForModule($attempt, $module))
             ->filter(fn ($response) => ! $response->question?->is_pretest)->values();
-    }
-
-    private function allResponsesForSection(UserTest $attempt, ?Section $section)
-    {
-        if (! $section) {
-            return collect();
-        }
-
-        return $section->modules->flatMap(fn ($module) => $this->responsesForModule($attempt, $module))->values();
     }
 
     private function responsesForModule(UserTest $attempt, Module $module)

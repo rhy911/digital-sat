@@ -902,8 +902,13 @@ export async function updateTestStatus(testId, status, refreshCallback) {
             body: JSON.stringify({ status: status })
         });
 
-        await dashboardJsonResponse(response, 'PUT');
+        const result = await dashboardJsonResponse(response, 'PUT');
         showAlert('success', 'Status updated!');
+        // Advisory difficulty warnings surfaced at publish (non-blocking).
+        if (result && Array.isArray(result.warnings) && result.warnings.length > 0) {
+            const details = result.warnings.map(w => w.message).join(' ');
+            showAlert('warning', `Published, but ${result.warnings.length} standard module(s) have skewed difficulty — IRT scores may be distorted. ${details}`);
+        }
         if (refreshCallback) await refreshCallback();
     } catch (error) {
         showAlert('danger', 'Error: ' + (error.message || 'Failed to update status'));
