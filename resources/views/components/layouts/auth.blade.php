@@ -7,6 +7,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{{ $title }}</title>
+    <x-head.favicons />
     @vite(['resources/css/app.css', 'resources/css/auth.css', 'resources/js/app.js', 'resources/js/auth.js'])
     @livewireStyles
     @stack('styles')
@@ -14,7 +15,9 @@
 
 <body>
     <header>
-        <x-brand.wordmark href="/" size="lg" tone="inverse" />
+        <a href="/" aria-label="DigiSAT home" class="auth-logo">
+            <img src="/brand/logo-horizontal-inverse.svg" alt="DigiSAT" class="auth-logo__img">
+        </a>
     </header>
     <main>
         <div class="flex-1 flex items-center justify-center w-full my-4">

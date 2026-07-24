@@ -13,7 +13,9 @@
 @endphp
 
 <div class="icon-rail">
-    <a href="{{ $logoHref }}" class="rail-logo">{{ $logoLabel }}</a>
+    <a href="{{ $logoHref }}" class="rail-logo" aria-label="{{ $logoLabel === 'D' ? 'DigiSAT home' : $logoLabel }}">
+        <img src="/brand/icon-light.svg" alt="" aria-hidden="true" class="rail-logo__img">
+    </a>
     <div class="rail-nav">
         @foreach ($items as $item)
             <a href="{{ $item['route'] }}" class="rail-item {{ !empty($item['active']) ? 'active' : '' }}"

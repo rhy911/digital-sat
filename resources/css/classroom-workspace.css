@@ -131,15 +131,18 @@ textarea {
     width: 36px;
     height: 36px;
     border-radius: 10px;
-    background: var(--accent);
-    color: #fff;
+    overflow: hidden;
     display: flex;
     align-items: center;
     justify-content: center;
-    font-weight: 800;
-    font-size: 16px;
     margin-bottom: 30px;
     text-decoration: none;
+}
+
+.rail-logo__img {
+    width: 100%;
+    height: 100%;
+    display: block;
 }
 
 .rail-nav {

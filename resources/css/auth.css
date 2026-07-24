@@ -6,6 +6,18 @@ header {
     align-items: center;
 }
 
+.auth-logo {
+    display: inline-flex;
+    align-items: center;
+    text-decoration: none;
+}
+
+.auth-logo__img {
+    height: 50px;
+    width: auto;
+    display: block;
+}
+
 .test-device-btn {
     background-color: rgba(255, 255, 255, 0.15);
     color: white;

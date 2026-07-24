@@ -124,6 +124,15 @@ u {
     border-radius: 0.75rem;
 }
 
+.brand-wordmark__icon {
+    display: block;
+    width: calc(var(--brand-wordmark-font-size, 1.35rem) * 1.35);
+    height: calc(var(--brand-wordmark-font-size, 1.35rem) * 1.35);
+    margin-right: 0.5em;
+    border-radius: 22%;
+    flex: none;
+}
+
 .brand-wordmark__text {
     display: inline-flex;
     align-items: baseline;

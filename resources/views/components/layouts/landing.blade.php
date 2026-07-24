@@ -5,6 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{{ $title ?? 'DigiSAT' }}</title>
+    <x-head.favicons />
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/geist@1.3.0/dist/fonts/geist.css">
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 </head>
@@ -12,7 +13,9 @@
 <body class="font-geist bg-slate-50 text-slate-900 selection:bg-slate-950 selection:text-white">
     <nav class="fixed top-0 z-50 w-full border-b border-slate-200 bg-white/90 backdrop-blur-md">
         <div class="mx-auto flex h-20 max-w-7xl items-center justify-between px-5 sm:px-6">
-            <x-brand.wordmark href="/" size="md" tone="dark" />
+            <a href="/" aria-label="DigiSAT home" class="inline-flex items-center">
+                <img src="/brand/logo-horizontal.svg" alt="DigiSAT" class="h-9 w-auto">
+            </a>
 
             <div class="hidden items-center gap-10 text-sm font-medium text-slate-600 md:flex">
                 <a href="#fidelity" data-scroll-target="#fidelity"
@@ -45,7 +48,7 @@
         <div class="mx-auto grid max-w-7xl gap-14 md:grid-cols-12">
             <div class="md:col-span-5">
                 <div class="mb-8 flex items-center gap-2 text-slate-900">
-                    <x-brand.wordmark size="sm" tone="dark" />
+                    <img src="/brand/logo-horizontal.svg" alt="DigiSAT" class="h-7 w-auto">
                 </div>
                 <p class="max-w-sm leading-relaxed text-slate-600">
                     The definitive testing platform and management suite for Digital SAT preparation.
