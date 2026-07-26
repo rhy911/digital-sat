@@ -72,6 +72,11 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/forum/{forumThread:ulid}', [\App\Http\Controllers\ForumController::class, 'show'])->name('forum.show');
     Route::post('/forum', [\App\Http\Controllers\ForumController::class, 'store'])->middleware('throttle:10,1')->name('forum.store');
     Route::post('/forum/{forumThread:ulid}/replies', [\App\Http\Controllers\ForumController::class, 'storeReply'])->middleware('throttle:15,1')->name('forum.replies.store');
+
+    Route::get('/notifications', [\App\Http\Controllers\NotificationController::class, 'index'])->name('notifications.index');
+    Route::get('/notifications/summary', [\App\Http\Controllers\NotificationController::class, 'summary'])->name('notifications.summary');
+    Route::post('/notifications/{id}/read', [\App\Http\Controllers\NotificationController::class, 'markRead'])->name('notifications.read');
+    Route::post('/notifications/read-all', [\App\Http\Controllers\NotificationController::class, 'markAllRead'])->name('notifications.read-all');
 });
 
 Route::middleware(['auth', 'verified'])->get('/dashboard', function () {

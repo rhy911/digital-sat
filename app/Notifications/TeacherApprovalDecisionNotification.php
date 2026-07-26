@@ -11,7 +11,19 @@ class TeacherApprovalDecisionNotification extends Notification implements Should
 {
     use Queueable;
     public function __construct(public bool $approved, public ?string $reason = null) {}
-    public function via(object $notifiable): array { return ['mail']; }
+    public function via(object $notifiable): array { return ['mail', 'database']; }
+    public function toArray(object $notifiable): array
+    {
+        return [
+            'type' => 'teacher_approval',
+            'title' => $this->approved ? 'Teacher account approved' : 'Teacher account not approved',
+            'body' => $this->approved
+                ? 'Your teacher account has been approved.'
+                : ($this->reason ?: 'Contact an administrator for more information.'),
+            'url' => $this->approved ? route('teacher.classes.index') : route('teacher.application.status'),
+            'icon' => 'teacher',
+        ];
+    }
     public function toMail(object $notifiable): MailMessage
     {
         $name = str_replace(["\r", "\n"], ' ', $notifiable->name);

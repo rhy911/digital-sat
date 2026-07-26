@@ -4,6 +4,7 @@ import morph from '@alpinejs/morph';
 import { initTruncatedTooltips } from './ui/truncated-tooltip.js';
 import { initDialogManager } from './ui/dialog-manager.js';
 import { initAttemptMonitorPolling } from './teacher/attempt-monitor.js';
+import { initNotificationBell } from './notifications.js';
 
 if (!window.Alpine) {
     window.Alpine = Alpine;
@@ -15,6 +16,7 @@ initTruncatedTooltips();
 initDialogManager();
 initAttemptMonitorPolling();
 initAutoDismissAlerts();
+initNotificationBell();
 
 import flatpickr from 'flatpickr';
 import 'flatpickr/dist/flatpickr.min.css';
@@ -112,6 +114,7 @@ document.addEventListener('DOMContentLoaded', () => {
 document.addEventListener('livewire:navigated', () => {
     initDatePickers();
     initAutoDismissAlerts();
+    initNotificationBell();
 });
 
 export function initAutoDismissAlerts() {
