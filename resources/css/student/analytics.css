@@ -669,10 +669,9 @@
 .ds-modal__backdrop {
     position: absolute;
     inset: 0;
-    background: oklch(18% 0.055 255 / 0.45);
-    backdrop-filter: blur(4px);
+    background: oklch(18% 0.055 255 / 0.65);
     opacity: 0;
-    transition: opacity 250ms ease;
+    transition: opacity 180ms cubic-bezier(0, 0, 0.2, 1);
 }
 
 .ds-modal__backdrop.is-visible {
@@ -686,16 +685,17 @@
     border-radius: 0.85rem;
     background: var(--ds-surface);
     padding: 1.5rem;
-    box-shadow: 0 4px 8px oklch(18% 0.055 255 / 0.12);
-    transform: scale(0.95);
+    box-shadow: 0 8px 24px -4px rgba(0, 0, 0, 0.2);
+    transform: scale(0.96) translateZ(0);
     opacity: 0;
+    will-change: transform, opacity;
     transition:
-        transform 250ms cubic-bezier(0.16, 1, 0.3, 1),
-        opacity 250ms ease;
+        transform 180ms cubic-bezier(0, 0, 0.2, 1),
+        opacity 180ms cubic-bezier(0, 0, 0.2, 1);
 }
 
 .ds-modal__content.is-visible {
-    transform: scale(1);
+    transform: scale(1) translateZ(0);
     opacity: 1;
 }
 

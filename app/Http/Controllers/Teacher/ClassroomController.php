@@ -72,6 +72,7 @@ class ClassroomController extends Controller
             'assignments.test',
             'documents.creator',
             'note',
+            'events' => fn ($query) => $query->orderBy('starts_at'),
         ])->loadCount([
             'activeMemberships',
             'coTeachers',
@@ -117,6 +118,19 @@ class ClassroomController extends Controller
             ->paginate(12, ['*'], 'assign_page')
             ->withQueryString();
 
+        $announcementsPage = $classroom->announcements()
+            ->with(['author', 'comments' => fn ($query) => $query->with('author')->oldest()])
+            ->orderByDesc('pinned')
+            ->latest()
+            ->paginate(10, ['*'], 'announce_page')
+            ->withQueryString();
+
+        $calendarItems = \App\Support\ClassroomCalendar::build(
+            $classroom->events,
+            $classroom->assignments,
+            fn ($assignment) => route('teacher.assignments.show', $assignment),
+        );
+
         $assignableTeacher = $user->role === 'admin' ? $classroom->owner : $user;
         $tests = Test::assignableTo($assignableTeacher)
             ->with('shares')
@@ -135,7 +149,9 @@ class ClassroomController extends Controller
             'leaderboard',
             'rosterPage',
             'documentsPage',
-            'assignmentsPage'
+            'assignmentsPage',
+            'announcementsPage',
+            'calendarItems'
         ));
     }
 

@@ -3,11 +3,15 @@
         @vite(['resources/css/classroom-workspace.css', 'resources/css/student/progress.css'])
     @endpush
 
+    @php
+        $unreadCount = $user->unreadNotifications()->count();
+    @endphp
+
     <div class="app-shell app-shell--no-list" x-data="{}">
         <x-shell.icon-rail :logo-href="\App\Support\NavRail::logoHrefForUser($user)" :avatar-label="$user->initials"
             :items="\App\Support\NavRail::forUser($user)" />
 
-        <div class="shell-content">
+        <div class="ledger-pane">
             <div class="binder-panel">
                 <div class="ledger-header">
                     <div class="dh-left">
@@ -40,7 +44,7 @@
                                 <div style="min-width: 0;">
                                     <div class="card-title" style="margin-top: 0; min-height: 0;">
                                         @if ($isUnread)
-                                            <span class="notif-dot" aria-label="Unread"></span>
+                                            <span class="status-pill pending text-3xs font-bold mr-6">New</span>
                                         @endif
                                         {{ $data['title'] ?? 'Notification' }}
                                     </div>
@@ -60,6 +64,27 @@
                     </div>
                 @endif
             </div>
+
+            <!-- CORKBOARD -->
+            <x-shell.corkboard header="Notification Center">
+                <div class="cork-note">
+                    <h3>Summary</h3>
+                    <p class="digest-line"><strong>Unread:</strong> <span class="mono">{{ $unreadCount }}</span></p>
+                    <p class="digest-line" style="margin-top: 4px;"><strong>Total:</strong> <span class="mono">{{ $notifications->total() }}</span></p>
+                </div>
+
+                @if ($unreadCount > 0)
+                    <div class="cork-note">
+                        <h3>Quick Actions</h3>
+                        <p class="digest-line">Clear unread indicators from your feed.</p>
+                        <form method="POST" action="{{ route('notifications.read-all') }}" class="mt-8">
+                            @csrf
+                            <button type="submit" class="btn-sm-primary btn-pin btn-full text-center">Mark all read</button>
+                        </form>
+                    </div>
+                @endif
+            </x-shell.corkboard>
         </div>
     </div>
 </x-layouts.student>
+

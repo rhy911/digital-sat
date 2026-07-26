@@ -206,6 +206,41 @@
         </div>
     </div>
 
+    <!-- READY START MODAL FOR FRESH PRACTICE TESTS -->
+    <div id="readyStartModal" class="ds-modal" aria-modal="true" role="dialog" aria-labelledby="readyStartModalTitle">
+        <div class="ds-modal__backdrop"></div>
+
+        <div class="ds-modal__content">
+            <div class="ds-modal__icon" style="background: var(--accent-soft); color: var(--accent);">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.8"
+                    stroke="currentColor" class="h-6 w-6" aria-hidden="true">
+                    <path stroke-linecap="round" stroke-linejoin="round"
+                        d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+            </div>
+            <div>
+                <h3 id="readyStartModalTitle" class="ds-modal__title">Ready to Begin Practice Test?</h3>
+                <div class="ds-modal__body mt-2 text-xs text-slate-600 leading-relaxed">
+                    Review your readiness before launching:
+                    <ul class="list-disc pl-4 mt-2 space-y-1 text-xs text-slate-600">
+                        <li>Ensure you have a stable internet connection.</li>
+                        <li>Timer starts immediately when you click <strong>I'm Ready</strong>.</li>
+                        <li>Built-in calculator &amp; reference sheet are provided inside engine.</li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="ds-modal__actions mt-4">
+                <x-ui.button id="btnConfirmReadyStart" type="button" variant="primary">
+                    I'm Ready — Begin Test
+                </x-ui.button>
+                <x-ui.button id="btnCancelReadyStart" type="button" variant="secondary">
+                    Cancel
+                </x-ui.button>
+            </div>
+        </div>
+    </div>
+
     @push('scripts')
         <script>
             function triggerLoadingScreen(message = 'Preparing your test...') {
@@ -395,6 +430,41 @@
                 }
             }
 
+            function showReadyStartModal(testId, firstModuleUlid) {
+                const modal = document.getElementById('readyStartModal');
+                const backdrop = modal?.querySelector('.ds-modal__backdrop');
+                const content = modal?.querySelector('.ds-modal__content');
+                const btnConfirm = document.getElementById('btnConfirmReadyStart');
+                const btnCancel = document.getElementById('btnCancelReadyStart');
+
+                if (!modal || !backdrop || !content || !btnConfirm || !btnCancel) {
+                    startTestFresh(testId, firstModuleUlid);
+                    return;
+                }
+
+                hideAjaxError();
+
+                const hideReadyModal = function() {
+                    backdrop.classList.remove('is-visible');
+                    content.classList.remove('is-visible');
+                    window.setTimeout(() => modal.classList.remove('show'), 250);
+                };
+
+                btnConfirm.onclick = function() {
+                    hideReadyModal();
+                    startTestFresh(testId, firstModuleUlid);
+                };
+
+                btnCancel.onclick = hideReadyModal;
+
+                modal.classList.add('show');
+                window.setTimeout(() => {
+                    backdrop.classList.add('is-visible');
+                    content.classList.add('is-visible');
+                    btnConfirm.focus();
+                }, 10);
+            }
+
             document.addEventListener('DOMContentLoaded', function() {
                 const testActions = document.querySelectorAll('.test-index-card [data-test-id]');
 
@@ -424,7 +494,7 @@
                                 return;
                             }
 
-                            startTestFresh(testId, optionsData.first_module_ulid);
+                            showReadyStartModal(testId, optionsData.first_module_ulid);
                         } catch (err) {
                             console.error(err);
                             showAjaxError(

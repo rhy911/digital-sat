@@ -5,6 +5,7 @@ import { initTruncatedTooltips } from './ui/truncated-tooltip.js';
 import { initDialogManager } from './ui/dialog-manager.js';
 import { initAttemptMonitorPolling } from './teacher/attempt-monitor.js';
 import { initNotificationBell } from './notifications.js';
+import { initClassroomCalendars } from './classroom-calendar.js';
 
 if (!window.Alpine) {
     window.Alpine = Alpine;
@@ -17,6 +18,7 @@ initDialogManager();
 initAttemptMonitorPolling();
 initAutoDismissAlerts();
 initNotificationBell();
+initClassroomCalendars();
 
 import flatpickr from 'flatpickr';
 import 'flatpickr/dist/flatpickr.min.css';
@@ -115,6 +117,7 @@ document.addEventListener('livewire:navigated', () => {
     initDatePickers();
     initAutoDismissAlerts();
     initNotificationBell();
+    initClassroomCalendars();
 });
 
 export function initAutoDismissAlerts() {

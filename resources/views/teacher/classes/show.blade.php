@@ -26,7 +26,11 @@
         searchQuery: '',
         statusFilter: 'all',
         newClassOpen: false,
-        activeTab: new URLSearchParams(location.search).get('assign_page') ? 'assign' : new URLSearchParams(location.search).get('docs_page') ? 'docs' : 'roster'
+        activeTab: new URLSearchParams(location.search).get('tab')
+            || (new URLSearchParams(location.search).get('announce_page') ? 'announce' : null)
+            || (new URLSearchParams(location.search).get('assign_page') ? 'assign' : null)
+            || (new URLSearchParams(location.search).get('docs_page') ? 'docs' : null)
+            || 'announce'
     }">
 
         <!-- COLUMN 1: ICON RAIL -->
@@ -56,12 +60,12 @@
                 <button class="new-class-btn"
                     @click="newClassOpen = !newClassOpen">{{ __('classroom.create_new_class') }}</button>
                 <div class="new-class-form" :class="{ 'open': newClassOpen }">
-                    <form method="POST" action="{{ route('teacher.classes.store') }}">
+                    <form method="POST" action="{{ route('teacher.classes.store') }}" autocomplete="off">
                         @csrf
                         <label>Class name</label>
-                        <input type="text" name="name" required placeholder="SAT Prep — Summer" maxlength="150">
+                        <input type="text" name="name" required placeholder="SAT Prep — Summer" maxlength="150" autocomplete="off">
                         <label>Description</label>
-                        <input type="text" name="description" placeholder="Optional" maxlength="2000">
+                        <input type="text" name="description" placeholder="Optional" maxlength="2000" autocomplete="off">
                         <div class="actions">
                             <button type="button" class="btn-sm-ghost"
                                 @click="newClassOpen = false">{{ __('classroom.cancel') }}</button>
@@ -80,8 +84,7 @@
             <div class="binder-panel">
                 <div class="ledger-header">
                     <div class="dh-left">
-                        <h2>{{ $classroom->name }} <span
-                                class="handwriting status-quote">"{{ ucfirst($classroom->status) }}"</span></h2>
+                        <h2>{{ $classroom->name }} <span class="status-pill ok ml-2"><span class="d"></span>{{ ucfirst($classroom->status) }}</span></h2>
                         <div class="dh-desc">
                             {{ $classroom->description ?: 'Manage roster, resources, assignments, and class access.' }}
                         </div>
@@ -98,12 +101,121 @@
 
                 <!-- PINNED TAB BAR (Teams-style: swaps the whole panel below, lazy via x-show) -->
                 <x-shell.tab-bar :tabs="[
+                    ['key' => 'announce', 'label' => 'Announcements', 'count' => $announcementsPage->total()],
+                    ['key' => 'calendar', 'label' => 'Calendar', 'count' => $classroom->events->count()],
                     ['key' => 'roster', 'label' => 'Roster', 'count' => $classroom->activeMemberships->count()],
                     ['key' => 'team', 'label' => 'Teaching team', 'count' => 1 + $classroom->co_teachers_count],
                     ['key' => 'docs', 'label' => 'Documents', 'count' => $classroom->documents_count],
                     ['key' => 'assign', 'label' => 'Assignments', 'count' => $classroom->assignments_count],
                     ['key' => 'settings', 'label' => 'Settings'],
                 ]" />
+
+                <!-- ANNOUNCEMENTS TAB PANEL -->
+                <div class="section-panel" :class="{ 'active': activeTab === 'announce' }">
+                    @if ($classroom->status === 'active')
+                        <form method="POST" action="{{ route('teacher.announcements.store', $classroom) }}"
+                            class="announce-composer" x-data="{ text: '' }" autocomplete="off">
+                            @csrf
+                            <div class="announce-composer__header">
+                                <span class="announce-composer__title">
+                                    <span class="announce-avatar">{{ substr(auth()->user()->name ?? 'T', 0, 1) }}</span>
+                                    Share an update with your class
+                                </span>
+                            </div>
+                            <textarea name="body" rows="3" maxlength="5000" required x-model="text" autocomplete="off"
+                                placeholder="Write an announcement for all active students in this class…" class="announce-textarea"></textarea>
+                            <div class="announce-composer__actions">
+                                <span class="announce-composer__hint" x-text="text.length + ' / 5000'">0 / 5000</span>
+                                <button type="submit" class="btn-sm-primary announce-post-btn" :disabled="!text.trim()" :class="{ 'is-active': text.trim().length > 0 }">Post announcement</button>
+                            </div>
+                        </form>
+                    @endif
+
+                    @forelse ($announcementsPage as $announcement)
+                        <article class="announce-card {{ $announcement->pinned ? 'is-pinned' : '' }}">
+                            <div class="announce-card__head">
+                                <div class="announce-card__meta">
+                                    <span class="announce-avatar">{{ substr($announcement->author?->name ?? 'T', 0, 1) }}</span>
+                                    <div>
+                                        <div class="announce-card__author">{{ $announcement->author?->name ?? 'Teacher' }}</div>
+                                        <div class="announce-card__time">{{ $announcement->created_at->diffForHumans() }}</div>
+                                    </div>
+                                    @if ($announcement->pinned)
+                                        <span class="announce-pin-badge">📌 Pinned</span>
+                                    @endif
+                                </div>
+                                <div class="announce-card__tools">
+                                    <form method="POST"
+                                        action="{{ route('teacher.announcements.pin', [$classroom, $announcement]) }}">
+                                        @csrf
+                                        <button type="submit" class="announce-pin-btn">
+                                            {{ $announcement->pinned ? 'Unpin' : 'Pin' }}
+                                        </button>
+                                    </form>
+                                    <button type="button" @click="$dispatch('open-confirm-delete', {
+                                        title: 'Delete Announcement?',
+                                        message: 'Are you sure you want to delete this announcement? This action cannot be undone.',
+                                        actionUrl: '{{ route('teacher.announcements.destroy', [$classroom, $announcement]) }}'
+                                    })" class="announce-del-btn">Delete</button>
+                                </div>
+                            </div>
+                            <div class="announce-card__body">{!! nl2br(e($announcement->body)) !!}</div>
+
+                            <div class="announce-comments">
+                                <div class="announce-comment-list">
+                                    @foreach ($announcement->comments as $comment)
+                                        <div class="announce-comment">
+                                            <div class="announce-comment__left">
+                                                <span class="announce-comment__avatar">{{ substr($comment->author?->name ?? 'U', 0, 1) }}</span>
+                                                <div class="announce-comment__content">
+                                                    <span class="announce-comment__author">{{ $comment->author?->name ?? 'User' }}</span>
+                                                    @if(in_array($comment->author_id, [$classroom->owner_id, ...$classroom->coTeachers->pluck('user_id')->all()], true))
+                                                        <span class="announce-comment__role-tag">Teacher</span>
+                                                    @endif
+                                                    <span class="announce-comment__body">{{ $comment->body }}</span>
+                                                    <div class="announce-comment__time">{{ $comment->created_at->diffForHumans() }}</div>
+                                                </div>
+                                            </div>
+                                            <div class="announce-comment__actions">
+                                                <button type="button" @click="$dispatch('open-confirm-delete', {
+                                                    title: 'Delete Comment?',
+                                                    message: 'Are you sure you want to delete this comment?',
+                                                    actionUrl: '{{ route('announcements.comments.destroy', [$classroom, $announcement, $comment]) }}'
+                                                })" class="announce-comment-del-btn" title="Delete comment">&times;</button>
+                                            </div>
+                                        </div>
+                                    @endforeach
+                                </div>
+
+                                @if ($classroom->status === 'active')
+                                    <form method="POST"
+                                        action="{{ route('announcements.comments.store', [$classroom, $announcement]) }}"
+                                        class="announce-comment-form" x-data="{ commentText: '' }" autocomplete="off">
+                                        @csrf
+                                        <input type="text" name="body" maxlength="2000" required x-model="commentText" autocomplete="off"
+                                            placeholder="Write a comment…" class="announce-comment-input">
+                                        <button type="submit" class="btn-sm-primary btn-compact announce-send-btn" :disabled="!commentText.trim()" :class="{ 'is-active': commentText.trim().length > 0 }">Send</button>
+                                    </form>
+                                @endif
+                            </div>
+                        </article>
+                    @empty
+                        <div class="empty-grid-cell" style="margin-top: 8px;">
+                            <strong>No announcements yet</strong>
+                            <p style="margin-top: 4px;">Post the first update for your class.</p>
+                        </div>
+                    @endforelse
+
+                    @if ($announcementsPage->hasPages())
+                        <div style="margin-top: 12px;">{{ $announcementsPage->links() }}</div>
+                    @endif
+                </div>
+
+                <!-- CALENDAR TAB PANEL -->
+                <div class="section-panel" :class="{ 'active': activeTab === 'calendar' }">
+                    <x-shell.class-calendar :items="$calendarItems" :can-manage="true" :classroom="$classroom"
+                        :events="$classroom->events" />
+                </div>
 
                 <!-- ROSTER TAB PANEL -->
                 <div class="section-panel" :class="{ 'active': activeTab === 'roster' }">
@@ -809,4 +921,5 @@
             });
         </script>
     @endpush
+    <x-ui.confirm-delete-modal />
 </x-layouts.student>
