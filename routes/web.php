@@ -18,9 +18,6 @@ use Illuminate\Support\Facades\Route;
 
 // Public routes
 Route::get('/', LandingController::class)->name('landing');
-Route::get('/landing-new', function () {
-    return view('public.landing');
-});
 Route::get('/media/{filename}', [MediaController::class, 'show'])
     ->where('filename', '[A-Za-z0-9]{20}\.(?:jpe?g|png|gif|webp|svg)')
     ->name('media.show');

@@ -14,7 +14,6 @@ class RegisterController extends Controller
 {
     public function __invoke(Request $request)
     {
-        Log::info('RegisterWeb called');
         try {
             $request->validate([
                 'username' => 'required|string|max:255|unique:users',

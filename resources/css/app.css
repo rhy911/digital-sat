@@ -175,14 +175,6 @@ u {
     color: #ffffff;
 }
 
-.bento-card {
-    transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
-}
-
-.bento-card:hover {
-    transform: translateY(-2px);
-}
-
 /* ==================== SECURE LOADING SCREEN ==================== */
 .loading-screen {
     position: fixed;

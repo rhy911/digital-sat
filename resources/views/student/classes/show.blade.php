@@ -86,61 +86,7 @@
                 <!-- ANNOUNCEMENTS TAB PANEL -->
                 <div class="section-panel" :class="{ 'active': activeTab === 'announce' }">
                     @forelse ($announcementsPage as $announcement)
-                        <article class="announce-card {{ $announcement->pinned ? 'is-pinned' : '' }}">
-                            <div class="announce-card__head">
-                                <div class="announce-card__meta">
-                                    <span class="announce-avatar">{{ substr($announcement->author?->name ?? 'T', 0, 1) }}</span>
-                                    <div>
-                                        <div class="announce-card__author">{{ $announcement->author?->name ?? 'Teacher' }}</div>
-                                        <div class="announce-card__time">{{ $announcement->created_at->diffForHumans() }}</div>
-                                    </div>
-                                    @if ($announcement->pinned)
-                                        <span class="announce-pin-badge">📌 Pinned</span>
-                                    @endif
-                                </div>
-                            </div>
-                            <div class="announce-card__body">{!! nl2br(e($announcement->body)) !!}</div>
-
-                            <div class="announce-comments">
-                                <div class="announce-comment-list">
-                                    @foreach ($announcement->comments as $comment)
-                                        <div class="announce-comment">
-                                            <div class="announce-comment__left">
-                                                <span class="announce-comment__avatar">{{ substr($comment->author?->name ?? 'U', 0, 1) }}</span>
-                                                <div class="announce-comment__content">
-                                                    <span class="announce-comment__author">{{ $comment->author?->name ?? 'User' }}</span>
-                                                    @if(in_array($comment->author_id, [$classroom->owner_id, ...$classroom->coTeachers->pluck('user_id')->all()], true))
-                                                        <span class="announce-comment__role-tag">Teacher</span>
-                                                    @endif
-                                                    <span class="announce-comment__body">{{ $comment->body }}</span>
-                                                    <div class="announce-comment__time">{{ $comment->created_at->diffForHumans() }}</div>
-                                                </div>
-                                            </div>
-                                            @if($comment->author_id === auth()->id())
-                                                <div class="announce-comment__actions">
-                                                    <button type="button" @click="$dispatch('open-confirm-delete', {
-                                                        title: 'Delete Comment?',
-                                                        message: 'Are you sure you want to delete your comment?',
-                                                        actionUrl: '{{ route('announcements.comments.destroy', [$classroom, $announcement, $comment]) }}'
-                                                    })" class="announce-comment-del-btn" title="Delete your comment">&times;</button>
-                                                </div>
-                                            @endif
-                                        </div>
-                                    @endforeach
-                                </div>
-
-                                @if ($classroom->status === 'active')
-                                    <form method="POST"
-                                        action="{{ route('announcements.comments.store', [$classroom, $announcement]) }}"
-                                        class="announce-comment-form" x-data="{ commentText: '' }" autocomplete="off">
-                                        @csrf
-                                        <input type="text" name="body" maxlength="2000" required x-model="commentText" autocomplete="off"
-                                            placeholder="Write a comment…" class="announce-comment-input">
-                                        <button type="submit" class="btn-sm-primary btn-compact announce-send-btn" :disabled="!commentText.trim()" :class="{ 'is-active': commentText.trim().length > 0 }">Send</button>
-                                    </form>
-                                @endif
-                            </div>
-                        </article>
+                        <x-classroom.announcement-card :announcement="$announcement" :classroom="$classroom" />
                     @empty
                         <div class="empty-grid-cell" style="margin-top: 8px;">
                             <strong>No announcements yet</strong>

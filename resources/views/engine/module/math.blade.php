@@ -28,12 +28,6 @@
         </div>
         ";
 
-    $testData ??= (object) [
-        'page_title' => 'Math Section',
-        'section_title' => 'Math Questions',
-        'username' => auth()->user()?->name ?? (auth()->user()?->username ?? 'Guest'),
-    ];
-
     $questions ??= collect();
     $savedAnswers ??= collect();
     $hasSPR = $questions->contains('question_type', 'student_produced_response');

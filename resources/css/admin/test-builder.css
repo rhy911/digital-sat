@@ -242,8 +242,7 @@ textarea:focus-visible,
 /* Transitions under 200ms */
 .transition-all,
 .transition-colors,
-.sidebar-link,
-.dash-btn {
+.sidebar-link {
     transition-property: all;
     transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
     transition-duration: 150ms;
@@ -265,68 +264,6 @@ textarea:focus-visible,
     opacity: 1;
 }
 
-/* Form Fields */
-.dash-field {
-    width: 100%;
-    padding: 10px 14px;
-    font-size: 14px;
-    background-color: #ffffff;
-    border: 1px solid var(--border-color);
-    border-radius: var(--radius);
-    color: var(--text-primary);
-    transition:
-        border-color 0.15s ease,
-        box-shadow 0.15s ease;
-}
-
-.dash-field:focus {
-    border-color: var(--primary);
-    box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.15);
-    outline: none;
-}
-
-/* Dashboard Buttons */
-.dash-btn {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    padding: 10px 18px;
-    font-size: 13px;
-    font-weight: 600;
-    border-radius: var(--radius);
-    cursor: pointer;
-    border: 1px solid transparent;
-}
-
-.dash-btn-primary {
-    background-color: var(--primary);
-    color: #ffffff;
-}
-
-.dash-btn-primary:hover {
-    background-color: var(--primary-hover);
-}
-
-.dash-btn-secondary {
-    background-color: #ffffff;
-    border-color: var(--border-color);
-    color: var(--text-muted);
-}
-
-.dash-btn-secondary:hover {
-    background-color: #f8fafc;
-    color: var(--text-primary);
-}
-
-.dash-btn-danger {
-    background-color: #fee2e2;
-    color: #b91c1c;
-}
-
-.dash-btn-danger:hover {
-    background-color: #fca5a5;
-}
-
 .bg-indigo-600 {
     background-color: var(--primary) !important;
 }
@@ -336,13 +273,7 @@ textarea:focus-visible,
     background-color: var(--primary-hover) !important;
 }
 
-.text-indigo-600,
-.text-indigo-650 {
-    color: var(--primary) !important;
-}
-
-.border-indigo-100,
-.border-indigo-200 {
+.border-indigo-100 {
     border-color: #d9def8 !important;
 }
 
@@ -353,20 +284,6 @@ textarea:focus-visible,
 input[type="checkbox"],
 input[type="radio"] {
     accent-color: var(--primary);
-}
-
-/* Glass panel styling */
-.glass-panel {
-    background: rgba(255, 255, 255, 0.7) !important;
-    border: 1px solid var(--border-color) !important;
-    box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.04) !important;
-    backdrop-filter: blur(8px) !important;
-    -webkit-backdrop-filter: blur(8px) !important;
-}
-
-.dashboard-title-gradient {
-    background: none !important;
-    color: var(--text-primary) !important;
 }
 
 .focus\:outline-hidden:focus,
@@ -714,17 +631,6 @@ select.ts-hidden-accessible {
     white-space: nowrap;
 }
 
-.test-builder-shell .table-id-cell {
-    color: #94a3b8 !important;
-    font-family:
-        ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace !important;
-    font-size: 11px;
-}
-
-.test-builder-shell .table-numeric-cell {
-    font-variant-numeric: tabular-nums;
-}
-
 .test-builder-shell .tabulator-footer {
     min-height: 64px;
     padding: 12px 16px !important;
@@ -1059,8 +965,7 @@ select.ts-hidden-accessible {
 .stem-preview,
 .edit-passage-preview,
 .edit-stem-preview,
-#editQuestionPreviewContent,
-.builder-block-preview {
+#editQuestionPreviewContent {
     font-family: "Noto Serif", Georgia, serif !important;
     background-color: #f8fafc;
     border: 1px solid var(--border-color);
@@ -1173,10 +1078,6 @@ select.ts-hidden-accessible {
 
 .edit-question-modal .text-slate-500 {
     color: var(--text-muted) !important;
-}
-
-.edit-question-modal .text-indigo-400 {
-    color: var(--primary) !important;
 }
 
 .edit-question-modal .bg-slate-900\/20,

@@ -2455,9 +2455,6 @@ td.num {
 .d-inline {
     display: inline;
 }
-.d-inline-block {
-    display: inline-block;
-}
 .text-muted {
     color: var(--ink-soft);
 }
@@ -3027,14 +3024,6 @@ td.num {
     color: var(--cw-muted);
 }
 
-.response-saved {
-    color: var(--cw-success);
-}
-
-.response-omitted {
-    color: var(--cw-danger);
-}
-
 .attempt-monitor__empty {
     display: grid;
     gap: 4px;
@@ -3052,14 +3041,6 @@ td.num {
 .attempt-monitor__empty span {
     color: var(--cw-muted);
     font-size: 0.82rem;
-}
-
-.answer-correct {
-    color: var(--cw-success);
-}
-
-.answer-wrong {
-    color: var(--cw-danger);
 }
 
 /* ============ STUDENT ATTEMPT MONITOR UI/UX IMPROVEMENTS ============ */
