@@ -7,10 +7,11 @@ document.addEventListener('DOMContentLoaded', () => {
     if (!sidebar || !toggle) return;
 
     const saved = localStorage.getItem(COMPACT_KEY);
-    let compact = saved === null ? window.innerWidth < 1280 : saved === 'true';
+    let compact = saved === null ? window.innerWidth <= 1366 : saved === 'true';
 
     function render() {
         sidebar.classList.toggle('is-compact', desktop.matches && compact);
+        sidebar.classList.toggle('is-expanded', desktop.matches && !compact);
         const action = compact ? 'Expand sidebar' : 'Compact sidebar';
         toggle.setAttribute('aria-label', action);
         toggle.setAttribute('title', action);

@@ -257,7 +257,7 @@ export function openValidationGrid(items) {
 
     validationGridTable = new Tabulator("#validation-grid", {
         data: flatItems,
-        layout: "fitColumns",
+        layout: "fitDataFill",
         reactiveData: true,
         columns: [
             { title: "Idx", field: "row_index", width: 50, headerSort: false, frozen: true },
@@ -821,7 +821,7 @@ export function initBulkImport() {
             showAlert('danger', 'Error: ' + err.message);
         } finally {
             btn.disabled = false;
-            btn.innerHTML = `${icon('cloud-arrow-up', 'w-5 h-5 leading-none')} Import ZIP Package`;
+            btn.innerHTML = `${icon('cloud-arrow-up', 'w-4 h-4 shrink-0')} <span>Import ZIP Package</span>`;
         }
     });
 

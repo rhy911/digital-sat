@@ -107,35 +107,38 @@
                     @keydown.arrow-up.prevent="moveImportTab(-1)">
                     <li role="presentation">
                         <button id="import-json-tab"
-                            class="rounded-lg px-4 py-2 font-semibold text-sm focus:outline-hidden transition-colors cursor-pointer"
-                            :class="importTab === 'json' ? 'bg-brand text-white shadow-sm' :
+                            class="inline-flex items-center justify-center gap-1.5 rounded-lg px-4 py-2 font-semibold text-sm focus:outline-hidden transition-colors cursor-pointer"
+                            :class="importTab === 'json' ? 'bg-brand text-white shadow-xs' :
                                 'text-slate-650 hover:text-slate-900 hover:bg-slate-100'"
                             x-on:click="setImportTab('json')" type="button" role="tab" aria-controls="import-json"
                             :aria-selected="importTab === 'json' ? 'true' : 'false'"
                             :tabindex="importTab === 'json' ? '0' : '-1'">
-                            <x-ui.icon name="filetype-json" class="w-4 h-4 mr-1.5 leading-none" /> Paste or upload
+                            <x-ui.icon name="filetype-json" class="w-4 h-4 shrink-0" />
+                            <span>Paste or upload</span>
                         </button>
                     </li>
                     <li role="presentation">
                         <button id="import-csv-tab"
-                            class="rounded-lg px-4 py-2 font-semibold text-sm focus:outline-hidden transition-colors cursor-pointer"
-                            :class="importTab === 'csv' ? 'bg-brand text-white shadow-sm' :
+                            class="inline-flex items-center justify-center gap-1.5 rounded-lg px-4 py-2 font-semibold text-sm focus:outline-hidden transition-colors cursor-pointer"
+                            :class="importTab === 'csv' ? 'bg-brand text-white shadow-xs' :
                                 'text-slate-650 hover:text-slate-900 hover:bg-slate-100'"
                             x-on:click="setImportTab('csv')" type="button" role="tab" aria-controls="import-csv"
                             :aria-selected="importTab === 'csv' ? 'true' : 'false'"
                             :tabindex="importTab === 'csv' ? '0' : '-1'">
-                            <x-ui.icon name="file-earmark-spreadsheet" class="w-4 h-4 mr-1.5 leading-none" /> CSV
+                            <x-ui.icon name="file-earmark-spreadsheet" class="w-4 h-4 shrink-0" />
+                            <span>CSV</span>
                         </button>
                     </li>
                     <li role="presentation">
                         <button id="import-zip-tab"
-                            class="rounded-lg px-4 py-2 font-semibold text-sm focus:outline-hidden transition-colors cursor-pointer"
-                            :class="importTab === 'zip' ? 'bg-brand text-white shadow-sm' :
+                            class="inline-flex items-center justify-center gap-1.5 rounded-lg px-4 py-2 font-semibold text-sm focus:outline-hidden transition-colors cursor-pointer"
+                            :class="importTab === 'zip' ? 'bg-brand text-white shadow-xs' :
                                 'text-slate-650 hover:text-slate-900 hover:bg-slate-100'"
                             x-on:click="setImportTab('zip')" type="button" role="tab" aria-controls="import-zip"
                             :aria-selected="importTab === 'zip' ? 'true' : 'false'"
                             :tabindex="importTab === 'zip' ? '0' : '-1'">
-                            <x-ui.icon name="file-earmark-zip" class="w-4 h-4 mr-1.5 leading-none" /> ZIP + images
+                            <x-ui.icon name="file-earmark-zip" class="w-4 h-4 shrink-0" />
+                            <span>ZIP + images</span>
                         </button>
                     </li>
                 </ul>
@@ -169,7 +172,7 @@
                                             id="bulkJsonFile" accept=".json,application/json" style="z-index: 10;"
                                             aria-label="Upload JSON questions file">
                                         <x-ui.icon name="filetype-json"
-                                            class="w-10 h-10 text-slate-400 mb-2 block leading-none bi" />
+                                            class="w-10 h-10 text-slate-400 mx-auto mb-2 block" />
                                         <span
                                             class="font-semibold block text-slate-700 text-sm mb-1 drag-instruction">Drag
                                             &amp; drop JSON here</span>
@@ -227,14 +230,16 @@
 
                         <div class="flex justify-end gap-3 mt-6 pt-4 border-t border-slate-100">
                             <button type="button"
-                                class="px-4 py-2 bg-white border border-slate-200 text-slate-700 hover:text-slate-900 rounded-lg hover:bg-slate-50 shadow-sm text-sm font-semibold flex items-center gap-1.5"
+                                class="inline-flex items-center justify-center gap-2 px-4 py-2 bg-white border border-slate-200 text-slate-700 hover:text-slate-900 rounded-lg hover:bg-slate-50 shadow-xs text-sm font-semibold cursor-pointer"
                                 id="bulkPreviewBtn">
-                                <x-ui.icon name="eye" class="w-4 h-4 leading-none" /> Preview
+                                <x-ui.icon name="eye" class="w-4 h-4 shrink-0" />
+                                <span>Preview</span>
                             </button>
                             <button type="button"
-                                class="px-5 py-2 bg-brand hover:bg-brand-hover text-white font-semibold text-sm rounded-lg shadow-sm flex items-center gap-1.5"
+                                class="inline-flex items-center justify-center gap-2 px-5 py-2 bg-brand hover:bg-brand-hover text-white font-semibold text-sm rounded-lg shadow-xs cursor-pointer"
                                 id="bulkImportSubmitBtn">
-                                <x-ui.icon name="cloud-arrow-up" class="w-4 h-4 leading-none" /> Import from Editor
+                                <x-ui.icon name="cloud-arrow-up" class="w-4 h-4 shrink-0" />
+                                <span>Import from Editor</span>
                             </button>
                         </div>
                     </div>
@@ -264,7 +269,7 @@
                                         id="bulkCsvFile" accept=".csv,.txt,text/csv,text/plain" style="z-index: 10;"
                                         aria-label="Upload CSV questions file">
                                     <x-ui.icon name="file-earmark-spreadsheet"
-                                        class="w-10 h-10 text-slate-400 mb-3 block leading-none bi" />
+                                        class="w-10 h-10 text-slate-400 mx-auto mb-3 block" />
                                     <span class="font-semibold block text-slate-700 text-sm mb-1 drag-instruction">Drag
                                         &amp; drop CSV here</span>
                                     <span class="text-slate-450 text-xs">or click to browse file</span>
@@ -279,30 +284,32 @@
                             <div class="flex flex-col justify-center gap-3">
                                 <span class="text-sm font-bold text-slate-700">Need a structured template?</span>
                                 <button type="button"
-                                    class="w-fit px-4 py-2 text-sm bg-white border border-slate-200 rounded-lg hover:bg-slate-50 text-slate-700 shadow-sm flex items-center gap-2 font-semibold"
+                                    class="inline-flex items-center gap-2 w-fit px-4 py-2 text-sm bg-white border border-slate-200 rounded-lg hover:bg-slate-50 text-slate-700 shadow-xs font-semibold cursor-pointer"
                                     id="bulkDownloadRwSampleCsvBtn">
-                                    <x-ui.icon name="download" class="w-4 h-4 text-brand leading-none" /> Download
-                                    R&amp;W Template.csv
+                                    <x-ui.icon name="download" class="w-4 h-4 text-brand shrink-0" />
+                                    <span>Download R&amp;W Template.csv</span>
                                 </button>
                                 <button type="button"
-                                    class="w-fit px-4 py-2 text-sm bg-white border border-slate-200 rounded-lg hover:bg-slate-50 text-slate-700 shadow-sm flex items-center gap-2 font-semibold"
+                                    class="inline-flex items-center gap-2 w-fit px-4 py-2 text-sm bg-white border border-slate-200 rounded-lg hover:bg-slate-50 text-slate-700 shadow-xs font-semibold cursor-pointer"
                                     id="bulkDownloadMathSampleCsvBtn">
-                                    <x-ui.icon name="download" class="w-4 h-4 text-brand leading-none" /> Download Math
-                                    Template.csv
+                                    <x-ui.icon name="download" class="w-4 h-4 text-brand shrink-0" />
+                                    <span>Download Math Template.csv</span>
                                 </button>
                             </div>
                         </div>
 
                         <div class="flex justify-end gap-3 mt-6 pt-4 border-t border-slate-100">
                             <button type="button"
-                                class="px-4 py-2 bg-white border border-slate-200 text-slate-700 hover:text-slate-900 rounded-lg hover:bg-slate-50 shadow-sm text-sm font-semibold flex items-center gap-1.5"
+                                class="inline-flex items-center justify-center gap-2 px-4 py-2 bg-white border border-slate-200 text-slate-700 hover:text-slate-900 rounded-lg hover:bg-slate-50 shadow-xs text-sm font-semibold cursor-pointer"
                                 id="bulkCsvPreviewBtn">
-                                <x-ui.icon name="eye" class="w-4 h-4 leading-none" /> Preview
+                                <x-ui.icon name="eye" class="w-4 h-4 shrink-0" />
+                                <span>Preview</span>
                             </button>
                             <button type="button"
-                                class="px-5 py-2 bg-brand hover:bg-brand-hover text-white font-semibold text-sm rounded-lg shadow-sm flex items-center gap-1.5"
+                                class="inline-flex items-center justify-center gap-2 px-5 py-2 bg-brand hover:bg-brand-hover text-white font-semibold text-sm rounded-lg shadow-xs cursor-pointer"
                                 id="bulkCsvImportSubmitBtn">
-                                <x-ui.icon name="cloud-arrow-up" class="w-4 h-4 leading-none" /> Import CSV
+                                <x-ui.icon name="cloud-arrow-up" class="w-4 h-4 shrink-0" />
+                                <span>Import CSV</span>
                             </button>
                         </div>
                     </div>
@@ -321,8 +328,8 @@
                             plus the images it uses.
                         </p>
 
-                        <div class="grid grid-cols-1 lg:grid-cols-12 gap-5 items-end">
-                            <div class="lg:col-span-8">
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div>
                                 <label class="block text-xs font-bold text-slate-600 uppercase tracking-wider mb-2">ZIP
                                     File <span class="text-rose-500">*</span></label>
                                 <div
@@ -332,7 +339,7 @@
                                         id="bulkZipFile" accept=".zip" style="z-index: 10;"
                                         aria-label="Upload ZIP questions package">
                                     <x-ui.icon name="file-earmark-zip"
-                                        class="w-10 h-10 text-slate-400 mb-3 block leading-none bi" />
+                                        class="w-10 h-10 text-slate-400 mx-auto mb-3 block" />
                                     <span class="font-semibold block text-slate-700 text-sm mb-1 drag-instruction">Drag
                                         &amp; drop ZIP here</span>
                                     <span class="text-slate-450 text-xs">or click to browse file</span>
@@ -359,15 +366,26 @@
                                     </div>
                                 </div>
                             </div>
-                            <div class="lg:col-span-4">
-                                <button type="button"
-                                    class="w-full py-4 bg-brand hover:bg-brand-hover text-white font-bold rounded-lg shadow-sm flex items-center justify-center gap-2"
-                                    id="bulkZipImportBtn">
-                                    <x-ui.icon name="cloud-arrow-up" class="w-5 h-5 leading-none" /> Import ZIP Package
-                                </button>
+                            <div class="flex flex-col justify-center gap-3">
+                                <span class="text-sm font-bold text-slate-700">ZIP Package Requirements</span>
+                                <ul class="text-xs text-slate-600 space-y-2 list-disc pl-4 leading-relaxed">
+                                    <li>Contains exactly one <code>questions.json</code> or <code>questions.csv</code> file.</li>
+                                    <li>Contains all referenced images in the root or subfolders.</li>
+                                    <li>Images referenced in stems or choices are automatically mapped.</li>
+                                </ul>
                             </div>
                         </div>
+
+                        <div class="flex justify-end gap-3 mt-6 pt-4 border-t border-slate-100">
+                            <button type="button"
+                                class="inline-flex items-center justify-center gap-2 px-5 py-2 bg-brand hover:bg-brand-hover text-white font-semibold text-sm rounded-lg shadow-xs cursor-pointer"
+                                id="bulkZipImportBtn">
+                                <x-ui.icon name="cloud-arrow-up" class="w-4 h-4 shrink-0" />
+                                <span>Import ZIP Package</span>
+                            </button>
+                        </div>
                     </div>
+
                 </div>
             </div>
         </div>

@@ -6,6 +6,7 @@ import { initDialogManager } from './ui/dialog-manager.js';
 import { initAttemptMonitorPolling } from './teacher/attempt-monitor.js';
 import { initNotificationBell } from './notifications.js';
 import { initClassroomCalendars } from './classroom-calendar.js';
+import { initMobileClassroomNav } from './classroom-nav.js';
 
 if (!window.Alpine) {
     window.Alpine = Alpine;
@@ -19,6 +20,7 @@ initAttemptMonitorPolling();
 initAutoDismissAlerts();
 initNotificationBell();
 initClassroomCalendars();
+initMobileClassroomNav();
 
 import flatpickr from 'flatpickr';
 import 'flatpickr/dist/flatpickr.min.css';

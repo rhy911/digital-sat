@@ -24,11 +24,11 @@ x-init="
     @endif
 "
 x-on:show-toast.window="addToast($event.detail.type || 'info', $event.detail.message, $event.detail.list || [])"
-class="fixed top-5 right-5 z-[99999] flex flex-col gap-3 max-w-sm w-full pointer-events-none"
+class="fixed top-5 left-5 right-5 sm:left-auto z-[99999] flex flex-col gap-3 max-w-sm w-auto sm:w-full pointer-events-none"
 style="z-index: 99999;"
 x-cloak>
     <template x-teleport="body">
-        <div class="fixed top-5 right-5 z-[99999] flex flex-col gap-3 max-w-sm w-full pointer-events-none" style="z-index: 99999;">
+        <div class="fixed top-5 left-5 right-5 sm:left-auto z-[99999] flex flex-col gap-3 max-w-sm w-auto sm:w-full pointer-events-none" style="z-index: 99999;">
             <template x-for="toast in toasts" :key="toast.id">
                 <div x-show="true"
                     x-transition:enter="transition-[transform,opacity] ease-out duration-250"

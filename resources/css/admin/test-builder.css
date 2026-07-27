@@ -129,6 +129,41 @@ body {
     }
 }
 
+@media (min-width: 1024px) and (max-width: 1366px) {
+    .test-builder-sidebar:not(.is-expanded) {
+        width: 76px !important;
+        flex-basis: 76px !important;
+    }
+
+    .test-builder-sidebar:not(.is-expanded) .test-builder-sidebar-header {
+        min-height: 64px;
+        padding: 0;
+    }
+
+    .test-builder-sidebar:not(.is-expanded) .test-builder-sidebar-brand,
+    .test-builder-sidebar:not(.is-expanded) .test-builder-sidebar-wordmark,
+    .test-builder-sidebar:not(.is-expanded) .test-builder-sidebar-label {
+        display: none !important;
+    }
+
+    .test-builder-sidebar:not(.is-expanded) .test-builder-sidebar-toggle {
+        top: 16px;
+        right: 22px;
+    }
+
+    .test-builder-sidebar:not(.is-expanded) nav {
+        padding-right: 12px;
+        padding-left: 12px;
+    }
+
+    .test-builder-sidebar:not(.is-expanded) .sidebar-link,
+    .test-builder-sidebar:not(.is-expanded) .sidebar-link-builder {
+        justify-content: center;
+        padding-right: 12px;
+        padding-left: 12px;
+    }
+}
+
 .test-builder-nav-group {
     margin: 0 0 8px;
     padding: 0 12px;

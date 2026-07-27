@@ -170,6 +170,10 @@ Route::middleware(['auth', 'verified', 'role:admin'])->prefix('admin')->name('ad
 
 // Verified Engine routes
 Route::middleware(['auth', 'verified'])->prefix('engine')->group(function () {
+    Route::get('/unavailable', function () {
+        return view('engine.mobile-blocked');
+    })->name('engine.mobile-blocked');
+
     Route::get('/session/{ulid?}', [SessionController::class, 'show'])->name('engine.session');
     Route::get('/session/{test_ulid}/teacher-preview', [SessionController::class, 'teacherPreview'])->name('engine.teacher-preview');
     Route::get('/submit-status/{userTest:ulid}', [SubmissionController::class, 'checkStatus'])->name('engine.submit-status');

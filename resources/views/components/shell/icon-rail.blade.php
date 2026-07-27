@@ -12,6 +12,15 @@
     $logoutHref = $logoutHref ?? route('logout');
 @endphp
 
+<button type="button" class="mobile-nav-toggle" data-mobile-nav-toggle aria-label="Open menu" aria-expanded="false">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <line x1="3.5" y1="6" x2="20.5" y2="6" />
+        <line x1="3.5" y1="12" x2="20.5" y2="12" />
+        <line x1="3.5" y1="18" x2="20.5" y2="18" />
+    </svg>
+</button>
+<div class="mobile-nav-scrim" data-mobile-nav-scrim></div>
+
 <div class="icon-rail">
     <a href="{{ $logoHref }}" class="rail-logo" aria-label="{{ $logoLabel === 'D' ? 'DigiSAT home' : $logoLabel }}">
         <img src="/brand/icon-light.svg" alt="" aria-hidden="true" class="rail-logo__img">

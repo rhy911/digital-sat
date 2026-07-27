@@ -4,6 +4,19 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script>
+        // Screen-size gate: measured on the actual viewport, not device/UA — small
+        // tablets in landscape can clear this while any phone cannot. Must run
+        // synchronously before the rest of <head> so a blocked visitor never sees
+        // test content. Threshold reused by the live resize guard in test.js.
+        window.SCREEN_SIZE_THRESHOLD = 768;
+        (function () {
+            var minDimension = Math.min(window.innerWidth, window.innerHeight);
+            if (minDimension < window.SCREEN_SIZE_THRESHOLD) {
+                window.location.replace("{{ route('engine.mobile-blocked') }}");
+            }
+        })();
+    </script>
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <meta name="google" content="notranslate">
     <title>{{ $pageTitle ?? 'Test' }}</title>
@@ -303,6 +316,17 @@
                 <button id="customAlertCancelBtn" class="custom-alert-btn btn-secondary hidden">Cancel</button>
                 <button id="customAlertConfirmBtn" class="custom-alert-btn btn-primary">OK</button>
             </div>
+        </div>
+    </div>
+
+    <!-- Live screen-size guard: covers the case where a laptop window is resized -->
+    <!-- or a tablet rotated down below the threshold mid-session. Does not touch -->
+    <!-- the timer/attempt state, only visually blocks interaction. -->
+    <div id="screenSizeGuard" class="screen-size-guard hidden" role="alertdialog" aria-modal="true">
+        <div class="screen-size-guard__box">
+            <h2>Your screen is too small</h2>
+            <p>This test requires a larger screen. Please resize your window, rotate your device, or switch to a
+                laptop/desktop to continue.</p>
         </div>
     </div>
 
