@@ -44,8 +44,8 @@ class ScoreRevisionService
         }
         $rwAbility = $this->irt->estimateAbility($rw->filter(fn ($answer) => ! $answer->question?->is_pretest)->values());
         $mathAbility = $this->irt->estimateAbility($math->filter(fn ($answer) => ! $answer->question?->is_pretest)->values());
-        $rwScore = $this->adaptive->convert($rwAbility['theta'], $rwAbility['se']);
-        $mathScore = $this->adaptive->convert($mathAbility['theta'], $mathAbility['se']);
+        $rwScore = $this->adaptive->convert($rwAbility['theta'], $rwAbility['se'], Section::TYPE_RW, $attempt->rw_m2_path);
+        $mathScore = $this->adaptive->convert($mathAbility['theta'], $mathAbility['se'], Section::TYPE_MATH, $attempt->math_m2_path);
         $total = $this->adaptive->totalRange($rwScore, $mathScore);
 
         return [

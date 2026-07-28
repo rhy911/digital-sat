@@ -96,5 +96,5 @@ class User extends Authenticatable implements MustVerifyEmail
     public function classroomMemberships() { return $this->hasMany(ClassroomMembership::class, 'student_id'); }
     public function assignmentRecipients() { return $this->hasMany(AssignmentRecipient::class, 'student_id'); }
     public function sharedTests() { return $this->belongsToMany(Test::class, 'test_shares')->withTimestamps(); }
-    public function isApprovedTeacher(): bool { return $this->role === 'teacher' && in_array($this->teacher_approval_status, [null, 'approved'], true); }
+    public function isApprovedTeacher(): bool { return $this->role === 'teacher' && $this->teacher_approval_status === 'approved'; }
 }

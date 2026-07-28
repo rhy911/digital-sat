@@ -39,6 +39,8 @@ class Classroom extends Model
     public function assignments() { return $this->hasMany(Assignment::class); }
     public function documents() { return $this->hasMany(ClassroomDocument::class); }
     public function note() { return $this->hasOne(ClassroomNote::class); }
+    public function announcements() { return $this->hasMany(ClassroomAnnouncement::class); }
+    public function events() { return $this->hasMany(ClassroomEvent::class); }
 
     public function hasTeacher(User $user): bool
     {

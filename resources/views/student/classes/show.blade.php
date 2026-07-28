@@ -12,9 +12,11 @@
     <div class="app-shell" x-data="{
         searchQuery: '',
         statusFilter: 'active',
-        activeTab: new URLSearchParams(location.search).get('docs_page') ? 'docs'
-            : new URLSearchParams(location.search).get('mates_page') ? 'classmates'
-            : 'assign'
+        activeTab: new URLSearchParams(location.search).get('tab')
+            || (new URLSearchParams(location.search).get('announce_page') ? 'announce' : null)
+            || (new URLSearchParams(location.search).get('docs_page') ? 'docs' : null)
+            || (new URLSearchParams(location.search).get('mates_page') ? 'classmates' : null)
+            || 'announce'
     }">
 
         <!-- COLUMN 1: ICON RAIL -->
@@ -51,9 +53,7 @@
             <div class="binder-panel">
                 <div class="ledger-header">
                     <div class="dh-left">
-                        <h2>{{ $classroom->name }} <span
-                                class="handwriting status-quote">"{{ ucfirst($classroom->status) }}"</span>
-                        </h2>
+                        <h2>{{ $classroom->name }} <span class="status-pill ok ml-2"><span class="d"></span>{{ ucfirst($classroom->status) }}</span></h2>
                         <div class="dh-desc">
                             {{ $classroom->description ?: 'Study resources and assigned work from your teaching team.' }}
                         </div>
@@ -69,12 +69,35 @@
 
                 <!-- PINNED TAB BAR -->
                 <x-shell.tab-bar :tabs="[
+                    ['key' => 'announce', 'label' => 'Announcements', 'count' => $announcementsPage->total()],
+                    ['key' => 'calendar', 'label' => 'Calendar', 'count' => $classroom->events->count()],
                     ['key' => 'assign', 'label' => __('classroom.tab_assignments'), 'count' => $classroom->assignments->count()],
                     ['key' => 'docs', 'label' => __('classroom.tab_documents'), 'count' => $classroom->documents_count],
                     ['key' => 'team', 'label' => __('classroom.tab_team'), 'count' => 1 + $classroom->coTeachers->count()],
                     ['key' => 'classmates', 'label' => __('classroom.tab_classmates'), 'count' => $activeMembers->count()],
                     ['key' => 'settings', 'label' => __('classroom.tab_settings')],
                 ]" />
+
+                <!-- CALENDAR TAB PANEL -->
+                <div class="section-panel" :class="{ 'active': activeTab === 'calendar' }">
+                    <x-shell.class-calendar :items="$calendarItems" :can-manage="false" />
+                </div>
+
+                <!-- ANNOUNCEMENTS TAB PANEL -->
+                <div class="section-panel" :class="{ 'active': activeTab === 'announce' }">
+                    @forelse ($announcementsPage as $announcement)
+                        <x-classroom.announcement-card :announcement="$announcement" :classroom="$classroom" />
+                    @empty
+                        <div class="empty-grid-cell" style="margin-top: 8px;">
+                            <strong>No announcements yet</strong>
+                            <p style="margin-top: 4px;">Updates from your teaching team will appear here.</p>
+                        </div>
+                    @endforelse
+
+                    @if ($announcementsPage->hasPages())
+                        <div style="margin-top: 12px;">{{ $announcementsPage->links() }}</div>
+                    @endif
+                </div>
 
                 <!-- ASSIGNMENTS TAB PANEL -->
                 <div class="section-panel" :class="{ 'active': activeTab === 'assign' }">
@@ -87,7 +110,7 @@
                     <div class="assignments-grid">
                         @forelse ($assignmentsPage as $assignment)
                             @php $status = $assignmentStatuses[$assignment->id]; @endphp
-                            <div class="index-card">
+                            <a href="{{ route('student.assignments.show', $assignment) }}" class="index-card text-inherit no-underline">
                                 <div class="card-due">
                                     {{ $assignment->due_at ? $assignment->due_at->format('D, M j') : 'No deadline' }}
                                 </div>
@@ -103,21 +126,25 @@
                                         </span>
                                     @endif
                                 </div>
-                                <div class="card-meta card-meta-divider">
+                                <div class="card-meta card-meta-divider" @click.stop>
                                     @if ($status['canStart'])
-                                        <form method="POST" action="{{ route('student.assignments.start', $assignment) }}">
-                                            @csrf
-                                            <button type="submit" class="btn-sm-primary btn-compact flex-none w-auto">
-                                                {{ $status['inProgress'] ? 'Resume' : 'Start attempt' }}
-                                            </button>
-                                        </form>
+                                        <button type="button" @click.prevent.stop="$dispatch('open-ready-modal', {
+                                            title: '{{ $status['inProgress'] ? 'Ready to Resume Attempt?' : 'Ready to Start Attempt?' }}',
+                                            testTitle: '{{ addslashes($assignment->title) }}',
+                                            subtitle: '{{ addslashes($assignment->test->title . $assignment->sectionSuffix() . ' • Classroom: ' . $classroom->name) }}',
+                                            actionRoute: '{{ route('student.assignments.start', $assignment) }}',
+                                            inProgress: {{ $status['inProgress'] ? 'true' : 'false' }},
+                                            attemptInfo: 'Attempt {{ $status['used'] + ($status['inProgress'] ? 0 : 1) }} of {{ $assignment->attempt_limit }}'
+                                        })" class="btn-sm-primary btn-compact flex-none w-auto">
+                                            {{ $status['inProgress'] ? 'Resume' : 'Start attempt' }}
+                                        </button>
                                     @elseif ($status['state'] === 'Completed')
-                                        <a href="{{ route('student.assignments.show', $assignment) }}" class="link-action">View results</a>
+                                        <span class="link-action">View results</span>
                                     @else
                                         <span class="text-xs text-muted">No attempts left</span>
                                     @endif
                                 </div>
-                            </div>
+                            </a>
                         @empty
                             <div class="empty-grid-cell">
                                 {{ __('classroom.no_assignments_yet') }}
@@ -385,4 +412,7 @@
             </form>
         </div>
     </x-ui.modal>
+
+    <x-ui.ready-modal />
+    <x-ui.confirm-delete-modal />
 </x-layouts.student>

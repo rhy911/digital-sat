@@ -8,7 +8,7 @@ class StoreModuleRequest extends FormRequest
 {
     public function authorize(): bool
     {
-        return true;
+        return true; // ModuleController::store() checks parent-test ownership + ensureUnlocked() after resolving section_id
     }
 
     public function rules(): array

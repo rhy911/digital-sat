@@ -7,6 +7,7 @@ use App\Models\Module;
 use App\Models\Passage;
 use App\Models\Question;
 use App\Models\Test;
+use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 
 class TestBuilderController extends Controller
 {
@@ -17,50 +18,20 @@ class TestBuilderController extends Controller
      */
     public function index()
     {
-        try {
-            $tests = Test::visibleTo(auth()->user())
-                ->where('title', '!=', 'Test Preview')
-                ->with(['creator', 'shares.teacher', 'sections.creator', 'sections.modules.creator'])
-                ->withCount(['userTests', 'shares'])
-                ->latest()
-                ->paginate(30);
-        } catch (\Exception $e) {
-            $tests = collect();
+        $qQuery = Question::visibleTo(auth()->user());
+        if (auth()->user()->role === 'teacher') {
+            $qQuery->where('created_by', auth()->id());
         }
+        $questionsTotal = $qQuery->count();
+        $questions = $qQuery
+            ->select(['id', 'section_type', 'stem', 'is_pretest', 'is_complete', 'skill_domain', 'difficulty', 'created_by'])
+            ->orderByDesc('id')
+            ->limit(self::QUESTIONS_TABLE_PER_PAGE)
+            ->get();
 
-        try {
-            $passages = Passage::latest()->paginate(30);
-        } catch (\Exception $e) {
-            $passages = collect();
-        }
-
-        try {
-            $qQuery = Question::visibleTo(auth()->user());
-            if (auth()->user()->role === 'teacher') {
-                $qQuery->where('created_by', auth()->id());
-            }
-            $questionsTotal = $qQuery->count();
-            $questions = $qQuery
-                ->select(['id', 'section_type', 'stem', 'is_pretest', 'is_complete', 'skill_domain', 'difficulty', 'created_by'])
-                ->orderByDesc('id')
-                ->limit(self::QUESTIONS_TABLE_PER_PAGE)
-                ->get();
-        } catch (\Exception $e) {
-            $questionsTotal = 0;
-            $questions = collect();
-        }
-
-        try {
-            $allModules = Module::visibleTo(auth()->user())
-                ->whereHas('sections.test', fn ($q) => $q->where('title', '!=', 'Test Preview'))
-                ->with(['creator', 'sections.test'])
-                ->withCount('questions')
-                ->latest()
-                ->paginate(30);
-        } catch (\Exception $e) {
-            $allModules = collect();
-        }
-
+        $tests = $this->testsQuery();
+        $passages = $this->passagesQuery();
+        $allModules = $this->modulesQuery();
         $questionsPerPage = self::QUESTIONS_TABLE_PER_PAGE;
 
         return view('admin.test-builder.index', compact('tests', 'passages', 'questions', 'questionsTotal', 'questionsPerPage', 'allModules'));
@@ -71,24 +42,35 @@ class TestBuilderController extends Controller
      */
     public function snapshot()
     {
-        $tests = Test::visibleTo(auth()->user())
+        return response()->json([
+            'tests' => $this->testsQuery(),
+            'passages' => $this->passagesQuery(),
+            'allModules' => $this->modulesQuery(),
+        ]);
+    }
+
+    private function testsQuery(): LengthAwarePaginator
+    {
+        return Test::visibleTo(auth()->user())
             ->where('title', '!=', 'Test Preview')
             ->with(['creator', 'shares.teacher', 'sections.creator', 'sections.modules.creator'])
             ->withCount(['userTests', 'shares'])
             ->latest()
             ->paginate(30);
-        $passages = Passage::latest()->paginate(30);
-        $allModules = Module::visibleTo(auth()->user())
+    }
+
+    private function passagesQuery(): LengthAwarePaginator
+    {
+        return Passage::latest()->paginate(30);
+    }
+
+    private function modulesQuery(): LengthAwarePaginator
+    {
+        return Module::visibleTo(auth()->user())
             ->whereHas('sections.test', fn ($q) => $q->where('title', '!=', 'Test Preview'))
             ->with(['creator', 'sections.test'])
             ->withCount('questions')
             ->latest()
             ->paginate(30);
-
-        return response()->json([
-            'tests' => $tests,
-            'passages' => $passages,
-            'allModules' => $allModules,
-        ]);
     }
 }

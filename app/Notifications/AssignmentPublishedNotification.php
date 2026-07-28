@@ -3,25 +3,22 @@
 namespace App\Notifications;
 
 use App\Models\Assignment;
-use Illuminate\Bus\Queueable;
-use Illuminate\Contracts\Queue\ShouldQueue;
-use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
 
-class AssignmentPublishedNotification extends Notification implements ShouldQueue
+class AssignmentPublishedNotification extends Notification
 {
-    use Queueable;
     public function __construct(public Assignment $assignment) {}
-    public function via(object $notifiable): array { return ['mail']; }
-    public function toMail(object $notifiable): MailMessage
+    public function via(object $notifiable): array { return ['database']; }
+    public function toArray(object $notifiable): array
     {
         $title = str_replace(["\r", "\n"], ' ', $this->assignment->title);
-        $name = str_replace(["\r", "\n"], ' ', $notifiable->name);
-        
-        $mail = (new MailMessage)->subject("New assignment: {$title}")
-            ->greeting("Hello {$name},")
-            ->line("{$this->assignment->classroom->name} has assigned {$title}.");
-        if ($this->assignment->due_at) $mail->line('Due '.$this->assignment->due_at->format('M j, Y g:i A').' (Asia/Ho_Chi_Minh).');
-        return $mail->action('View assignment', route('student.assignments.show', $this->assignment));
+
+        return [
+            'type' => 'assignment_published',
+            'title' => 'New assignment',
+            'body' => "{$this->assignment->classroom->name}: {$title}",
+            'url' => route('student.assignments.show', $this->assignment),
+            'icon' => 'assignment',
+        ];
     }
 }

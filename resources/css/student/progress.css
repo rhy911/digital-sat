@@ -585,25 +585,8 @@
     box-shadow: inset 0 -1px 0 rgba(0, 0, 0, 0.15);
 }
 
-.ds-bar-fill.is-medium {
-    background: var(--ds-warning-strong);
-}
-
-.ds-bar-fill.is-low {
-    background: var(--ds-danger);
-}
-
 .ds-bar-fill.is-pace {
     background: var(--ds-primary);
-}
-
-.ds-bar-track__tick {
-    position: absolute;
-    top: -2px;
-    bottom: -2px;
-    width: 2px;
-    background: var(--ds-ink-strong);
-    opacity: 0.35;
 }
 
 .ds-bar-row__value {
@@ -916,25 +899,6 @@
 .ds-skill-stats small {
     font-size: 0.65rem;
     color: var(--ds-muted);
-}
-
-/* ---------- Score Split Sub-lines on Trend Chart ---------- */
-.ds-trend-subline {
-    fill: none;
-    stroke-width: 2.25;
-    stroke-linecap: round;
-    stroke-linejoin: round;
-    stroke-dasharray: 4 4;
-    vector-effect: non-scaling-stroke;
-    opacity: 0.65;
-}
-
-.ds-trend-subline.is-math {
-    stroke: var(--ds-warning, #b7791f);
-}
-
-.ds-trend-subline.is-rw {
-    stroke: var(--green, #2f855a);
 }
 
 /* ---------- Ruled Yellow Index Card (Study Tips) ---------- */

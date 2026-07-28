@@ -37,22 +37,6 @@
     box-sizing: border-box;
 }
 
-.ps-back {
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    color: var(--ps-muted);
-    font-size: 0.85rem;
-    font-weight: 650;
-    text-decoration: none;
-    margin-bottom: 1.5rem;
-    transition: color 180ms ease;
-}
-
-.ps-back:hover {
-    color: var(--ps-ink);
-}
-
 .profile-settings__grid {
     display: grid;
     grid-template-columns: 280px 1fr;

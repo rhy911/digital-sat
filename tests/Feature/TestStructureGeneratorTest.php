@@ -155,7 +155,7 @@ class TestStructureGeneratorTest extends TestCase
     public function test_configured_test_defaults_to_draft_and_returns_a_builder_module()
     {
         $this->withoutMiddleware();
-        $user = User::factory()->create(['role' => 'teacher']);
+        $user = User::factory()->create(['role' => 'teacher', 'teacher_approval_status' => 'approved']);
 
         $response = $this->actingAs($user)->postJson(route('home-dashboard.tests.generate-configured'), [
             'title' => 'Teacher Draft',

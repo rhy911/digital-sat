@@ -234,7 +234,7 @@ class BulkQuestionImportTest extends TestCase
 
     public function test_import_sets_created_by_correctly(): void
     {
-        $teacher = User::factory()->create(['role' => 'teacher']);
+        $teacher = User::factory()->create(['role' => 'teacher', 'teacher_approval_status' => 'approved']);
         $this->module->update(['created_by' => $teacher->id]);
 
         $response = $this->actingAs($teacher)

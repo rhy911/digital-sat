@@ -10,6 +10,7 @@ use App\Services\TestManagementService;
 use App\Http\Requests\Admin\StoreModuleRequest;
 use App\Http\Requests\Admin\UpdateModuleRequest;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
 
@@ -123,7 +124,8 @@ class ModuleController extends Controller
                 'errors' => $e->errors(),
             ], 422);
         } catch (\Exception $e) {
-            return response()->json(['status' => 'error', 'message' => $e->getMessage()], 500);
+            Log::error('Failed to delete module', ['exception' => $e]);
+            return response()->json(['status' => 'error', 'message' => 'Failed to delete module. Please try again or contact support.'], 500);
         }
     }
 }

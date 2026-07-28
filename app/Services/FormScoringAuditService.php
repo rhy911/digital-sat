@@ -127,14 +127,6 @@ class FormScoringAuditService
         return $errors;
     }
 
-    private function validParameters(object $question): bool
-    {
-        return is_numeric($question->irt_a) && is_numeric($question->irt_b) && is_numeric($question->irt_c)
-            && (float) $question->irt_a > 0.0 && (float) $question->irt_a <= 4.0
-            && (float) $question->irt_b >= -6.0 && (float) $question->irt_b <= 6.0
-            && (float) $question->irt_c >= 0.0 && (float) $question->irt_c < 1.0;
-    }
-
     private function moduleLabel(Module $module): string
     {
         return 'Module '.(int) $module->module_number.' '.ucfirst($module->difficulty_level);

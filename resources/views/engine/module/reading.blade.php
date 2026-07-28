@@ -8,12 +8,6 @@
         </div>
         ";
 
-    $testData ??= (object) [
-        'page_title' => 'Reading and Writing Section',
-        'section_title' => 'Reading and Writing Questions',
-        'username' => auth()->user()?->name ?? (auth()->user()?->username ?? 'Guest'),
-    ];
-
     $questions ??= collect();
     $savedAnswers ??= collect();
 @endphp

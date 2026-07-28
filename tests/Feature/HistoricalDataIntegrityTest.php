@@ -211,7 +211,7 @@ class HistoricalDataIntegrityTest extends TestCase
         ]);
 
         // Attempting to delete via QuestionController destroy method should return 422
-        $teacher = User::factory()->create(['role' => 'teacher']);
+        $teacher = User::factory()->create(['role' => 'teacher', 'teacher_approval_status' => 'approved']);
         $this->mcqQuestion->update(['created_by' => $teacher->id]);
 
         $response = $this->actingAs($teacher)->deleteJson(route('home-dashboard.questions.delete', $this->mcqQuestion));

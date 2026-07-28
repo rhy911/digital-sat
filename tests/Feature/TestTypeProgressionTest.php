@@ -16,7 +16,7 @@ class TestTypeProgressionTest extends TestCase
 {
     use RefreshDatabase;
 
-    public function test_normal_full_length_uses_fixed_progression_and_route_neutral_table(): void
+    public function test_normal_full_length_uses_fixed_progression_and_irt_score(): void
     {
         [$student, $test] = $this->base('full_length');
         $rw = $this->section($test, Section::TYPE_RW, 1);
@@ -41,11 +41,12 @@ class TestTypeProgressionTest extends TestCase
         $this->assertNotNull($attempt->score_reading_writing);
         $this->assertNotNull($attempt->score_math);
         $this->assertNull($attempt->score_conversion_set_id);
-        $this->assertSame('normal_consensus_v1', $attempt->score_conversion_version);
-        $this->assertSame('normal_generic', $attempt->score_estimate_kind);
-        $this->assertNull($attempt->rw_theta);
-        $this->assertNull($attempt->math_theta);
-        $this->assertSame('raw_table_v1', $attempt->scoring_method);
+        // Normal is now IRT-scored (difficulty-aware), not the route-neutral raw table.
+        $this->assertSame('irt_curve_v1', $attempt->score_conversion_version);
+        $this->assertSame('adaptive_irt_provisional', $attempt->score_estimate_kind);
+        $this->assertNotNull($attempt->rw_theta);
+        $this->assertNotNull($attempt->math_theta);
+        $this->assertSame('eap_3pl_v1', $attempt->scoring_method);
     }
 
     public function test_adaptive_full_length_uses_irt_score_and_uncertainty_range(): void
@@ -66,7 +67,7 @@ class TestTypeProgressionTest extends TestCase
 
         $attempt->refresh();
         $this->assertSame('adaptive_irt_provisional', $attempt->score_estimate_kind);
-        $this->assertSame('provisional_irt_v1', $attempt->score_conversion_version);
+        $this->assertSame('irt_curve_v1', $attempt->score_conversion_version);
         $this->assertNotNull($attempt->rw_theta);
         $this->assertNotNull($attempt->total_score_lower);
         $this->assertGreaterThanOrEqual($attempt->total_score_lower, $attempt->total_score);

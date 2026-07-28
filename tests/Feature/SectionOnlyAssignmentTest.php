@@ -225,12 +225,34 @@ class SectionOnlyAssignmentTest extends TestCase
 
         // Complete Math section using TestProgressionService
         $progression = app(\App\Services\TestProgressionService::class);
-        $rwModule = Module::create([
+        $mathModule = Module::create([
             'section_id' => Section::create(['test_id' => $test->id, 'name' => 'Math', 'type' => 'math', 'order' => 2])->id,
             'title' => 'Module 1',
             'module_number' => 1,
             'order' => 1,
         ]);
+
+        $mathQuestion = Question::create([
+            'stem' => 'Math question?',
+            'question_type' => 'multiple_choice',
+            'difficulty' => 'easy',
+            'section_type' => 'math',
+            'skill_domain' => 'algebra',
+            'calculator_allowed' => true,
+            'is_complete' => true,
+        ]);
+        $mathModule->questions()->attach($mathQuestion->id, ['position' => 1]);
+
+        $mathAnswer = \App\Models\UserTestAnswer::create([
+            'user_test_id' => $attemptMath->id,
+            'module_id' => $mathModule->id,
+            'question_id' => $mathQuestion->id,
+            'selected_answer' => 'A',
+            'is_correct' => true,
+            'time_spent' => 42,
+            'question_snapshot' => ['stem' => 'Math question?'],
+        ]);
+        $mathAnswer->forceFill(['created_at' => now()->subHours(2)])->save();
 
         // Mock completion fields on Math attempt
         $attemptMath->update([
@@ -255,6 +277,14 @@ class SectionOnlyAssignmentTest extends TestCase
 
         // Verify standalone practice section attemptMath was cleaned up
         $this->assertDatabaseMissing('user_tests', ['id' => $attemptMath->id]);
+
+        // Verify the copied answer retains its original time_spent and created_at (not merge time)
+        $copiedAnswer = \App\Models\UserTestAnswer::where('user_test_id', $result->id)
+            ->where('question_id', $mathQuestion->id)
+            ->first();
+        $this->assertNotNull($copiedAnswer);
+        $this->assertEquals(42, $copiedAnswer->time_spent);
+        $this->assertTrue($copiedAnswer->created_at->equalTo($mathAnswer->created_at));
     }
 
     public function test_auto_merge_preserves_assignment_section_attempt()

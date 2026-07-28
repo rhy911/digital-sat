@@ -26,6 +26,7 @@ class AuthRoleTest extends TestCase
 
         $this->teacher = User::factory()->create([
             'role' => 'teacher',
+            'teacher_approval_status' => 'approved',
             'email' => 'teacher@bluebook.com',
             'email_verified_at' => now(),
         ]);

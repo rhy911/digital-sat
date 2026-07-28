@@ -31,8 +31,9 @@ class SatScoringService
             throw new InvalidArgumentException('Both adaptive modules require scored responses.');
         }
 
-        $module1Ability = $this->estimateAbility($m1);
-        $path = $m2Path ?? $this->routeModule2($module1Ability['theta']);
+        // Only estimate Module 1 ability on its own when we still need to route; at
+        // finalize the caller passes the already-decided path, so skip the extra EAP pass.
+        $path = $m2Path ?? $this->routeModule2($this->estimateAbility($m1)['theta']);
         $allResponses = $m1->concat($m2)->values();
         $ability = $this->estimateAbility($allResponses);
 
@@ -110,9 +111,25 @@ class SatScoringService
         ];
     }
 
-    public function routeModule2(float $thetaM1): string
+    public function routeModule2(float $thetaM1, ?string $sectionType = null): string
     {
-        return $thetaM1 >= 0.0 ? Module::DIFFICULTY_HARD : Module::DIFFICULTY_EASY;
+        return $thetaM1 >= $this->routingCutoff($sectionType)
+            ? Module::DIFFICULTY_HARD
+            : Module::DIFFICULTY_EASY;
+    }
+
+    /**
+     * Global per-section theta cutoff for Module 2 routing, from config. Falls back to
+     * the configured default when the section is unknown or has no explicit cutoff.
+     */
+    private function routingCutoff(?string $sectionType): float
+    {
+        $cutoffs = config('sat_scoring.routing.theta_cutoff', []);
+        if ($sectionType !== null && isset($cutoffs[$sectionType]) && is_numeric($cutoffs[$sectionType])) {
+            return (float) $cutoffs[$sectionType];
+        }
+
+        return (float) ($cutoffs['default'] ?? 0.0);
     }
 
     private function scoredResponses(Collection $responses): Collection

@@ -18,9 +18,6 @@ use Illuminate\Support\Facades\Route;
 
 // Public routes
 Route::get('/', LandingController::class)->name('landing');
-Route::get('/landing-new', function () {
-    return view('public.landing');
-});
 Route::get('/media/{filename}', [MediaController::class, 'show'])
     ->where('filename', '[A-Za-z0-9]{20}\.(?:jpe?g|png|gif|webp|svg)')
     ->name('media.show');
@@ -72,6 +69,14 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/forum/{forumThread:ulid}', [\App\Http\Controllers\ForumController::class, 'show'])->name('forum.show');
     Route::post('/forum', [\App\Http\Controllers\ForumController::class, 'store'])->middleware('throttle:10,1')->name('forum.store');
     Route::post('/forum/{forumThread:ulid}/replies', [\App\Http\Controllers\ForumController::class, 'storeReply'])->middleware('throttle:15,1')->name('forum.replies.store');
+
+    Route::get('/notifications', [\App\Http\Controllers\NotificationController::class, 'index'])->name('notifications.index');
+    Route::get('/notifications/summary', [\App\Http\Controllers\NotificationController::class, 'summary'])->name('notifications.summary');
+    Route::post('/notifications/{id}/read', [\App\Http\Controllers\NotificationController::class, 'markRead'])->name('notifications.read');
+    Route::post('/notifications/read-all', [\App\Http\Controllers\NotificationController::class, 'markAllRead'])->name('notifications.read-all');
+
+    Route::post('/classes/{classroom}/announcements/{announcement}/comments', [\App\Http\Controllers\AnnouncementCommentController::class, 'store'])->middleware('throttle:20,1')->name('announcements.comments.store');
+    Route::delete('/classes/{classroom}/announcements/{announcement}/comments/{comment}', [\App\Http\Controllers\AnnouncementCommentController::class, 'destroy'])->name('announcements.comments.destroy');
 });
 
 Route::middleware(['auth', 'verified'])->get('/dashboard', function () {
@@ -129,6 +134,12 @@ Route::middleware(['auth', 'verified', 'role:admin,teacher'])->prefix('teacher')
         Route::post('/classes/{classroom}/documents', [\App\Http\Controllers\Teacher\ClassroomDocumentController::class, 'store'])->name('classes.documents.store');
         Route::delete('/classes/{classroom}/documents/{document}', [\App\Http\Controllers\Teacher\ClassroomDocumentController::class, 'destroy'])->name('classes.documents.destroy');
         Route::put('/classes/{classroom}/note', [\App\Http\Controllers\Teacher\ClassroomController::class, 'noteUpdate'])->name('classes.note.update');
+        Route::post('/classes/{classroom}/announcements', [\App\Http\Controllers\Teacher\AnnouncementController::class, 'store'])->middleware('throttle:20,1')->name('announcements.store');
+        Route::post('/classes/{classroom}/announcements/{announcement}/pin', [\App\Http\Controllers\Teacher\AnnouncementController::class, 'togglePin'])->name('announcements.pin');
+        Route::delete('/classes/{classroom}/announcements/{announcement}', [\App\Http\Controllers\Teacher\AnnouncementController::class, 'destroy'])->name('announcements.destroy');
+        Route::post('/classes/{classroom}/events', [\App\Http\Controllers\Teacher\ClassroomEventController::class, 'store'])->name('events.store');
+        Route::put('/classes/{classroom}/events/{event}', [\App\Http\Controllers\Teacher\ClassroomEventController::class, 'update'])->name('events.update');
+        Route::delete('/classes/{classroom}/events/{event}', [\App\Http\Controllers\Teacher\ClassroomEventController::class, 'destroy'])->name('events.destroy');
         Route::get('/classes/{classroom}/students/{student}/progress', \App\Http\Controllers\Teacher\StudentProgressController::class)->name('classes.students.progress');
         Route::post('/memberships/{membership}/approve', [\App\Http\Controllers\Teacher\MembershipController::class, 'approve'])->name('memberships.approve');
         Route::post('/memberships/{membership}/reject', [\App\Http\Controllers\Teacher\MembershipController::class, 'reject'])->name('memberships.reject');
@@ -156,6 +167,10 @@ Route::middleware(['auth', 'verified', 'role:admin'])->prefix('admin')->name('ad
 
 // Verified Engine routes
 Route::middleware(['auth', 'verified'])->prefix('engine')->group(function () {
+    Route::get('/unavailable', function () {
+        return view('engine.mobile-blocked');
+    })->name('engine.mobile-blocked');
+
     Route::get('/session/{ulid?}', [SessionController::class, 'show'])->name('engine.session');
     Route::get('/session/{test_ulid}/teacher-preview', [SessionController::class, 'teacherPreview'])->name('engine.teacher-preview');
     Route::get('/submit-status/{userTest:ulid}', [SubmissionController::class, 'checkStatus'])->name('engine.submit-status');

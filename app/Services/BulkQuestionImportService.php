@@ -159,7 +159,6 @@ class BulkQuestionImportService
             }
 
             if (preg_match('/\.(json|csv)$/i', $fileItem->getFilename())) {
-                \Illuminate\Support\Facades\Log::info('Found data file in ZIP: ' . $fileItem->getPathname());
                 $dataFiles[] = [
                     'path' => $fileItem->getPathname(),
                     'base' => $fileItem->getPath(),
@@ -185,13 +184,10 @@ class BulkQuestionImportService
                 return [];
             }
 
-            \Illuminate\Support\Facades\Log::info('Decoded JSON keys: ' . implode(', ', array_keys($decoded)));
             $items = $this->extractItemsFromDecodedJson($decoded);
         } else {
             $items = $this->csvImportService->parseCsvToItems($raw);
         }
-
-        \Illuminate\Support\Facades\Log::info('Items extracted from ' . $dataFile['path'] . ': ' . count($items));
 
         return $items;
     }
@@ -276,9 +272,7 @@ class BulkQuestionImportService
 
                     Storage::disk('public')->put('media/' . $newName, $content);
                     $url = '/media/' . $newName;
-                    
-                    \Illuminate\Support\Facades\Log::info("Media imported: $filename -> media/$newName");
-                    
+
                     return "![]($url)";
                 }
                 
@@ -395,11 +389,6 @@ class BulkQuestionImportService
      */
     public function import(array $payload): array
     {
-        \Illuminate\Support\Facades\Log::info('Bulk Import payload items count: ' . count($payload['items'] ?? []));
-        if (!empty($payload['items'])) {
-             \Illuminate\Support\Facades\Log::info('First item keys:', array_keys($payload['items'][0]));
-        }
-        
         $validated = $this->validate($payload);
         $module = Module::with('section')->findOrFail($validated['module_id']);
         app(TestContentLockService::class)->ensureModuleUnlocked($module);

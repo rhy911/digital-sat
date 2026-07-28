@@ -93,12 +93,18 @@
                         <p style="font-size: 13px; color: var(--ink-soft); margin-bottom: 8px;">Ensure you have a stable internet connection before launching the test. The test will open in our adaptive browser engine.</p>
                         
                         @if ($inProgress || ($assignment->acceptsNewStarts() && $used < $assignment->attempt_limit))
-                            <form method="POST" action="{{ route('student.assignments.start', $assignment) }}">
-                                @csrf
-                                <button type="submit" class="btn-sm-primary btn-px-16" style="padding: 8px 18px; font-size: 13px;">
+                            <div>
+                                <button type="button" @click="$dispatch('open-ready-modal', {
+                                    title: '{{ $inProgress ? 'Ready to Resume Attempt?' : 'Ready to Start Attempt?' }}',
+                                    testTitle: '{{ addslashes($assignment->title) }}',
+                                    subtitle: '{{ addslashes($assignment->test->title . ($assignment->assign_type === 'section' ? ($assignment->section_type === 'reading_writing' ? ' (Reading & Writing Only)' : ' (Math Only)') : '') . ' • Classroom: ' . $assignment->classroom->name) }}',
+                                    actionRoute: '{{ route('student.assignments.start', $assignment) }}',
+                                    inProgress: {{ $inProgress ? 'true' : 'false' }},
+                                    attemptInfo: 'Attempt {{ $inProgress ? $used : ($used + 1) }} of {{ $assignment->attempt_limit }}'
+                                })" class="btn-sm-primary btn-px-16" style="padding: 8px 18px; font-size: 13px;">
                                     {{ $inProgress ? 'Resume attempt' : 'Start attempt ' . ($used + 1) }}
                                 </button>
-                            </form>
+                            </div>
                         @else
                             <div style="background-color: var(--amber-soft); border: 1px solid var(--amber); color: var(--amber); padding: 10px 14px; border-radius: 8px; font-weight: 600; font-size: 12.5px; display: inline-block; align-self: flex-start;">
                                 No new attempt is currently available for this assignment.
@@ -195,4 +201,6 @@
             </x-shell.corkboard>
         </div>
     </div>
+
+    <x-ui.ready-modal />
 </x-layouts.student>

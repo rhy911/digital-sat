@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\StoreTestRequest;
 use App\Http\Requests\Admin\UpdateTestRequest;
 use App\Models\Test;
+use App\Services\DifficultyDistributionAdvisor;
 use App\Services\TestManagementService;
 use App\Services\TestStructureService;
 use Illuminate\Http\Request;
@@ -17,7 +18,7 @@ class TestController extends Controller
 {
     protected TestManagementService $testManagement;
 
-    public function __construct(TestManagementService $testManagement, private TestStructureService $structures)
+    public function __construct(TestManagementService $testManagement, private TestStructureService $structures, private DifficultyDistributionAdvisor $difficultyAdvisor)
     {
         $this->testManagement = $testManagement;
     }
@@ -62,10 +63,18 @@ class TestController extends Controller
             }
         });
 
+        // Advisory only, computed at publish: never blocks (validateForPublication
+        // above already threw on any hard error). Warns e.g. an all-hard "standard"
+        // module that would distort IRT scores.
+        $warnings = $test->status === 'active'
+            ? $this->difficultyAdvisor->warnings($test->fresh())
+            : [];
+
         return response()->json([
             'status' => 'success',
             'message' => 'Test updated successfully',
             'data' => $test,
+            'warnings' => $warnings,
         ]);
     }
 

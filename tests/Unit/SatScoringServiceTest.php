@@ -70,6 +70,27 @@ class SatScoringServiceTest extends TestCase
         $this->assertSame('easy', $this->service->routeModule2(-0.1));
     }
 
+    public function test_routing_cutoff_is_configurable_per_section(): void
+    {
+        config()->set('sat_scoring.routing.theta_cutoff', [
+            'default' => 0.0,
+            'reading_writing' => 0.5,
+            'math' => -0.5,
+        ]);
+
+        // Reading & Writing cutoff 0.5.
+        $this->assertSame('easy', $this->service->routeModule2(0.4, 'reading_writing'));
+        $this->assertSame('hard', $this->service->routeModule2(0.6, 'reading_writing'));
+
+        // Math cutoff -0.5.
+        $this->assertSame('hard', $this->service->routeModule2(-0.4, 'math'));
+        $this->assertSame('easy', $this->service->routeModule2(-0.6, 'math'));
+
+        // Unknown / null section falls back to the default cutoff (0.0).
+        $this->assertSame('hard', $this->service->routeModule2(0.0));
+        $this->assertSame('easy', $this->service->routeModule2(-0.1));
+    }
+
     private function responses(array $correctness)
     {
         return collect($correctness)->map(fn ($correct) => (object) [

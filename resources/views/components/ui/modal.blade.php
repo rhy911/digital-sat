@@ -32,10 +32,10 @@
 
             <!-- Modal panel -->
             <div class="flex min-h-full items-end justify-center p-4 text-center sm:items-center sm:p-0">
-                <div x-show="show" x-transition:enter="transition-all ease-out duration-200"
+                <div x-show="show" x-transition:enter="transition-[transform,opacity] ease-out duration-150"
                     x-transition:enter-start="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
                     x-transition:enter-end="opacity-100 translate-y-0 sm:scale-100"
-                    x-transition:leave="transition-all ease-in duration-200"
+                    x-transition:leave="transition-[transform,opacity] ease-in duration-100"
                     x-transition:leave-start="opacity-100 translate-y-0 sm:scale-100"
                     x-transition:leave-end="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
                     class="relative transform overflow-hidden rounded-xl bg-white text-left shadow-xl sm:my-8 sm:w-full {{ $maxWidthClass }} border border-slate-200 transform-gpu will-change-[transform,opacity]">

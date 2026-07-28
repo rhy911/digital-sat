@@ -26,6 +26,7 @@ import {
 } from './test/features.js';
 import { startTimer } from './test/timer.js';
 import { initializeBreakControls } from './test/break.js';
+import { initializeScreenSizeGuard } from './test/screen-guard.js';
 
 // Expose to global scope for inline onclick handlers and backwards compatibility
 window.toggleTimer = toggleTimer;
@@ -94,6 +95,7 @@ document.addEventListener("DOMContentLoaded", () => {
   initializeSimpleFullscreen();
   initializeBreakControls();
   initializeAutosave();
+  initializeScreenSizeGuard();
 
   // Initialize Timer
   const duration = window.durationMinutes ?? 32;

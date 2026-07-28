@@ -12,6 +12,7 @@ class UserTestAnswer extends Model
         'question_id',
         'selected_answer',
         'is_correct',
+        'time_spent',
         'question_snapshot',
     ];
 

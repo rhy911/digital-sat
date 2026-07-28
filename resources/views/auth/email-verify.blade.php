@@ -1,11 +1,4 @@
 <x-layouts.auth title="Verify Email">
-    @push('styles')
-        <style>
-            .signin-container {
-                gap: 20px;
-            }
-        </style>
-    @endpush
     <!-- Title -->
     <div class="flex flex-col justify-center items-center gap-1">
         <h1 class="text-2xl sm:text-3xl font-bold text-center m-0 text-black">Verify Your Email</h1>

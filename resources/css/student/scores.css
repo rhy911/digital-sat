@@ -171,60 +171,6 @@
     letter-spacing: 0.05em;
 }
 
-/* ---------- Section Scores ---------- */
-.sd-section-scores {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 1rem;
-    margin-bottom: 2.5rem;
-}
-.sd-section-score-card {
-    background: linear-gradient(135deg, #f0f7ff 0%, #e8f4ff 100%);
-    border: 1px solid #c7dff7;
-    border-radius: 14px;
-    padding: 1.25rem 1.5rem;
-    display: flex;
-    align-items: center;
-    gap: 1.25rem;
-}
-.sd-section-icon {
-    width: 44px;
-    height: 44px;
-    border-radius: 10px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    flex-shrink: 0;
-}
-.sd-section-icon.rw {
-    background: #0077c8;
-}
-.sd-section-icon.math {
-    background: #7c3aed;
-}
-.sd-section-icon svg {
-    color: #fff;
-}
-.sd-section-score-label {
-    font-size: 0.78rem;
-    font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: 0.06em;
-    color: #475569;
-    margin-bottom: 0.2rem;
-}
-.sd-section-score-num {
-    font-size: 1.9rem;
-    font-weight: 800;
-    color: #0a2d6e;
-    line-height: 1;
-}
-.sd-section-score-sub {
-    font-size: 0.78rem;
-    color: #64748b;
-    margin-top: 0.2rem;
-}
-
 /* ---------- Section Heading ---------- */
 .sd-section-sub {
     font-size: 1rem;
@@ -483,11 +429,6 @@ table.sd-table th {
 }
 table.sd-table th:hover {
     color: #fff;
-}
-table.sd-table th .sort-icon {
-    opacity: 0.5;
-    margin-left: 3px;
-    font-size: 0.7rem;
 }
 table.sd-table tbody tr {
     border-bottom: 1px solid #f1f5f9;
@@ -902,9 +843,6 @@ table.sd-table td {
     .sd-stat-row {
         grid-template-columns: repeat(3, 1fr);
     }
-    .sd-section-scores {
-        grid-template-columns: 1fr;
-    }
     .sd-domains-grid {
         grid-template-columns: 1fr;
     }
@@ -935,7 +873,3 @@ table.sd-table td {
     margin-bottom: 1rem;
 }
 
-/* ---------- Tab panels ---------- */
-.sd-tab-panel {
-    animation: sd-fade-in 0.2s ease;
-}

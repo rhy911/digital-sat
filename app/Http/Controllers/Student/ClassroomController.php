@@ -46,6 +46,7 @@ class ClassroomController extends Controller
             ])->whereIn('status', ['published', 'closed']),
             'memberships.student',
             'note',
+            'events' => fn ($query) => $query->orderBy('starts_at'),
         ])->loadCount([
             'documents',
             'assignments' => fn ($query) => $query->whereIn('status', ['published', 'closed']),
@@ -98,6 +99,19 @@ class ClassroomController extends Controller
             ->paginate(15, ['*'], 'mates_page')
             ->withQueryString();
 
+        $announcementsPage = $classroom->announcements()
+            ->with(['author', 'comments' => fn ($query) => $query->with('author')->oldest()])
+            ->orderByDesc('pinned')
+            ->latest()
+            ->paginate(10, ['*'], 'announce_page')
+            ->withQueryString();
+
+        $calendarItems = \App\Support\ClassroomCalendar::build(
+            $classroom->events,
+            $classroom->assignments,
+            fn ($assignment) => route('student.assignments.show', $assignment),
+        );
+
         return view('student.classes.show', [
             'user' => $request->user(),
             'classroom' => $classroom,
@@ -113,6 +127,8 @@ class ClassroomController extends Controller
             'documentsPage' => $documentsPage,
             'assignmentsPage' => $assignmentsPage,
             'classmatesPage' => $classmatesPage,
+            'announcementsPage' => $announcementsPage,
+            'calendarItems' => $calendarItems,
         ]);
     }
 

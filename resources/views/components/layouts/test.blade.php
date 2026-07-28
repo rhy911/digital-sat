@@ -4,9 +4,29 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script>
+        // Screen-size gate: measured on the actual viewport, not device/UA — small
+        // tablets in landscape can clear this while any phone cannot. Must run
+        // synchronously before the rest of <head> so a blocked visitor never sees
+        // test content. Thresholds reused by the live resize guard in test.js.
+        //
+        // Width and height are checked separately, NOT via min(w, h): a 1366x768
+        // laptop has an inner height near 620 after browser chrome, so a single
+        // 768 min-dimension threshold locked out a large share of real desktops.
+        // 900w keeps portrait tablets (768) and every phone out; 500h only ever
+        // trips on a deliberately squashed window.
+        window.SCREEN_MIN_WIDTH = 900;
+        window.SCREEN_MIN_HEIGHT = 500;
+        (function () {
+            if (window.innerWidth < window.SCREEN_MIN_WIDTH || window.innerHeight < window.SCREEN_MIN_HEIGHT) {
+                window.location.replace("{{ route('engine.mobile-blocked') }}");
+            }
+        })();
+    </script>
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <meta name="google" content="notranslate">
     <title>{{ $pageTitle ?? 'Test' }}</title>
+    <x-head.favicons />
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link
@@ -302,6 +322,17 @@
                 <button id="customAlertCancelBtn" class="custom-alert-btn btn-secondary hidden">Cancel</button>
                 <button id="customAlertConfirmBtn" class="custom-alert-btn btn-primary">OK</button>
             </div>
+        </div>
+    </div>
+
+    <!-- Live screen-size guard: covers the case where a laptop window is resized -->
+    <!-- or a tablet rotated down below the threshold mid-session. Does not touch -->
+    <!-- the timer/attempt state, only visually blocks interaction. -->
+    <div id="screenSizeGuard" class="screen-size-guard hidden" role="alertdialog" aria-modal="true">
+        <div class="screen-size-guard__box">
+            <h2>Your screen is too small</h2>
+            <p>This test requires a larger screen. Please resize your window, rotate your device, or switch to a
+                laptop/desktop to continue.</p>
         </div>
     </div>
 

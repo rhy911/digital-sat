@@ -2,6 +2,40 @@
 @import url("test-footer.css");
 @import url("test-review.css");
 
+.screen-size-guard {
+    position: fixed;
+    inset: 0;
+    z-index: 999999;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+    background: rgba(15, 23, 42, 0.92);
+}
+
+.screen-size-guard.hidden {
+    display: none;
+}
+
+.screen-size-guard__box {
+    max-width: 360px;
+    text-align: center;
+    color: #fff;
+}
+
+.screen-size-guard__box h2 {
+    margin: 0 0 10px;
+    font-size: 20px;
+    font-weight: 700;
+}
+
+.screen-size-guard__box p {
+    margin: 0;
+    font-size: 14px;
+    line-height: 1.6;
+    color: rgba(255, 255, 255, 0.85);
+}
+
 body {
     display: flex;
     flex-direction: column;

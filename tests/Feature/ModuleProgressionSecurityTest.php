@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Jobs\ScoreModuleJob;
 use App\Models\AnswerChoice;
 use App\Models\Module;
 use App\Models\Question;
@@ -12,6 +13,8 @@ use App\Models\UserTest;
 use App\Models\UserTestAnswer;
 use App\Models\UserTestModuleSubmission;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Queue;
 use Tests\TestCase;
 
 class ModuleProgressionSecurityTest extends TestCase
@@ -152,6 +155,50 @@ class ModuleProgressionSecurityTest extends TestCase
             ->postJson(route('engine.test.submit-module'), $firstPayload)
             ->assertStatus(409)
             ->assertJsonPath('error', 'module_progression_conflict');
+    }
+
+    /**
+     * The scoring cache key is per-attempt and lives for 300s, so a student who
+     * finishes the next module inside that window must not be served the previous
+     * module's cached routing decision (which would navigate them straight back
+     * into the module they just submitted).
+     *
+     * Queue::fake() is what makes this meaningful: on the default "sync" test queue
+     * the job runs inside dispatch() and always refreshes the key before the
+     * controller reads it, which is exactly why the bug was invisible in tests but
+     * live on the production "database" queue.
+     */
+    public function test_next_module_submit_is_not_served_the_previous_modules_cached_result(): void
+    {
+        $attempt = $this->attempt();
+
+        // Module 1 submitted for real (sync queue): the job runs, populates
+        // scoring_result_{id}, and advances the attempt — production's state at
+        // the moment module 1 finished.
+        $first = $this->actingAs($this->student)
+            ->postJson(route('engine.test.submit-module'), [
+                'user_test_id' => $attempt->id,
+                'module_id' => $this->moduleOne->id,
+                'answers' => [(string) $this->moduleOneQuestion->id => 'A'],
+            ])->assertOk();
+
+        $issued = Module::where('ulid', $first->json('next_module_id'))->firstOrFail();
+        Cache::put("scoring_result_{$attempt->id}", $first->json(), 300);
+
+        // Module 2 submitted while a worker has not yet picked the job up.
+        Queue::fake();
+        $second = $this->actingAs($this->student)
+            ->postJson(route('engine.test.submit-module'), [
+                'user_test_id' => $attempt->id,
+                'module_id' => $issued->id,
+                'answers' => [(string) $issued->questions()->firstOrFail()->id => 'A'],
+            ])->assertOk();
+
+        Queue::assertPushed(ScoreModuleJob::class);
+        $second->assertJsonPath('status', 'scoring');
+        $this->assertNull($second->json('next_module_id'), 'Module 2 submit returned the stale module 1 routing decision.');
+        $this->assertNull($second->json('test_completed'));
+        $this->assertFalse(Cache::has("scoring_result_{$attempt->id}"), 'Previous result must be cleared before dispatch.');
     }
 
     private function attempt(): UserTest

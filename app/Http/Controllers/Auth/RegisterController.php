@@ -14,7 +14,6 @@ class RegisterController extends Controller
 {
     public function __invoke(Request $request)
     {
-        Log::info('RegisterWeb called');
         try {
             $request->validate([
                 'username' => 'required|string|max:255|unique:users',
@@ -53,11 +52,13 @@ class RegisterController extends Controller
             return redirect()->route('verify.email.notice')
                 ->with('warning', 'Đăng ký thành công! Vui lòng xác minh email để tiếp tục.');
         } catch (\Exception $e) {
-            $message = $e->getMessage();
+            $isValidationError = $e instanceof \Illuminate\Validation\ValidationException;
+            $message = $isValidationError ? $e->getMessage() : 'Đã xảy ra lỗi khi đăng ký. Vui lòng thử lại.';
 
-            if (!($e instanceof \Illuminate\Validation\ValidationException)) {
+            if (!$isValidationError) {
                 Log::error('Register error details (Web):', [
-                    'error' => $message,
+                    'error' => $e->getMessage(),
+                    'email' => $request->input('email'),
                 ]);
             }
 
