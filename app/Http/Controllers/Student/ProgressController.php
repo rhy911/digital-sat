@@ -16,6 +16,7 @@ class ProgressController extends Controller
             ->whereHas('test', fn($q) => $q->where('title', '!=', 'Test Preview'))
             ->with(['test', 'scoreConversionSet', 'userAnswers.question'])
             ->where('status', 'completed')
+            ->excludingAbsorbedSections()
             ->orderBy('completed_at', 'desc')
             ->limit(15)
             ->get();

@@ -350,5 +350,41 @@ class SectionOnlyAssignmentTest extends TestCase
             'assignment_id' => $assignment->id,
             'score_math' => 680,
         ]);
+
+        // ...but the student score list must only show the merged attempt.
+        $visible = UserTest::where('user_id', $student->id)
+            ->where('status', 'completed')
+            ->excludingAbsorbedSections()
+            ->pluck('id');
+
+        $this->assertTrue($visible->contains($attemptRw->id));
+        $this->assertFalse($visible->contains($attemptMath->id));
+    }
+
+    public function test_unmerged_section_attempt_stays_visible_in_score_list()
+    {
+        $student = User::factory()->student()->create();
+        $test = Test::create([
+            'title' => 'Solo Section Test',
+            'test_type' => 'full_length',
+            'status' => 'active',
+        ]);
+
+        $attempt = UserTest::create([
+            'user_id' => $student->id,
+            'test_id' => $test->id,
+            'attempt_type' => 'section',
+            'section_type' => 'math',
+            'status' => 'completed',
+            'score_math' => 700,
+            'completed_at' => now(),
+        ]);
+
+        $visible = UserTest::where('user_id', $student->id)
+            ->where('status', 'completed')
+            ->excludingAbsorbedSections()
+            ->pluck('id');
+
+        $this->assertTrue($visible->contains($attempt->id));
     }
 }

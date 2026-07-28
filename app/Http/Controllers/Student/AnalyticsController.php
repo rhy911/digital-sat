@@ -40,6 +40,7 @@ class AnalyticsController extends Controller
             ->whereHas('test', fn ($q) => $q->where('title', '!=', 'Test Preview'))
             ->with('userAnswers.question')
             ->where('status', 'completed')
+            ->excludingAbsorbedSections()
             ->orderBy('completed_at', 'desc')
             ->limit(10)
             ->get();
@@ -51,6 +52,7 @@ class AnalyticsController extends Controller
         // Ledger stats in one aggregate query (was two separate queries run inside the Blade view).
         $completedStats = $user->userTests()
             ->where('status', 'completed')
+            ->excludingAbsorbedSections()
             ->selectRaw('COUNT(*) as completed_count, MAX(score_reading_writing + score_math) as best_score')
             ->first();
 

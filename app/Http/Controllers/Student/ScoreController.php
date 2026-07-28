@@ -17,6 +17,7 @@ class ScoreController extends Controller
     {
         $latest = UserTest::where('user_id', Auth::id())
             ->where('status', 'completed')
+            ->excludingAbsorbedSections()
             ->orderBy('completed_at', 'desc')
             ->first();
 
@@ -36,8 +37,16 @@ class ScoreController extends Controller
         $attempts = UserTest::with(['test', 'assignment.classroom'])
             ->where('user_id', $userTest->user_id)
             ->where('status', 'completed')
+            ->excludingAbsorbedSections()
             ->orderBy('completed_at', 'desc')
             ->get();
+
+        // An absorbed section attempt is hidden from the list but can still be
+        // opened directly (e.g. from an assignment report) — keep it visible so
+        // the sidebar always contains the attempt being shown.
+        if (! $attempts->contains('id', $userTest->id)) {
+            $attempts = $attempts->push($userTest->loadMissing('test'))->sortByDesc('completed_at')->values();
+        }
 
         return view('student.scores.show', array_merge(
             ['user' => $userTest->user, 'authUser' => $authUser, 'attempts' => $attempts, 'selectedUlid' => $userTest->ulid],

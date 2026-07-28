@@ -103,6 +103,32 @@ class UserTest extends Model
     }
 
     /**
+     * Scope out section attempts that have already been absorbed into a merged
+     * full attempt (see TestProgressionService::autoMergeIfEligible). The merge
+     * only deletes the leftover attempt when it is not assignment-linked, so an
+     * assignment-linked section attempt survives and would otherwise show up
+     * next to the merged score in student-facing lists.
+     */
+    public function scopeExcludingAbsorbedSections($query)
+    {
+        return $query->where(function ($outer) {
+            $outer->where('attempt_type', '!=', 'section')
+                ->orWhereNotExists(function ($merged) {
+                    $merged->selectRaw('1')
+                        ->from('user_tests as merged_attempt')
+                        ->whereColumn('merged_attempt.user_id', 'user_tests.user_id')
+                        ->whereColumn('merged_attempt.test_id', 'user_tests.test_id')
+                        ->whereColumn('merged_attempt.id', '!=', 'user_tests.id')
+                        ->where('merged_attempt.attempt_type', 'full')
+                        ->where('merged_attempt.status', 'completed')
+                        ->whereNotNull('merged_attempt.score_reading_writing')
+                        ->whereNotNull('merged_attempt.score_math')
+                        ->whereColumn('merged_attempt.completed_at', '>=', 'user_tests.completed_at');
+                });
+        });
+    }
+
+    /**
      * Scope to attempts a given teacher is allowed to see: assignment-linked
      * attempts in a classroom they own/co-teach, or (if the student opted in)
      * independent practice attempts, still gated by an active shared classroom.
