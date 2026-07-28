@@ -27,7 +27,11 @@ class SubmissionController extends Controller
     {
         $validated = $request->validated();
         $lockKey = "module_submit_lock_{$validated['user_test_id']}_{$validated['module_id']}";
-        $lock = Cache::lock($lockKey, 30);
+        // TTL must exceed ScoreModuleJob::$timeout (60s). If the lock expired first, a
+        // second submit could acquire it while the first job is still running, and that
+        // job's forceRelease() in finally/failed() would then release a lock it no
+        // longer owns.
+        $lock = Cache::lock($lockKey, 90);
 
         if (! $lock->get()) {
             return response()->json([
@@ -114,6 +118,16 @@ class SubmissionController extends Controller
                 return response()->json($result, isset($result['error']) ? 500 : 200);
             }
 
+            // The scoring cache key is per-attempt, not per-module, and lives for 300s.
+            // Drop the previous module's result before dispatching so a student who
+            // submits the next module inside that window can't be served the stale
+            // routing decision (and sent back into a module they already finished).
+            // Placed after the receipt branch above so a duplicate submit never clears
+            // a live result, and before dispatch() so the sync-queue read below still
+            // sees this job's own fresh write.
+            $cacheKey = "scoring_result_{$outcome['user_test_id']}";
+            Cache::forget($cacheKey);
+
             // Scoring (IRT compute) runs off the request thread so the row lock above
             // isn't held for the duration. The job releases $lockKey when it finishes;
             // the frontend polls /submit-status until the cache key below appears.
@@ -129,7 +143,6 @@ class SubmissionController extends Controller
             // On a "sync" queue connection (local artisan tinker, tests) the job above has
             // already run and released the lock by the time dispatch() returns. Serve the
             // ready result immediately instead of making the caller poll for it needlessly.
-            $cacheKey = "scoring_result_{$outcome['user_test_id']}";
             if (Cache::has($cacheKey)) {
                 $result = Cache::get($cacheKey);
 

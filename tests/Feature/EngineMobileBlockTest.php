@@ -24,7 +24,10 @@ class EngineMobileBlockTest extends TestCase
         $response = $this->actingAs($user)->get(route('engine.session'));
 
         $response->assertOk();
-        $response->assertSee('SCREEN_SIZE_THRESHOLD', false);
+        // Width and height are gated separately: a single min(w, h) threshold
+        // locked out 1366x768 laptops, whose inner height is ~620 after chrome.
+        $response->assertSee('SCREEN_MIN_WIDTH', false);
+        $response->assertSee('SCREEN_MIN_HEIGHT', false);
         $response->assertSee('screenSizeGuard', false);
     }
 

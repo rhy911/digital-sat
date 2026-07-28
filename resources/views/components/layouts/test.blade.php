@@ -8,11 +8,17 @@
         // Screen-size gate: measured on the actual viewport, not device/UA — small
         // tablets in landscape can clear this while any phone cannot. Must run
         // synchronously before the rest of <head> so a blocked visitor never sees
-        // test content. Threshold reused by the live resize guard in test.js.
-        window.SCREEN_SIZE_THRESHOLD = 768;
+        // test content. Thresholds reused by the live resize guard in test.js.
+        //
+        // Width and height are checked separately, NOT via min(w, h): a 1366x768
+        // laptop has an inner height near 620 after browser chrome, so a single
+        // 768 min-dimension threshold locked out a large share of real desktops.
+        // 900w keeps portrait tablets (768) and every phone out; 500h only ever
+        // trips on a deliberately squashed window.
+        window.SCREEN_MIN_WIDTH = 900;
+        window.SCREEN_MIN_HEIGHT = 500;
         (function () {
-            var minDimension = Math.min(window.innerWidth, window.innerHeight);
-            if (minDimension < window.SCREEN_SIZE_THRESHOLD) {
+            if (window.innerWidth < window.SCREEN_MIN_WIDTH || window.innerHeight < window.SCREEN_MIN_HEIGHT) {
                 window.location.replace("{{ route('engine.mobile-blocked') }}");
             }
         })();
