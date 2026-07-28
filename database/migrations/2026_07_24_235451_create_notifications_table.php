@@ -11,10 +11,13 @@ return new class extends Migration
      */
     public function up(): void
     {
+        Schema::dropIfExists('notifications');
         Schema::create('notifications', function (Blueprint $table) {
             $table->uuid('id')->primary();
-            $table->string('type');
-            $table->morphs('notifiable');
+            $table->string('type', 191);
+            $table->string('notifiable_type', 191);
+            $table->unsignedBigInteger('notifiable_id');
+            $table->index(['notifiable_type', 'notifiable_id']);
             $table->text('data');
             $table->timestamp('read_at')->nullable();
             $table->timestamps();

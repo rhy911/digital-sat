@@ -19,6 +19,8 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        \Illuminate\Support\Facades\Schema::defaultStringLength(191);
+
         \Illuminate\Support\Facades\Blade::directive('markdown', function ($expression) {
             return "<?php echo \App\Support\QuestionContentRenderer::markdown($expression); ?>";
         });

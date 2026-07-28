@@ -99,7 +99,7 @@ class ScoreReportService
 
         foreach ($userAnswers as $answer) {
             $q = $answer->question;
-            if (! $q || $q->is_pretest) {
+            if (! $q) {
                 continue;
             }
 
@@ -141,7 +141,7 @@ class ScoreReportService
 
         foreach ($userTest->userAnswers as $answer) {
             $question = $answer->question;
-            if (! $question || $question->is_pretest) {
+            if (! $question) {
                 continue;
             }
 
@@ -164,6 +164,7 @@ class ScoreReportService
                 'difficulty'   => $question->difficulty    ?? 'N/A',
                 'timeSpent'    => $answer->time_spent,
                 'expectedTime' => $question->expected_time,
+                'isPretest'    => (bool) $question->is_pretest,
                 'questionData' => [
                     'stem'          => $this->markdown($question->stem ?? ''),
                     'explanation'   => $this->markdown($question->explanation?->explanation ?? 'No explanation available.'),
@@ -171,6 +172,7 @@ class ScoreReportService
                     'your_answer'   => $answer->selected_answer ?? 'Omitted',
                     'status'        => $statusKey,
                     'question_type' => $question->question_type,
+                    'is_pretest'    => (bool) $question->is_pretest,
                     'choices'       => $question->answerChoices
                         ->map(fn ($c) => [
                             'label'      => $c->label,

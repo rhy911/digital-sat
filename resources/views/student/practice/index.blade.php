@@ -28,7 +28,8 @@
                             Pick an active practice test, then continue an unfinished attempt or start fresh.
                         </div>
                     </div>
-                    <div>
+                    <div style="display: flex; gap: 8px; align-items: center;">
+                        <a href="{{ route('student.scores.index') }}" class="btn-outline">My Score Reports</a>
                         <a href="{{ route('test.preview') }}" class="btn-outline">Preview test format</a>
                     </div>
                 </div>
