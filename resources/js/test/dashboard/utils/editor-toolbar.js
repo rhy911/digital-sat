@@ -85,15 +85,11 @@ export function getPremiumToolbar(activeEditorKey, changeCallback) {
                         }
                     } catch (error) {
                         showAlert('danger', error.message);
-                    } finally {
-                        fileInput.remove();
                     }
                 });
 
                 fileInput.click();
-            },
-            className: "bi bi-image",
-            title: "Upload and Insert Image"
+            }
         },
         "|", { name: "preview", action: togglePreview, className: "bi bi-eye text-brand font-bold", title: "Toggle Preview", noDisable: true }
     ];

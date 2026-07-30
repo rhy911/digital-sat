@@ -14,13 +14,14 @@ class AssignmentStatusResolver
 
         $state = $completed->isNotEmpty() ? 'Completed'
             : ($inProgress ? 'In progress'
+            : ($assignment->status === 'closed' ? 'Closed'
             : ($assignment->available_at && now()->lt($assignment->available_at) ? 'Upcoming'
-            : ($assignment->due_at && now()->gte($assignment->due_at) ? 'Overdue' : 'Open')));
+            : ($assignment->due_at && now()->gte($assignment->due_at) ? 'Overdue' : 'Open'))));
 
         $variant = match ($state) {
             'Completed' => 'success',
             'In progress' => 'brand',
-            'Overdue' => 'danger',
+            'Overdue', 'Closed' => 'danger',
             'Upcoming' => 'neutral',
             default => 'warning',
         };

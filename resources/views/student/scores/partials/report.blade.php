@@ -293,12 +293,12 @@
                                                     $time = $row['timeSpent'];
                                                     $expected = $row['expectedTime'] ?? 0;
 
-                                                    if ($time > 90) {
+                                                    if ($expected > 0 && $time > $expected * 1.5) {
                                                         $paceColor = '#ef4444'; // Red (Stuck / Slow)
-                                                        $paceLabel = 'Stuck (>90s)';
-                                                    } elseif ($time < 15 && $isCorrect) {
+                                                        $paceLabel = 'Stuck / Slow';
+                                                    } elseif ($isCorrect && $expected > 0 && $time < $expected * 0.4) {
                                                         $paceColor = '#f59e0b'; // Amber (Rushed)
-                                                        $paceLabel = 'Rushed (<15s)';
+                                                        $paceLabel = 'Rushed';
                                                     } else {
                                                         $paceColor = '#3b82f6'; // Blue (Optimal)
                                                         $paceLabel = 'Optimal';
@@ -337,11 +337,11 @@
                 </div>
                 <div style="display: flex; align-items: center; gap: 0.35rem;">
                     <div style="width: 10px; height: 3px; background: #f59e0b; border-radius: 99px;"></div>
-                    <span>Rushed (<15s)< /span>
+                    <span>Rushed (&lt;40% expected)</span>
                 </div>
                 <div style="display: flex; align-items: center; gap: 0.35rem;">
                     <div style="width: 10px; height: 3px; background: #ef4444; border-radius: 99px;"></div>
-                    <span>Stuck / Slow (>90s)</span>
+                    <span>Stuck / Slow (&gt;150% expected)</span>
                 </div>
             </div>
         </div>

@@ -47,14 +47,15 @@ class PerformanceAnalytics
                 $isCorrect = (bool) $answer->is_correct;
                 $timeSpent = (int) $answer->time_spent;
                 $hasAnswered = !empty($answer->selected_answer);
+                $expectedTime = $question->expected_time ?: QuestionPacing::expectedSeconds($question->section_type, $difficulty);
 
                 if (!$hasAnswered) {
                     $skippedCount++;
                 } else {
-                    if (!$isCorrect && $timeSpent > 90) {
+                    if (!$isCorrect && $timeSpent > $expectedTime * 1.5) {
                         $stuckCount++;
                     }
-                    if ($isCorrect && $timeSpent < 15) {
+                    if ($isCorrect && $timeSpent < $expectedTime * 0.4) {
                         $rushedCount++;
                     }
                 }
@@ -91,7 +92,6 @@ class PerformanceAnalytics
                 $difficultyStats[$difficulty]['total']++;
                 $difficultyStats[$difficulty]['correct'] += $isCorrect ? 1 : 0;
 
-                $expectedTime = $question->expected_time ?? 0;
                 if ($expectedTime > 0) {
                     if (!isset($pacingStats[$difficulty])) {
                         $pacingStats[$difficulty] = ['count' => 0, 'timeSpent' => 0, 'expectedTime' => 0];

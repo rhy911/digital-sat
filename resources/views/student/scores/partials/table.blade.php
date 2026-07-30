@@ -99,15 +99,10 @@
                             @endif
                         </td>
                         <td>
-                            @if (($row['expectedTime'] ?? 0) > 0)
-                                @php($isSlow = $row['timeSpent'] > $row['expectedTime'] * 1.2)
-                                <span class="sd-domain-tag {{ $isSlow ? 'text-rose-600 font-semibold' : '' }}"
-                                    title="Expected {{ $row['expectedTime'] }}s">
-                                    {{ $row['timeSpent'] }}s / {{ $row['expectedTime'] }}s
-                                </span>
-                            @else
-                                <span class="sd-domain-tag">{{ $row['timeSpent'] }}s</span>
-                            @endif
+                            @php($isSlow = $row['timeSpent'] > ($row['expectedTime'] ?? 0) * 1.2)
+                            <span class="sd-domain-tag {{ $isSlow ? 'text-rose-600 font-semibold' : '' }}">
+                                {{ $row['timeSpent'] }}s
+                            </span>
                         </td>
                         <td>
                             <button class="sd-review-btn js-review-btn"

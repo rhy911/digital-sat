@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Models\UserTest;
 use App\Models\UserTestAnswer;
 use App\Support\QuestionMediaUrl;
+use App\Support\QuestionPacing;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
@@ -163,7 +164,7 @@ class ScoreReportService
                 'domainLabel'  => $formattedDomain,
                 'difficulty'   => $question->difficulty    ?? 'N/A',
                 'timeSpent'    => $answer->time_spent,
-                'expectedTime' => $question->expected_time,
+                'expectedTime' => $question->expected_time ?: QuestionPacing::expectedSeconds($question->section_type, $question->difficulty),
                 'isPretest'    => (bool) $question->is_pretest,
                 'questionData' => [
                     'stem'          => $this->markdown($question->stem ?? ''),

@@ -4,7 +4,6 @@ namespace App\Http\Controllers\Teacher;
 
 use App\Http\Controllers\Controller;
 use App\Models\ClassroomMembership;
-use App\Notifications\AssignmentPublishedNotification;
 use App\Notifications\MembershipDecisionNotification;
 use App\Services\ClassroomService;
 
@@ -47,18 +46,12 @@ class MembershipController extends Controller
     }
 
     /**
-     * Notify a newly-approved student of enrollment and any open published assignments.
+     * Notify a newly-approved student of enrollment. Past assignments/announcements
+     * are not replayed as notifications — student sees them in the classroom itself.
      */
     private function notifyApproved(ClassroomMembership $membership): void
     {
         $membership->student->notify(new MembershipDecisionNotification($membership->classroom, true));
-
-        $membership->classroom->assignments()
-            ->where('status', 'published')
-            ->where(fn ($query) => $query->whereNull('due_at')->orWhere('due_at', '>', now()))
-            ->each(fn ($assignment) => $membership->student->notify(
-                new AssignmentPublishedNotification($assignment->load('classroom'))
-            ));
     }
 
     public function reject(ClassroomMembership $membership, ClassroomService $service)

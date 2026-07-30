@@ -356,7 +356,7 @@ input[type="radio"] {
 }
 
 .actions-dropdown .dropdown-item {
-    display: block;
+    display: flex;
     width: 100%;
     padding: 8px 16px;
     text-align: left;
@@ -940,7 +940,11 @@ select.ts-hidden-accessible {
 }
 
 .editor-toolbar button {
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
     color: var(--text-muted) !important;
+    font-size: 1rem !important;
 }
 
 .editor-toolbar button.active,
@@ -1100,7 +1104,11 @@ select.ts-hidden-accessible {
 }
 
 .edit-question-modal .editor-toolbar button {
-    color: #64748b !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    color: #475569 !important;
+    font-size: 1rem !important;
 }
 
 .edit-question-modal .editor-toolbar button:hover,

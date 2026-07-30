@@ -22,7 +22,7 @@
             <div class="ds-habit-info">
                 <strong>{{ $stuckCount }}</strong>
                 <span>Stuck Questions</span>
-                <small>Spent > 90s and answered incorrectly. Learn when to flag and skip!</small>
+                <small>Spent far longer than expected and answered incorrectly. Learn when to flag and skip!</small>
             </div>
         </div>
 
@@ -31,7 +31,7 @@
             <div class="ds-habit-info">
                 <strong>{{ $rushedCount }}</strong>
                 <span>Rushed Questions</span>
-                <small>Answered correctly in < 15s. Quick thinking or lucky guesses.</small>
+                <small>Answered correctly much faster than expected. Quick thinking or lucky guesses.</small>
             </div>
         </div>
     </div>

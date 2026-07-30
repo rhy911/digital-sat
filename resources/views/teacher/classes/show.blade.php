@@ -26,11 +26,11 @@
         searchQuery: '',
         statusFilter: 'all',
         newClassOpen: false,
-        activeTab: new URLSearchParams(location.search).get('tab')
-            || (new URLSearchParams(location.search).get('announce_page') ? 'announce' : null)
-            || (new URLSearchParams(location.search).get('assign_page') ? 'assign' : null)
-            || (new URLSearchParams(location.search).get('docs_page') ? 'docs' : null)
-            || 'announce'
+        activeTab: new URLSearchParams(location.search).get('tab') ||
+            (new URLSearchParams(location.search).get('announce_page') ? 'announce' : null) ||
+            (new URLSearchParams(location.search).get('assign_page') ? 'assign' : null) ||
+            (new URLSearchParams(location.search).get('docs_page') ? 'docs' : null) ||
+            'announce'
     }">
 
         <!-- COLUMN 1: ICON RAIL -->
@@ -63,9 +63,11 @@
                     <form method="POST" action="{{ route('teacher.classes.store') }}" autocomplete="off">
                         @csrf
                         <label>Class name</label>
-                        <input type="text" name="name" required placeholder="SAT Prep — Summer" maxlength="150" autocomplete="off">
+                        <input type="text" name="name" required placeholder="SAT Prep — Summer" maxlength="150"
+                            autocomplete="off">
                         <label>Description</label>
-                        <input type="text" name="description" placeholder="Optional" maxlength="2000" autocomplete="off">
+                        <input type="text" name="description" placeholder="Optional" maxlength="2000"
+                            autocomplete="off">
                         <div class="actions">
                             <button type="button" class="btn-sm-ghost"
                                 @click="newClassOpen = false">{{ __('classroom.cancel') }}</button>
@@ -84,7 +86,8 @@
             <div class="binder-panel">
                 <div class="ledger-header">
                     <div class="dh-left">
-                        <h2>{{ $classroom->name }} <span class="status-pill ok ml-2"><span class="d"></span>{{ ucfirst($classroom->status) }}</span></h2>
+                        <h2>{{ $classroom->name }} <span class="status-pill ok ml-2"><span
+                                    class="d"></span>{{ ucfirst($classroom->status) }}</span></h2>
                         <div class="dh-desc">
                             {{ $classroom->description ?: 'Manage roster, resources, assignments, and class access.' }}
                         </div>
@@ -118,7 +121,8 @@
                             @csrf
                             <div class="announce-composer__header">
                                 <span class="announce-composer__title">
-                                    <span class="announce-avatar">{{ substr(auth()->user()->name ?? 'T', 0, 1) }}</span>
+                                    <span
+                                        class="announce-avatar">{{ substr(auth()->user()->name ?? 'T', 0, 1) }}</span>
                                     Share an update with your class
                                 </span>
                             </div>
@@ -126,14 +130,14 @@
                                 placeholder="Write an announcement for all active students in this class…" class="announce-textarea"></textarea>
                             <div class="announce-composer__actions">
                                 <span class="announce-composer__hint" x-text="text.length + ' / 5000'">0 / 5000</span>
-                                <button type="submit" class="btn-sm-primary announce-post-btn" :disabled="!text.trim()" :class="{ 'is-active': text.trim().length > 0 }">Post announcement</button>
+                                <button type="submit" class="btn-sm-primary announce-post-btn" :disabled="!text.trim()"
+                                    :class="{ 'is-active': text.trim().length > 0 }">Post announcement</button>
                             </div>
                         </form>
                     @endif
 
                     @forelse ($announcementsPage as $announcement)
-                        <x-classroom.announcement-card :announcement="$announcement" :classroom="$classroom"
-                            :can-manage="true" />
+                        <x-classroom.announcement-card :announcement="$announcement" :classroom="$classroom" :can-manage="true" />
                     @empty
                         <div class="empty-grid-cell" style="margin-top: 8px;">
                             <strong>No announcements yet</strong>
@@ -185,7 +189,7 @@
                             <div class="flex flex-col gap-8">
                                 @foreach ($pending as $membership)
                                     <div class="pending-row">
-                                        <div class="flex items-center gap-8">
+                                        <div class="flex items-center gap-2">
                                             @if ($classroom->status === 'active')
                                                 <input type="checkbox" x-model.number="selected"
                                                     value="{{ $membership->id }}">

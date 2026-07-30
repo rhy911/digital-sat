@@ -12,6 +12,16 @@ return [
             'math' => 0.0,
         ],
     ],
+
+    // Fallback per-question pacing target (seconds) used only when a question has
+    // no admin-entered expected_time. Midpoint of realistic SAT per-difficulty pacing
+    // bands (Reading & Writing: easy 30-45s, medium 60-75s, hard 90-120s; Math: easy
+    // 30-50s, medium 60-90s, hard 120-180s). "unknown" (untagged difficulty) falls
+    // back to the medium band.
+    'pacing_defaults' => [
+        'reading_writing' => ['easy' => 38, 'medium' => 68, 'hard' => 105, 'unknown' => 68],
+        'math' => ['easy' => 40, 'medium' => 75, 'hard' => 150, 'unknown' => 75],
+    ],
     'normal_conversion' => [
         'version' => 'normal_consensus_v1',
         'source_name' => 'DigiSAT reviewed calculator consensus',
