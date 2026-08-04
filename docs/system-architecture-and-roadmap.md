@@ -1,23 +1,18 @@
-# Tài liệu Thiết kế Kiến trúc Hệ thống & Lộ trình Nâng cấp
+# Tài liệu Kiến trúc Hệ thống (System Architecture Specification)
 
-## System Architecture & Technical Roadmap Specification
-
-> **Trạng thái:** Chốt chính thức (Locked 2026-08-02)  
-> **Phiên bản:** 3.0 (Reviewed & corrected against codebase)  
-
-> [!NOTE]
-> **Quy ước đánh dấu trong tài liệu:**
+> **Trạng thái:** Chốt chính thức (Locked 2026-08-04)
+> **Phiên bản:** 4.0 (Rewritten — chỉ mô tả kiến trúc hiện tại, đã bỏ toàn bộ phần lộ trình quy hoạch)
 >
-> - Không có tag = **đang tồn tại trong codebase hiện tại** (verified against migrations, services, config).
-> - `[PLANNED — Phase N]` = **kiến trúc quy hoạch**, chưa có code. Sẽ được xây dựng trong Phase tương ứng.
-> - Trong sơ đồ Mermaid: đường nét đứt `-.->` = thành phần quy hoạch.
+> [!NOTE]
+> Tài liệu này mô tả **kiến trúc thực tế đang chạy** của repo `digital-sat`, được verify trực tiếp từ migrations, service layer, config và CI pipeline. Repo này phục vụ mục đích **tối ưu hoá và cải thiện** web Digital SAT hiện có, chạy trên **iNET cPanel shared hosting (không có quyền root)**.
+>
+> Các hạng mục quy hoạch trước đây trong bản v3.0 (containerize Docker, Redis, migrate Inertia.js/React, Exam Driver đa kỳ thi TSA/THPT Quốc gia) đã được xác nhận thuộc về **lộ trình của một dự án khác**, không nằm trong phạm vi repo này — cPanel hiện tại của hệ thống không hỗ trợ Redis/Docker nên các hạng mục đó không áp dụng được ở đây. Tài liệu này vì vậy không còn mục lộ trình (roadmap).
 
 ---
 
 ## Mục lục (Table of Contents)
 
-- [Tài liệu Thiết kế Kiến trúc Hệ thống \& Lộ trình Nâng cấp](#tài-liệu-thiết-kế-kiến-trúc-hệ-thống--lộ-trình-nâng-cấp)
-  - [System Architecture \& Technical Roadmap Specification](#system-architecture--technical-roadmap-specification)
+- [Tài liệu Kiến trúc Hệ thống (System Architecture Specification)](#tài-liệu-kiến-trúc-hệ-thống-system-architecture-specification)
   - [Mục lục (Table of Contents)](#mục-lục-table-of-contents)
   - [1. Tổng quan \& Mục tiêu (Overview \& Objectives)](#1-tổng-quan--mục-tiêu-overview--objectives)
     - [1.1 Bối cảnh \& Mục đích (Context \& Purpose)](#11-bối-cảnh--mục-đích-context--purpose)
@@ -29,15 +24,13 @@
       - [**A. Phân hệ Học sinh (Student Portal)**](#a-phân-hệ-học-sinh-student-portal)
       - [**B. Phân hệ Giáo viên \& Trung tâm (Teacher / Center Admin)**](#b-phân-hệ-giáo-viên--trung-tâm-teacher--center-admin)
       - [**C. Phân hệ Quản trị Hệ thống (System Admin)**](#c-phân-hệ-quản-trị-hệ-thống-system-admin)
-      - [**D. Phân hệ Core Engine \& Chấm điểm (Multi-Exam Core Engine)**](#d-phân-hệ-core-engine--chấm-điểm-multi-exam-core-engine)
+      - [**D. Phân hệ Core Engine \& Chấm điểm (SAT Engine)**](#d-phân-hệ-core-engine--chấm-điểm-sat-engine)
   - [2. Kiến trúc Hệ thống Tổng thể (High-Level Architecture - HLA)](#2-kiến-trúc-hệ-thống-tổng-thể-high-level-architecture---hla)
     - [2.1 Sơ đồ Kiến trúc Tổng thể (System Architecture Diagram)](#21-sơ-đồ-kiến-trúc-tổng-thể-system-architecture-diagram)
     - [2.2 Phong cách Kiến trúc (Architecture Pattern)](#22-phong-cách-kiến-trúc-architecture-pattern)
-    - [2.3 Bảng So sánh Công nghệ (Tech Stack: Current vs Planning)](#23-bảng-so-sánh-công-nghệ-tech-stack-current-vs-planning)
+    - [2.3 Bảng Công nghệ Sử dụng (Tech Stack)](#23-bảng-công-nghệ-sử-dụng-tech-stack)
   - [3. Thiết kế Chi tiết (Low-Level Design - LLD)](#3-thiết-kế-chi-tiết-low-level-design---lld)
-    - [3.1 Thiết kế Module \& Luồng xử lý (Component \& Sequence Design)](#31-thiết-kế-module--luồng-xử-lý-component--sequence-design)
-      - [**A. Class Diagram: Exam Driver Architecture `[PLANNED — Phase 2]`**](#a-class-diagram-exam-driver-architecture-planned--phase-2)
-      - [**B. Sequence Diagram: Luồng Nộp bài Async \& Polling Trạng thái (Module Submit)**](#b-sequence-diagram-luồng-nộp-bài-async--polling-trạng-thái-module-submit)
+    - [3.1 Sequence Diagram: Luồng Nộp bài Async \& Polling Trạng thái (Module Submit)](#31-sequence-diagram-luồng-nộp-bài-async--polling-trạng-thái-module-submit)
     - [3.2 Thiết kế Cơ sở Dữ liệu (Database Design \& ERD)](#32-thiết-kế-cơ-sở-dữ-liệu-database-design--erd)
       - [**A. Diagram: Core Entity-Relationship Diagram (ERD)**](#a-diagram-core-entity-relationship-diagram-erd)
       - [**B. Chiến lược Đánh chỉ mục \& Retention Policy (Indexing \& Retention)**](#b-chiến-lược-đánh-chỉ-mục--retention-policy-indexing--retention)
@@ -50,16 +43,11 @@
     - [4.1 An ninh \& Bảo mật (Security Invariants)](#41-an-ninh--bảo-mật-security-invariants)
     - [4.2 Hiệu năng \& Khả năng mở rộng (Performance \& Scalability)](#42-hiệu-năng--khả-năng-mở-rộng-performance--scalability)
     - [4.3 Hạ tầng \& Triển khai (Infrastructure \& Deployment)](#43-hạ-tầng--triển-khai-infrastructure--deployment)
-      - [**A. Sơ đồ Mạng Triển khai Docker `[PLANNED — Phase 4]`**](#a-sơ-đồ-mạng-triển-khai-docker-planned--phase-4)
+      - [**A. Mô hình Hosting hiện tại**](#a-mô-hình-hosting-hiện-tại)
       - [**B. Quy trình CI/CD Pipeline (GitHub Actions)**](#b-quy-trình-cicd-pipeline-github-actions)
   - [5. Giám sát, Bảo trì \& Phục hồi (Observability \& Reliability)](#5-giám-sát-bảo-trì--phục-hồi-observability--reliability)
     - [5.1 Logging \& Monitoring (Giám sát \& Ghi log)](#51-logging--monitoring-giám-sát--ghi-log)
     - [5.2 Sao lưu \& Phục hồi Thảm họa (Backup \& Disaster Recovery)](#52-sao-lưu--phục-hồi-thảm-họa-backup--disaster-recovery)
-  - [6. Lộ trình Triển khai 4 Pha (Implementation Roadmap)](#6-lộ-trình-triển-khai-4-pha-implementation-roadmap)
-    - [**Phase 1: Foundation \& Tooling (Dev Env)**](#phase-1-foundation--tooling-dev-env)
-    - [**Phase 2: Core Exam Driver \& TSA Question Components**](#phase-2-core-exam-driver--tsa-question-components)
-    - [**Phase 3: Inertia React Migration**](#phase-3-inertia-react-migration)
-    - [**Phase 4: Production Docker Deploy**](#phase-4-production-docker-deploy)
 
 ---
 
@@ -67,7 +55,7 @@
 
 ### 1.1 Bối cảnh & Mục đích (Context & Purpose)
 
-Hệ thống là **Nền tảng kiểm tra và khảo thí trực tuyến đa kỳ thi** (Digital Assessment & E-learning Platform). Ban đầu được phát triển để mô phỏng chính xác giao diện thi Digital SAT (Bluebook clone) của College Board với thuật toán chấm điểm thích ứng 3PL IRT. Hệ thống đang được mở rộng thành nền tảng khảo thí đa kỳ thi (SAT, TSA ĐHBK Hà Nội, THPT Quốc gia).
+Hệ thống là **Nền tảng luyện thi Digital SAT trực tuyến** (Digital SAT Practice Platform), mô phỏng chính xác giao diện thi Digital SAT (Bluebook clone) của College Board với thuật toán chấm điểm thích ứng 3PL IRT.
 
 **Đối tượng sử dụng chính:**
 
@@ -79,21 +67,18 @@ Hệ thống là **Nền tảng kiểm tra và khảo thí trực tuyến đa k�
 
 #### **In-scope (Nằm trong phạm vi):**
 
-- **Đa kỳ thi (Multi-exam):**
-  - SAT: Bài thi thích ứng 2 phần (Reading & Writing, Math), chấm điểm IRT 3PL EAP thang 400–1600.
-  - TSA (ĐHBK HN): Bài thi 3 phần 60/30/60 phút, 5 dạng câu hỏi, chấm điểm cộng dồn /100. `[PLANNED — Phase 2]`
-  - THPT Quốc gia: Bài thi theo môn, dạng câu hỏi Đúng/Sai nhiều ý (chấm điểm từng phần), thang /10. `[PLANNED — Phase 2]`
+- **SAT:** Bài thi thích ứng 2 phần (Reading & Writing, Math), chấm điểm IRT 3PL EAP thang 400–1600.
 - **Engine Thi (Test Engine):** Mô phỏng 100% Bluebook UI (Timer, Desmos Calculator, Strike-through, Highlight, Review Grid, Lock-down browser mock).
 - **Test Builder & Bank:** Trình soạn thảo đề thi, ngân hàng câu hỏi phân quyền (Mine/Shared), nhập liệu hàng loạt (JSON/CSV/ZIP media).
 - **Classroom LMS:** Quản lý lớp học, bài đăng thông báo (Announcements), lịch thi (Class Calendar), giao bài thi (Assignments).
-- **Tầng giao diện mới (Frontend Migration):** Chuyển đổi toàn bộ ứng dụng sang **Inertia.js + React + TypeScript**. `[PLANNED — Phase 1]`
-- **Hạ tầng Container (Docker & Redis):** Đóng gói Docker Compose, chạy Redis cho Cache/Session/Queue, Supervisor worker daemon 24/7. `[PLANNED — Phase 1 & 4]`
+- **Tối ưu hoá liên tục trên nền hạ tầng hiện có:** cải thiện hiệu năng, chất lượng code (PHPStan/Larastan), độ phủ test, và bảo mật trong giới hạn của cPanel shared hosting.
 
 #### **Out-of-scope (Không nằm trong phạm vi):**
 
 - Sàn thương mại điện tử B2C bán khóa học/đề thi trực tiếp cho người dùng lẻ.
 - Tự động phát hiện gian lận bằng AI webcam/micro recording (chỉ áp dụng client-side event lock browser).
 - Chạy hệ thống trên Multi-region AWS/GCP.
+- **Đa kỳ thi (TSA ĐHBK Hà Nội, THPT Quốc gia), containerize Docker/Redis, migrate frontend sang Inertia.js/React** — đây là các hạng mục thuộc lộ trình của một dự án khác. cPanel hosting hiện tại của hệ thống này không có quyền root và không hỗ trợ Redis/Docker nên các hạng mục đó không áp dụng cho repo này.
 
 ### 1.3 Thuật ngữ & Từ viết tắt (Glossary)
 
@@ -102,7 +87,6 @@ Hệ thống là **Nền tảng kiểm tra và khảo thí trực tuyến đa k�
 | **IRT**   | Item Response Theory                                     | Lý thuyết Ứng đáp Câu hỏi - Thuật toán ước lượng năng lực thí sinh $\theta$.       |
 | **3PL**   | 3-Parameter Logistic                                     | Mô hình IRT 3 tham số: Độ khó ($b$), Độ phân biệt ($a$), Độ đoán mò ($c$).         |
 | **EAP**   | Expected A Posteriori                                    | Thuật toán ước lượng Bayes tính giá trị $\theta$ trên lưới điểm cố định $[-4, 4]$. |
-| **TSA**   | Thinking Skills Assessment                               | Bài thi Đánh giá Tư duy - Đại học Bách khoa Hà Nội.                                |
 | **IDOR**  | Insecure Direct Object Reference                         | Lỗi bảo mật truy cập trái phép tài nguyên khi thay đổi tham số ID.                 |
 | **SPR**   | Student-Produced Response                                | Dạng câu hỏi trả lời ngắn (tự điền số/văn bản).                                    |
 | **MCQ**   | Multiple Choice Question                                 | Câu hỏi trắc nghiệm nhiều lựa chọn.                                                |
@@ -110,19 +94,16 @@ Hệ thống là **Nền tảng kiểm tra và khảo thí trực tuyến đa k�
 | **ULID**  | Universally Unique Lexicographically Sortable Identifier | ID dạng 26 ký tự, dùng thay thế UUID cho URL-safe routing.                         |
 | **SE**    | Standard Error                                           | Sai số chuẩn ước lượng $\theta$, dùng tính dải điểm (score band).                  |
 | **TTL**   | Time To Live                                             | Thời gian tồn tại của cache entry trước khi tự hết hạn.                            |
-| **FPM**   | FastCGI Process Manager                                  | PHP process manager dùng cho production (thay thế mod_php).                        |
+| **FPM**   | FastCGI Process Manager                                  | PHP process manager quản lý bởi cPanel (MultiPHP Manager).                         |
 | **RPO**   | Recovery Point Objective                                 | Mức mất mát dữ liệu tối đa chấp nhận được khi khôi phục hệ thống.                  |
 | **RTO**   | Recovery Time Objective                                  | Thời gian tối đa để phục hồi hệ thống sau sự cố.                                   |
 | **PII**   | Personally Identifiable Information                      | Thông tin cá nhân nhạy cảm (tên, email, mật khẩu).                                 |
 
 ### 1.4 Sơ đồ Phân rã Chức năng (Functional Decomposition Map)
 
-> [!NOTE]
-> Sơ đồ phân rã toàn bộ nhóm chức năng của hệ thống theo 4 Phân hệ chính. Các tính năng có tag `[PLANNED — Phase N]` là tính năng quy hoạch mở rộng multi-exam.
-
 ```mermaid
 graph TD
-    Root["Nền tảng Khảo thí Đa kỳ thi\n(Digital Assessment System)"]
+    Root["Nền tảng Luyện thi Digital SAT\n(Digital SAT Practice Platform)"]
 
     %% 1. STUDENT PORTAL
     subgraph StudentPortal["1. Phân hệ Học sinh (Student Portal)"]
@@ -137,7 +118,7 @@ graph TD
     subgraph TeacherPortal["2. Phân hệ Giáo viên & Trung tâm (Teacher / Center Admin)"]
         T_Class["Quản lý Lớp học (Classroom LMS)\n- Tạo & Quản lý Lớp học / Join Code\n- Danh sách Học sinh & Bài nộp\n- Giao bài thi (Assignments: Full / Section / Module)\n- Lịch thi & Bài đăng thông báo (Announcements)"]
         T_Builder["Biên soạn Đề thi (Test Builder)\n- Tạo đề & Cấu hình Ma trận đề\n- Quản lý Section & Pivot Section-Module\n- Đóng băng dữ liệu (Content Lock Service)"]
-        T_Bank["Ngân hàng Câu hỏi (Question Bank)\n- Tạo/Sửa câu hỏi (5 Question Types)\n- Bài đọc Đơn / Bài đọc Đôi (Passages)\n- Tham số IRT 3PL (a, b, c)\n- Phân quyền (Mine / Shared Bank)\n- Import hàng loạt (JSON/CSV/ZIP Media)"]
+        T_Bank["Ngân hàng Câu hỏi (Question Bank)\n- Tạo/Sửa câu hỏi (MCQ đơn, SPR)\n- Bài đọc Đơn / Bài đọc Đôi (Passages)\n- Tham số IRT 3PL (a, b, c)\n- Phân quyền (Mine / Shared Bank)\n- Import hàng loạt (JSON/CSV/ZIP Media)"]
         T_Analytics["Báo cáo Phân tích Lớp học\n- Bảng điểm tổng hợp (Class Gradebook)\n- Thống kê phổ điểm & Tỷ lệ làm đúng câu\n- Phân tích lỗ hổng kiến thức cả lớp\n- Xuất kết quả PDF / Print"]
     end
 
@@ -148,11 +129,10 @@ graph TD
     end
 
     %% 4. CORE ENGINE & SCORING
-    subgraph CoreEngine["4. Core Engine & Chấm điểm (Multi-Exam Core Engine)"]
+    subgraph CoreEngine["4. Core Engine & Chấm điểm (SAT Engine)"]
         E_UI["Bluebook Test Engine UI\n- Dynamic Section/Module Navigation\n- Timer / Desmos Calc / Review Grid\n- Strike-through / Highlight / Bookmark\n- Lockdown Browser Mock (Block Copy/Paste)"]
-        E_Collector["DOM Answer Collector (5 Dạng câu)\n- MCQ Single (Chữ cái A/B/C/D)\n- MCQ Multi [PLANNED — Phase 2]\n- True/False Multi-statement [PLANNED — Phase 2]\n- Short Answer SPR (Chữ / Số / Phân số)\n- Drag-and-Drop dnd-kit [PLANNED — Phase 2]"]
-        E_Driver["Pluggable Exam Drivers [PLANNED — Phase 2]\n- SatExamDriver (2-Stage Adaptive M2 Routing)\n- TsaExamDriver (3-Part Timed 60/30/60m)\n- ThptExamDriver (1-Paper Subject)"]
-        E_Score["Async Scoring Engine\n- 3PL IRT EAP Grid Estimation (theta [-4,4])\n- Path-aware Piecewise-linear Conversion\n- TSA Additive / THPT Per-part Scoring [PLANNED — Phase 2]\n- Snapshot Freezing (Chống Data Drift)"]
+        E_Collector["DOM Answer Collector\n- MCQ Single (Chữ cái A/B/C/D)\n- Short Answer SPR (Chữ / Số / Phân số)"]
+        E_Score["Async Scoring Engine\n- 3PL IRT EAP Grid Estimation (theta [-4,4])\n- Path-aware Piecewise-linear Conversion\n- Snapshot Freezing (Chống Data Drift)"]
     end
 
     Root --> StudentPortal
@@ -182,7 +162,7 @@ Mô tả phân rã chi tiết từng Phân hệ:
   - Hỗ trợ bài đọc ngắn, bài đọc dài, bài đọc đôi (`passages`, `paired_passages`).
   - Quản lý tham số IRT 3PL ($a$: độ phân biệt, $b$: độ khó, $c$: độ đoán mò).
   - Nhập liệu hàng loạt (Bulk Import) qua file JSON/CSV/ZIP chứa media.
-  - Hỗ trợ 5 dạng câu hỏi: MCQ đơn, MCQ nhiều đáp án `[PLANNED — Phase 2]`, Đúng/Sai nhiều ý `[PLANNED — Phase 2]`, Tự điền số/văn bản (SPR), Kéo thả `[PLANNED — Phase 2]`.
+  - Hỗ trợ 2 dạng câu hỏi: MCQ đơn, Tự điền số/văn bản (SPR).
 - **Báo cáo Phân tích Lớp học (Class Analytics):** Bảng điểm tổng hợp của lớp (Gradebook), thống kê phổ điểm, tỷ lệ trả lời đúng/sai từng câu hỏi để phát hiện lỗ hổng kiến thức chung của lớp, xuất file báo cáo.
 
 #### **C. Phân hệ Quản trị Hệ thống (System Admin)**
@@ -191,13 +171,12 @@ Mô tả phân rã chi tiết từng Phân hệ:
 - **Quản lý Cấu hình Thang điểm (Score Conversion Sets):** Quản lý phiên bản quy đổi điểm IRT Theta sang Scaled Score (200-800), phê duyệt/đóng băng bộ quy đổi điểm (`SCORE_CONVERSION_SETS`).
 - **Quản lý Dữ liệu Toàn cầu:** Giám sát ngân hàng câu hỏi dùng chung toàn hệ thống, quản lý media tĩnh.
 
-#### **D. Phân hệ Core Engine & Chấm điểm (Multi-Exam Core Engine)**
+#### **D. Phân hệ Core Engine & Chấm điểm (SAT Engine)**
 
 - **Giao diện Thi Bluebook Replica (Test Engine UI):**
   - Chạy giao diện chuẩn Bluebook (Timer đếm ngược, Desmos Calculator tích hợp, Strike-through gạch đáp án, Highlight văn bản, Review Grid lưới câu hỏi, Bookmark đánh dấu).
   - Trình phong tỏa client (Lockdown browser mock) chặn Copy/Paste/Right-click và phím tắt.
-- **Bộ Thu thập Đáp án DOM (Answer Collector Contract):** Hợp đồng giao tiếp DOM thống nhất (`read`, `restore`, `isAnswered`, `watch`) thu thập kết quả 5 dạng câu hỏi không phụ thuộc Blade hay React.
-- **Exam Drivers Đa kỳ thi `[PLANNED — Phase 2]`:** Strategy pattern cắm dán quy trình thi: `SatExamDriver` (Adaptive 2 phần), `TsaExamDriver` (3 phần 60/30/60m), `ThptExamDriver` (1 bài thi theo môn).
+- **Bộ Thu thập Đáp án DOM (Answer Collector Contract):** Hợp đồng giao tiếp DOM thống nhất (`read`, `restore`, `isAnswered`, `watch`) thu thập kết quả cho 2 dạng câu hỏi (MCQ đơn, SPR).
 - **Hệ thống Chấm điểm Bất đồng bộ (Async IRT Scoring):**
   - Ước lượng năng lực thí sinh $\theta$ qua thuật toán **3PL IRT EAP Grid** trên lưới điểm $[-4, 4]$ step $0.05$.
   - Quy đổi $\theta \rightarrow$ điểm 200-800 qua đường cong piecewise-linear (`config/sat_scoring.php`).
@@ -210,143 +189,62 @@ Mô tả phân rã chi tiết từng Phân hệ:
 
 ### 2.1 Sơ đồ Kiến trúc Tổng thể (System Architecture Diagram)
 
-> [!IMPORTANT]
-> Các node viền nét đứt (`-.->`) trong sơ đồ dưới đây là kiến trúc **quy hoạch** (Planned). Hiện tại chỉ SAT Scoring và Blade+Alpine+Livewire frontend đang hoạt động.
-
 ```mermaid
 flowchart TB
     subgraph ClientLayer["1. Client Layer (Browser)"]
-        CurrentFE["CURRENT: Blade + Alpine.js + Livewire\n(Vanilla JS Engine)"]
-        PlannedFE["PLANNED: Inertia React TS\n(Student / Teacher / Admin)"]
+        FE["Blade + Alpine.js + Livewire\n(Vanilla JS Test Engine)"]
     end
 
-    subgraph CDN_Nginx["2. Reverse Proxy & Asset Layer"]
-        Nginx["Nginx Web Server Container\n(SSL Termination / Static Assets)\n[PLANNED — Phase 4]"]
-    end
-
-    subgraph AppLayer["3. Application Layer (Laravel 12)"]
+    subgraph AppLayer["2. Application Layer (Laravel 12, PHP-FPM via cPanel)"]
         Router["Laravel Router & Middleware"]
         AuthMiddleware["Auth & Ownership Guards\n(Sanctum / Fortify / FormRequest)"]
-        
-        subgraph CurrentServices["Current Service Layer"]
+
+        subgraph Services["Service Layer"]
             SatScoring["SatScoringService\n(3PL IRT EAP Grid)"]
             ContentLock["TestContentLockService"]
             ScoreConversion["ScoreConversionService\n(Adaptive + Default)"]
         end
-
-        subgraph PlannedDrivers["Pluggable Exam Driver Layer [PLANNED — Phase 2]"]
-            SATDriver["SatExamDriver"]
-            TSADriver["TsaExamDriver"]
-            THPTDriver["ThptExamDriver"]
-        end
     end
 
-    subgraph AsyncLayer["4. Async Processing Layer"]
-        CurrentQueue["CURRENT: MySQL Queue\n(database driver)"]
-        PlannedQueue["PLANNED: Supervisor + Redis Queue\n[Phase 1 & 4]"]
+    subgraph AsyncLayer["3. Async Processing Layer"]
+        Queue["MySQL Queue (database driver)\ncPanel Cron -> php artisan queue:restart"]
     end
 
-    subgraph StorageLayer["5. Data & Storage Layer"]
-        CurrentStorage["CURRENT:\n- MySQL 8.0 (SESSION/CACHE/QUEUE all database)\n- Local Disk (FILESYSTEM_DISK=local)"]
-        PlannedStorage["PLANNED:\n- Redis 7 (SESSION/CACHE/QUEUE)\n[Phase 1]"]
+    subgraph StorageLayer["4. Data & Storage Layer"]
+        Storage["MySQL 8.0 (SESSION_DRIVER / CACHE_STORE / QUEUE_CONNECTION = database)\nLocal Disk (FILESYSTEM_DISK=local)"]
     end
 
-    subgraph SidecarLayer["6. Sidecar Analytics [PLANNED — Future]"]
-        FastAPI["Python FastAPI Sidecar\n(girth / py-irt Auto-calibration)"]
-    end
-
-    %% Current connections (solid)
-    CurrentFE -->|HTTPS| Router
+    FE -->|HTTPS| Router
     Router --> AuthMiddleware
-    AuthMiddleware --> CurrentServices
-    CurrentServices -->|Read / Write| CurrentStorage
-    CurrentQueue -->|Pop Jobs from MySQL| CurrentServices
-
-    %% Planned connections (dashed)
-    PlannedFE -.->|Inertia Protocol| Nginx
-    Nginx -.-> Router
-    AuthMiddleware -.-> PlannedDrivers
-    PlannedDrivers -.-> CurrentServices
-    PlannedQueue -.->|Pop Jobs| PlannedStorage
-    PlannedQueue -.->|Calibration Queue| FastAPI
+    AuthMiddleware --> Services
+    Services -->|Read / Write| Storage
+    Queue -->|Pop Jobs from MySQL| Services
+    Queue -->|Read / Write| Storage
 ```
 
 ### 2.2 Phong cách Kiến trúc (Architecture Pattern)
 
-- **Layered Monolith with Async Worker Pattern:** Laravel 12 đóng vai trò Monolith backend sạch (MVC + Mandatory Service Layer). Logic chấm điểm nặng và đắt đỏ được đẩy xuống hàng đợi Async Queue.
-- **Inertia Protocol (Monolithic SPA) `[PLANNED — Phase 1]`:** Sử dụng Inertia.js để nối thẳng Laravel Controllers/FormRequests với React UI mà không cần tách riêng RESTful API + SPA client. Giữ nguyên toàn bộ cơ chế bảo mật và Session Auth của Laravel.
-- **Driver / Strategy Pattern `[PLANNED — Phase 2]`:** Tầng Exam Driver được thiết kế theo Strategy Pattern để cắm dán linh hoạt 4 trục biến thiên của các kỳ thi (SAT, TSA, THPT QG).
+- **Layered Monolith with Async Worker Pattern:** Laravel 12 đóng vai trò Monolith backend sạch (MVC + Mandatory Service Layer). Logic chấm điểm nặng và đắt đỏ được đẩy xuống hàng đợi Async Queue (MySQL `database` driver), xử lý bởi worker chạy qua cPanel cron.
 
-### 2.3 Bảng So sánh Công nghệ (Tech Stack: Current vs Planning)
+### 2.3 Bảng Công nghệ Sử dụng (Tech Stack)
 
-| Tầng                   | Công nghệ Hiện tại (Current — verified)                        | Công nghệ Quy hoạch (Planning)                                 | Rationale / Lý do chuyển đổi                                           |
-| ---------------------- | -------------------------------------------------------------- | -------------------------------------------------------------- | ---------------------------------------------------------------------- |
-| **Backend Framework**  | Laravel 12 (PHP 8.2)                                           | Laravel 12 (PHP 8.2+)                                          | Giữ nguyên. Service Container làm Driver Registry tuyệt vời.           |
-| **Frontend UI**        | Blade + Vanilla JS + Alpine.js 3 + **Livewire 4.3**            | **Inertia.js + React + TypeScript**                            | Giải quyết phức tạp 5 dạng câu hỏi, kéo-thả `dnd-kit`, TanStack Table. |
-| **Data Table**         | Tabulator.js (CDN hack `!important`)                           | **TanStack Table (React)**                                     | Xóa bỏ hack CSS CDN, type-safe toàn bộ bảng dữ liệu.                   |
-| **Question Drag-Drop** | Chưa có                                                        | **`dnd-kit` (React)**                                          | Hỗ trợ kéo thả mượt mà trên cả Desktop & Tablet.                       |
-| **Session & Cache**    | MySQL (`SESSION_DRIVER=database`)                              | **Redis 7 Container**                                          | Loại bỏ nút thắt cổ chai ghi DB, tăng năng lực tải lên 10k concurrent. |
-| **Queue Connection**   | MySQL (`QUEUE_CONNECTION=database`)                            | **Redis 7 Container**                                          | Xử lý hàng đợi tức thì, không lock bảng `jobs` trong MySQL.            |
-| **Queue Worker**       | cPanel cron / `queue:restart` (supervisor commented out)       | **Supervisor Daemon Container**                                | Đảm bảo worker `queue:work` chạy 24/7 không bao giờ ngắt.              |
-| **Code Quality**       | Larastan v3 in `composer.json` (chưa có `phpstan.neon` config) | **PHPStan/Larastan Level 6+ & Vitest**                         | Chặn bug mis-grading im lặng trước khi promote code.                   |
-| **CI/CD**              | GitHub Actions chỉ chạy `composer audit` + `npm audit`         | **GitHub Actions (chạy `php artisan test` + PHPStan + build)** | Tự động hóa kiểm thử ~7.8k dòng unit/feature tests.                    |
-| **Hosting**            | iNET cPanel (không có quyền root)                              | **Docker Compose trên VPS Việt Nam**                           | Đảm bảo quyền root cài Supervisor/Redis                                |
+| Tầng | Công nghệ | Ghi chú |
+| --- | --- | --- |
+| **Backend Framework** | Laravel 12 (PHP 8.2) | |
+| **Frontend UI** | Blade + Vanilla JS + Alpine.js 3 + **Livewire 4.3** | |
+| **Data Table** | Tabulator.js | |
+| **Session & Cache** | MySQL (`SESSION_DRIVER=database`, `CACHE_STORE=database`) | cPanel shared hosting không hỗ trợ Redis, nên giữ nguyên MySQL `database` driver. |
+| **Queue Connection** | MySQL (`QUEUE_CONNECTION=database`) | |
+| **Queue Worker** | cPanel Cron gọi `php artisan queue:restart` (`deploy.sh`) | Không có Supervisor daemon do cPanel không có quyền root. |
+| **Code Quality** | Larastan v3 (`composer.json`) + `phpstan.neon` (Level 6, `app/`) | Chưa được wire vào CI pipeline. |
+| **CI/CD** | GitHub Actions: `composer audit` + `php artisan test` (SQLite in-memory) + `npm audit` | Xem chi tiết pipeline tại [4.3.B](#b-quy-trình-cicd-pipeline-github-actions). |
+| **Hosting** | iNET cPanel shared hosting (không có quyền root, không hỗ trợ Redis/Docker) | |
 
 ---
 
 ## 3. Thiết kế Chi tiết (Low-Level Design - LLD)
 
-### 3.1 Thiết kế Module & Luồng xử lý (Component & Sequence Design)
-
-#### **A. Class Diagram: Exam Driver Architecture `[PLANNED — Phase 2]`**
-
-> [!NOTE]
-> Toàn bộ sơ đồ Class Diagram dưới đây là **kiến trúc quy hoạch**. Hiện tại codebase chỉ có `SatScoringService` (hardcoded SAT). Không có `ExamDriverInterface`, `ExamDriverRegistry`, `TsaScoringService`, hay `ThptScoringService`.
-
-```mermaid
-classDiagram
-    class ExamDriverInterface {
-        <<interface>>
-        +getStructureConfig() ExamStructure
-        +getScoringService() ScoringServiceInterface
-        +getSupportedQuestionTypes() Array~QuestionType~
-        +getLanguage() String
-    }
-
-    class SatExamDriver {
-        +getStructureConfig() 2-Stage Adaptive
-        +getScoringService() SatScoringService
-        +getSupportedQuestionTypes() MULTIPLE_CHOICE, SPR
-        +getLanguage() "en"
-    }
-
-    class TsaExamDriver {
-        +getStructureConfig() 3-Part Timed 60/30/60m
-        +getScoringService() TsaScoringService
-        +getSupportedQuestionTypes() MCQ_SINGLE, MCQ_MULTI, TRUE_FALSE_MULTI, SHORT_ANSWER, DRAG_DROP
-        +getLanguage() "vi"
-    }
-
-    class ThptExamDriver {
-        +getStructureConfig() 1-Paper Subject
-        +getScoringService() ThptScoringService
-        +getSupportedQuestionTypes() MCQ_SINGLE, TRUE_FALSE_MULTI, SHORT_ANSWER
-        +getLanguage() "vi"
-    }
-
-    class ExamDriverRegistry {
-        -drivers: Map~String, ExamDriverInterface~
-        +register(slug, driver)
-        +make(slug) ExamDriverInterface
-    }
-
-    ExamDriverInterface <|.. SatExamDriver
-    ExamDriverInterface <|.. TsaExamDriver
-    ExamDriverInterface <|.. ThptExamDriver
-    ExamDriverRegistry o-- ExamDriverInterface
-```
-
-#### **B. Sequence Diagram: Luồng Nộp bài Async & Polling Trạng thái (Module Submit)**
+### 3.1 Sequence Diagram: Luồng Nộp bài Async & Polling Trạng thái (Module Submit)
 
 > Sơ đồ này phản ánh **luồng hiện tại** trong `SubmissionController.php`, đã được verified.
 
@@ -375,7 +273,7 @@ sequenceDiagram
     end
 
     par Client Polling
-        loop Every 1.5s (fixed interval — backoff PLANNED)
+        loop Every 1.5s (fixed interval)
             Student->>Controller: GET /engine/submit-status
             Controller->>Lock: Cache::get("scoring_result_{userTestId}")
             Controller-->>Student: { status: "scoring" }
@@ -645,7 +543,7 @@ erDiagram
 
 #### **A. Endpoint Standard & Protocol**
 
-Hệ thống hiện tại sử dụng **Blade Views over HTTPS** cho trang web và **RESTful JSON Endpoints** cho các thao tác AJAX Engine. Sau migration sẽ chuyển sang **Inertia Protocol** `[PLANNED — Phase 1]`.
+Hệ thống sử dụng **Blade Views over HTTPS** cho trang web và **RESTful JSON Endpoints** cho các thao tác AJAX Engine.
 
 #### **B. Chi tiết các Endpoints chính (Hot Path Engine)**
 
@@ -731,66 +629,39 @@ Hệ thống hiện tại sử dụng **Blade Views over HTTPS** cho trang web v
 
 ### 4.2 Hiệu năng & Khả năng mở rộng (Performance & Scalability)
 
-- **Chiến lược Cache `[PLANNED — Phase 1, chuyển sang Redis]`:**
-  - Hiện tại dùng MySQL `database` driver cho cache/session/queue.
+- **Chiến lược Cache (MySQL `database` driver):**
   - `Cache-aside` cho câu hỏi đề thi và thông tin cấu hình module.
   - TTL Cache 300s cho kết quả chấm điểm tạm thời (`scoring_result_{userTestId}`).
   - Cache Lock 90s ngăn chặn việc dồn nộp bài trùng lặp (`module_submit_lock_{userTestId}_{moduleId}`).
-- **Giảm tải Polling `[PLANNED — Phase 1]`:**
-  - Frontend sẽ áp dụng Polling Jitter (dao động ngẫu nhiên $\pm 200ms$) và Exponential Backoff (1.5s $\rightarrow$ 2s $\rightarrow$ 3s) khi gọi `/submit-status` để triệt tiêu hiện tượng dồn tải đồng bộ (Thundering Herd).
-  - Hiện tại: polling cố định mỗi 1.5s (chưa có backoff).
+- **Polling trạng thái chấm điểm:** Frontend gọi `/submit-status` mỗi 1.5s cố định (fixed interval, không có jitter/backoff).
 
 ### 4.3 Hạ tầng & Triển khai (Infrastructure & Deployment)
 
-#### **A. Sơ đồ Mạng Triển khai Docker `[PLANNED — Phase 4]`**
+#### **A. Mô hình Hosting hiện tại**
 
-> [!NOTE]
-> Hiện tại hệ thống chạy trên **iNET cPanel** (không có quyền root). Sơ đồ dưới đây là hạ tầng mục tiêu sau Phase 4.
+Hệ thống chạy trên **iNET cPanel shared hosting**, không có quyền root, không hỗ trợ Redis/Docker:
 
-```mermaid
-graph TD
-    subgraph Internet["Internet / Users"]
-        Browser["User Browser"]
-    end
-
-    subgraph HostServer["VPS Server (Vietnam DC - Decree 53 Compliant)"]
-        subgraph Ports["External Ports"]
-            Port80["Port 80 (HTTP)"]
-            Port443["Port 443 (HTTPS)"]
-        end
-
-        subgraph DockerNetwork["Docker Compose Internal Bridge Network"]
-            NginxCont["Nginx Container\n(Reverse Proxy & SSL)"]
-            AppCont["Laravel 12 PHP-FPM Container\n(App Logic)"]
-            WorkerCont["Supervisor Worker Container\n(queue:work Daemon)"]
-            RedisCont["Redis 7 Alpine Container\n(Cache/Session/Queue)"]
-            MySQLCont[("MySQL 8.0 Container\n(Persistent Storage Volume)")]
-        end
-    end
-
-    Browser -->|TLS / HTTPS| Port443
-    Port443 --> NginxCont
-    NginxCont -->|FastCGI pass app:9000| AppCont
-    AppCont -->|TCP 6379| RedisCont
-    AppCont -->|TCP 3306| MySQLCont
-    WorkerCont -->|TCP 6379| RedisCont
-    WorkerCont -->|TCP 3306| MySQLCont
-```
+- **Web/App:** PHP-FPM quản lý qua cPanel MultiPHP Manager.
+- **Database:** MySQL 8.0 qua cPanel (cũng đóng vai trò Session/Cache/Queue driver).
+- **File Storage:** Local Disk (`FILESYSTEM_DISK=local`).
+- **Queue Worker:** cPanel Cron Job gọi `php artisan queue:restart` (`deploy.sh`), không có Supervisor daemon 24/7.
+- **Deploy:** Script `deploy.sh` chạy thủ công/qua cron trên server, không dùng container.
 
 #### **B. Quy trình CI/CD Pipeline (GitHub Actions)**
 
-> [!WARNING]
-> **Hiện tại (2026-08-02):** CI chỉ chạy `composer audit` + `npm audit`. Sơ đồ dưới là pipeline **mục tiêu Phase 1**.
+> Phản ánh đúng `.github/workflows/ci.yml` hiện tại — chạy trên push/PR vào `main`.
 
 ```mermaid
 flowchart LR
-    Push["Git Push / PR"] --> Audit["Composer & NPM Audit\n(CURRENT ✅)"]
-    Audit --> Pint["PHPStan / Larastan L6+\n(PLANNED)"]
-    Pint --> TestDB["Setup Test DB\n(sat_app_testing)"]
-    TestDB --> PHPUnit["Run php artisan test\n(PLANNED)"]
-    PHPUnit --> BuildAsset["npm run build check\n(PLANNED)"]
-    BuildAsset --> Success["Ready to Deploy"]
+    Push["Git Push / PR to main"] --> Setup["Setup PHP 8.2\n(mbstring, dom, fileinfo, sqlite3)"]
+    Setup --> Install["composer install"]
+    Install --> Audit["composer audit --locked"]
+    Audit --> Test["php artisan test\n(DB_CONNECTION=sqlite, :memory:)"]
+    Test --> Node["Setup Node 20 + npm ci"]
+    Node --> NpmAudit["npm audit --audit-level=high"]
 ```
+
+- **Chưa được wire vào CI:** PHPStan/Larastan (config `phpstan.neon` Level 6 đã có nhưng chưa chạy trong workflow), `npm run build` check.
 
 ---
 
@@ -799,7 +670,7 @@ flowchart LR
 ### 5.1 Logging & Monitoring (Giám sát & Ghi log)
 
 - **Tập trung Log:** Laravel Stack Channel (daily + stderr). File `storage/logs/laravel.log` tự động xoay vòng (rotation 14 ngày, cấu hình `LOG_DAILY_DAYS`).
-- **Health Check Endpoint:** Endpoint `GET /up` kiểm tra trạng thái kết nối MySQL & Redis (khi Redis được bật).
+- **Health Check Endpoint:** `GET /up` (Laravel mặc định, đăng ký qua `bootstrap/app.php` `health: '/up'`) — chỉ xác nhận ứng dụng đã boot thành công, không kiểm tra chi tiết kết nối MySQL.
 - **Queue Monitoring:** Theo dõi số lượng hỏng job qua lệnh `php artisan queue:failed` và lưu log tại bảng `failed_jobs`. `ScoreModuleJob` có `failed()` handler tự động ghi error vào cache + force-release lock.
 
 ### 5.2 Sao lưu & Phục hồi Thảm họa (Backup & Disaster Recovery)
@@ -808,46 +679,5 @@ flowchart LR
   - Daily Full Database Dump (`mysqldump`) lúc 02:00 AM UTC+7, nén mã hóa và lưu trữ tại storage an toàn độc lập.
   - Hourly Transaction Log Backup cho phép khôi phục về từng thời điểm (Point-in-Time Recovery).
 - **Chỉ số Mục tiêu Phục hồi:**
-  - **RTO (Recovery Time Objective):** $< 2$ giờ (Thời gian tối đa để dựng lại hệ thống từ Docker Compose + Database Dump).
+  - **RTO (Recovery Time Objective):** $< 2$ giờ (Thời gian tối đa để dựng lại hệ thống từ Database Dump trên cPanel).
   - **RPO (Recovery Point Objective):** $< 1$ giờ (Mức độ mất mát dữ liệu tối đa chấp nhận được).
-
----
-
-## 6. Lộ trình Triển khai 4 Pha (Implementation Roadmap)
-
-```mermaid
-timeline
-    title Lộ trình Nâng cấp Hạ tầng & Frontend Multi-Exam
-    Phase 1 : Dockerize Local Dev : Config Redis Env : Setup Inertia React TS : Wire CI tests & PHPStan L6 : Add polling backoff/jitter
-    Phase 2 : Core Exam Driver Backend : Build 5 React Question Components : TSA Scoring Engine Driver
-    Phase 3 : Rebuild Test Engine React : Rebuild Builder with TanStack Table : Port LMS Skeuomorphic Components
-    Phase 4 : Docker Compose Deploy VPS VN : Config Production Redis : Run 24/7 Supervisor Worker
-```
-
-### **Phase 1: Foundation & Tooling (Dev Env)**
-
-- Thiết lập `docker-compose.yml` local (FPM, Nginx, Redis, MySQL, Worker).
-- Cài đặt `@inertiajs/react`, `react`, `typescript`, Vite React plugin.
-- Cấu hình `phpstan.neon` với Larastan level 6 (package đã có trong `composer.json`).
-- Cấu hình GitHub Actions CI chạy `php artisan test` (test DB: `sat_app_testing`).
-- Thêm polling jitter + exponential backoff vào `/submit-status` (~20 dòng JS).
-
-### **Phase 2: Core Exam Driver & TSA Question Components**
-
-- Xây dựng Exam Driver Interface (`ExamDriverInterface`, `ExamDriverRegistry`, `SatExamDriver`, `TsaExamDriver`).
-- Thêm `exam_code` column vào `tests` table (migration).
-- Mở rộng `question_type` enum: `multiple_choice` → thêm `mcq_multi`, `true_false_multi`, `short_answer`, `drag_drop`.
-- Xây dựng 5 React Question Components (`McqSingle`, `McqMulti`, `TrueFalseMulti`, `ShortAnswer`, `DragAndDrop` với `dnd-kit`).
-- Xây dựng `TsaScoringService` (additive /100).
-
-### **Phase 3: Inertia React Migration**
-
-- Rebuild giao diện Test Engine (Bluebook fidelity) sang Inertia React.
-- Rebuild Test Builder sang Inertia React + TanStack Table.
-- Porting các giao diện LMS sang React components giữ nguyên skeuomorphic design system tokens.
-
-### **Phase 4: Production Docker Deploy**
-
-- Triển khai Docker Compose trên VPS Việt Nam.
-- Khởi chạy Supervisor worker container xử lý `queue:work` 24/7.
-- Switch cấu hình prod sang Redis backing store (`SESSION_DRIVER`, `CACHE_STORE`, `QUEUE_CONNECTION`).

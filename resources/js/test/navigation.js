@@ -250,9 +250,21 @@ export function collectAnswers() {
     if (qType === 'multiple_choice') {
       const selected = questionEl.querySelector('input[type="radio"]:checked');
       answers[qId] = selected ? selected.value : null;
-    } else if (qType === 'student_produced_response') {
-      const input = questionEl.querySelector('.spr-input');
+    } else if (qType === 'student_produced_response' || qType === 'spr') {
+      const input = questionEl.querySelector('.spr-input, input.answer-input, input[type="text"]');
       answers[qId] = input && input.value.trim() !== '' ? input.value.trim() : null;
+    } else {
+      // Generic fallback for custom/new question types to prevent silent answer loss
+      const radio = questionEl.querySelector('input[type="radio"]:checked');
+      const textInput = questionEl.querySelector('.spr-input, input.answer-input, input[type="text"], textarea');
+      if (radio) {
+        answers[qId] = radio.value;
+      } else if (textInput && textInput.value.trim() !== '') {
+        answers[qId] = textInput.value.trim();
+      } else {
+        answers[qId] = null;
+      }
+      console.warn(`[Engine] Unknown or unhandled question type '${qType}' for question ${qId}, applied generic fallback collection.`);
     }
   });
 
@@ -423,30 +435,40 @@ export async function submitModule(options = {}) {
     if (data.status === 'scoring') {
         data = await new Promise((resolve) => {
             let pollAttempts = 0;
-            const maxPollAttempts = 40;
-            const poll = setInterval(async () => {
+            const maxPollAttempts = 30;
+            let currentDelay = 1500;
+            const maxDelay = 4000;
+
+            const poll = async () => {
                 try {
                     pollAttempts++;
                     const statusRes = await fetch(`/engine/submit-status/${window.userTestUlid || window.userTestId}`);
                     const statusData = await statusRes.json();
                     if (statusData.status !== 'scoring') {
-                        clearInterval(poll);
                         resolve(statusData);
+                        return;
                     } else if (pollAttempts >= maxPollAttempts) {
-                        clearInterval(poll);
                         resolve({
                           error: "Scoring timeout",
                           message: "Scoring is taking longer than expected. Please try again in a minute."
                         });
+                        return;
                     }
                 } catch (e) {
-                    clearInterval(poll);
                     resolve({
                       error: "Polling error",
                       message: "Unable to check scoring status. Please try again."
                     });
+                    return;
                 }
-            }, 1500);
+
+                // Exponential backoff with random jitter (200-500ms) to avoid thundering herd
+                const jitter = Math.floor(Math.random() * 300) + 200;
+                currentDelay = Math.min(maxDelay, Math.floor(currentDelay * 1.3)) + jitter;
+                setTimeout(poll, currentDelay);
+            };
+
+            setTimeout(poll, currentDelay);
         });
     }
 

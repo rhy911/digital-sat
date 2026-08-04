@@ -22,31 +22,35 @@ trait HandlesAnswers
             return $correctChoice && trim($correctChoice->label) === trim($userAnswer);
         }
 
-        $submitted = trim((string) $userAnswer);
-        $submittedNumber = $this->parseNumericAnswer($submitted);
+        if ($question->question_type === 'student_produced_response' || $question->question_type === 'spr') {
+            $submitted = trim((string) $userAnswer);
+            $submittedNumber = $this->parseNumericAnswer($submitted);
 
-        foreach ($question->sprCorrectAnswers as $accepted) {
-            $acceptedText = trim((string) $accepted->answer);
-            $acceptedNumber = $this->parseNumericAnswer($acceptedText);
+            foreach ($question->sprCorrectAnswers as $accepted) {
+                $acceptedText = trim((string) $accepted->answer);
+                $acceptedNumber = $this->parseNumericAnswer($acceptedText);
 
-            if ($submittedNumber !== null && $acceptedNumber !== null) {
-                $tolerance = $accepted->tolerance !== null
-                    ? max(0.0, (float) $accepted->tolerance)
-                    : 0.0001;
+                if ($submittedNumber !== null && $acceptedNumber !== null) {
+                    $tolerance = $accepted->tolerance !== null
+                        ? max(0.0, (float) $accepted->tolerance)
+                        : 0.0001;
 
-                if (abs($submittedNumber - $acceptedNumber) <= $tolerance) {
-                    return true;
+                    if (abs($submittedNumber - $acceptedNumber) <= $tolerance) {
+                        return true;
+                    }
+
+                    continue;
                 }
 
-                continue;
+                if ($acceptedText === $submitted) {
+                    return true;
+                }
             }
 
-            if ($acceptedText === $submitted) {
-                return true;
-            }
+            return false;
         }
 
-        return false;
+        throw new \InvalidArgumentException("Unsupported question type '{$question->question_type}' for question ID {$question->id}");
     }
 
     private function parseNumericAnswer(string $value): ?float
