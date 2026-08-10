@@ -192,12 +192,6 @@
     padding: 1.5rem 0 4rem;
 }
 
-.ds-teacher-workspace {
-    width: min(100% - 2rem, 1180px);
-    margin: 0 auto;
-    padding: 1.5rem 0 4rem;
-}
-
 .ds-workspace-head {
     min-height: 6rem;
     display: flex;
@@ -542,564 +536,863 @@
     gap: 0.6rem;
 }
 
-
 /* ==========================================================================
-   Tactile Study Desk: Custom Premium Booklet & Postcard Styles
+   Home dashboard (/home) — Layer 2 product surface.
+
+   The desk / corkboard / manila skin that used to live here was removed on
+   purpose: docs/styling-system.md §1 scopes that visual language to the
+   classroom workspace and forbids exporting it into the regular dashboard.
+   Everything below is built on the global --ds-* tokens so the teacher and
+   student faces of /home share one grammar. Panels themselves come from
+   <x-ui.card>; these rules only style what lives inside them.
    ========================================================================== */
 
-/* Full-Screen Workspace Overrides */
-.ds-desk-workspace-view {
-    grid-template-columns: 1fr !important;
-    padding: 0 !important;
-    gap: 0 !important;
-    background: var(--wood-back) !important;
-    overflow-y: auto;
-}
-
-.ds-desk-board {
-    background-color: var(--cork-tan);
-    background-image:
-        radial-gradient(rgba(0, 0, 0, 0.15) 15%, transparent 16%),
-        radial-gradient(rgba(0, 0, 0, 0.15) 15%, transparent 16%);
-    background-size: 8px 8px;
-    background-position: 0 0, 4px 4px;
-    border: 14px solid var(--wood-border);
-    border-radius: 8px;
-    box-shadow: inset 0 6px 15px rgba(0, 0, 0, 0.7);
-    margin: 20px;
-    padding: 30px;
-    min-height: calc(100vh - 40px);
+.home {
+    width: min(100%, 1200px);
+    margin-inline: auto;
+    padding-block: 0.75rem 2rem;
     display: flex;
     flex-direction: column;
     gap: 1.75rem;
 }
 
-/* Thumbtacks */
-.ds-thumbtack {
-    position: absolute;
-    width: 14px;
-    height: 14px;
-    border-radius: 50%;
-    box-shadow: 0 3px 5px rgba(0, 0, 0, 0.35);
-    z-index: 10;
+/* Tabular figures for anything a reader scans or compares. */
+.home-num {
+    font-family: var(--font-mono);
+    font-variant-numeric: tabular-nums;
 }
 
-.ds-thumbtack.green {
-    background: radial-gradient(circle at 35% 30%, #10b981, #065f46);
-}
-.ds-thumbtack.red {
-    background: radial-gradient(circle at 35% 30%, #ef4444, #7f1d1d);
-}
-.ds-thumbtack.blue {
-    background: radial-gradient(circle at 35% 30%, #3b82f6, #1d4ed8);
-}
+/* --- Page header ---------------------------------------------------------- */
 
-.ds-thumbtack.left {
-    top: -7px;
-    left: 24px;
-}
-.ds-thumbtack.right {
-    top: -7px;
-    right: 24px;
-}
-.ds-thumbtack.center {
-    top: -7px;
-    left: 50%;
-    transform: translateX(-50%);
-}
-
-/* Pinned Header Manila Sheet */
-.ds-desk-header-sheet {
-    position: relative;
-    background: var(--manila);
-    border: 1px solid var(--binder-border);
-    border-radius: 8px;
-    padding: 1.5rem 2rem;
-    box-shadow: 2px 5px 15px rgba(0,0,0,0.15);
-    margin-bottom: 0.25rem;
-}
-
-/* Desk Grid layout */
-.ds-desk-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(min(100%, 460px), 1fr));
-    gap: 2.25rem;
-    align-items: start;
-}
-
-/* Spiral Notebook */
-.ds-spiral-notebook {
-    position: relative;
-    background: #fafaf9;
-    border: 1px solid #d6d3d1;
-    border-radius: 8px;
-    padding: 2rem 2.25rem 2rem 3rem;
-    box-shadow: 3px 6px 18px rgba(0,0,0,0.06);
-    background-image: linear-gradient(rgba(226, 232, 240, 0.4) 1px, transparent 1px);
-    background-size: 100% 2rem;
-    line-height: 2rem;
-}
-
-.ds-spiral-spine {
-    position: absolute;
-    left: 8px;
-    top: 1.5rem;
-    bottom: 1.5rem;
+.home-head {
     display: flex;
-    flex-direction: column;
+    flex-wrap: wrap;
+    align-items: flex-end;
     justify-content: space-between;
-    width: 16px;
-    z-index: 15;
+    gap: 1rem 1.5rem;
+    padding-bottom: 1.5rem;
+    border-bottom: 1px solid var(--ds-border-subtle);
 }
 
-.ds-spiral-ring {
-    width: 22px;
-    height: 8px;
-    background: linear-gradient(180deg, #d1d5db 0%, #9ca3af 50%, #4b5563 100%);
-    border-radius: 4px;
-    box-shadow: 1px 2px 2px rgba(0,0,0,0.15);
-    margin-left: -8px;
+.home-head__lead {
+    min-width: 0;
 }
 
-/* 3D Booklet Container & perspective */
-.ds-booklet-container {
-    perspective: 1200px;
-    width: 100%;
-}
-
-.ds-booklet {
-    position: relative;
-    background: #fdfdfb;
-    border: 1px solid #dcdad0;
-    border-radius: 12px;
-    padding: 2.25rem 2rem;
-    box-shadow: -5px 5px 15px rgba(0,0,0,0.06), 0 2px 4px rgba(0,0,0,0.03);
-    transition: transform 0.5s cubic-bezier(0.25, 0.8, 0.25, 1), box-shadow 0.5s ease;
-    transform-style: preserve-3d;
-    overflow: hidden;
-}
-
-/* Left spine texture simulating physical binding */
-.ds-booklet::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    bottom: 0;
-    width: 22px;
-    background: linear-gradient(90deg, #d4af37 0%, #aa8c2c 30%, #ffd700 70%, #8b7500 100%);
-    border-top-left-radius: 11px;
-    border-bottom-left-radius: 11px;
-    box-shadow: inset -2px 0 5px rgba(0,0,0,0.15), 1px 0 2px rgba(255,255,255,0.2);
-    z-index: 10;
-}
-
-/* Page edge lines simulating stacked book paper pages */
-.ds-booklet::after {
-    content: '';
-    position: absolute;
-    top: 0;
-    right: 0;
-    bottom: 0;
-    width: 6px;
-    background: repeating-linear-gradient(180deg, #fff 0px, #fff 2px, #e2e8f0 3px, #e2e8f0 4px);
-    border-top-right-radius: 11px;
-    border-bottom-right-radius: 11px;
-    box-shadow: inset 1px 0 2px rgba(0,0,0,0.1);
-    z-index: 5;
-}
-
-.ds-booklet:hover {
-    transform: rotateY(-8deg) rotateX(4deg) translateZ(12px);
-    box-shadow: -20px 20px 35px rgba(26,20,5,0.12), -5px 5px 15px rgba(0,0,0,0.06);
-}
-
-.ds-booklet-inner {
-    padding-left: 1.5rem;
-    z-index: 2;
-    position: relative;
-}
-
-.ds-booklet-title {
-    font-family: var(--font-body);
-    font-size: 1.85rem;
-    font-weight: 850;
-    color: #0f172a;
-    letter-spacing: -0.01em;
+.home-head__meta {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 0.5rem;
     margin-bottom: 0.5rem;
 }
 
-.ds-pulse-dot {
-    width: 8px;
-    height: 8px;
-    background-color: #ef4444;
-    border-radius: 50%;
-    display: inline-block;
-    animation: ds-pulse 1.8s infinite ease-in-out;
+.home-date {
+    font-size: 0.8125rem;
+    font-weight: 600;
+    color: var(--ds-text-secondary);
 }
 
-@keyframes ds-pulse {
-    0% {
-        transform: scale(0.85);
-        box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7);
-    }
-    70% {
-        transform: scale(1);
-        box-shadow: 0 0 0 8px rgba(239, 68, 68, 0);
-    }
+.home-title {
+    margin: 0;
+    font-size: 1.5rem;
+    line-height: 1.2;
+    font-weight: 700;
+    letter-spacing: -0.011em;
+    color: var(--ds-text-primary);
+    text-wrap: balance;
+}
+
+.home-subtitle {
+    margin: 0.375rem 0 0;
+    max-width: 62ch;
+    font-size: 0.875rem;
+    line-height: 1.5;
+    color: var(--ds-text-secondary);
+    text-wrap: pretty;
+}
+
+.home-head__actions {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 0.625rem;
+}
+
+/* --- Teacher / student view switcher -------------------------------------- */
+
+.home-switch {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.125rem;
+    padding: 0.1875rem;
+    border: 1px solid var(--ds-border-default);
+    border-radius: 0.625rem;
+    background: var(--ds-surface-muted);
+}
+
+.home-switch__btn {
+    min-height: 2.25rem;
+    padding: 0 0.75rem;
+    border: 0;
+    border-radius: 0.5rem;
+    background: transparent;
+    font-family: inherit;
+    font-size: 0.8125rem;
+    font-weight: 600;
+    color: var(--ds-text-secondary);
+    white-space: nowrap;
+    cursor: pointer;
+    transition:
+        color var(--motion-fast),
+        background-color var(--motion-fast),
+        box-shadow var(--motion-fast);
+}
+
+.home-switch__btn:hover {
+    color: var(--ds-text-primary);
+}
+
+.home-switch__btn.is-active {
+    background: var(--ds-surface);
+    color: var(--ds-text-primary);
+    box-shadow: 0 1px 2px oklch(20% 0.045 255 / 0.12);
+}
+
+.home-switch__btn:focus-visible {
+    outline: none;
+    box-shadow:
+        0 0 0 2px var(--ds-surface),
+        0 0 0 4px var(--ds-focus);
+}
+
+/* --- Stat strip (one panel, hairline-divided cells) ----------------------- */
+
+.home-stats__grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 180px), 1fr));
+    gap: 1px;
+    background: var(--ds-border-subtle);
+}
+
+.home-stat {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.25rem;
+    padding: 1.25rem 1.5rem;
+    border: 0;
+    background: var(--ds-surface);
+    font-family: inherit;
+    text-align: left;
+}
+
+.home-stat__label {
+    font-size: 0.75rem;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+    text-transform: uppercase;
+    color: var(--ds-text-secondary);
+}
+
+.home-stat__value {
+    font-size: 1.75rem;
+    line-height: 1.1;
+    font-weight: 700;
+    color: var(--ds-text-primary);
+}
+
+.home-stat__value--warning {
+    color: var(--ds-warning-strong);
+}
+
+.home-stat__note {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: var(--ds-text-secondary);
+}
+
+.home-stat--action {
+    cursor: pointer;
+    color: inherit;
+    text-decoration: none;
+    transition: background-color var(--motion-fast);
+}
+
+.home-stat--action .home-stat__note {
+    color: var(--ds-warning-strong);
+}
+
+.home-stat--action:hover {
+    background: var(--ds-brand-soft);
+}
+
+.home-stat--action:focus-visible {
+    outline: none;
+    box-shadow: inset 0 0 0 2px var(--ds-focus);
+}
+
+/* --- Panel chrome (inside <x-ui.card>) ------------------------------------ */
+
+.home-panel__title {
+    margin: 0;
+    font-size: 0.9375rem;
+    font-weight: 700;
+    color: var(--ds-text-primary);
+}
+
+.home-panel__headline {
+    min-width: 0;
+}
+
+.home-panel__sub {
+    margin: 0.125rem 0 0;
+    font-size: 0.8125rem;
+    font-weight: 500;
+    color: var(--ds-text-secondary);
+}
+
+.home-panel__links {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.home-panel__foot {
+    width: 100%;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.5rem 1rem;
+    font-size: 0.8125rem;
+    color: var(--ds-text-secondary);
+}
+
+.home-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+    min-height: 2rem;
+    padding: 0 0.125rem;
+    border: 0;
+    background: transparent;
+    font-family: inherit;
+    font-size: 0.8125rem;
+    font-weight: 650;
+    color: var(--ds-brand);
+    text-decoration: none;
+    white-space: nowrap;
+    cursor: pointer;
+    transition: color var(--motion-fast);
+}
+
+.home-link:hover {
+    color: var(--ds-brand-hover);
+    text-decoration: underline;
+    text-underline-offset: 3px;
+}
+
+.home-link:focus-visible {
+    outline: none;
+    border-radius: 0.375rem;
+    box-shadow:
+        0 0 0 2px var(--ds-surface),
+        0 0 0 4px var(--ds-focus);
+}
+
+.home-link svg {
+    transition: transform var(--motion-fast);
+}
+
+.home-link:hover svg {
+    transform: translateX(2px);
+}
+
+/* --- Rows ----------------------------------------------------------------- */
+
+.home-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.625rem;
+}
+
+.home-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+    min-height: 3.5rem;
+    padding: 0.875rem 1rem;
+    border: 1px solid var(--ds-border-subtle);
+    border-radius: 0.625rem;
+    background: var(--ds-surface-muted);
+    color: inherit;
+    text-decoration: none;
+    transition:
+        border-color var(--motion-fast),
+        background-color var(--motion-fast);
+}
+
+a.home-row:hover {
+    border-color: var(--ds-brand-line);
+    background: var(--ds-surface);
+}
+
+/* Rows that carry their own button instead of being one big link: the button
+   is the affordance, so the row itself stays flat and non-interactive. */
+.home-row--static {
+    border-color: var(--ds-border-default);
+    background: var(--ds-surface);
+}
+
+a.home-row:focus-visible {
+    outline: none;
+    box-shadow:
+        0 0 0 2px var(--ds-surface),
+        0 0 0 4px var(--ds-focus);
+}
+
+.home-row__main {
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.1875rem;
+}
+
+.home-row__title {
+    overflow: hidden;
+    font-size: 0.875rem;
+    font-weight: 650;
+    color: var(--ds-text-primary);
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.home-row__meta {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.3125rem;
+    font-size: 0.8125rem;
+    color: var(--ds-text-secondary);
+}
+
+.home-row__flag {
+    font-weight: 650;
+    color: var(--ds-warning-strong);
+}
+
+.home-row__aside {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    flex-shrink: 0;
+}
+
+.home-row__chevron {
+    flex-shrink: 0;
+    color: var(--ds-text-tertiary);
+    transition:
+        transform var(--motion-fast),
+        color var(--motion-fast);
+}
+
+a.home-row:hover .home-row__chevron {
+    color: var(--ds-brand);
+    transform: translateX(2px);
+}
+
+.home-code {
+    padding: 0.125rem 0.375rem;
+    border: 1px solid var(--ds-border-default);
+    border-radius: 0.375rem;
+    background: var(--ds-surface);
+    font-size: 0.75rem;
+    font-weight: 650;
+    letter-spacing: 0.04em;
+    color: var(--ds-text-secondary);
+}
+
+/* --- Chips, notes, ledger -------------------------------------------------- */
+
+.home-chips {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.375rem;
+}
+
+.home-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3125rem;
+    padding: 0.3125rem 0.5625rem;
+    border: 1px solid var(--ds-border-subtle);
+    border-radius: 0.375rem;
+    background: var(--ds-surface-muted);
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: var(--ds-text-secondary);
+}
+
+.home-chip svg {
+    color: var(--ds-text-tertiary);
+}
+
+.home-note {
+    margin: 1rem 0 0;
+    font-size: 0.8125rem;
+    color: var(--ds-text-secondary);
+}
+
+.home-ledger {
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.home-ledger__row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    padding: 0.75rem 1rem;
+    border-radius: 0.5rem;
+    background: var(--ds-surface-muted);
+}
+
+.home-ledger dt {
+    font-size: 0.8125rem;
+    color: var(--ds-text-secondary);
+}
+
+.home-ledger dd {
+    margin: 0;
+    font-size: 0.875rem;
+    font-weight: 700;
+    color: var(--ds-text-primary);
+}
+
+/* --- Latest score --------------------------------------------------------- */
+
+.home-score {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 0.5rem;
+}
+
+.home-score__value {
+    font-size: 2.5rem;
+    line-height: 1;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    color: var(--ds-brand);
+}
+
+.home-score__max {
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: var(--ds-text-secondary);
+}
+
+.home-score__badge {
+    margin-left: auto;
+    align-self: center;
+}
+
+.home-split {
+    margin: 1rem 0 0;
+    padding-top: 0.875rem;
+    border-top: 1px solid var(--ds-border-subtle);
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.5rem;
+}
+
+.home-split__cell {
+    padding: 0.75rem 0.875rem;
+    border-radius: 0.5rem;
+    background: var(--ds-surface-muted);
+}
+
+.home-split dt {
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: var(--ds-text-secondary);
+}
+
+.home-split dd {
+    margin: 0.125rem 0 0;
+    font-size: 1rem;
+    font-weight: 700;
+    color: var(--ds-text-primary);
+}
+
+.home-split dd span {
+    font-size: 0.75rem;
+    font-weight: 500;
+    color: var(--ds-text-secondary);
+}
+
+/* --- Open-attempt resume strip -------------------------------------------- */
+
+.home-resume {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.75rem 1rem;
+    padding: 1rem 1.25rem;
+    border: 1px solid var(--ds-border-default);
+    border-radius: 0.75rem;
+    background: var(--ds-surface);
+}
+
+.home-resume__dot {
+    width: 0.5rem;
+    height: 0.5rem;
+    flex-shrink: 0;
+    border-radius: 999px;
+    background: var(--ds-warning);
+    animation: home-pulse 2s ease-in-out infinite;
+}
+
+.home-resume__body {
+    flex: 1;
+    min-width: 0;
+}
+
+.home-resume__label {
+    margin: 0;
+    font-size: 0.75rem;
+    font-weight: 650;
+    letter-spacing: 0.02em;
+    text-transform: uppercase;
+    color: var(--ds-warning-strong);
+}
+
+.home-resume__title {
+    margin: 0.125rem 0 0;
+    font-size: 0.9375rem;
+    font-weight: 650;
+    color: var(--ds-text-primary);
+}
+
+@keyframes home-pulse {
+    0%,
     100% {
-        transform: scale(0.85);
-        box-shadow: 0 0 0 0 rgba(239, 68, 68, 0);
+        opacity: 1;
+    }
+    50% {
+        opacity: 0.35;
     }
 }
 
-/* Pinned Postcard Card adjustments */
-.ds-postcard {
-    position: relative;
-    background: #fff !important;
-    border: 1px solid var(--binder-border) !important;
-    border-radius: 12px !important;
-    box-shadow: 0 4px 10px rgba(0,0,0,0.02) !important;
-    transition: transform 0.3s ease, box-shadow 0.3s ease !important;
+/* --- Recommended test ------------------------------------------------------ */
+
+.home-featured {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1.5rem;
 }
 
-.ds-postcard:hover {
-    transform: rotate(0deg) translateY(-2px) !important;
-    box-shadow: 0 10px 20px rgba(0,0,0,0.06) !important;
+.home-featured__body {
+    flex: 1 1 24rem;
+    min-width: 0;
 }
 
-/* Custom Teacher Postmark Stamp styling */
-.ds-postmark {
-    width: 58px;
-    height: 58px;
-    border: 2px dashed rgba(220, 38, 38, 0.65);
-    border-radius: 4px;
-    padding: 2px;
+.home-featured__title {
+    margin: 0.5rem 0 0.25rem;
+    font-size: 1.125rem;
+    font-weight: 700;
+    color: var(--ds-text-primary);
+    text-wrap: balance;
+}
+
+.home-featured__desc {
+    margin: 0 0 0.75rem;
+    max-width: 60ch;
+    font-size: 0.875rem;
+    line-height: 1.5;
+    color: var(--ds-text-secondary);
+    text-wrap: pretty;
+}
+
+.home-featured__action {
+    flex-shrink: 0;
+}
+
+/* --- Callouts (full border + tint; no decorative side stripes, §6.4) ------- */
+
+.home-stack {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+}
+
+.home-callout {
+    display: flex;
+    gap: 0.875rem;
+    padding: 1.5rem;
+    border: 1px solid;
+    border-radius: 0.75rem;
+}
+
+.home-callout__icon {
+    flex-shrink: 0;
+    margin-top: 0.125rem;
+}
+
+.home-callout__title {
+    margin: 0 0 0.375rem;
+    font-size: 0.875rem;
+    font-weight: 700;
+}
+
+.home-callout__body {
+    margin: 0;
+    font-size: 0.8125rem;
+    line-height: 1.6;
+}
+
+/* Text on a tinted surface takes a darker shade of that same hue, never gray. */
+.home-callout--tip {
+    border-color: oklch(88% 0.06 85);
+    background: oklch(97.5% 0.028 85);
+}
+
+.home-callout--tip .home-callout__icon {
+    color: oklch(48% 0.1 70);
+}
+
+.home-callout--tip .home-callout__title {
+    color: oklch(30% 0.06 70);
+}
+
+.home-callout--tip .home-callout__body {
+    color: oklch(36% 0.05 70);
+}
+
+.home-callout--info {
+    border-color: var(--ds-brand-line);
+    background: var(--ds-brand-soft);
+}
+
+.home-callout--info .home-callout__icon {
+    color: var(--ds-brand);
+}
+
+.home-callout--info .home-callout__title {
+    color: oklch(28% 0.09 258);
+}
+
+.home-callout--info .home-callout__body {
+    color: oklch(34% 0.07 258);
+}
+
+/* --- Blog / forum lists ---------------------------------------------------- */
+
+.home-feature-link {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+    padding: 0.875rem;
+    border: 1px solid var(--ds-border-subtle);
+    border-radius: 0.625rem;
+    background: var(--ds-surface-muted);
+    text-decoration: none;
+    transition:
+        border-color var(--motion-fast),
+        background-color var(--motion-fast);
+}
+
+.home-feature-link:hover {
+    border-color: var(--ds-brand-line);
+    background: var(--ds-surface);
+}
+
+.home-feature-link:focus-visible {
+    outline: none;
+    box-shadow:
+        0 0 0 2px var(--ds-surface),
+        0 0 0 4px var(--ds-focus);
+}
+
+.home-feature-link__title {
+    font-size: 0.875rem;
+    font-weight: 650;
+    line-height: 1.35;
+    color: var(--ds-text-primary);
+}
+
+.home-feature-link__excerpt {
+    font-size: 0.8125rem;
+    line-height: 1.45;
+    color: var(--ds-text-secondary);
+}
+
+.home-feature-link__byline {
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: var(--ds-text-secondary);
+}
+
+.home-minilist {
+    list-style: none;
+    margin: 0.75rem 0 0;
+    padding: 0;
+}
+
+.home-minilist--flush {
+    margin-top: 0;
+}
+
+.home-minilist li + li {
+    border-top: 1px solid var(--ds-border-subtle);
+}
+
+.home-minilist__link {
+    display: flex;
+    flex-direction: column;
+    gap: 0.125rem;
+    min-height: 2.75rem;
+    padding: 0.625rem 0.25rem;
+    text-decoration: none;
+}
+
+.home-minilist__link:focus-visible {
+    outline: none;
+    border-radius: 0.375rem;
+    box-shadow:
+        0 0 0 2px var(--ds-surface),
+        0 0 0 4px var(--ds-focus);
+}
+
+.home-minilist__title {
+    font-size: 0.8125rem;
+    font-weight: 650;
+    line-height: 1.4;
+    color: var(--ds-text-primary);
+    transition: color var(--motion-fast);
+}
+
+.home-minilist__link:hover .home-minilist__title {
+    color: var(--ds-brand);
+}
+
+.home-minilist__meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.3125rem;
+    font-size: 0.75rem;
+    color: var(--ds-text-secondary);
+}
+
+/* --- Empty states ---------------------------------------------------------- */
+
+.home-empty {
+    height: 100%;
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    color: rgba(220, 38, 38, 0.7);
-    font-size: 0.525rem;
-    font-weight: 900;
-    text-transform: uppercase;
-    letter-spacing: 0.04em;
-    transform: rotate(-10deg);
-    line-height: 1.25;
-    background: rgba(254, 242, 242, 0.4);
-    box-shadow: 0 0 0 2px rgba(254, 242, 242, 0.5);
-    flex-shrink: 0;
+    gap: 0.375rem;
+    padding: 2rem 1.5rem;
+    border: 1px dashed var(--ds-border-strong);
+    border-radius: 0.75rem;
+    background: var(--ds-surface-muted);
+    text-align: center;
 }
 
-/* ==========================================================================
-   Home "Discover" desk — refined layer
-   Calmer chrome + a small paper-tuned palette so markup stops carrying
-   hundreds of inline styles. Scoped to .ds-desk-board so classroom-workspace
-   (which shares .cork-note / .ds-booklet base rules) is untouched.
-   ========================================================================== */
-.ds-desk-board {
-    --paper: #fdfdfb;
-    --paper-line: var(--binder-border);
-    --ink-1: #1e293b;
-    --ink-2: #475569;
-    --ink-3: #64748b;
-    --ink-accent: #3730a3;
-    --gold: #aa8c2c;
+.home-empty__icon {
+    color: var(--ds-text-secondary);
 }
 
-/* Grid columns (were inline flex-column gap:2rem) */
-.ds-desk-col {
-    display: flex;
-    flex-direction: column;
-    gap: 2rem;
-}
-
-/* Pinned header sheet */
-.ds-desk-header__row {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    flex-wrap: wrap;
-    gap: 1.5rem;
-}
-
-.ds-desk-title {
-    font-family: var(--font-hand);
-    color: var(--ink-1);
-    margin: 0.2rem 0 0;
-    font-size: 1.75rem;
-    line-height: 1.15;
+.home-empty__title {
+    margin: 0.25rem 0 0;
+    font-size: 0.875rem;
     font-weight: 700;
+    color: var(--ds-text-primary);
 }
 
-.ds-desk-subtitle {
-    margin: 0.35rem 0 0;
-    font-size: 0.9rem;
-    color: var(--ink-2);
-    max-width: 46ch;
-    line-height: 1.5;
-}
-
-.ds-desk-header__actions {
-    display: flex;
-    gap: 0.625rem;
-    align-items: center;
-    flex-wrap: wrap;
-}
-
-.ds-desk-header__actions .btn-outline {
-    background: var(--panel);
-}
-
-/* Shared hand-lettered card titles */
-.ds-hand-title {
-    font-family: var(--font-hand);
-    font-weight: 700;
-    color: var(--ink-1);
-    margin: 0 0 0.5rem;
-    font-size: 1.2rem;
-    line-height: 1.2;
-}
-
-/* Spiral notebook (ledger / resume) */
-.ds-notebook-lead {
-    font-size: 0.9rem;
-    color: var(--ink-2);
-    margin: 0.5rem 0;
-    line-height: 1.6;
-}
-
-.ds-ledger-list {
-    list-style: none;
-    padding: 0;
-    margin: 0.5rem 0 0.9rem;
-    font-size: 0.9rem;
-    color: #334155;
-    line-height: 1.9;
-}
-
-.ds-ledger-list strong {
-    color: #0f172a;
-}
-
-.ds-notebook-resume {
-    display: flex;
-    align-items: center;
-    gap: 0.75rem;
-    margin-top: 1rem;
-}
-
-.ds-btn-paper {
-    text-decoration: none;
-    padding: 0.5rem 1.1rem;
-    font-size: 0.8rem;
-}
-
-/* Recommended booklet — drop the wax seal + heavy 3D tilt, keep the spine */
-.ds-desk-board .ds-booklet {
-    box-shadow: -3px 4px 12px rgba(0, 0, 0, 0.05);
-    transition: transform 180ms cubic-bezier(0.16, 1, 0.3, 1), box-shadow 180ms cubic-bezier(0.16, 1, 0.3, 1);
-}
-
-.ds-desk-board .ds-booklet:hover {
-    transform: translateY(-3px);
-    box-shadow: -4px 10px 22px rgba(26, 20, 5, 0.1);
-}
-
-/* Assignments booklet card */
-.ds-assignment-booklet {
-    background: #faf9f6 !important;
-    border-left: 4px solid var(--accent) !important;
-}
-
-.ds-assignment-tag {
-    background: rgba(42, 77, 143, 0.1) !important;
-    color: var(--accent) !important;
-    border-color: rgba(42, 77, 143, 0.25) !important;
-}
-
-.ds-assignment-list {
-    display: flex;
-    flex-direction: column;
-    gap: 0.75rem;
-    margin-bottom: 1.25rem;
-}
-
-.ds-assignment-row {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding-bottom: 0.6rem;
-    border-bottom: 1px dashed var(--binder-spine);
-    font-size: 0.85rem;
-}
-
-.ds-assignment-row:last-child {
-    border-bottom: none;
-    padding-bottom: 0;
-}
-
-.ds-booklet-tag {
-    display: inline-block;
-    margin-bottom: 0.75rem;
-    padding: 0.15rem 0.5rem;
-    border: 1px solid rgba(212, 175, 55, 0.25);
-    border-radius: 4px;
-    background: rgba(212, 175, 55, 0.12);
-    color: var(--gold);
-    font-size: 0.72rem;
-    font-weight: 800;
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
-}
-
-.ds-booklet-meta {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    flex-wrap: wrap;
-    margin: 0.4rem 0 0.8rem;
-    font-size: 0.85rem;
-    font-weight: 600;
-    color: var(--ink-2);
-}
-
-.ds-booklet-meta .ds-chip {
-    background: #e2e8f0;
-    padding: 0.15rem 0.45rem;
-    border-radius: 4px;
-    color: var(--ink-2);
-}
-
-.ds-booklet-desc {
-    font-size: 0.85rem;
-    color: var(--ink-3);
-    line-height: 1.5;
-    margin-bottom: 1rem;
-}
-
-/* Postcards — remove tilt, keep a single thumbtack (set on markup) */
-.ds-desk-board .ds-postcard {
-    margin-top: 0;
-}
-
-.ds-postcard__lead {
-    display: flex;
-    justify-content: space-between;
-    align-items: flex-start;
-    gap: 1rem;
-    padding-bottom: 12px;
-    margin-bottom: 12px;
-    border-bottom: 1px dashed var(--border-strong);
-}
-
-.ds-postcard__lead-title {
-    display: block;
-    color: var(--ink);
-    text-decoration: none;
-    font-weight: 800;
-    font-size: 14px;
-    line-height: 1.3;
-}
-
-.ds-postcard__lead-excerpt {
-    font-size: 12px;
-    color: var(--ink-soft);
-    margin: 4px 0 0.4rem;
-    line-height: 1.4;
-}
-
-.ds-postcard__byline {
-    font-size: 11px;
-    color: var(--ink-faint);
-    font-weight: 600;
-}
-
-/* Footer note grid — one responsive grid replacing two centered flex rows */
-.ds-note-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(min(100%, 260px), 1fr));
-    gap: 1.5rem;
-    margin-top: 1.5rem;
-}
-
-/* Calmer notes: no rotation, single consistent thumbtack from .cork-note::before,
-   color variants for tone without the multi-colour thumbtack clutter */
-.ds-desk-board .cork-note {
-    box-shadow: 2px 4px 10px rgba(0, 0, 0, 0.12);
-}
-
-.cork-note--yellow {
-    background: #fef9c3;
-}
-
-.cork-note--indigo {
-    background: #e0e7ff;
-}
-
-.ds-note__title {
-    font-family: var(--font-hand);
-    font-size: 1.1rem;
-    font-weight: 700;
-    color: var(--ink-1);
-    margin: 0.25rem 0 0.5rem;
-    padding-top: 0;
-    text-transform: none;
-    letter-spacing: normal;
-}
-
-.cork-note--yellow .ds-note__title {
-    color: #854d0e;
-}
-
-.cork-note--indigo .ds-note__title {
-    color: #312e81;
-}
-
-.ds-note__body {
-    font-size: 0.85rem;
-    line-height: 1.55;
-    color: var(--ink-2);
+.home-empty__body {
     margin: 0;
+    max-width: 38ch;
+    font-size: 0.8125rem;
+    line-height: 1.5;
+    color: var(--ds-text-secondary);
 }
 
-.ds-note__body em {
-    font-style: italic;
+.home-empty__body + * {
+    margin-top: 0.5rem;
 }
 
-.cork-note--yellow .ds-note__body {
-    color: #713f12;
-}
+/* --- Responsive ------------------------------------------------------------ */
 
-.cork-note--indigo .ds-note__body {
-    color: #3730a3;
-}
-
-.ds-note__link {
-    font-weight: 800;
-    text-decoration: underline;
-    margin-top: 0.35rem;
-    display: inline-block;
-}
-
-.cork-note--yellow .ds-note__link {
-    color: #a16207;
-}
-
-@media (max-width: 640px) {
-    .ds-desk-board {
-        margin: 10px;
-        padding: 18px;
-        border-width: 8px;
+@media (max-width: 900px) {
+    .home-head {
+        align-items: flex-start;
     }
 
-    .ds-desk-header__actions {
+    .home-head__actions {
         width: 100%;
     }
 
-    .ds-desk-header__actions .btn-outline {
+    .home-switch,
+    .home-switch__btn {
         flex: 1;
-        text-align: center;
     }
 }
 
+@media (max-width: 640px) {
+    .home {
+        gap: 1rem;
+    }
+
+    .home-title {
+        font-size: 1.25rem;
+    }
+
+    .home-score__value {
+        font-size: 2rem;
+    }
+
+    .home-row {
+        flex-wrap: wrap;
+    }
+
+    .home-row__aside {
+        width: 100%;
+        justify-content: flex-end;
+    }
+
+    .home-featured__action,
+    .home-featured__action > a,
+    .home-featured__action > button {
+        width: 100%;
+    }
+}
+
+/* app.css already zeroes durations under reduced motion; these hovers also
+   move, so cancel the movement itself rather than just its timing. */
+@media (prefers-reduced-motion: reduce) {
+    .home-link:hover svg,
+    a.home-row:hover .home-row__chevron {
+        transform: none;
+    }
+
+    .home-resume__dot {
+        animation: none;
+    }
+}

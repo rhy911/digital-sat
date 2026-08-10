@@ -221,25 +221,25 @@
                         <div class="analysis-toolbar">
                             <div class="flex flex-wrap items-center gap-2 flex-1 min-w-[280px]">
                                 <div class="relative flex-1 min-w-[160px]">
-                                    <input type="text" x-model="searchQuery" placeholder="Search stem, question #, domain..." class="analysis-toolbar__input w-full focus:outline-none">
+                                    <input type="text" x-model="searchQuery" placeholder="Search stem, question #, domain..." aria-label="Search stem, question #, or domain" class="analysis-toolbar__input w-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/20 transition-all">
                                     <svg class="w-3.5 h-3.5 absolute left-2.5 top-2.5 text-muted" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
                                 </div>
 
-                                <select x-model="selectedModule" class="analysis-toolbar__select focus:outline-none">
+                                <select x-model="selectedModule" aria-label="Filter by module" class="analysis-toolbar__select focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/20 transition-all">
                                     <option value="all">All Modules</option>
                                     @foreach($uniqueModules as $mod)
                                         <option value="{{ $mod }}">{{ $mod }}</option>
                                     @endforeach
                                 </select>
 
-                                <select x-model="selectedDifficulty" class="analysis-toolbar__select focus:outline-none">
+                                <select x-model="selectedDifficulty" aria-label="Filter by difficulty" class="analysis-toolbar__select focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/20 transition-all">
                                     <option value="all">All Difficulties</option>
                                     <option value="easy">Easy</option>
                                     <option value="medium">Medium</option>
                                     <option value="hard">Hard</option>
                                 </select>
 
-                                <select x-model="selectedDomain" class="analysis-toolbar__select focus:outline-none">
+                                <select x-model="selectedDomain" aria-label="Filter by domain" class="analysis-toolbar__select focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/20 transition-all">
                                     <option value="all">All Domains</option>
                                     @foreach($uniqueDomains as $dom)
                                         <option value="{{ $dom }}">{{ $dom }}</option>

@@ -31,24 +31,27 @@
                 @endif
 
                 <select
-                    class="px-3 py-2 text-xs rounded-lg border border-slate-200 bg-white text-slate-800 focus:border-brand focus:ring-2 focus:ring-brand/20 outline-none w-full max-w-[130px]"
-                    id="questionsTableSectionFilter">
+                    class="px-3 py-2 text-xs rounded-lg border border-slate-200 bg-white text-slate-800 focus:border-brand focus-visible:ring-2 focus-visible:ring-brand/20 outline-none w-full max-w-[130px]"
+                    id="questionsTableSectionFilter"
+                    aria-label="Filter by section">
                     <option value="">All sections</option>
                     <option value="reading_writing">R&amp;W</option>
                     <option value="math">Math</option>
                 </select>
 
                 <select
-                    class="px-3 py-2 text-xs rounded-lg border border-slate-200 bg-white text-slate-800 focus:border-brand focus:ring-2 focus:ring-brand/20 outline-none w-full max-w-[130px]"
-                    id="questionsTableStatusFilter">
+                    class="px-3 py-2 text-xs rounded-lg border border-slate-200 bg-white text-slate-800 focus:border-brand focus-visible:ring-2 focus-visible:ring-brand/20 outline-none w-full max-w-[130px]"
+                    id="questionsTableStatusFilter"
+                    aria-label="Filter by status">
                     <option value="">All status</option>
                     <option value="1">Complete</option>
                     <option value="0">Incomplete</option>
                 </select>
 
                 <select
-                    class="text-xs rounded-lg border border-slate-200 bg-white text-slate-800 focus:border-brand focus:ring-2 focus:ring-brand/20 outline-none w-full max-w-xs tom-select tom-select-filter"
-                    id="questionsTableModuleFilter">
+                    class="text-xs rounded-lg border border-slate-200 bg-white text-slate-800 focus:border-brand focus-visible:ring-2 focus-visible:ring-brand/20 outline-none w-full max-w-xs tom-select tom-select-filter"
+                    id="questionsTableModuleFilter"
+                    aria-label="Filter by module">
                     <option value="">All modules</option>
                     @php
                         $hasModules = false;

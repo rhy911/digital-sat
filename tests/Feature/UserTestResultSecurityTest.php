@@ -44,6 +44,114 @@ class UserTestResultSecurityTest extends TestCase
             ->assertRedirect(route('student.scores.show', $userTest));
     }
 
+    public function test_in_progress_attempt_resumes_into_the_engine(): void
+    {
+        $user = User::factory()->create([
+            'role' => 'student',
+            'email_verified_at' => now(),
+        ]);
+        [$test, $module] = $this->testWithOneModule('Resumable Test');
+        $userTest = UserTest::create([
+            'user_id' => $user->id,
+            'test_id' => $test->id,
+            'status' => 'in_progress',
+            'current_module_id' => $module->id,
+        ]);
+
+        $this->actingAs($user)
+            ->get(route('my-practice', $userTest))
+            ->assertRedirect(route('engine.session', ['ulid' => $module->ulid, 'attempt' => $userTest->ulid]));
+    }
+
+    public function test_resume_endpoint_sends_the_owner_into_the_engine(): void
+    {
+        $user = User::factory()->create([
+            'role' => 'student',
+            'email_verified_at' => now(),
+        ]);
+        [$test, $module] = $this->testWithOneModule('Resume Endpoint Test');
+        $userTest = UserTest::create([
+            'user_id' => $user->id,
+            'test_id' => $test->id,
+            'status' => 'in_progress',
+        ]);
+
+        $this->actingAs($user)
+            ->post(route('my-practice.resume', $userTest))
+            ->assertRedirect(route('engine.session', ['ulid' => $module->ulid, 'attempt' => $userTest->ulid]));
+
+        // The attempt had no issued module — resuming must issue one, otherwise
+        // the engine rejects it with a 409.
+        $this->assertSame($module->id, $userTest->fresh()->current_module_id);
+    }
+
+    public function test_resume_endpoint_rejects_a_completed_attempt(): void
+    {
+        $user = User::factory()->create([
+            'role' => 'student',
+            'email_verified_at' => now(),
+        ]);
+        [$test] = $this->testWithOneModule('Finished Resume Test');
+        $userTest = UserTest::create([
+            'user_id' => $user->id,
+            'test_id' => $test->id,
+            'status' => 'completed',
+            'completed_at' => now(),
+        ]);
+
+        $this->actingAs($user)
+            ->post(route('my-practice.resume', $userTest))
+            ->assertStatus(409);
+    }
+
+    public function test_resume_endpoint_rejects_another_users_attempt(): void
+    {
+        $owner = User::factory()->create([
+            'role' => 'student',
+            'email_verified_at' => now(),
+        ]);
+        $intruder = User::factory()->create([
+            'role' => 'student',
+            'email_verified_at' => now(),
+        ]);
+        [$test, $module] = $this->testWithOneModule('Private Resume Test');
+        $userTest = UserTest::create([
+            'user_id' => $owner->id,
+            'test_id' => $test->id,
+            'status' => 'in_progress',
+            'current_module_id' => $module->id,
+        ]);
+
+        $this->actingAs($intruder)
+            ->post(route('my-practice.resume', $userTest))
+            ->assertForbidden();
+    }
+
+    public function test_in_progress_attempt_without_current_module_falls_back_to_the_library(): void
+    {
+        $user = User::factory()->create([
+            'role' => 'student',
+            'email_verified_at' => now(),
+        ]);
+        $test = Test::create([
+            'title' => 'Stalled Test',
+            'test_type' => 'full_length',
+            'break_duration_minutes' => 0,
+            'status' => 'active',
+            'is_public' => true,
+        ]);
+        $userTest = UserTest::create([
+            'user_id' => $user->id,
+            'test_id' => $test->id,
+            'status' => 'in_progress',
+        ]);
+
+        $this->actingAs($user)
+            ->get(route('my-practice', $userTest))
+            ->assertRedirect(route('home.practice'))
+            ->assertSessionHas('error');
+    }
+
     public function test_other_user_cannot_view_practice_result_by_ulid(): void
     {
         $owner = User::factory()->create([
@@ -167,6 +275,36 @@ class UserTestResultSecurityTest extends TestCase
             ->get(route('student.scores.export-pdf', $attempt))
             ->assertOk()
             ->assertHeader('content-type', 'application/pdf');
+    }
+
+    /**
+     * @return array{0: Test, 1: Module}
+     */
+    private function testWithOneModule(string $title): array
+    {
+        $test = Test::create([
+            'title' => $title,
+            'test_type' => 'full_length',
+            'break_duration_minutes' => 0,
+            'status' => 'active',
+            'is_public' => true,
+        ]);
+        $section = Section::create([
+            'test_id' => $test->id,
+            'name' => 'Math',
+            'type' => 'math',
+            'order' => 1,
+        ]);
+        $module = Module::create([
+            'section_id' => $section->id,
+            'module_number' => 1,
+            'difficulty_level' => 'standard',
+            'duration_minutes' => 35,
+            'total_questions' => 1,
+            'order' => 1,
+        ]);
+
+        return [$test, $module];
     }
 
     private function scoredAttempt(User $student, ?Test $test = null, array $extra = []): UserTest

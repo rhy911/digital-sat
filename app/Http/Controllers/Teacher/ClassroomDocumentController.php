@@ -20,7 +20,15 @@ class ClassroomDocumentController extends Controller
             'source_type' => 'required|in:file,link',
             'title' => 'required|string|max:180',
             'description' => 'nullable|string|max:2000',
-            'document_file' => 'required_if:source_type,file|file|mimes:pdf,doc,docx,ppt,pptx,xls,xlsx,txt,png,jpg,jpeg,webp|max:20480',
+            // Streaming-ZIP OOXML exports (e.g. Google Slides) are detected as
+            // application/octet-stream, so `mimes:` alone rejects valid .pptx files.
+            'document_file' => [
+                'required_if:source_type,file',
+                'file',
+                'extensions:pdf,doc,docx,ppt,pptx,xls,xlsx,txt,png,jpg,jpeg,webp',
+                'mimetypes:application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/vnd.ms-powerpoint,application/vnd.openxmlformats-officedocument.presentationml.presentation,application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,text/plain,application/zip,application/octet-stream,image/png,image/jpeg,image/webp',
+                'max:20480',
+            ],
             'external_url' => 'required_if:source_type,link|nullable|url|starts_with:http://,https://|max:2000',
         ]);
 

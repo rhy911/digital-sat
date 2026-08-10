@@ -46,7 +46,7 @@
                             </h3>
                             <button type="button" data-modal-close
                                 x-on:click="$dispatch('close-modal', '{{ $id }}')"
-                                class="text-slate-500 hover:text-slate-900 focus:outline-none cursor-pointer"
+                                class="text-slate-500 hover:text-slate-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/20 rounded-lg p-1 transition-colors cursor-pointer"
                                 aria-label="Close modal">
                                 <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
                                     stroke="currentColor">

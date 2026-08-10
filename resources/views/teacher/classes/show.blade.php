@@ -25,7 +25,7 @@
     <div class="app-shell" x-data="{
         searchQuery: '',
         statusFilter: 'all',
-        newClassOpen: false,
+        newClassOpen: new URLSearchParams(location.search).get('new') === '1',
         activeTab: new URLSearchParams(location.search).get('tab') ||
             (new URLSearchParams(location.search).get('announce_page') ? 'announce' : null) ||
             (new URLSearchParams(location.search).get('assign_page') ? 'assign' : null) ||

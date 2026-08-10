@@ -2,7 +2,6 @@
 
 namespace Tests\Feature;
 
-use App\Livewire\Teacher\Workspace;
 use App\Models\Assignment;
 use App\Models\AssignmentRecipient;
 use App\Models\Classroom;
@@ -59,7 +58,7 @@ class TeacherClassManagementTest extends TestCase
 
         $this->assertSame('approved', $teacher->fresh()->teacher_approval_status);
         Notification::assertSentTo($teacher, TeacherApprovalDecisionNotification::class);
-        $this->actingAs($teacher->fresh())->get(route('teacher.workspace'))->assertRedirect(route('home'));
+        $this->actingAs($teacher->fresh())->get(route('teacher.workspace'))->assertRedirect(route('teacher.classes.index'));
     }
 
     public function test_teacher_home_exposes_workspace_tabs_and_separated_test_builder(): void
@@ -85,75 +84,31 @@ class TeacherClassManagementTest extends TestCase
             ->assertSee('Test Builder');
     }
 
-    public function test_teacher_workspace_switches_sections_and_class_status_without_route_navigation(): void
+    public function test_class_and_report_entry_points_open_real_pages(): void
     {
         $teacher = $this->teacher();
         $activeClass = $this->classroom($teacher);
         $archivedClass = Classroom::create(['owner_id' => $teacher->id, 'name' => 'Archived Cohort', 'status' => 'archived']);
         $assignment = $this->assignment($activeClass, $this->testFor($teacher), ['title' => 'Workspace Assignment']);
 
-        Livewire::actingAs($teacher)
-            ->test(Workspace::class)
-            ->assertSet('section', 'classes')
-            ->assertSet('classStatus', 'active')
-            ->assertSee($activeClass->name)
-            ->assertDontSee($archivedClass->name)
-            ->call('showClassStatus', 'archived')
-            ->assertSet('classStatus', 'archived')
-            ->assertSee($archivedClass->name)
-            ->assertDontSee($activeClass->name)
-            ->call('showSection', 'assignments')
-            ->assertSet('section', 'assignments')
-            ->assertSee($assignment->title);
-
-        $this->assertSame('assignments', session('teacher_workspace.section'));
-        $this->assertSame('archived', session('teacher_workspace.class_status'));
-
-        Livewire::actingAs($teacher)->test(Workspace::class)->call('showProgress');
-        $this->assertSame('progress', session('teacher_home.tab'));
+        // Both entry points navigate now; neither reveals an in-page pane.
+        $this->actingAs($teacher)
+            ->get(route('teacher.classes.index'))
+            ->assertRedirect(route('teacher.classes.show', $activeClass));
 
         $this->actingAs($teacher)
             ->get(route('teacher.assignments.index'))
-            ->assertRedirect(route('teacher.assignments.show', $assignment))
-            ->assertSessionHas('teacher_workspace.section', 'assignments')
-            ->assertSessionHas('teacher_home.tab', 'reports');
+            ->assertRedirect(route('teacher.assignments.show', $assignment));
 
+        // The overview lists live classes only; archived ones live on the class page.
         $this->actingAs($teacher)
             ->get(route('home'))
             ->assertOk()
-            ->assertSee($assignment->title)
-            ->assertDontSee('?section=', false)
-            ->assertDontSee('?status=', false);
-
-        $this->actingAs($teacher)
-            ->get(route('teacher.classes.index'))
-            ->assertRedirect(route('teacher.classes.show', $activeClass))
-            ->assertSessionHas('teacher_workspace.section', 'classes')
-            ->assertSessionHas('teacher_home.tab', 'classes');
+            ->assertSee($activeClass->name)
+            ->assertDontSee($archivedClass->name);
     }
 
-    public function test_teacher_workspace_restores_session_state_and_keeps_pagination_out_of_url(): void
-    {
-        $teacher = $this->teacher();
-        foreach (range(1, 13) as $index) {
-            Classroom::create(['owner_id' => $teacher->id, 'name' => "Archived Cohort {$index}", 'status' => 'archived']);
-        }
-
-        session([
-            'teacher_workspace.section' => 'classes',
-            'teacher_workspace.class_status' => 'archived',
-        ]);
-
-        Livewire::actingAs($teacher)
-            ->test(Workspace::class)
-            ->assertSet('section', 'classes')
-            ->assertSet('classStatus', 'archived')
-            ->assertSee('Archived Cohort')
-            ->assertSee('wire:click="gotoPage', false)
-            ->assertDontSee('classesPage=', false);
-    }
-
-    public function test_workspace_scopes_teacher_data_and_allows_admin_oversight(): void
+    public function test_class_pages_scope_teacher_data_and_allow_admin_oversight(): void
     {
         $teacher = $this->teacher();
         $other = $this->teacher();
@@ -161,15 +116,30 @@ class TeacherClassManagementTest extends TestCase
         $owned = $this->classroom($teacher);
         $otherClass = Classroom::create(['owner_id' => $other->id, 'name' => 'Other Teacher Cohort']);
 
-        Livewire::actingAs($teacher)
-            ->test(Workspace::class)
+        // The class page's sidebar is the class list now, so scoping is asserted there.
+        $this->actingAs($teacher)
+            ->get(route('teacher.classes.show', $owned))
+            ->assertOk()
             ->assertSee($owned->name)
             ->assertDontSee($otherClass->name);
 
-        Livewire::actingAs($admin)
-            ->test(Workspace::class)
+        $this->actingAs($admin)
+            ->get(route('teacher.classes.show', $owned))
+            ->assertOk()
             ->assertSee($owned->name)
             ->assertSee($otherClass->name);
+    }
+
+    public function test_teacher_without_any_class_gets_a_create_form_rather_than_a_dead_end(): void
+    {
+        $teacher = $this->teacher();
+
+        // This is the destination of the approval email, so it must be actionable.
+        $this->actingAs($teacher)
+            ->get(route('teacher.classes.index'))
+            ->assertOk()
+            ->assertSee('Create your first class')
+            ->assertSee('action="'.route('teacher.classes.store').'"', false);
     }
 
     public function test_assignment_report_back_link_returns_to_its_origin(): void
@@ -476,9 +446,10 @@ class TeacherClassManagementTest extends TestCase
         } catch (\Illuminate\Validation\ValidationException $e) {
             $this->assertArrayHasKey('assignment', $e->errors());
         }
+        // The overview lists live classes only; the archived one stays reachable
+        // from the class page, which is where archived work is managed.
         $this->actingAs($teacher)->get(route('home'))->assertDontSee($classroom->name);
-        session(['teacher_workspace.class_status' => 'archived']);
-        $this->actingAs($teacher)->get(route('home'))->assertSee($classroom->name);
+        $this->actingAs($teacher)->get(route('teacher.classes.show', $classroom))->assertOk()->assertSee($classroom->name);
     }
 
     public function test_future_assignment_blocks_start_until_available(): void
@@ -649,8 +620,9 @@ class TeacherClassManagementTest extends TestCase
             'added_by' => $owner->id,
         ]);
 
-        Livewire::actingAs($coTeacher)
-            ->test(Workspace::class)
+        $this->actingAs($coTeacher)
+            ->get(route('teacher.classes.show', $classroom))
+            ->assertOk()
             ->assertSee($classroom->name);
 
         $this->actingAs($coTeacher)

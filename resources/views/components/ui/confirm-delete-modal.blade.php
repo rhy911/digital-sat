@@ -44,7 +44,7 @@ x-cloak>
                     <!-- Header -->
                     <div class="bg-slate-50 px-4 py-3 border-b flex justify-between items-center" style="background: var(--binder-bg); border-color: var(--border);">
                         <h3 class="text-base font-semibold text-rose-700 flex items-center gap-2" style="color: var(--red); margin: 0;" x-text="title"></h3>
-                        <button type="button" x-on:click="show = false" class="text-slate-400 hover:text-slate-600 focus:outline-none cursor-pointer" aria-label="Close modal">
+                        <button type="button" x-on:click="show = false" class="text-slate-400 hover:text-slate-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500/20 rounded-lg p-1 transition-colors cursor-pointer" aria-label="Close modal">
                             <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
                             </svg>

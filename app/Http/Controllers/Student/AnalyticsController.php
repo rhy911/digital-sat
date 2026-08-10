@@ -32,7 +32,7 @@ class AnalyticsController extends Controller
 
         $inProgressAttempt = $user->userTests()
             ->where('status', 'in_progress')
-            ->with(['test.sections.modules'])
+            ->with(['test.sections.modules', 'currentModule.section'])
             ->orderBy('updated_at', 'desc')
             ->first();
 
@@ -62,13 +62,57 @@ class AnalyticsController extends Controller
             : null;
 
         $assignments = collect();
+        $assignmentFocus = ['open' => 0, 'overdue' => 0, 'dueSoon' => 0];
+
         if ($user->role === 'student' || $user->role === 'teacher') {
-            $assignments = \App\Models\Assignment::whereHas('recipients', fn ($query) => $query->where('student_id', $user->id)->where('status', 'active'))
-                ->whereIn('status', ['published', 'closed'])
+            $recipientScope = \App\Models\Assignment::whereHas('recipients', fn ($query) => $query->where('student_id', $user->id)->where('status', 'active'))
+                ->whereIn('status', ['published', 'closed']);
+
+            $assignments = (clone $recipientScope)
                 ->with(['classroom', 'test', 'attempts' => fn ($query) => $query->where('user_id', $user->id)])
                 ->latest('published_at')
                 ->limit(3)
                 ->get();
+
+            // Counted separately from the list above, which is capped at 3 and
+            // includes completed work — deriving a headline count from it lies.
+            // "Open" means still finishable: published, already available, not
+            // completed, and either in a live class or holding a resumable
+            // attempt (archiving blocks new starts but preserves resume).
+            $openDueDates = (clone $recipientScope)
+                ->where('status', 'published')
+                ->where(fn ($query) => $query->whereNull('available_at')->orWhere('available_at', '<=', now()))
+                ->whereDoesntHave('attempts', fn ($query) => $query->where('user_id', $user->id)->where('status', 'completed'))
+                ->where(fn ($query) => $query
+                    ->whereHas('classroom', fn ($classroom) => $classroom->where('status', 'active'))
+                    ->orWhereHas('attempts', fn ($attempt) => $attempt->where('user_id', $user->id)->where('status', 'in_progress')))
+                ->pluck('due_at');
+
+            $assignmentFocus = [
+                'open' => $openDueDates->count(),
+                'overdue' => $openDueDates->filter(fn ($due) => $due && now()->gte($due))->count(),
+                'dueSoon' => $openDueDates->filter(fn ($due) => $due && now()->lt($due) && $due->lte(now()->addDays(2)))->count(),
+            ];
+        }
+
+        $teacherStats = null;
+        if ($user->role === 'teacher' || $user->role === 'admin') {
+            $classQuery = \App\Models\Classroom::query()->when(
+                $user->role !== 'admin',
+                fn ($query) => $query->where(fn ($scope) => $scope->where('owner_id', $user->id)
+                    ->orWhereHas('coTeachers', fn ($teachers) => $teachers->whereKey($user->id)))
+            );
+
+            $activeClassIds = (clone $classQuery)->where('status', 'active')->pluck('id');
+
+            $teacherStats = [
+                'activeClassesCount' => $activeClassIds->count(),
+                'enrolledStudentsCount' => \App\Models\ClassroomMembership::whereIn('classroom_id', $activeClassIds)->where('status', 'active')->count(),
+                'pendingRequestsCount' => \App\Models\ClassroomMembership::whereIn('classroom_id', $activeClassIds)->where('status', 'pending')->count(),
+                'publishedAssignmentsCount' => \App\Models\Assignment::whereIn('classroom_id', $activeClassIds)->where('status', 'published')->count(),
+                'recentClasses' => (clone $classQuery)->where('status', 'active')->withCount(['activeMemberships', 'assignments', 'memberships as pending_memberships_count' => fn ($q) => $q->where('status', 'pending')])->latest()->limit(4)->get(),
+                'recentAssignments' => \App\Models\Assignment::whereIn('classroom_id', $activeClassIds)->with(['classroom', 'test'])->withCount(['recipients', 'attempts'])->latest()->limit(5)->get(),
+            ];
         }
 
         return [
@@ -85,6 +129,8 @@ class AnalyticsController extends Controller
             'completedCount' => (int) ($completedStats->completed_count ?? 0),
             'bestScore' => $completedStats->best_score ? (int) $completedStats->best_score : null,
             'assignments' => $assignments,
+            'assignmentFocus' => $assignmentFocus,
+            'teacherStats' => $teacherStats,
         ];
     }
 }

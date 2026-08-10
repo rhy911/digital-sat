@@ -7,15 +7,27 @@ use Illuminate\Support\Facades\Storage;
 
 class ClassroomDocumentAccessController extends Controller
 {
+    /** Only these render in the browser tab; everything else is forced to download. */
+    private const INLINE_SAFE_MIMES = [
+        'application/pdf',
+        'image/png',
+        'image/jpeg',
+        'image/webp',
+    ];
+
     public function open(ClassroomDocument $document)
     {
         $this->authorize('view', $document);
         abort_unless($document->isFile() && $document->disk && $document->path, 404);
         abort_unless(Storage::disk($document->disk)->exists($document->path), 404);
 
+        $mime = $document->mime_type ?: 'application/octet-stream';
+        $disposition = in_array($mime, self::INLINE_SAFE_MIMES, true) ? 'inline' : 'attachment';
+
         return response()->file(Storage::disk($document->disk)->path($document->path), [
-            'Content-Type' => $document->mime_type ?: 'application/octet-stream',
-            'Content-Disposition' => 'inline; filename="'.$this->safeFilename($document).'"',
+            'Content-Type' => $mime,
+            'Content-Disposition' => $disposition.'; filename="'.$this->safeFilename($document).'"',
+            'X-Content-Type-Options' => 'nosniff',
         ]);
     }
 

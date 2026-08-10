@@ -11,7 +11,9 @@
 @import "@fontsource/ibm-plex-mono/400.css";
 @import "@fontsource/ibm-plex-mono/500.css";
 @import "@fontsource/ibm-plex-mono/600.css";
-@import "@fontsource/architects-daughter/400.css";
+@import "@fontsource/playfair-display/600.css";
+@import "@fontsource/playfair-display/700.css";
+@import "@fontsource/playfair-display/600-italic.css";
 /* @import './root.css';
 @import './auth.css'; */
 
@@ -46,6 +48,62 @@
 
 :root {
     --z-tooltip: 10000;
+}
+
+/* --- High-Contrast Focus Ring System (WCAG 2.1 AA Affordance) --- */
+.focus-ring,
+:focus-visible {
+    outline: none;
+}
+
+button:focus-visible,
+a:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible,
+[tabindex]:focus-visible {
+    outline: none !important;
+    box-shadow: 0 0 0 2px #ffffff, 0 0 0 4px var(--ds-focus, #2a4d8f) !important;
+}
+
+/* --- Density Utility Classes --- */
+.density-compact {
+    padding: var(--density-compact-padding);
+    gap: var(--density-compact-gap);
+}
+
+.density-comfortable {
+    padding: var(--density-comfortable-padding);
+    gap: var(--density-comfortable-gap);
+}
+
+.density-spacious {
+    padding: var(--density-spacious-padding);
+    gap: var(--density-spacious-gap);
+}
+
+/* --- Motion System Scale & Reduced Motion Override --- */
+.motion-fast {
+    transition: all var(--motion-fast);
+}
+
+.motion-normal {
+    transition: all var(--motion-normal);
+}
+
+.motion-slow {
+    transition: all var(--motion-slow);
+}
+
+@media (prefers-reduced-motion: reduce) {
+    *,
+    ::before,
+    ::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+        scroll-behavior: auto !important;
+    }
 }
 
 .truncated-text-tooltip {
@@ -308,10 +366,12 @@ u {
     }
 }
 
-/* ==================== GLOBAL APP HEADER ==================== */
-header {
-    background-color: #d9e3f0;
-}
+/* ==================== GLOBAL APP HEADER ====================
+   There is deliberately no bare `header { background-color: ... }` rule here.
+   app.css loads on every page, so an unscoped element selector painted every
+   <header> in the app — including semantic page headers that want no chrome at
+   all — and the only surface that actually wanted the colour was the teacher
+   attempt monitor, which now sets it itself. Style headers by class. */
 
 /* User Dropdown trigger (menu itself now handled by <x-ui.dropdown>) */
 header .user {

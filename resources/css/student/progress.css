@@ -290,8 +290,7 @@
 .ds-baseline-card {
     display: grid;
     align-content: center;
-    border: 1px solid var(--ds-border);
-    border-left: 5px solid var(--ds-border-strong);
+    border: 1px solid var(--ds-border-strong);
     border-radius: 0.7rem;
     background: linear-gradient(
         135deg,
@@ -415,8 +414,7 @@
 .ds-trend-insight {
     display: grid;
     align-content: center;
-    border: 1px solid var(--binder-border);
-    border-left: 5px solid var(--ds-warning);
+    border: 1px solid var(--ds-warning);
     border-radius: 0.7rem;
     background: var(--ds-warning-soft);
     padding: 1rem;
@@ -457,8 +455,7 @@
     grid-template-columns: 1fr auto;
     align-items: center;
     gap: 0.2rem 0.8rem;
-    border: 1px solid var(--ds-border);
-    border-left: 4px solid var(--ds-border-strong);
+    border: 1px solid var(--ds-border-strong);
     border-radius: 6px;
     background: var(--ds-surface-raised);
     padding: 0.75rem 1.1rem;
@@ -469,8 +466,7 @@
 }
 
 .ds-history-list li:first-child {
-    border-color: var(--binder-border);
-    border-left-color: var(--ds-warning);
+    border-color: var(--ds-warning);
     background: var(--ds-warning-soft);
 }
 
@@ -668,7 +664,8 @@
     justify-content: center;
     border: 2.5px dashed currentColor;
     border-radius: 50%;
-    font-family: var(--font-hand), "Architects Daughter", cursive;
+    font-family: var(--font-hand), "Playfair Display", Georgia, serif;
+    font-style: italic;
     font-size: 1.2rem;
     font-weight: 900;
     width: 2.25rem;
@@ -956,7 +953,8 @@
 }
 
 .ds-study-card__header h4 {
-    font-family: var(--font-hand), "Architects Daughter", cursive;
+    font-family: var(--font-hand), "Playfair Display", Georgia, serif;
+    font-style: italic;
     font-size: 1.25rem;
     color: var(--ds-danger, #c1443a);
     font-weight: 900;
@@ -992,7 +990,8 @@
 }
 
 .ds-study-list li span {
-    font-family: var(--font-hand), "Architects Daughter", cursive;
+    font-family: var(--font-hand), "Playfair Display", Georgia, serif;
+    font-style: italic;
     font-size: 1.05rem;
     color: #2f3e46;
     line-height: 1.45;

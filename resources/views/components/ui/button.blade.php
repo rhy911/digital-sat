@@ -23,7 +23,7 @@
 
     $classes = $attributes->class([
         'inline-flex items-center justify-center rounded-lg font-bold transition-colors',
-        'focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-brand/20',
+        'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--ds-focus)] focus-visible:ring-offset-2',
         'active:translate-y-px',
         'disabled:cursor-not-allowed disabled:opacity-50 aria-disabled:cursor-not-allowed aria-disabled:opacity-50',
         $sizeClasses,

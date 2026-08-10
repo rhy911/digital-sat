@@ -5,14 +5,16 @@
 @php
     $hasTeacherHomeTabs = $user?->role === 'teacher' && $user->isApprovedTeacher();
     $isTeacherHome = $hasTeacherHomeTabs && request()->routeIs('home');
-    $storedTeacherTab = session('teacher_home.tab', 'progress');
-    $teacherHomeTab = in_array($storedTeacherTab, ['progress', 'classes', 'reports'], true) ? $storedTeacherTab : 'progress';
+    $storedTeacherTab = session('teacher_home.tab', 'overview');
+    // Only Overview and Progress are panes of /home. Classes and Reports are
+    // their own pages, so they navigate like any other nav item.
+    $teacherHomeTab = in_array($storedTeacherTab, ['overview', 'progress'], true) ? $storedTeacherTab : 'overview';
 
     if ($hasTeacherHomeTabs) {
         $navItems = [
-            ['label' => 'Progress', 'tab' => 'progress', 'href' => route('teacher.progress'), 'active' => false],
-            ['label' => 'Classes', 'tab' => 'classes', 'href' => route('teacher.classes.index'), 'active' => request()->routeIs('teacher.classes.*'), 'current' => request()->routeIs('teacher.classes.show')],
-            ['label' => 'Reports', 'tab' => 'reports', 'href' => route('teacher.assignments.index'), 'active' => request()->routeIs('teacher.assignments.*'), 'current' => request()->routeIs('teacher.assignments.show')],
+            ['label' => 'Overview', 'tab' => 'overview', 'href' => route('home'), 'active' => false],
+            ['label' => 'Classes', 'href' => route('teacher.classes.index'), 'active' => request()->routeIs('teacher.classes.*'), 'current' => request()->routeIs('teacher.classes.show')],
+            ['label' => 'Reports', 'href' => route('teacher.assignments.index'), 'active' => request()->routeIs('teacher.assignments.*'), 'current' => request()->routeIs('teacher.assignments.show')],
             ['label' => 'Test Library', 'href' => route('home.practice'), 'active' => request()->routeIs('home.practice', 'test.preview', 'engine.session', 'engine.test.attempt-options')],
             ['label' => 'Test Builder', 'href' => route('home-dashboard.index'), 'active' => request()->routeIs('home-dashboard.*'), 'external' => true],
         ];
@@ -73,13 +75,7 @@
             @foreach($navItems as $item)
                 @if($isTeacherHome && isset($item['tab']))
                     <button type="button"
-                        @if($item['tab'] === 'progress')
-                            @click="tab = 'progress'; $dispatch('teacher-home-tab-requested', { tab: 'progress' }); Livewire.dispatch('teacher-home-progress')"
-                        @elseif($item['tab'] === 'classes')
-                            @click="tab = 'classes'; $dispatch('teacher-home-tab-requested', { tab: 'classes' }); Livewire.dispatch('teacher-workspace-section', { section: 'classes' })"
-                        @else
-                            @click="tab = 'reports'; $dispatch('teacher-home-tab-requested', { tab: 'reports' }); Livewire.dispatch('teacher-workspace-section', { section: 'assignments' })"
-                        @endif
+                        @click="tab = '{{ $item['tab'] }}'; $dispatch('teacher-home-tab-requested', { tab: '{{ $item['tab'] }}' })"
                         :class="{ 'is-active': tab === '{{ $item['tab'] }}' }"
                         :aria-current="tab === '{{ $item['tab'] }}' ? 'page' : null"
                     >{{ $item['label'] }}</button>
@@ -115,13 +111,9 @@
 
     <nav class="ds-mobile-nav" aria-label="Primary mobile" @if($isTeacherHome) x-data="{ tab: '{{ $teacherHomeTab }}' }" @teacher-home-tab-requested.window="tab = $event.detail.tab" @teacher-home-tab-changed.window="tab = $event.detail.tab" @endif>
         @foreach($navItems as $item)
-            @if($isTeacherHome && isset($item['tab']) && $item['tab'] !== 'classes')
+            @if($isTeacherHome && isset($item['tab']))
                 <button type="button"
-                    @if($item['tab'] === 'progress')
-                        @click="tab = 'progress'; $dispatch('teacher-home-tab-requested', { tab: 'progress' }); Livewire.dispatch('teacher-home-progress')"
-                    @else
-                        @click="tab = 'reports'; $dispatch('teacher-home-tab-requested', { tab: 'reports' }); Livewire.dispatch('teacher-workspace-section', { section: 'assignments' })"
-                    @endif
+                    @click="tab = '{{ $item['tab'] }}'; $dispatch('teacher-home-tab-requested', { tab: '{{ $item['tab'] }}' })"
                     :class="{ 'is-active': tab === '{{ $item['tab'] }}' }"
                     :aria-current="tab === '{{ $item['tab'] }}' ? 'page' : null"
                 >{{ $item['label'] }}</button>

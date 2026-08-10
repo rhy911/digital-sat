@@ -1,6 +1,7 @@
 @props([
     'padded' => true,
     'shadow' => 'sm',
+    'stretch' => false,
 ])
 
 @php
@@ -10,11 +11,16 @@
     };
     $sectionPadding = $padded ? 'px-6 py-4' : '';
     $bodyPadding = $padded ? 'p-6' : '';
+    // In a side-by-side row the taller card sets the height. Without this the
+    // shorter card just grows a gap under its footer; with it the body absorbs
+    // the slack and the footer stays pinned to the bottom edge.
+    $stretchClasses = $stretch ? 'flex h-full flex-col' : '';
 @endphp
 
 <div {{ $attributes->class([
         'rounded-xl border border-slate-200 bg-white overflow-hidden',
         $shadowClasses,
+        $stretchClasses,
     ]) }}>
     @isset($header)
         <div class="flex items-center justify-between gap-3 border-b border-slate-200 {{ $sectionPadding }}">
@@ -22,7 +28,7 @@
         </div>
     @endisset
 
-    <div class="{{ $bodyPadding }}">
+    <div @class([$bodyPadding, 'grow' => $stretch])>
         {{ $slot }}
     </div>
 

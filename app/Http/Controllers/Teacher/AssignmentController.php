@@ -29,9 +29,6 @@ class AssignmentController extends Controller
 
     public function index()
     {
-        session(['teacher_workspace.section' => 'assignments']);
-        session(['teacher_home.tab' => 'reports']);
-
         $user = auth()->user();
         $assignment = $this->getTeacherAssignmentsQuery($user)->latest('updated_at')->first();
 
@@ -75,9 +72,6 @@ class AssignmentController extends Controller
     public function show(Assignment $assignment, AssignmentReportService $reports)
     {
         $this->authorize('view', $assignment);
-
-        session(['teacher_workspace.section' => 'assignments']);
-        session(['teacher_home.tab' => 'reports']);
 
         $user = auth()->user();
         $assignments = $this->getTeacherAssignmentsQuery($user)

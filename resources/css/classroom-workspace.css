@@ -82,7 +82,8 @@ body {
 }
 
 .handwriting {
-    font-family: "Architects Daughter", cursive;
+    font-family: var(--font-hand), "Playfair Display", Georgia, serif;
+    font-style: italic;
 }
 
 button {
@@ -2095,8 +2096,8 @@ td.num {
 .cork-texture {
     background-color: var(--cork-tan);
     background-image:
-        radial-gradient(rgba(0, 0, 0, 0.15) 15%, transparent 16%),
-        radial-gradient(rgba(0, 0, 0, 0.15) 15%, transparent 16%);
+        radial-gradient(rgba(0, 0, 0, 0.06) 15%, transparent 16%),
+        radial-gradient(rgba(0, 0, 0, 0.06) 15%, transparent 16%);
     background-size: 8px 8px;
     background-position:
         0 0,
@@ -2521,6 +2522,23 @@ td.num {
     }
 }
 
+/* ============ PHONE: MOBILE SPATIAL BUDGET ============
+   docs/styling-system.md §4 — decoration that carries no information gives up
+   its space to content on phones. Lived in student/analytics.css before, which
+   no classroom view loads, so the rule never actually applied. */
+@media (max-width: 640px) {
+    .cork-note__pin,
+    .ds-tape-strip,
+    .ds-decorative-stamp {
+        display: none !important;
+    }
+
+    .cork-note {
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1) !important;
+        transform: none !important;
+    }
+}
+
 :focus-visible {
     outline: 2px solid var(--accent);
     outline-offset: 2px;
@@ -2667,8 +2685,9 @@ td.num {
 }
 
 .btn-sm-primary.btn-pin {
-    width: 100%;
-    padding: 8px;
+    display: inline-flex;
+    width: auto;
+    padding: 0.5rem 1.25rem;
     margin-top: 12px;
 }
 
@@ -2843,6 +2862,9 @@ td.num {
 
 .attempt-monitor__student {
     padding: 16px;
+    /* Was inherited from an unscoped `header {}` rule in app.css; declared here
+       now that the rule is gone, since this is the surface that wanted it. */
+    background-color: #d9e3f0;
     border-bottom: 1px solid var(--cw-line);
 }
 
@@ -3263,7 +3285,7 @@ td.num {
     display: flex;
     align-items: center;
     justify-content: center;
-    font-family: var(--font-hand), "Architects Daughter", cursive;
+    font-family: var(--font-hand), "Playfair Display", Georgia, serif;
     font-size: 1.5rem;
     font-weight: 900;
     color: var(--accent);

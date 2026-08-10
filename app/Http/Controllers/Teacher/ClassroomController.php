@@ -12,26 +12,33 @@ use App\Models\User;
 use App\Services\ClassroomService;
 use App\Support\ClassroomLeaderboard;
 use App\Support\ClassroomRosterStats;
+use Illuminate\Http\Request;
 
 class ClassroomController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
-        session(['teacher_workspace.section' => 'classes']);
-        session(['teacher_home.tab' => 'classes']);
-
         $user = auth()->user();
 
-        if ($user->role !== 'admin') {
-            $classroom = $this->scopeToTeacher(Classroom::query(), $user)->where('status', 'active')->latest('updated_at')->first()
-                ?? $this->scopeToTeacher(Classroom::query(), $user)->latest('updated_at')->first();
+        // Admins oversee every class; teachers only their own or co-taught ones.
+        $visible = fn () => Classroom::query()
+            ->when($user->role !== 'admin', fn ($query) => $this->scopeToTeacher($query, $user));
 
-            if ($classroom) {
-                return redirect()->route('teacher.classes.show', $classroom);
-            }
+        $classroom = $visible()->where('status', 'active')->latest('updated_at')->first()
+            ?? $visible()->latest('updated_at')->first();
+
+        if ($classroom) {
+            // `new` is forwarded so a "Create a class" link lands with the form
+            // already open, instead of on a page where the user hunts for it.
+            return redirect()->route('teacher.classes.show', array_filter([
+                'classroom' => $classroom,
+                'new' => $request->boolean('new') ? 1 : null,
+            ]));
         }
 
-        return redirect()->route('home');
+        // Nothing to show yet. This is the first screen a newly approved teacher
+        // reaches from their approval email, so it has to carry the create form.
+        return view('teacher.classes.index', ['user' => $user]);
     }
 
     private function scopeToTeacher($query, User $user)
@@ -41,12 +48,13 @@ class ClassroomController extends Controller
             ->orWhereHas('coTeachers', fn ($teachers) => $teachers->whereKey($user->id)));
     }
 
+    /**
+     * Kept as a redirect: the embedded workspace pane it used to open is gone,
+     * but the route is linked from older mail and bookmarks.
+     */
     public function workspace()
     {
-        session(['teacher_workspace.section' => 'classes']);
-        session(['teacher_home.tab' => 'classes']);
-
-        return redirect()->route('home');
+        return redirect()->route('teacher.classes.index');
     }
 
     public function progress()

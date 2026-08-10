@@ -24,11 +24,10 @@ x-init="
     @endif
 "
 x-on:show-toast.window="addToast($event.detail.type || 'info', $event.detail.message, $event.detail.list || [])"
-class="fixed top-5 left-5 right-5 sm:left-auto z-[99999] flex flex-col gap-3 max-w-sm w-auto sm:w-full pointer-events-none"
-style="z-index: 99999;"
+class="fixed top-5 left-5 right-5 sm:left-auto z-60 flex flex-col gap-3 max-w-sm w-auto sm:w-full pointer-events-none"
 x-cloak>
     <template x-teleport="body">
-        <div class="fixed top-5 left-5 right-5 sm:left-auto z-[99999] flex flex-col gap-3 max-w-sm w-auto sm:w-full pointer-events-none" style="z-index: 99999;">
+        <div class="fixed top-5 left-5 right-5 sm:left-auto z-60 flex flex-col gap-3 max-w-sm w-auto sm:w-full pointer-events-none">
             <template x-for="toast in toasts" :key="toast.id">
                 <div x-show="true"
                     x-transition:enter="transition-[transform,opacity] ease-out duration-250"
@@ -72,7 +71,7 @@ x-cloak>
 
                     <!-- Close Button -->
                     <button type="button" @click="removeToast(toast.id)"
-                        class="text-slate-400 hover:text-slate-700 transition-colors p-1 -mr-1 -mt-1 rounded-lg focus:outline-none"
+                        class="text-slate-400 hover:text-slate-700 transition-colors p-1 -mr-1 -mt-1 rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-current"
                         aria-label="Close notification">
                         <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />

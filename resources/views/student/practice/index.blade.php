@@ -76,7 +76,15 @@
                                     </div>
 
                                     <div class="library-resume-card__action">
-                                        @if ($moduleUlid)
+                                        @if ($moduleUlid && !$attempt->assignment_id)
+                                            {{-- Same confirmation the test card below opens: attempt-options
+                                                 only knows about self-study attempts, so an assignment attempt
+                                                 keeps the direct link. --}}
+                                            <button type="button" class="library-btn-primary"
+                                                data-test-id="{{ $attempt->test_id }}">
+                                                Resume
+                                            </button>
+                                        @elseif ($moduleUlid)
                                             <a href="{{ route('engine.session', ['ulid' => $moduleUlid]) }}?attempt={{ $attempt->ulid }}"
                                                 class="library-btn-primary">
                                                 Resume
@@ -467,7 +475,8 @@
             }
 
             document.addEventListener('DOMContentLoaded', function() {
-                const testActions = document.querySelectorAll('.test-index-card [data-test-id]');
+                const testActions = document.querySelectorAll(
+                    '.test-index-card [data-test-id], .library-resume-card [data-test-id]');
 
                 testActions.forEach(action => {
                     action.addEventListener('click', async function() {

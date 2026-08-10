@@ -40,8 +40,7 @@
     justify-content: space-between;
     gap: 20px;
     background: var(--panel);
-    border: 1px solid var(--border);
-    border-left: 5px solid var(--accent);
+    border: 1px solid rgba(42, 77, 143, 0.3);
     border-radius: 8px;
     padding: 16px 20px;
     box-shadow: 0 6px 16px rgba(26, 32, 44, 0.05);

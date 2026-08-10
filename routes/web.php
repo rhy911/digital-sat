@@ -95,6 +95,7 @@ Route::middleware(['auth', 'verified'])->prefix('student')->group(function () {
     Route::get('/practice', [\App\Http\Controllers\Student\PracticeController::class, 'index'])->name('home.practice');
     Route::get('/practice/preview', [\App\Http\Controllers\Student\PracticeController::class, 'preview'])->name('test.preview');
     Route::get('/practice/{userTest:ulid}', [\App\Http\Controllers\Student\PracticeController::class, 'show'])->name('my-practice');
+    Route::post('/practice/{userTest:ulid}/resume', [\App\Http\Controllers\Student\PracticeController::class, 'resume'])->name('my-practice.resume');
     Route::delete('/practice/{userTest:ulid}', [\App\Http\Controllers\Student\PracticeController::class, 'destroy'])->name('my-practice.destroy');
     Route::get('/scores', [\App\Http\Controllers\Student\ScoreController::class, 'index'])->name('student.scores.index');
     Route::get('/scores/{userTest:ulid}', [\App\Http\Controllers\Student\ScoreController::class, 'show'])->name('student.scores.show');
