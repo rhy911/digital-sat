@@ -7,6 +7,7 @@ import {
   showCustomConfirm,
   showCustomAlert
 } from './ui.js';
+import { pollForScoringResult, describeSubmitError } from './scoring.js';
 
 let autosaveInitialized = false;
 let autosaveTimer = null;
@@ -272,6 +273,17 @@ export function collectAnswers() {
 }
 
 export function initializeAutosave() {
+  // The periodic timer is restarted on every call because submitModule() clears
+  // it, and navigateModule() calls this again for the next module. Without this,
+  // autosave would stay dead for every module after the first submission.
+  if (state.autosaveIntervalId) {
+    clearInterval(state.autosaveIntervalId);
+    state.autosaveIntervalId = null;
+  }
+
+  startAutosaveInterval();
+
+  // The document-level listeners below must only ever be bound once.
   if (autosaveInitialized) return;
   autosaveInitialized = true;
 
@@ -286,13 +298,6 @@ export function initializeAutosave() {
       scheduleAutosave();
     }
   });
-
-  // Periodically autosave elapsed time every 15 seconds
-  setInterval(() => {
-    if (!state.isSubmitting && !window.isPreview && window.userTestId && window.currentModuleId) {
-      autosaveAnswers();
-    }
-  }, 15000);
 
   document.addEventListener('visibilitychange', () => {
     if (document.visibilityState === 'hidden') {
@@ -309,6 +314,20 @@ export function initializeAutosave() {
     syncTimer();
     autosaveAnswers();
   });
+}
+
+/**
+ * Periodic autosave of elapsed time. The interval id lives on `state` so
+ * submitModule() can stop it: once a module has been submitted there is nothing
+ * left to save, and a stray autosave is one of the paths that could re-enter
+ * submitModule().
+ */
+function startAutosaveInterval() {
+  state.autosaveIntervalId = setInterval(() => {
+    if (!state.isSubmitting && !window.isPreview && window.userTestId && window.currentModuleId) {
+      autosaveAnswers();
+    }
+  }, 15000);
 }
 
 function scheduleAutosave() {
@@ -355,7 +374,12 @@ async function autosaveAnswers() {
 
     if (response.status === 409) {
       const data = await response.json();
-      if (data.error === 'module_expired') {
+      // Fire the deadline submit at most once per module. Without this guard the
+      // 15s autosave loop can re-enter submitModule every cycle once the submit
+      // guard has been released, quietly stacking duplicate POSTs.
+      if (data.error === 'module_expired'
+          && state.expiredSubmitTriggeredFor !== window.currentModuleId) {
+        state.expiredSubmitTriggeredFor = window.currentModuleId;
         await submitModule({ skipConfirm: true, timedOut: true });
         return;
       }
@@ -413,65 +437,95 @@ export async function submitModule(options = {}) {
   }
 
   clearTimeout(autosaveTimer);
+  // Nothing left to autosave for a module that is being submitted, and a stray
+  // autosave here is one of the paths that re-entered submitModule().
+  if (state.autosaveIntervalId) {
+    clearInterval(state.autosaveIntervalId);
+    state.autosaveIntervalId = null;
+  }
   showLoadingScreen("Saving responses & scoring current module...");
+
+  // Capture before any navigation can change window.currentModuleId — the poll
+  // is scoped to the module that was actually submitted.
+  const submittedModuleId = window.currentModuleId;
+  const MAX_MANUAL_RETRIES = 2;
+  let manualRetries = 0;
+  let data = null;
+
   try {
-    const response = await fetch('/engine/test/submit-module', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Accept': 'application/json',
-        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
-      },
-      body: JSON.stringify({
-        user_test_id: window.userTestId,
-        module_id: window.currentModuleId,
-        answers: answers,
-        question_times: state.questionTimings
-      })
-    });
+    // Loop only for a deliberate "Try Again"; a slow queue re-polls, never re-POSTs.
+    for (;;) {
+      let response = null;
 
-    let data = await response.json();
-
-    if (data.status === 'scoring') {
-        data = await new Promise((resolve) => {
-            let pollAttempts = 0;
-            const maxPollAttempts = 30;
-            let currentDelay = 1500;
-            const maxDelay = 4000;
-
-            const poll = async () => {
-                try {
-                    pollAttempts++;
-                    const statusRes = await fetch(`/engine/submit-status/${window.userTestUlid || window.userTestId}`);
-                    const statusData = await statusRes.json();
-                    if (statusData.status !== 'scoring') {
-                        resolve(statusData);
-                        return;
-                    } else if (pollAttempts >= maxPollAttempts) {
-                        resolve({
-                          error: "Scoring timeout",
-                          message: "Scoring is taking longer than expected. Please try again in a minute."
-                        });
-                        return;
-                    }
-                } catch (e) {
-                    resolve({
-                      error: "Polling error",
-                      message: "Unable to check scoring status. Please try again."
-                    });
-                    return;
-                }
-
-                // Exponential backoff with random jitter (200-500ms) to avoid thundering herd
-                const jitter = Math.floor(Math.random() * 300) + 200;
-                currentDelay = Math.min(maxDelay, Math.floor(currentDelay * 1.3)) + jitter;
-                setTimeout(poll, currentDelay);
-            };
-
-            setTimeout(poll, currentDelay);
+      try {
+        response = await fetch('/engine/test/submit-module', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Accept': 'application/json',
+            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+          },
+          body: JSON.stringify({
+            user_test_id: window.userTestId,
+            module_id: submittedModuleId,
+            answers: answers,
+            question_times: state.questionTimings
+          })
         });
+      } catch (networkError) {
+        // The request may well have reached the server and only the response was
+        // lost. Treating this as a failure (and releasing the submit guard) is
+        // what produced module_progression_conflict with no prior timeout: the
+        // student pressed Next again and hit the still-held lock. Poll instead.
+        console.warn('Submit POST failed in transport, falling back to polling:', networkError);
+        data = await pollForScoringResult(window.userTestUlid, submittedModuleId);
+        if (data.error !== 'scoring_timeout') break;
+        response = null;
+      }
+
+      if (response) {
+        // 409 submission_in_progress means the work is already in flight for this
+        // exact attempt+module. Keep polling; never re-POST.
+        if (response.status === 429 || response.status === 409) {
+          const body = await response.json().catch(() => ({}));
+
+          if (response.status === 429 || body.error === 'submission_in_progress') {
+            data = await pollForScoringResult(window.userTestUlid, submittedModuleId);
+          } else {
+            data = body;
+          }
+        } else {
+          data = await response.json();
+
+          if (data.status === 'scoring') {
+            data = await pollForScoringResult(window.userTestUlid, submittedModuleId);
+          }
+        }
+      }
+
+      if (!data || data.error !== 'scoring_timeout') break;
+
+      // Budget exhausted but the submission may still be alive server-side.
+      // Offer the choice rather than auto-retrying — the automatic retry is what
+      // grew the queue during the incident.
+      const info = describeSubmitError(data);
+      hideLoadingScreen();
+      const keepWaiting = await showCustomConfirm(
+        info.message, info.type, info.title, 'Keep Waiting', 'Try Again'
+      );
+
+      if (keepWaiting) {
+        showLoadingScreen('Still scoring — please keep this page open.');
+        data = await pollForScoringResult(window.userTestUlid, submittedModuleId);
+        if (data.error !== 'scoring_timeout') break;
+        continue;
+      }
+
+      if (++manualRetries > MAX_MANUAL_RETRIES) break;
+      showLoadingScreen('Trying again...');
     }
 
+    data = data || {};
     const timedOut = Boolean(options.timedOut || data.timed_out);
 
     if (data.test_completed) {
@@ -567,16 +621,62 @@ export async function submitModule(options = {}) {
     } else {
       hideLoadingScreen();
       console.error("Submission failed", data);
-      const msg = data.error || data.message || "Error submitting test. Please try again.";
-      await showCustomAlert(msg, "error", "Submission Error");
+
+      // Never render data.error verbatim — that is how students saw the literal
+      // string "module_progression_conflict" on screen.
+      const info = describeSubmitError(data);
+      await showCustomAlert(info.message, info.type, info.title);
+
+      if (info.recovery === 'resync') {
+        await resyncToCurrentModule();
+        return;
+      }
+
+      if (info.recovery === 'home') {
+        window.isNavigatingLegitimately = true;
+        window.location.href = window.homeUrl || '/home';
+        return;
+      }
+
+      // 'retry' / 'none': the submission really is over, so let the student act.
       state.isSubmitting = false;
     }
   } catch (error) {
     hideLoadingScreen();
     console.error("Error submitting module:", error);
-    await showCustomAlert("Network error: " + error.message, "error", "Network Error");
+    const info = describeSubmitError({ error: 'network_lost' });
+    await showCustomAlert(info.message, info.type, info.title);
     state.isSubmitting = false;
   }
+}
+
+/**
+ * Put a stale tab back where the attempt actually is, instead of stranding the
+ * student on a module the server has already moved past.
+ */
+async function resyncToCurrentModule() {
+  try {
+    const res = await fetch(
+      `/engine/submit-status/${window.userTestUlid}?module_id=${window.currentModuleId ?? ''}`,
+      { headers: { Accept: 'application/json' } }
+    );
+    const data = await res.json();
+
+    if (data.test_completed) {
+      window.isNavigatingLegitimately = true;
+      window.location.href = data.redirect_url || window.homeUrl || '/home';
+      return;
+    }
+
+    if (data.next_module_id) {
+      navigateModule(`/engine/session/${data.next_module_id}`);
+      return;
+    }
+  } catch (e) {
+    console.warn('Resync failed:', e);
+  }
+
+  state.isSubmitting = false;
 }
 
 export function prevQuestion() {

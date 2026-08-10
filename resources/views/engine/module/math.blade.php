@@ -176,5 +176,8 @@
         window.durationMinutes = @json($testData->duration_minutes ?? 35);
         window.initialElapsedSeconds = @json($userTest ? $userTest->current_module_elapsed_seconds : 0);
         window.savedQuestionTimes = Object.assign({}, @json($savedQuestionTimes ?? []));
+        // Client poll budget, sourced from the server so it cannot drift from the
+        // lock TTL. See the I3 invariant in config/scoring.php.
+        window.scoringBudgetSeconds = @json(config('scoring.client_budget'));
     </script>
 </x-layouts.test>

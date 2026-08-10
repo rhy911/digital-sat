@@ -21,7 +21,20 @@ class TestProgressionService
 
     public function submit(UserTest $attempt, Module $submitted): array
     {
-        $test = Test::with('sections.modules.questions')->findOrFail($attempt->test_id);
+        // Only counts and IRT parameters are ever read off this relation:
+        // TestStructureService::validate() counts questions, and
+        // validateAdaptiveMeasurement() reads is_pretest + irt_a/b/c.
+        // Selecting whole rows pulled every question `stem` in the test (~162
+        // LONGTEXT rows on an adaptive full-length) on EVERY module submit.
+        // TestStructureService uses loadMissing(), so it will not refetch — these
+        // columns must stay present or that validation silently misbehaves.
+        $test = Test::with(['sections.modules.questions' => fn ($query) => $query->select([
+            'questions.id',
+            'questions.is_pretest',
+            'questions.irt_a',
+            'questions.irt_b',
+            'questions.irt_c',
+        ])])->findOrFail($attempt->test_id);
         $shape = $this->structures->validate($test);
         $section = $shape['sections']->first(fn ($candidate) => $candidate->modules->contains('id', $submitted->id));
         if (! $section) {
@@ -42,6 +55,58 @@ class TestProgressionService
         }
 
         return $this->advanceSectionOrComplete($attempt, $test, $section, $shape['sections']);
+    }
+
+    /**
+     * Would submitting this module finish the attempt?
+     *
+     * Terminal submissions run finalize() — two IRT estimates, score conversion and
+     * a possible auto-merge — and are the only ones expensive enough to justify the
+     * queue. Everything else is a single theta estimate and can be scored inline.
+     *
+     * NOTE the criterion is "terminal", not "module 1". On an adaptive full-length
+     * (RW M1, RW M2, Math M1, Math M2) only Math M2 is terminal; treating
+     * module_number === 1 as the test would leave two of four submissions queued
+     * for no reason.
+     *
+     * Mirrors the branching in submit() above. Callers must treat a thrown
+     * exception as "assume terminal" and fall back to the queue.
+     */
+    public function isTerminalSubmission(UserTest $attempt, Module $submitted): bool
+    {
+        $test = Test::with(['sections.modules'])->findOrFail($attempt->test_id);
+        $shape = $this->structures->validate($test);
+        $section = $shape['sections']->first(fn ($candidate) => $candidate->modules->contains('id', $submitted->id));
+
+        if (! $section) {
+            throw new \RuntimeException('Submitted module is outside the validated test structure.');
+        }
+
+        $flow = $shape['flows']->get($section->id);
+
+        // Adaptive module 1 always routes to a module 2.
+        if ($flow === TestStructureService::FLOW_ADAPTIVE && (int) $submitted->module_number === 1) {
+            return false;
+        }
+
+        // Linear flow with another module left in this section.
+        if ($flow === TestStructureService::FLOW_LINEAR) {
+            $modules = $this->structures->orderedModules($section);
+            $index = $modules->search(fn ($module) => (int) $module->id === (int) $submitted->id);
+            if ($index !== false && $modules->has($index + 1)) {
+                return false;
+            }
+        }
+
+        // Section-scoped attempts finalize as soon as their one section ends.
+        if ($attempt->attempt_type === 'section') {
+            return true;
+        }
+
+        // Otherwise: terminal only when no later section remains.
+        return ! $shape['sections']->contains(
+            fn ($candidate) => (int) $candidate->order > (int) $section->order
+        );
     }
 
     private function routeAdaptive(UserTest $attempt, Test $test, Section $section, Module $module): array
@@ -169,40 +234,64 @@ class TestProgressionService
                 }
             }
 
-            $secondAnswers = UserTestAnswer::where('user_test_id', $second->id)->get();
-            foreach ($secondAnswers as $ans) {
-                $exists = UserTestAnswer::where('user_test_id', $first->id)
-                    ->where('module_id', $ans->module_id)
-                    ->where('question_id', $ans->question_id)
-                    ->exists();
+            // This runs on the FINAL module of a section attempt — exactly when a
+            // whole cohort converges at once. The previous version issued one
+            // exists() per answer (~108 queries) and one INSERT per row, all inside
+            // this transaction while it holds two lockForUpdate rows. Same rows,
+            // same skip rule, same timestamps — three statements instead of ~220.
+            $existingAnswerKeys = UserTestAnswer::where('user_test_id', $first->id)
+                ->get(['module_id', 'question_id'])
+                ->map(fn ($answer) => $answer->module_id.':'.$answer->question_id)
+                ->flip();
 
-                if (! $exists) {
-                    $copy = new UserTestAnswer([
-                        'user_test_id'      => $first->id,
-                        'module_id'         => $ans->module_id,
-                        'question_id'       => $ans->question_id,
-                        'selected_answer'   => $ans->selected_answer,
-                        'is_correct'        => $ans->is_correct,
-                        'time_spent'        => $ans->time_spent,
-                        'question_snapshot' => $ans->question_snapshot,
-                    ]);
-                    $copy->forceFill([
-                        'created_at' => $ans->created_at,
-                        'updated_at' => $ans->updated_at,
-                    ])->save();
+            $answerRows = [];
+            foreach (UserTestAnswer::where('user_test_id', $second->id)->cursor() as $ans) {
+                if ($existingAnswerKeys->has($ans->module_id.':'.$ans->question_id)) {
+                    continue;
                 }
+
+                $answerRows[] = [
+                    'user_test_id'      => $first->id,
+                    'module_id'         => $ans->module_id,
+                    'question_id'       => $ans->question_id,
+                    'selected_answer'   => $ans->selected_answer,
+                    'is_correct'        => $ans->is_correct,
+                    'time_spent'        => $ans->time_spent,
+                    // Raw value: the model casts this to array, and insert() bypasses
+                    // casting, so the encoded JSON has to go in as stored.
+                    'question_snapshot' => $ans->getRawOriginal('question_snapshot'),
+                    'created_at'        => $ans->created_at,
+                    'updated_at'        => $ans->updated_at,
+                ];
             }
 
-            $secondSubmissions = \App\Models\UserTestModuleSubmission::where('user_test_id', $second->id)->get();
-            foreach ($secondSubmissions as $sub) {
-                \App\Models\UserTestModuleSubmission::firstOrCreate(
-                    ['user_test_id' => $first->id, 'module_id' => $sub->module_id],
-                    [
-                        'issued_next_module_id' => $sub->issued_next_module_id,
-                        'result'                => $sub->result,
-                        'submitted_at'          => $sub->submitted_at,
-                    ]
-                );
+            foreach (array_chunk($answerRows, 200) as $chunk) {
+                UserTestAnswer::insert($chunk);
+            }
+
+            $existingSubmissionModuleIds = \App\Models\UserTestModuleSubmission::where('user_test_id', $first->id)
+                ->pluck('module_id')
+                ->flip();
+
+            $submissionRows = [];
+            foreach (\App\Models\UserTestModuleSubmission::where('user_test_id', $second->id)->cursor() as $sub) {
+                if ($existingSubmissionModuleIds->has($sub->module_id)) {
+                    continue;
+                }
+
+                $submissionRows[] = [
+                    'user_test_id'          => $first->id,
+                    'module_id'             => $sub->module_id,
+                    'issued_next_module_id' => $sub->issued_next_module_id,
+                    'result'                => $sub->getRawOriginal('result'),
+                    'submitted_at'          => $sub->submitted_at,
+                    'created_at'            => $sub->created_at,
+                    'updated_at'            => $sub->updated_at,
+                ];
+            }
+
+            foreach (array_chunk($submissionRows, 200) as $chunk) {
+                \App\Models\UserTestModuleSubmission::insert($chunk);
             }
 
             $first->forceFill([
@@ -517,6 +606,16 @@ class TestProgressionService
             ->filter(fn ($response) => ! $response->question?->is_pretest)->values();
     }
 
+    /**
+     * Do NOT narrow this select to drop `question_snapshot`, however tempting the
+     * blob size makes it. UserTestAnswer::getQuestionAttribute() rebuilds the
+     * Question from that snapshot and SHADOWS the eager-loaded relation, so the
+     * snapshot — not the live `questions` row — supplies the irt_a/b/c and
+     * is_pretest that SatScoringService scores with. Dropping it would silently
+     * change which parameters grade a student.
+     *
+     * The eager load below is the fallback for legacy rows that have no snapshot.
+     */
     private function responsesForModule(UserTest $attempt, Module $module)
     {
         return UserTestAnswer::where('user_test_id', $attempt->id)

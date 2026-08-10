@@ -259,7 +259,9 @@ export function showCustomAlert(message, type = 'info', title = 'Notification', 
   });
 }
 
-export function showCustomConfirm(message, type = 'warning', title = 'Confirm Action') {
+// confirmText/cancelText are optional and default to the previous hardcoded
+// labels, so existing call sites are unaffected.
+export function showCustomConfirm(message, type = 'warning', title = 'Confirm Action', confirmText = 'Confirm', cancelText = 'Cancel') {
   return new Promise((resolve) => {
     const modal = getOrCreateAlertModal();
     const titleEl = modal.querySelector('#customAlertTitle');
@@ -274,9 +276,9 @@ export function showCustomConfirm(message, type = 'warning', title = 'Confirm Ac
 
     // Set button visibility & labels
     cancelBtn.classList.remove('hidden');
-    cancelBtn.textContent = 'Cancel';
+    cancelBtn.textContent = cancelText;
     confirmBtn.className = 'custom-alert-btn btn-primary';
-    confirmBtn.textContent = 'Confirm';
+    confirmBtn.textContent = confirmText;
 
     // Set icons and colors based on type
     iconEl.className = 'custom-alert-icon ' + type;

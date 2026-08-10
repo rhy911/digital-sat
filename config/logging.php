@@ -73,6 +73,18 @@ return [
             'replace_placeholders' => true,
         ],
 
+        // Queue/scoring telemetry: job wall time, queue wait, and the reason a
+        // module submission was rejected as a conflict. Kept off `laravel.log`
+        // because `logs:clear` truncates that file and this data is what sizes
+        // the timing invariants in config/scoring.php after a load test.
+        'queue' => [
+            'driver' => 'daily',
+            'path' => storage_path('logs/queue.log'),
+            'level' => 'info',
+            'days' => env('LOG_QUEUE_DAYS', 14),
+            'replace_placeholders' => true,
+        ],
+
         'slack' => [
             'driver' => 'slack',
             'url' => env('LOG_SLACK_WEBHOOK_URL'),

@@ -8,7 +8,7 @@ use App\Models\UserTest;
 use App\Models\UserTestAnswer;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Validation\ValidationException;
 use Symfony\Component\HttpKernel\Exception\ConflictHttpException;
 
@@ -110,6 +110,16 @@ trait HandlesAnswers
         }
 
         if ((int) $userTest->current_module_id !== (int) $module->id) {
+            // One of three distinct causes behind a module_progression_conflict.
+            // Classified so a load test can prove which one actually fires
+            // instead of leaving it to inference. Safe scalars only.
+            Log::channel('queue')->info('conflict.module_mismatch', [
+                'user_test_id' => $userTest->id,
+                'requested_module_id' => (int) $module->id,
+                'current_module_id' => (int) $userTest->current_module_id,
+                'attempt_status' => $userTest->status,
+            ]);
+
             throw new ConflictHttpException('This module is not active for the test attempt.');
         }
 

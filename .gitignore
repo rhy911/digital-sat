@@ -18,6 +18,8 @@
 /public/storage
 /storage/*.key
 /storage/pail
+# flock slot files for the cron queue workers — one per worker line
+/storage/w*.lock
 /vendor
 Homestead.json
 Homestead.yaml

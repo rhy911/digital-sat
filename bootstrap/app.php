@@ -30,5 +30,10 @@ return Application::configure(basePath: dirname(__DIR__))
     })
     ->withSchedule(function (\Illuminate\Console\Scheduling\Schedule $schedule): void {
         $schedule->command('logs:clear')->daily();
+        // Nothing pruned this table before; it grows unbounded.
+        $schedule->command('queue:prune-failed --hours=168')->daily();
+        // Queue depth / oldest job age. Cheap enough to run during an exam, and
+        // its log is what sizes the timing invariants in config/scoring.php.
+        $schedule->command('sat:queue-health')->everyMinute()->withoutOverlapping();
     })
     ->create();

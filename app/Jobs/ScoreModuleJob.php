@@ -2,28 +2,36 @@
 
 namespace App\Jobs;
 
-use App\Models\Module;
-use App\Models\UserTest;
-use App\Models\UserTestModuleSubmission;
-use App\Services\AttemptProgressionService;
-use App\Services\TestProgressionService;
+use App\Services\ModuleScoringService;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
-use Illuminate\Database\UniqueConstraintViolationException;
 use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
 use Illuminate\Support\Facades\Cache;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 
+/**
+ * Async scoring for the TERMINAL module submission.
+ *
+ * Non-terminal modules are scored inline in the request (see
+ * SubmissionController) because routing is a single theta estimate. The terminal
+ * submission runs finalize() — two IRT estimates plus conversion plus a possible
+ * auto-merge — so it stays off the request thread.
+ *
+ * The actual work lives in ModuleScoringService, shared with the inline path so
+ * the two can never drift apart.
+ */
 class ScoreModuleJob implements ShouldQueue
 {
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 
+    // Retries are deliberately off: a second run risks advancing the attempt
+    // twice. The recovery mechanism is the UserTestModuleSubmission receipt,
+    // not the retry counter.
     public int $tries = 1;
 
-    public int $timeout = 60;
+    public int $timeout = 120;
 
     public function __construct(
         public int $userTestId,
@@ -31,45 +39,48 @@ class ScoreModuleJob implements ShouldQueue
         public int $sectionId,
         public bool $timedOut = false,
         public ?string $lockKey = null,
-    ) {}
+        public ?string $lockOwner = null,
+        public ?int $queuedAtMs = null,
+    ) {
+        // The worker reads `timeout` off the serialized payload, so assigning it
+        // here is honoured. Keeps the whole timing set in config/scoring.php.
+        $this->timeout = (int) config('scoring.job_timeout', 120);
+        // Stamped in the web request, so queue_wait_ms below is a true
+        // end-to-end wait rather than just the worker's own view.
+        $this->queuedAtMs ??= (int) (microtime(true) * 1000);
+    }
 
     /**
      * Score the submitted module and advance the attempt. Runs off the request
      * thread so the HTTP submit no longer holds a row lock for the duration of
      * the IRT computation; the frontend polls /submit-status until this writes
-     * the cache key below.
+     * the cache key.
      */
-    public function handle(TestProgressionService $progression, AttemptProgressionService $attemptProgression): void
+    public function handle(ModuleScoringService $scoring): void
     {
-        $cacheKey = "scoring_result_{$this->userTestId}";
+        $startedAt = hrtime(true);
+        $outcome = 'ok';
 
         try {
-            $userTest = UserTest::findOrFail($this->userTestId);
-            $module = Module::findOrFail($this->moduleId);
-
-            $result = $progression->submit($userTest, $module);
-            $result['timed_out'] = $this->timedOut;
-
-            if (! isset($result['error'])) {
-                $result = $this->advanceAndRecord($attemptProgression, $result);
-            }
-
-            Cache::put($cacheKey, $result, 300);
+            $scoring->scoreAndAdvance($this->userTestId, $this->moduleId, $this->timedOut);
         } catch (\Throwable $e) {
-            Log::error('EXCEPTION in ScoreModuleJob', [
+            $outcome = 'error';
+            $scoring->recordFailure($this->userTestId, $this->moduleId, $e, 'EXCEPTION in ScoreModuleJob');
+        } finally {
+            $this->releaseSubmitLock();
+
+            // The two numbers that let invariant I2 in config/scoring.php be
+            // re-derived after a load test: how long the job took, and how long
+            // it waited before starting. Safe scalars only — no payloads.
+            Log::channel('queue')->info('score_module_job', [
                 'user_test_id' => $this->userTestId,
                 'module_id' => $this->moduleId,
-                'exception' => $e,
+                'outcome' => $outcome,
+                'duration_ms' => (int) ((hrtime(true) - $startedAt) / 1e6),
+                'queue_wait_ms' => $this->queuedAtMs
+                    ? max(0, (int) (microtime(true) * 1000) - $this->queuedAtMs)
+                    : null,
             ]);
-            Cache::put($cacheKey, [
-                'status' => 'error',
-                'error' => 'Server error during submission.',
-                'message' => 'An unexpected server error occurred.',
-            ], 300);
-        } finally {
-            if ($this->lockKey) {
-                Cache::lock($this->lockKey)->forceRelease();
-            }
         }
     }
 
@@ -91,54 +102,35 @@ class ScoreModuleJob implements ShouldQueue
             'status' => 'error',
             'error' => 'Server error during submission.',
             'message' => 'An unexpected server error occurred.',
-        ], 300);
+            'scored_module_id' => $this->moduleId,
+        ], (int) config('scoring.result_ttl', 900));
 
-        if ($this->lockKey) {
-            Cache::lock($this->lockKey)->forceRelease();
-        }
+        $this->releaseSubmitLock();
     }
 
     /**
-     * Persist the routing decision and a submission receipt. If a duplicate
-     * request raced this job and already recorded a receipt for this module,
-     * fall back to that receipt's result instead of erroring.
+     * Release the submit lock, checking ownership.
+     *
+     * forceRelease() deletes the row for ANY owner, so if this job's lock had
+     * already lapsed and been re-acquired by a newer request, the old job would
+     * steal the new holder's lock on its way out. restoreLock()->release() is
+     * owner-checked and no-ops in that case.
+     *
+     * The forceRelease fallback covers jobs already sitting in the `jobs` table
+     * at deploy time, whose payloads were serialized without an owner.
      */
-    private function advanceAndRecord(AttemptProgressionService $attemptProgression, array $result): array
+    private function releaseSubmitLock(): void
     {
-        return DB::transaction(function () use ($attemptProgression, $result) {
-            $existing = UserTestModuleSubmission::where('user_test_id', $this->userTestId)
-                ->where('module_id', $this->moduleId)
-                ->first();
-            if ($existing) {
-                return $existing->result;
-            }
+        if (! $this->lockKey) {
+            return;
+        }
 
-            $userTest = UserTest::where('id', $this->userTestId)->lockForUpdate()->first();
-            if (! $userTest) {
-                // Section-attempt auto-merge (TestProgressionService::autoMergeIfEligible) can
-                // delete this attempt during finalize when it's the second half of a completed
-                // pair. The result already points at the surviving merged attempt, so just cache it.
-                return $result;
-            }
+        if ($this->lockOwner) {
+            Cache::restoreLock($this->lockKey, $this->lockOwner)->release();
 
-            $nextModule = $attemptProgression->advance($userTest, $result);
+            return;
+        }
 
-            try {
-                UserTestModuleSubmission::create([
-                    'user_test_id' => $this->userTestId,
-                    'module_id' => $this->moduleId,
-                    'issued_next_module_id' => $nextModule?->id,
-                    'result' => $result,
-                    'submitted_at' => now(),
-                ]);
-            } catch (UniqueConstraintViolationException) {
-                return UserTestModuleSubmission::where('user_test_id', $this->userTestId)
-                    ->where('module_id', $this->moduleId)
-                    ->first()
-                    ->result;
-            }
-
-            return $result;
-        });
+        Cache::lock($this->lockKey)->forceRelease();
     }
 }

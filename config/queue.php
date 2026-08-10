@@ -40,7 +40,12 @@ return [
             'connection' => env('DB_QUEUE_CONNECTION'),
             'table' => env('DB_QUEUE_TABLE', 'jobs'),
             'queue' => env('DB_QUEUE', 'default'),
-            'retry_after' => (int) env('DB_QUEUE_RETRY_AFTER', 90),
+            // Invariant I1 (see config/scoring.php): must stay above
+            // ScoreModuleJob's timeout (120s) or the queue re-reserves a job
+            // that is still running and scores the same module twice. The old
+            // default of 90 sat exactly at the lock TTL, which is how duplicate
+            // jobs got dispatched during the 70-student mock exam.
+            'retry_after' => (int) env('DB_QUEUE_RETRY_AFTER', 180),
             'after_commit' => false,
         ],
 

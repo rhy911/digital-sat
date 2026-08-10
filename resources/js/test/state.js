@@ -32,6 +32,16 @@ export const state = {
   isPaused: false,
   isSubmitting: false,
 
+  // Submission state. isSubmitting must stay true for the WHOLE time a
+  // submission is in flight server-side — releasing it while scoring is still
+  // running is what let a second POST through and produced the
+  // module_progression_conflict popup. autosaveIntervalId lets the periodic
+  // autosave be stopped once a module has been submitted; there is nothing left
+  // to save at that point. expiredSubmitTriggeredFor makes the autosave
+  // module_expired handler fire at most once per module.
+  autosaveIntervalId: null,
+  expiredSubmitTriggeredFor: null,
+
   // Question timing
   questionActiveStartedAtMs: null,
   questionTimings: {}

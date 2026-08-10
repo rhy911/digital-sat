@@ -67,14 +67,27 @@ class SatScoringService
             throw new InvalidArgumentException('Ability estimation requires at least one scored response.');
         }
 
+        // Item parameters are constant across the theta grid, but reading them is
+        // NOT cheap: $response->question runs UserTestAnswer::getQuestionAttribute(),
+        // which json_decodes the snapshot and rebuilds a Question plus its passage,
+        // answer choices and SPR answers on EVERY access, with no memoisation.
+        // Called inside the loop below that was 161 grid points x N responses object
+        // graph rebuilds per estimate — ~8,000 for a 50-item section, and the single
+        // largest cost in the whole scoring path. Hoisted out; the arithmetic and
+        // the resulting theta are unchanged.
+        $items = [];
+        foreach ($responses as $response) {
+            [$a, $b, $c] = $this->itemParameters($response);
+            $items[] = [$a, $b, $c, (bool) $response->is_correct];
+        }
+
         $logPosteriors = [];
         for ($theta = self::GRID_MIN; $theta <= self::GRID_MAX + 1e-9; $theta += self::GRID_STEP) {
             $logPosterior = -0.5 * ($theta ** 2);
-            foreach ($responses as $response) {
-                [$a, $b, $c] = $this->itemParameters($response);
+            foreach ($items as [$a, $b, $c, $isCorrect]) {
                 $probability = $c + (1 - $c) / (1 + exp(-$a * ($theta - $b)));
                 $probability = max(1e-12, min(1 - 1e-12, $probability));
-                $logPosterior += $response->is_correct
+                $logPosterior += $isCorrect
                     ? log($probability)
                     : log(1 - $probability);
             }
