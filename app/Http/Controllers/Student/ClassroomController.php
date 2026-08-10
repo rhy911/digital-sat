@@ -82,14 +82,16 @@ class ClassroomController extends Controller
             ->with('creator')
             ->latest('created_at')
             ->paginate(15, ['*'], 'docs_page')
-            ->withQueryString();
+            ->withQueryString()
+            ->appends(['tab' => 'docs']);
 
         $assignmentsPage = $classroom->assignments()
             ->with('test')
             ->whereIn('status', ['published', 'closed'])
             ->latest('created_at')
             ->paginate(12, ['*'], 'assign_page')
-            ->withQueryString();
+            ->withQueryString()
+            ->appends(['tab' => 'assign']);
 
         $classmatesPage = $classroom->memberships()
             ->where('status', 'active')
@@ -97,14 +99,16 @@ class ClassroomController extends Controller
             ->with('student')
             ->orderByDesc('decided_at')
             ->paginate(15, ['*'], 'mates_page')
-            ->withQueryString();
+            ->withQueryString()
+            ->appends(['tab' => 'classmates']);
 
         $announcementsPage = $classroom->announcements()
             ->with(['author', 'comments' => fn ($query) => $query->with('author')->oldest()])
             ->orderByDesc('pinned')
             ->latest()
             ->paginate(10, ['*'], 'announce_page')
-            ->withQueryString();
+            ->withQueryString()
+            ->appends(['tab' => 'announce']);
 
         $calendarItems = \App\Support\ClassroomCalendar::build(
             $classroom->events,

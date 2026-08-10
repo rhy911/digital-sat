@@ -10,7 +10,7 @@
     <div class="app-shell" x-data="{
         searchQuery: '',
         statusFilter: 'all',
-        activeTab: 'results'
+        activeTab: new URLSearchParams(location.search).get('tab') || 'results'
     }">
         <!-- COLUMN 1: ICON RAIL -->
         <x-shell.icon-rail :logo-href="route('teacher.progress')" :avatar-label="$userInitials"
@@ -85,83 +85,14 @@
 
                     <!-- PINNED TAB BAR -->
                     <x-shell.tab-bar :tabs="[
-                        ['key' => 'results', 'label' => 'Student results', 'count' => count($report['rows'])],
+                        ['key' => 'results', 'label' => 'Student results', 'count' => $report['metrics']['assigned']],
                         ['key' => 'analysis', 'label' => 'Question Analysis', 'count' => count($report['questionAnalysis'])],
                         ['key' => 'settings', 'label' => 'Settings'],
                     ]" />
 
                     <!-- RESULTS PANEL -->
                     <div class="section-panel" :class="{ 'active': activeTab === 'results' }">
-                        <div class="sp-head">
-                            <div>
-                                <p>Best completed score represents each student; every attempt remains available.</p>
-                            </div>
-                        </div>
-
-                        <table>
-                            <thead>
-                                <tr>
-                                    <th>Student</th>
-                                    <th>Status</th>
-                                    <th>Attempts</th>
-                                    <th>Best score</th>
-                                    @if($assignment->assign_type !== 'section')
-                                        <th>R&amp;W Score</th>
-                                        <th>Math Score</th>
-                                    @endif
-                                    <th class="text-right">Actions</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                @forelse($report['rows'] as $row)
-                                    <tr>
-                                        <td class="name-cell">
-                                            <x-ui.person-cell :name="$row['recipient']->student->name"
-                                                :email="$row['recipient']->student->email"
-                                                :initials="$row['recipient']->student->initials" />
-                                        </td>
-                                        <td>
-                                            <span class="status-pill {{ $row['recipient']->status === 'withdrawn' ? 'pending' : ($row['in_progress'] ? 'pending' : ($row['best'] ? 'ok' : 'pending')) }}">
-                                                <span class="d"></span>
-                                                {{ $row['recipient']->status === 'withdrawn' ? 'Withdrawn' : ($row['in_progress'] ? 'In progress' : ($row['best'] ? ($row['late'] ? 'Completed late' : 'Completed') : 'Not started')) }}
-                                            </span>
-                                        </td>
-                                        <td>{{ $row['completed_count'] }} / {{ $assignment->attempt_limit }}</td>
-                                        <td>
-                                            @if ($row['best'])
-                                                @if ($assignment->assign_type === 'section')
-                                                    <strong>{{ $assignment->section_type === 'reading_writing' ? ($row['best']->score_reading_writing ?? '—') : ($row['best']->score_math ?? '—') }} / 800</strong>
-                                                @else
-                                                    <strong>{{ $row['best']->total_score ?? '—' }} / 1600</strong>
-                                                @endif
-                                                <small style="display: block; font-size: 11px; color: var(--ink-soft); margin-top: 2px;">
-                                                    Correct: {{ $row['best']->correct_answers_count }}/{{ $row['best']->total_questions_count }}
-                                                </small>
-                                            @else
-                                                —
-                                            @endif
-                                        </td>
-                                        @if($assignment->assign_type !== 'section')
-                                            <td>{{ $row['best']?->score_reading_writing ?? '—' }}</td>
-                                            <td>{{ $row['best']?->score_math ?? '—' }}</td>
-                                        @endif
-                                        <td class="text-right">
-                                            @if ($row['attempts']->isNotEmpty())
-                                                <a href="{{ route('teacher.assignments.students.show', [$assignment, $row['recipient']->student]) }}" class="link-action">
-                                                    View attempts
-                                                </a>
-                                            @else
-                                                —
-                                            @endif
-                                        </td>
-                                    </tr>
-                                @empty
-                                    <tr>
-                                        <td colspan="{{ $assignment->assign_type === 'section' ? 5 : 7 }}" class="empty-row">No recipients yet.</td>
-                                    </tr>
-                                @endforelse
-                            </tbody>
-                        </table>
+                        <livewire:teacher.assignment-student-results :assignment="$assignment" />
                     </div>
 
                     <!-- ANALYSIS PANEL -->

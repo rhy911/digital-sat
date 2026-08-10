@@ -68,6 +68,17 @@ class SubmissionController extends Controller
             ], 409)->header('Retry-After', 2);
         }
 
+        // Tells autosave to stop writing for this attempt+module. The lock alone is
+        // not enough: autosave does not (and must not) contend for it, or a submit
+        // arriving mid-autosave would be answered `submission_in_progress` with no
+        // job behind it and the client would poll until its budget ran out. See
+        // ModuleScoringService::submitMarkerKey().
+        $markerKey = ModuleScoringService::submitMarkerKey(
+            (int) $validated['user_test_id'],
+            (int) $validated['module_id']
+        );
+        Cache::put($markerKey, 1, (int) config('scoring.lock_ttl'));
+
         $jobDispatched = false;
 
         try {
@@ -242,7 +253,10 @@ class SubmissionController extends Controller
             ], 500);
         } finally {
             if (! $jobDispatched) {
+                // Same condition as the lock: while a job owns the submission the
+                // marker has to outlive this request, and the job drops it.
                 $lock->release();
+                Cache::forget($markerKey);
             }
         }
     }

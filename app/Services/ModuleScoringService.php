@@ -27,6 +27,22 @@ class ModuleScoringService
     ) {}
 
     /**
+     * Cache key marking "a submission for this attempt+module is being processed".
+     *
+     * Autosave has to know about it: the submit lock is held for the whole
+     * submission, but the attempt only leaves the module inside advanceAndRecord()
+     * below. In the window between submit committing its answers and that advance,
+     * a straggler autosave still passes every check in resolveSubmissionContext()
+     * and overwrites the just-submitted answers with the values it collected
+     * before the student's last edit — silent mis-grading. AnswerController skips
+     * writing while this key exists.
+     */
+    public static function submitMarkerKey(int $userTestId, int $moduleId): string
+    {
+        return "module_submit_active_{$userTestId}_{$moduleId}";
+    }
+
+    /**
      * @return array<string, mixed> the result payload, also written to the cache
      */
     public function scoreAndAdvance(int $userTestId, int $moduleId, bool $timedOut): array
@@ -50,6 +66,12 @@ class ModuleScoringService
         }
 
         Cache::put($cacheKey, $result, $resultTtl);
+
+        // Both the inline path and the job go through here, so this is the one
+        // place the marker can be dropped for either. Safe now: advanceAndRecord()
+        // has committed, so any later autosave for this module is rejected by the
+        // current_module_id check in resolveSubmissionContext() instead.
+        Cache::forget(self::submitMarkerKey($userTestId, $moduleId));
 
         return $result;
     }

@@ -817,4 +817,67 @@ class TeacherClassManagementTest extends TestCase
         $this->assertLessThan(20, count($queries), 'AssignmentReportService is executing too many queries.');
         $this->assertSame(20, $report['metrics']['assigned']);
     }
+
+    public function test_assignment_report_sorts_recipients_alphabetically_and_paginates(): void
+    {
+        $teacher = $this->teacher();
+        $classroom = $this->classroom($teacher);
+        $test = $this->testFor($teacher);
+        $assignment = $this->assignment($classroom, $test);
+
+        $studentZ = User::factory()->student()->create(['name' => 'Zelda Student']);
+        $studentA = User::factory()->student()->create(['name' => 'Aaron Student']);
+        $studentM = User::factory()->student()->create(['name' => 'Michael Student']);
+
+        \App\Models\AssignmentRecipient::create(['assignment_id' => $assignment->id, 'student_id' => $studentZ->id, 'assigned_at' => now()]);
+        \App\Models\AssignmentRecipient::create(['assignment_id' => $assignment->id, 'student_id' => $studentA->id, 'assigned_at' => now()]);
+        \App\Models\AssignmentRecipient::create(['assignment_id' => $assignment->id, 'student_id' => $studentM->id, 'assigned_at' => now()]);
+
+        $report = app(\App\Services\AssignmentReportService::class)->build($assignment);
+
+        $names = $report['rows']->map(fn ($r) => $r['recipient']->student->name)->values()->all();
+        $this->assertSame(['Aaron Student', 'Michael Student', 'Zelda Student'], $names);
+
+        $response = $this->actingAs($teacher)->get(route('teacher.assignments.show', $assignment));
+        $response->assertOk();
+        $response->assertSee('Aaron Student');
+        $response->assertSee('Michael Student');
+        $response->assertSee('Zelda Student');
+
+        Livewire::actingAs($teacher)
+            ->test(\App\Livewire\Teacher\AssignmentStudentResults::class, ['assignment' => $assignment])
+            ->assertSee('Aaron Student')
+            ->assertSee('Michael Student')
+            ->assertSee('Zelda Student');
+    }
+
+    public function test_classroom_roster_livewire_component_paginates_without_full_page_reload(): void
+    {
+        $teacher = $this->teacher();
+        $classroom = $this->classroom($teacher);
+
+        $students = collect();
+        foreach (range(1, 20) as $i) {
+            $s = User::factory()->student()->create(['name' => sprintf('Student %02d', $i)]);
+            \App\Models\ClassroomMembership::create([
+                'classroom_id' => $classroom->id,
+                'student_id' => $s->id,
+                'status' => 'active',
+                'decided_at' => now()->subMinutes(20 - $i),
+            ]);
+            $students->push($s);
+        }
+
+        $response = $this->actingAs($teacher)->get(route('teacher.classes.show', $classroom));
+        $response->assertOk();
+        $response->assertSee('wire:name="teacher.classroom-roster"', false);
+
+        Livewire::actingAs($teacher)
+            ->test(\App\Livewire\Teacher\ClassroomRoster::class, ['classroom' => $classroom])
+            ->assertSee('Student 20')
+            ->assertSee('Student 06')
+            ->call('gotoPage', 2, 'rosterPage')
+            ->assertSee('Student 05')
+            ->assertSee('Student 01');
+    }
 }

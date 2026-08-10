@@ -314,6 +314,11 @@ export function initializeSprInputValidation() {
   const sprInputs = document.querySelectorAll('.spr-input');
   
   sprInputs.forEach(input => {
+    input.setAttribute('autocomplete', 'off');
+    input.setAttribute('autocorrect', 'off');
+    input.setAttribute('autocapitalize', 'off');
+    input.setAttribute('spellcheck', 'false');
+
     // Keydown listener to block invalid keys
     input.addEventListener('keydown', (e) => {
       // Allow control keys (backspace, delete, arrows, enter, etc.)

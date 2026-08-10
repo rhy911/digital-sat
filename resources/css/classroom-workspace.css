@@ -1844,6 +1844,16 @@ td.num {
     background: var(--amber);
 }
 
+.status-pill.in-progress {
+    color: var(--accent);
+    border: 1px solid var(--accent);
+    transform: rotate(1deg);
+}
+
+.status-pill.in-progress .d {
+    background: var(--accent);
+}
+
 .status-pill.danger {
     color: var(--red);
     border: 1px solid var(--red);
@@ -1851,6 +1861,71 @@ td.num {
 
 .status-pill.danger .d {
     background: var(--red);
+}
+
+/* ============ SKEUOMORPHIC WORKSPACE PAGINATION ============ */
+.cw-pagination {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 16px;
+    margin-top: 16px;
+    border-top: 1px solid var(--border-strong, rgba(26, 32, 44, 0.16));
+}
+
+.cw-pagination__info {
+    font-size: 12px;
+    color: var(--ink-soft, #5A6980);
+}
+
+.cw-pagination__info strong {
+    color: var(--ink, #1A202C);
+    font-family: var(--font-mono, 'IBM Plex Mono', monospace);
+}
+
+.cw-pagination__controls {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.cw-pagination__btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 4px 10px;
+    font-size: 12px;
+    font-weight: 600;
+    font-family: var(--font-mono, 'IBM Plex Mono', monospace);
+    color: var(--ink, #1A202C);
+    background: var(--panel, #FFFFFF);
+    border: 1px solid var(--border-strong, rgba(26, 32, 44, 0.16));
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    text-decoration: none;
+}
+
+.cw-pagination__btn:hover:not(:disabled) {
+    background: var(--binder-bg, #FCF9F2);
+    border-color: var(--accent, #2A4D8F);
+    color: var(--accent, #2A4D8F);
+}
+
+.cw-pagination__btn.is-active {
+    background: var(--accent, #2A4D8F);
+    color: #FFFFFF;
+    border-color: var(--accent, #2A4D8F);
+    font-weight: 700;
+    box-shadow: 0 2px 5px rgba(42, 77, 143, 0.25);
+}
+
+.cw-pagination__btn:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+    background: rgba(241, 242, 245, 0.6);
+    border-color: var(--border, rgba(26, 32, 44, 0.08));
+    color: var(--ink-faint, #8592A8);
 }
 
 /* ============ DUE-SOON INDEX CARDS ============ */

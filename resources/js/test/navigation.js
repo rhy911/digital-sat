@@ -13,6 +13,21 @@ let autosaveInitialized = false;
 let autosaveTimer = null;
 let lastAutosavePayload = '';
 
+// Autosave runs single-flight. SPR answers mutate one character at a time, so the
+// old fire-and-forget autosave put 4-5 overlapping POSTs on the wire for a single
+// typed answer — and fetch does not guarantee delivery order, so the payload
+// carrying "1" could land after the one carrying "12.5" and win the upsert. The
+// student was then graded on a half-typed answer. Only one request may be in
+// flight; anything typed meanwhile is coalesced into ONE follow-up that re-reads
+// the DOM, so the last write always carries the newest value.
+let autosaveInFlight = false;
+let autosavePending = false;
+let lastAutosaveStartedAtMs = 0;
+// Floor between requests. Keeps continuous typing under the route's
+// throttle:60,1 — a 429 there is swallowed by the catch below, which is how an
+// edit could go missing entirely.
+const MIN_AUTOSAVE_GAP_MS = 1200;
+
 export function initSecurity() {
   // Block DevTools shortcuts
   document.addEventListener('keydown', function(e) {
@@ -281,6 +296,15 @@ export function initializeAutosave() {
     state.autosaveIntervalId = null;
   }
 
+  // Per-module bookkeeping. A pending flag left over from the previous module would
+  // fire one pointless save, and a stale lastAutosavePayload could suppress the
+  // first real save of this module.
+  clearTimeout(autosaveTimer);
+  autosaveInFlight = false;
+  autosavePending = false;
+  lastAutosaveStartedAtMs = 0;
+  lastAutosavePayload = '';
+
   startAutosaveInterval();
 
   // The document-level listeners below must only ever be bound once.
@@ -333,65 +357,104 @@ function startAutosaveInterval() {
 function scheduleAutosave() {
   if (window.isPreview || !window.userTestId || !window.currentModuleId) return;
 
+  // Assignments still save on the first keystroke (0ms) so answers are durable as
+  // close to the deadline as possible; the gap floor only throttles the ones after
+  // it. Practice keeps its 700ms debounce.
+  const baseDelay = window.isAssignmentAttempt ? 0 : 700;
+  const sinceLastStart = Date.now() - lastAutosaveStartedAtMs;
+  const delay = Math.max(baseDelay, MIN_AUTOSAVE_GAP_MS - sinceLastStart, 0);
+
   clearTimeout(autosaveTimer);
   autosaveTimer = setTimeout(() => {
     autosaveAnswers();
-  }, window.isAssignmentAttempt ? 0 : 700);
+  }, delay);
 }
 
 async function autosaveAnswers() {
   if (window.isPreview || !window.userTestId || !window.currentModuleId) return;
 
-  const elapsed = (window.initialElapsedSeconds || 0) + getTimerElapsedSeconds();
-  const elapsed_seconds = Math.max(0, elapsed);
+  // From the moment Next is pressed the submission owns these answers. The server
+  // rejects a late autosave as well, but not sending one keeps the race off the
+  // wire entirely.
+  if (state.isSubmitting) return;
 
-  updateActiveQuestionTime();
-  const answers = collectAnswers();
-  const payload = JSON.stringify({
-    user_test_id: window.userTestId,
-    module_id: window.currentModuleId,
-    answers: answers,
-    question_times: state.questionTimings,
-    elapsed_seconds: elapsed_seconds
-  });
+  // Coalesce instead of racing: note that something changed and send exactly one
+  // follow-up after the in-flight request settles.
+  if (autosaveInFlight) {
+    autosavePending = true;
+    return;
+  }
 
-  // Local state backup
-  localStorage.setItem(`sat_state_${window.userTestId}_${window.currentModuleId}`, JSON.stringify(answers));
-
-  if (payload === lastAutosavePayload) return;
+  autosaveInFlight = true;
+  lastAutosaveStartedAtMs = Date.now();
 
   try {
-    const response = await fetch('/engine/test/autosave-module', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Accept': 'application/json',
-        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
-      },
-      body: payload,
-      keepalive: true
+    const elapsed = (window.initialElapsedSeconds || 0) + getTimerElapsedSeconds();
+    const elapsed_seconds = Math.max(0, elapsed);
+
+    updateActiveQuestionTime();
+    const answers = collectAnswers();
+    const payload = JSON.stringify({
+      user_test_id: window.userTestId,
+      module_id: window.currentModuleId,
+      answers: answers,
+      question_times: state.questionTimings,
+      elapsed_seconds: elapsed_seconds
     });
 
-    if (response.status === 409) {
-      const data = await response.json();
-      // Fire the deadline submit at most once per module. Without this guard the
-      // 15s autosave loop can re-enter submitModule every cycle once the submit
-      // guard has been released, quietly stacking duplicate POSTs.
-      if (data.error === 'module_expired'
-          && state.expiredSubmitTriggeredFor !== window.currentModuleId) {
-        state.expiredSubmitTriggeredFor = window.currentModuleId;
-        await submitModule({ skipConfirm: true, timedOut: true });
-        return;
+    // Local state backup
+    localStorage.setItem(`sat_state_${window.userTestId}_${window.currentModuleId}`, JSON.stringify(answers));
+
+    if (payload === lastAutosavePayload) return;
+
+    try {
+      const response = await fetch('/engine/test/autosave-module', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+          'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+        },
+        body: payload,
+        keepalive: true
+      });
+
+      if (response.status === 409) {
+        const data = await response.json();
+        // Fire the deadline submit at most once per module. Without this guard the
+        // 15s autosave loop can re-enter submitModule every cycle once the submit
+        // guard has been released, quietly stacking duplicate POSTs.
+        if (data.error === 'module_expired'
+            && state.expiredSubmitTriggeredFor !== window.currentModuleId) {
+          state.expiredSubmitTriggeredFor = window.currentModuleId;
+          await submitModule({ skipConfirm: true, timedOut: true });
+          return;
+        }
+
+        // A submission for this module is already saving the answers. Nothing is
+        // wrong and this payload is obsolete — drop it without warning, and do NOT
+        // mark it as saved.
+        if (data.error === 'submission_in_progress') return;
       }
-    }
 
-    if (!response.ok) {
-      throw new Error(`Autosave failed with status ${response.status}`);
-    }
+      if (!response.ok) {
+        throw new Error(`Autosave failed with status ${response.status}`);
+      }
 
-    lastAutosavePayload = payload;
-  } catch (error) {
-    console.warn("Autosave failed:", error);
+      lastAutosavePayload = payload;
+    } catch (error) {
+      console.warn("Autosave failed:", error);
+    }
+  } finally {
+    autosaveInFlight = false;
+
+    if (autosavePending) {
+      autosavePending = false;
+      // Goes back through scheduleAutosave() so the follow-up re-reads the DOM and
+      // respects the gap floor, rather than replaying a payload queued behind this
+      // request.
+      if (!state.isSubmitting) scheduleAutosave();
+    }
   }
 }
 

@@ -118,9 +118,15 @@ class ScoreModuleJob implements ShouldQueue
      *
      * The forceRelease fallback covers jobs already sitting in the `jobs` table
      * at deploy time, whose payloads were serialized without an owner.
+     *
+     * The autosave marker goes with it. scoreAndAdvance() already drops it on the
+     * happy path; doing it here too covers the catch block and the failed() hook,
+     * where otherwise autosave would stay blocked for the marker's whole TTL.
      */
     private function releaseSubmitLock(): void
     {
+        Cache::forget(ModuleScoringService::submitMarkerKey($this->userTestId, $this->moduleId));
+
         if (! $this->lockKey) {
             return;
         }

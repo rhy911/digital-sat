@@ -5,9 +5,11 @@ namespace App\Http\Controllers\Engine;
 use App\Http\Controllers\Controller;
 use App\Http\Controllers\Engine\Concerns\HandlesAnswers;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Auth\Access\AuthorizationException;
 use App\Services\AssignmentModuleTimingService;
+use App\Services\ModuleScoringService;
 use Symfony\Component\HttpKernel\Exception\ConflictHttpException;
 
 class AnswerController extends Controller
@@ -32,6 +34,15 @@ class AnswerController extends Controller
             $result = DB::transaction(function () use ($validated, $request) {
                 [$userTest, $module] = $this->resolveSubmissionContext($validated);
 
+                // Checked here, not before the transaction: resolveSubmissionContext()
+                // has taken the attempt row lock, so a submit can no longer slip in
+                // between this read and the write below. An autosave that started
+                // before the student's last edit must not be allowed to overwrite the
+                // answers a submission has already saved.
+                if (Cache::has(ModuleScoringService::submitMarkerKey((int) $userTest->id, (int) $module->id))) {
+                    return ['expired' => false, 'submitting' => true, 'saved_count' => 0];
+                }
+
                 if ($userTest->assignment_id) {
                     $timing = $this->assignmentTiming->syncElapsed($userTest, $module);
                     if ($timing['expired']) {
@@ -54,6 +65,15 @@ class AnswerController extends Controller
                 return response()->json([
                     'error' => 'module_expired',
                     'message' => 'Module time has expired. Saved answers will be submitted.',
+                ], 409);
+            }
+
+            if ($result['submitting'] ?? false) {
+                // Same code the submit route uses for "already in flight": nothing is
+                // wrong, this autosave is simply obsolete. The client drops it.
+                return response()->json([
+                    'error' => 'submission_in_progress',
+                    'message' => 'Submission is processing',
                 ], 409);
             }
 

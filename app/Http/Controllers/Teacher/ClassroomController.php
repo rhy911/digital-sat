@@ -99,31 +99,27 @@ class ClassroomController extends Controller
         $rosterStats = ClassroomRosterStats::forClassroom($classroom);
         $topScore = ClassroomRosterStats::topScore($rosterStats, $classroom);
 
-        $rosterPage = $classroom->memberships()
-            ->where('status', 'active')
-            ->with('student')
-            ->orderByDesc('decided_at')
-            ->paginate(15, ['*'], 'roster_page')
-            ->withQueryString();
-
         $documentsPage = $classroom->documents()
             ->with('creator')
             ->latest('created_at')
             ->paginate(15, ['*'], 'docs_page')
-            ->withQueryString();
+            ->withQueryString()
+            ->appends(['tab' => 'docs']);
 
         $assignmentsPage = $classroom->assignments()
             ->with('test')
             ->latest('created_at')
             ->paginate(12, ['*'], 'assign_page')
-            ->withQueryString();
+            ->withQueryString()
+            ->appends(['tab' => 'assign']);
 
         $announcementsPage = $classroom->announcements()
             ->with(['author', 'comments' => fn ($query) => $query->with('author')->oldest()])
             ->orderByDesc('pinned')
             ->latest()
             ->paginate(10, ['*'], 'announce_page')
-            ->withQueryString();
+            ->withQueryString()
+            ->appends(['tab' => 'announce']);
 
         $calendarItems = \App\Support\ClassroomCalendar::build(
             $classroom->events,
@@ -147,7 +143,6 @@ class ClassroomController extends Controller
             'topScore',
             'tests',
             'leaderboard',
-            'rosterPage',
             'documentsPage',
             'assignmentsPage',
             'announcementsPage',

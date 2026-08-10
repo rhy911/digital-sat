@@ -124,7 +124,11 @@
                                     <input type="text"
                                         class="w-full px-4 py-2 border border-slate-300 rounded focus:outline-hidden focus:ring-2 focus:ring-indigo-500 spr-input"
                                         name="q{{ $loop->iteration }}" placeholder="______" maxlength="6"
-                                        value="{{ $savedAnswer ?? '' }}">
+                                        value="{{ $savedAnswer ?? '' }}"
+                                        autocomplete="off"
+                                        autocorrect="off"
+                                        autocapitalize="off"
+                                        spellcheck="false">
                                     @if ($q->spr_hint)
                                         <div class="mt-1 italic text-slate-500 text-sm">{{ $q->spr_hint }}
                                         </div>
