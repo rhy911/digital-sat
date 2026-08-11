@@ -664,7 +664,7 @@
     justify-content: center;
     border: 2.5px dashed currentColor;
     border-radius: 50%;
-    font-family: var(--font-hand), "Playfair Display", Georgia, serif;
+    font-family: var(--font-hand), "Lora", Georgia, serif;
     font-style: italic;
     font-size: 1.2rem;
     font-weight: 900;
@@ -953,7 +953,7 @@
 }
 
 .ds-study-card__header h4 {
-    font-family: var(--font-hand), "Playfair Display", Georgia, serif;
+    font-family: var(--font-hand), "Lora", Georgia, serif;
     font-style: italic;
     font-size: 1.25rem;
     color: var(--ds-danger, #c1443a);
@@ -990,7 +990,7 @@
 }
 
 .ds-study-list li span {
-    font-family: var(--font-hand), "Playfair Display", Georgia, serif;
+    font-family: var(--font-hand), "Lora", Georgia, serif;
     font-style: italic;
     font-size: 1.05rem;
     color: #2f3e46;

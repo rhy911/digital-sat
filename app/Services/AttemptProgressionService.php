@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Models\Module;
 use App\Models\Test;
 use App\Models\UserTest;
+use Carbon\CarbonInterface;
 use Symfony\Component\HttpKernel\Exception\ConflictHttpException;
 
 class AttemptProgressionService
@@ -50,7 +51,26 @@ class AttemptProgressionService
         }
     }
 
-    public function advance(UserTest $attempt, array $result): ?Module
+    /**
+     * Issue the next module and start its clock.
+     *
+     * Assignment attempts run on a CHAINED clock: the next module's timer starts
+     * the moment the previous one ends, whether or not the student ever opens the
+     * page. A null start date here is what used to make an unopened module
+     * unexpirable, so a student who closed the tab left the attempt in_progress
+     * forever — see AssignmentAttemptTimeoutService.
+     *
+     * $startNextAt is the previous module's true deadline. The timeout sweeper
+     * passes it so a cascade that runs late produces the same module boundaries as
+     * one that ran on time; cron lateness must never hand out extra test time. A
+     * live student's submit passes null and gets now(), which is that same moment.
+     *
+     * Practice attempts keep the null: they are allowed to pause while away and
+     * resume from current_module_elapsed_seconds (SessionController::show).
+     *
+     * @param  array<string, mixed>  $result
+     */
+    public function advance(UserTest $attempt, array $result, ?CarbonInterface $startNextAt = null): ?Module
     {
         if (! empty($result['test_completed'])) {
             $attempt->forceFill([
@@ -74,7 +94,9 @@ class AttemptProgressionService
 
         $attempt->forceFill([
             'current_module_id' => $nextModule->id,
-            'current_module_started_at' => null,
+            'current_module_started_at' => $attempt->assignment_id
+                ? ($startNextAt ? $startNextAt->copy() : now())
+                : null,
             'current_module_elapsed_seconds' => 0,
         ])->save();
 

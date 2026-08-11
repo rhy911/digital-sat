@@ -9,6 +9,7 @@ use App\Models\Classroom;
 use App\Models\Test;
 use App\Models\User;
 use App\Notifications\AssignmentPublishedNotification;
+use App\Services\AssignmentAttemptTimeoutService;
 use App\Services\AssignmentReportService;
 use App\Services\AssignmentService;
 use Illuminate\Http\Request;
@@ -69,9 +70,16 @@ class AssignmentController extends Controller
         return back()->with('success', 'Assignment created. Students were notified.');
     }
 
-    public function show(Assignment $assignment, AssignmentReportService $reports)
+    public function show(Assignment $assignment, AssignmentReportService $reports, AssignmentAttemptTimeoutService $timeouts)
     {
         $this->authorize('view', $assignment);
+
+        // Third catch-up point. The report is where "in progress" is read as a fact
+        // about a student, so an attempt whose clock expired hours ago must not
+        // still be listed that way because cron is down.
+        foreach ($timeouts->candidateAttemptsQuery()->where('assignment_id', $assignment->id)->get() as $running) {
+            $timeouts->finalizeExpired($running);
+        }
 
         $user = auth()->user();
         $assignments = $this->getTeacherAssignmentsQuery($user)

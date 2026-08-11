@@ -34,6 +34,20 @@ return Application::configure(basePath: dirname(__DIR__))
         $schedule->command('queue:prune-failed --hours=168')->daily();
         // Queue depth / oldest job age. Cheap enough to run during an exam, and
         // its log is what sizes the timing invariants in config/scoring.php.
-        $schedule->command('sat:queue-health')->everyMinute()->withoutOverlapping();
+        // Bounded lock for the same reason as the sweep below: the default is 24h,
+        // so one process killed by a host resource limit would take the exam
+        // telemetry offline for a day — and the outage would be invisible, because
+        // the missing signal IS the monitoring. Two minutes is generous for four
+        // COUNTs on a once-a-minute command.
+        $schedule->command('sat:queue-health')->everyMinute()->withoutOverlapping(2);
+        // Assignment attempts are fixed-time exams, so their clock must keep
+        // running after the student closes the tab. Without this the attempt sits
+        // in_progress until someone reopens it, one module at a time.
+        // 5-minute lock expiry, not the 24h default: this runs unattended on a
+        // host where a PHP process can be killed by a resource limit mid-sweep. A
+        // default lock outliving a killed process would silently stop every later
+        // sweep for a day. Concurrency if a slow sweep outlives the lock is safe —
+        // per-module submit locks are what actually guard correctness.
+        $schedule->command('assignments:finalize-expired')->everyMinute()->withoutOverlapping(5);
     })
     ->create();

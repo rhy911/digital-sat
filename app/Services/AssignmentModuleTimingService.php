@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Models\Module;
 use App\Models\Section;
 use App\Models\UserTest;
+use Carbon\CarbonInterface;
 use Illuminate\Support\Carbon;
 
 class AssignmentModuleTimingService
@@ -42,6 +43,23 @@ class AssignmentModuleTimingService
             'remaining_seconds' => $remainingSeconds,
             'expired' => $remainingSeconds === 0,
         ];
+    }
+
+    /**
+     * The wall-clock moment this module's time runs out, or null if its clock has
+     * not started. This is the instant the module is treated as submitted when the
+     * student is not there to submit it themselves, so it must be derived from the
+     * stored start date only — never from "now" — or a sweeper running late would
+     * push the deadline forward and hand out extra time.
+     */
+    public function deadline(UserTest $userTest, Module $module): ?CarbonInterface
+    {
+        if (! $userTest->current_module_started_at) {
+            return null;
+        }
+
+        return $userTest->current_module_started_at->copy()
+            ->addSeconds($this->durationSeconds($module));
     }
 
     public function syncElapsed(UserTest $userTest, Module $module): array

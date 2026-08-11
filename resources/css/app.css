@@ -11,9 +11,10 @@
 @import "@fontsource/ibm-plex-mono/400.css";
 @import "@fontsource/ibm-plex-mono/500.css";
 @import "@fontsource/ibm-plex-mono/600.css";
-@import "@fontsource/playfair-display/600.css";
-@import "@fontsource/playfair-display/700.css";
-@import "@fontsource/playfair-display/600-italic.css";
+@import "@fontsource/lora/400.css";
+@import "@fontsource/lora/600.css";
+@import "@fontsource/lora/700.css";
+@import "@fontsource/lora/600-italic.css";
 /* @import './root.css';
 @import './auth.css'; */
 

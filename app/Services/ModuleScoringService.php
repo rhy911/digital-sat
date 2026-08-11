@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Models\Module;
 use App\Models\UserTest;
 use App\Models\UserTestModuleSubmission;
+use Carbon\CarbonInterface;
 use Illuminate\Database\UniqueConstraintViolationException;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
@@ -43,9 +44,12 @@ class ModuleScoringService
     }
 
     /**
+     * @param  ?CarbonInterface  $startNextAt  When the next module's clock should start. Only
+     *                                the timeout sweeper passes it, so a late
+     *                                cascade reproduces the on-time boundaries.
      * @return array<string, mixed> the result payload, also written to the cache
      */
-    public function scoreAndAdvance(int $userTestId, int $moduleId, bool $timedOut): array
+    public function scoreAndAdvance(int $userTestId, int $moduleId, bool $timedOut, ?CarbonInterface $startNextAt = null): array
     {
         $cacheKey = "scoring_result_{$userTestId}";
         $resultTtl = (int) config('scoring.result_ttl', 900);
@@ -62,7 +66,7 @@ class ModuleScoringService
         $result['scored_module_id'] = $moduleId;
 
         if (! isset($result['error'])) {
-            $result = $this->advanceAndRecord($userTestId, $moduleId, $result);
+            $result = $this->advanceAndRecord($userTestId, $moduleId, $result, $startNextAt);
         }
 
         Cache::put($cacheKey, $result, $resultTtl);
@@ -84,9 +88,9 @@ class ModuleScoringService
      * @param  array<string, mixed>  $result
      * @return array<string, mixed>
      */
-    private function advanceAndRecord(int $userTestId, int $moduleId, array $result): array
+    private function advanceAndRecord(int $userTestId, int $moduleId, array $result, ?CarbonInterface $startNextAt = null): array
     {
-        return DB::transaction(function () use ($userTestId, $moduleId, $result) {
+        return DB::transaction(function () use ($userTestId, $moduleId, $result, $startNextAt) {
             $existing = UserTestModuleSubmission::where('user_test_id', $userTestId)
                 ->where('module_id', $moduleId)
                 ->first();
@@ -105,7 +109,7 @@ class ModuleScoringService
                 return $result;
             }
 
-            $nextModule = $this->attemptProgression->advance($userTest, $result);
+            $nextModule = $this->attemptProgression->advance($userTest, $result, $startNextAt);
 
             try {
                 UserTestModuleSubmission::create([

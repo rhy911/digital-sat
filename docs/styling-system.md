@@ -99,7 +99,7 @@ Màu sắc mô tả **vai trò UX** thay vì tên màu nguyên bản:
 
 1. **Single Primary Action Rule**: Mỗi view hoặc card chỉ được có **tối đa một nút Primary Action** (`variant="primary"`). Các hành động phụ dùng `secondary` hoặc `ghost`.
 2. **Multi-Modal Status Signals (WCAG 1.4.1)**: Không dùng màu sắc làm tín hiệu duy nhất. Badge trạng thái bắt buộc chứa **Icon + Text + Color**.
-3. **Playfair Display Restrictions**: Font `Playfair Display` italic chỉ dùng cho lớp cảm xúc/contextual (nhãn viết tay, quote, con dấu). **Cấm dùng Playfair cho nút bấm, số liệu hay dữ liệu quan trọng**.
+3. **Lora Restrictions**: Font `Lora` italic chỉ dùng cho lớp cảm xúc/contextual (nhãn viết tay, quote, con dấu). **Cấm dùng Lora cho nút bấm, số liệu hay dữ liệu quan trọng**.
 4. **Cấm Side-Stripe Decorative Accent**: Không dùng `border-left: 4px/5px solid` làm trang trí ngẫu nhiên cho card. Dùng viền mỏng toàn phần (`border border-slate-200`) + background tint.
 5. **Cấm Z-Index Tùy tiện**: Luôn tuân thủ thang z-index chuẩn: `dropdown: 30` → `sticky: 35` → `backdrop: 40` → `modal: 50` → `toast: 60` → `tooltip: 10000`.
 

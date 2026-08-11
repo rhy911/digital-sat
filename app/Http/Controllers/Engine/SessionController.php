@@ -11,6 +11,7 @@ use App\Models\Test;
 use App\Models\User;
 use App\Models\UserTest;
 use App\Models\UserTestAnswer;
+use App\Services\AssignmentAttemptTimeoutService;
 use App\Services\AssignmentModuleTimingService;
 use App\Services\AttemptProgressionService;
 use Illuminate\Support\Facades\Auth;
@@ -21,6 +22,7 @@ class SessionController extends Controller
     public function __construct(
         private AssignmentModuleTimingService $assignmentTiming,
         private AttemptProgressionService $progression,
+        private AssignmentAttemptTimeoutService $timeouts,
     ) {}
 
     public function show($ulid = null)
@@ -40,6 +42,23 @@ class SessionController extends Controller
         $user = Auth::user();
         $requestedAttempt = UserTest::where('ulid', $attemptUlid)->firstOrFail();
         abort_unless((int) $requestedAttempt->user_id === (int) Auth::id(), 403, 'Unauthorized.');
+
+        // Second catch-up point, for a student who returns by URL (bookmark, back
+        // into a stale tab) instead of through the assignment page. Reopening a
+        // module whose deadline already passed would restart nothing — the clock is
+        // server-side — but it would show them a live-looking test, so close the
+        // attempt out first and send them to their score instead.
+        if ($requestedAttempt->assignment_id && $requestedAttempt->status === 'in_progress') {
+            if ($this->timeouts->finalizeExpired($requestedAttempt) > 0) {
+                $requestedAttempt->refresh();
+
+                if ($requestedAttempt->status === 'completed') {
+                    return redirect()->route('student.scores.show', $requestedAttempt)
+                        ->with('success', 'Your time ran out, so this attempt was submitted automatically.');
+                }
+            }
+        }
+
         abort_unless($requestedAttempt->status === 'in_progress', 409, 'This attempt is no longer active.');
 
         $moduleQuery = Module::query();

@@ -8,6 +8,7 @@ use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Log;
 
@@ -41,6 +42,9 @@ class ScoreModuleJob implements ShouldQueue
         public ?string $lockKey = null,
         public ?string $lockOwner = null,
         public ?int $queuedAtMs = null,
+        // ISO-8601 rather than a Carbon: this is queue payload, and a plain string
+        // survives serialization without depending on the date cast round-tripping.
+        public ?string $startNextAtIso = null,
     ) {
         // The worker reads `timeout` off the serialized payload, so assigning it
         // here is honoured. Keeps the whole timing set in config/scoring.php.
@@ -62,7 +66,12 @@ class ScoreModuleJob implements ShouldQueue
         $outcome = 'ok';
 
         try {
-            $scoring->scoreAndAdvance($this->userTestId, $this->moduleId, $this->timedOut);
+            $scoring->scoreAndAdvance(
+                $this->userTestId,
+                $this->moduleId,
+                $this->timedOut,
+                $this->startNextAtIso ? Carbon::parse($this->startNextAtIso) : null,
+            );
         } catch (\Throwable $e) {
             $outcome = 'error';
             $scoring->recordFailure($this->userTestId, $this->moduleId, $e, 'EXCEPTION in ScoreModuleJob');

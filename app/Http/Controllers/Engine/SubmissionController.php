@@ -125,9 +125,19 @@ class SubmissionController extends Controller
                 [$userTest, $module] = $this->resolveSubmissionContext($validated, $userTest);
                 $section = $module->section;
                 $timedOut = false;
+                $nextStartsAt = null;
 
                 if ($userTest->assignment_id) {
                     $timedOut = $this->assignmentTiming->syncElapsed($userTest, $module)['expired'];
+                    // On a timed-out submission the next module's clock starts at
+                    // this module's deadline, not at now(). The POST can land well
+                    // after the deadline — a suspended laptop wakes and syncTimer
+                    // fires late, a flaky connection retries — and dating the next
+                    // module from arrival time would hand back the minutes the
+                    // student already lost. Untimed submissions keep now().
+                    if ($timedOut) {
+                        $nextStartsAt = $this->assignmentTiming->deadline($userTest, $module);
+                    }
                 } elseif ($userTest->current_module_started_at) {
                     $test = $module->section->test;
                     $duration = ($test && $test->title === 'Test Preview') ? 0 : ($module->duration_minutes ?? ($section->type === 'math' ? 35 : 32));
@@ -156,6 +166,7 @@ class SubmissionController extends Controller
                     'module_id' => $module->id,
                     'section_id' => $section->id,
                     'timed_out' => $timedOut,
+                    'next_starts_at' => $nextStartsAt,
                 ];
             });
 
@@ -194,6 +205,7 @@ class SubmissionController extends Controller
                             $outcome['user_test_id'],
                             $outcome['module_id'],
                             $outcome['timed_out'],
+                            $outcome['next_starts_at'],
                         );
 
                         return response()->json($result, isset($result['error']) ? 500 : 200);
@@ -219,6 +231,7 @@ class SubmissionController extends Controller
                 $outcome['timed_out'],
                 $lockKey,
                 $lock->owner(),
+                startNextAtIso: $outcome['next_starts_at']?->toIso8601String(),
             );
             $jobDispatched = true;
 

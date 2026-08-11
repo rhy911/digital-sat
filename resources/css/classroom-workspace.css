@@ -82,7 +82,7 @@ body {
 }
 
 .handwriting {
-    font-family: var(--font-hand), "Playfair Display", Georgia, serif;
+    font-family: var(--font-hand), "Lora", Georgia, serif;
     font-style: italic;
 }
 
@@ -3285,7 +3285,7 @@ td.num {
     display: flex;
     align-items: center;
     justify-content: center;
-    font-family: var(--font-hand), "Playfair Display", Georgia, serif;
+    font-family: var(--font-hand), "Lora", Georgia, serif;
     font-size: 1.5rem;
     font-weight: 900;
     color: var(--accent);
