@@ -74,6 +74,7 @@
             </div>
             <h4 class="loading-title fw-bold mb-2">Digital SAT Test Engine</h4>
             <p id="loadingStatusText" class="loading-status">Initializing secure test environment...</p>
+            <p id="loadingSubtext" class="loading-subtext text-xs text-slate-400 mt-2">Please wait, this can take up to 5 minutes...</p>
         </div>
     </div>
 

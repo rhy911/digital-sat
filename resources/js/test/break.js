@@ -1,4 +1,5 @@
 import { pauseTimer, resumeTimer } from './timer.js';
+import { showCustomConfirm } from './ui.js';
 
 let breakOverlay = null;
 let isOnBreak = false;
@@ -84,4 +85,103 @@ function getBreakOverlay() {
   document.body.appendChild(breakOverlay);
 
   return breakOverlay;
+}
+
+let interSectionOverlay = null;
+let interSectionTimer = null;
+
+export function showInterSectionBreak(durationSeconds = 600, onComplete) {
+  if (interSectionOverlay) {
+    interSectionOverlay.remove();
+    interSectionOverlay = null;
+  }
+  if (interSectionTimer) {
+    clearInterval(interSectionTimer);
+    interSectionTimer = null;
+  }
+
+  let remainingSeconds = durationSeconds;
+
+  interSectionOverlay = document.createElement('div');
+  interSectionOverlay.id = 'interSectionBreakOverlay';
+  interSectionOverlay.style.position = 'fixed';
+  interSectionOverlay.style.inset = '0';
+  interSectionOverlay.style.zIndex = '99999';
+  interSectionOverlay.style.background = '#ffffff';
+  interSectionOverlay.style.display = 'flex';
+  interSectionOverlay.style.flexDirection = 'column';
+  interSectionOverlay.style.alignItems = 'center';
+  interSectionOverlay.style.justifyContent = 'center';
+  interSectionOverlay.style.padding = '2rem';
+
+  const formatTime = (secs) => {
+    const m = Math.floor(secs / 60);
+    const s = secs % 60;
+    return `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
+  };
+
+  interSectionOverlay.innerHTML = `
+    <div class="max-w-lg text-center font-sans">
+      <div class="inline-flex items-center justify-center w-16 h-16 rounded-full bg-slate-100 text-slate-800 mb-6">
+        <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="12" r="10"></circle>
+          <polyline points="12 6 12 12 16 14"></polyline>
+        </svg>
+      </div>
+      <h2 class="text-3xl font-bold text-slate-900 mb-3">Take a Break</h2>
+      <p class="text-slate-600 text-base mb-6 leading-relaxed">
+        Section 1 is complete! You have a 10-minute break before Section 2 begins.
+        You may step away from your device or start the next section immediately.
+      </p>
+      <div class="my-6 py-4 px-8 bg-slate-50 border border-slate-200 rounded-2xl inline-block">
+        <div class="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1">Break Time Remaining</div>
+        <div id="breakTimerDisplay" class="text-5xl font-mono font-bold text-slate-900">${formatTime(remainingSeconds)}</div>
+      </div>
+      <div class="mt-6">
+        <button type="button" id="resumeTestBtn" class="bg-[#fedb00] text-[#1e1e1e] py-3.5 px-10 rounded-full font-bold text-base transition-shadow duration-300 shadow-[inset_0_0_0_1px_#1e1e1e] hover:shadow-[inset_0_0_0_2px_#1e1e1e]">
+          Resume Test / Start Section 2
+        </button>
+      </div>
+    </div>
+  `;
+
+  document.body.appendChild(interSectionOverlay);
+
+  const finishBreak = () => {
+    if (interSectionTimer) {
+      clearInterval(interSectionTimer);
+      interSectionTimer = null;
+    }
+    if (interSectionOverlay) {
+      interSectionOverlay.remove();
+      interSectionOverlay = null;
+    }
+    if (typeof onComplete === 'function') {
+      onComplete();
+    }
+  };
+
+  interSectionOverlay.querySelector('#resumeTestBtn').addEventListener('click', async () => {
+    const confirmed = await showCustomConfirm(
+      'Are you sure you want to end your break and start Section 2 now?',
+      'info',
+      'Resume Test',
+      'Resume Test',
+      'Stay on Break'
+    );
+    if (confirmed) {
+      finishBreak();
+    }
+  });
+
+  interSectionTimer = setInterval(() => {
+    remainingSeconds--;
+    const timerDisplay = document.getElementById('breakTimerDisplay');
+    if (timerDisplay) {
+      timerDisplay.textContent = formatTime(Math.max(0, remainingSeconds));
+    }
+    if (remainingSeconds <= 0) {
+      finishBreak();
+    }
+  }, 1000);
 }

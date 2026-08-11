@@ -19,6 +19,7 @@
         </div>
         <h4 class="loading-title fw-bold mb-2">{{ $title }}</h4>
         <p id="loadingStatusText" class="loading-status">{{ $statusText }}</p>
+        <p id="loadingSubtext" class="loading-subtext text-xs text-slate-400 mt-2">Please wait, this can take up to 5 minutes...</p>
         @if ($cancelRoute)
             <a id="loadingCancelLink" href="{{ $cancelRoute }}" class="loading-cancel hidden">{{ $cancelText }}</a>
         @endif

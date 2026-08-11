@@ -108,6 +108,7 @@
         window.isPreview = @json($testData->is_preview ?? false);
         window.isTeacherPreview = @json($isTeacherPreview ?? false);
         window.isAssignmentAttempt = @json($isAssignmentAttempt ?? false);
+        window.isFinalModule = @json($isFinalModule ?? false);
         window.serverRemainingSeconds = @json($serverRemainingSeconds ?? null);
         window.canTakeBreak = @json(!($testData->is_preview ?? false) && !empty($userTestId));
         window.durationMinutes = @json($testData->duration_minutes ?? 32);

@@ -157,7 +157,13 @@ class TestProgressionService
         if ($nextSection) {
             $next = $this->structures->orderedModules($nextSection)->first();
 
-            return $this->nextModuleResult($next, 'Section completed. Moving to the next section.');
+            $breakMinutes = (int) ($test->break_duration_minutes ?? 10);
+            return $this->nextModuleResult(
+                $next,
+                'Section completed. Moving to the next section.',
+                isSectionBreak: true,
+                breakDurationSeconds: $breakMinutes * 60
+            );
         }
 
         $this->finalize($attempt, $test);
@@ -171,9 +177,15 @@ class TestProgressionService
         ];
     }
 
-    private function nextModuleResult(Module $module, string $message): array
+    private function nextModuleResult(Module $module, string $message, bool $isSectionBreak = false, int $breakDurationSeconds = 600): array
     {
-        return ['status' => 'success', 'next_module_id' => $module->ulid, 'message' => $message];
+        $result = ['status' => 'success', 'next_module_id' => $module->ulid, 'message' => $message];
+        if ($isSectionBreak) {
+            $result['is_section_break'] = true;
+            $result['break_duration_seconds'] = $breakDurationSeconds;
+        }
+
+        return $result;
     }
 
     private function autoMergeIfEligible(UserTest $attempt, Test $test): UserTest

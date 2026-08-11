@@ -96,11 +96,20 @@ export function updateQuestionButtonStates() {
 // SECURE LOADING SCREEN
 // ============================================================================
 
-export function showLoadingScreen(message = "Loading...") {
+export function showLoadingScreen(message = "Loading...", subtext = "Please wait, this can take up to 5 minutes...") {
   const overlay = document.getElementById('loadingScreen');
   const textEl = document.getElementById('loadingStatusText');
+  const subtextEl = document.getElementById('loadingSubtext');
   if (overlay) {
     if (textEl) textEl.textContent = message;
+    if (subtextEl) {
+      if (subtext) {
+        subtextEl.textContent = subtext;
+        subtextEl.classList.remove('hidden');
+      } else {
+        subtextEl.classList.add('hidden');
+      }
+    }
     overlay.classList.remove('hidden');
   }
 }
@@ -129,6 +138,7 @@ function getOrCreateAlertModal() {
     <div class="custom-alert-box">
       <div class="custom-alert-icon" id="customAlertIcon"></div>
       <div class="custom-alert-content">
+        <div id="customAlertBadge" class="custom-alert-badge hidden">Final Step</div>
         <h5 class="custom-alert-title" id="customAlertTitle">Notification</h5>
         <p id="customAlertMessage" class="custom-alert-message"></p>
       </div>
@@ -158,8 +168,9 @@ function getOrCreateAlertModal() {
         box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1), 0 10px 10px -5px rgba(0,0,0,0.04);
         width: 90%; max-width: 420px; padding: 24px; border: 1px solid rgba(226, 232, 240, 0.8);
         display: flex; flex-direction: column; align-items: center; text-align: center;
-        transform: scale(1); transition: transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1); z-index: 1;
+        transform: scale(1); transition: all 0.25s cubic-bezier(0.34, 1.56, 0.64, 1); z-index: 1;
       }
+      .custom-alert-box.is-final { border: 2px solid #fedb00; box-shadow: 0 25px 30px -5px rgba(254, 219, 0, 0.3), 0 10px 10px -5px rgba(0,0,0,0.04); }
       .custom-alert-modal.hidden .custom-alert-box { transform: scale(0.9); }
       .custom-alert-icon {
         display: flex; align-items: center; justify-content: center; width: 56px; height: 56px;
@@ -168,6 +179,8 @@ function getOrCreateAlertModal() {
       .custom-alert-icon.warning { background-color: rgba(245, 158, 11, 0.1); color: #d97706; }
       .custom-alert-icon.error { background-color: rgba(239, 68, 68, 0.1); color: #dc2626; }
       .custom-alert-icon.success { background-color: rgba(16, 185, 129, 0.1); color: #059669; }
+      .custom-alert-icon.final { background-color: rgba(254, 219, 0, 0.25); color: #92400e; }
+      .custom-alert-badge { display: inline-block; padding: 2px 10px; border-radius: 9999px; font-size: 11px; font-weight: 800; letter-spacing: 0.05em; text-transform: uppercase; background-color: #fef3c7; color: #92400e; margin-bottom: 8px; }
       .custom-alert-content { margin-bottom: 24px; width: 100%; }
       .custom-alert-title { font-size: 1.15rem; font-weight: 700; color: #0f172a; margin-bottom: 8px; font-family: sans-serif; }
       .custom-alert-message { font-size: 0.95rem; color: #475569; line-height: 1.5; margin: 0; font-family: sans-serif; }
@@ -175,6 +188,8 @@ function getOrCreateAlertModal() {
       .custom-alert-btn { flex: 1; max-width: 160px; padding: 10px 16px; border-radius: 8px; font-size: 0.95rem; font-weight: 600; cursor: pointer; transition: all 0.2s ease; border: none; outline: none; }
       .custom-alert-btn.btn-primary { background-color: #1e293b; color: #ffffff; }
       .custom-alert-btn.btn-primary:hover { background-color: #0f172a; transform: translateY(-1px); }
+      .custom-alert-btn.btn-gold { background-color: #fedb00; color: #1e1e1e; font-weight: 700; border: 1px solid #1e1e1e; }
+      .custom-alert-btn.btn-gold:hover { background-color: #ebd000; transform: translateY(-1px); }
       .custom-alert-btn.btn-secondary { background-color: #f1f5f9; color: #475569; border: 1px solid #e2e8f0; }
       .custom-alert-btn.btn-secondary:hover { background-color: #e2e8f0; color: #334155; transform: translateY(-1px); }
     `;
@@ -193,6 +208,11 @@ export function showCustomAlert(message, type = 'info', title = 'Notification', 
     const iconEl = modal.querySelector('#customAlertIcon');
     const confirmBtn = modal.querySelector('#customAlertConfirmBtn');
     const cancelBtn = modal.querySelector('#customAlertCancelBtn');
+    const badgeEl = modal.querySelector('#customAlertBadge');
+    const boxEl = modal.querySelector('.custom-alert-box');
+
+    if (boxEl) boxEl.classList.remove('is-final');
+    if (badgeEl) badgeEl.classList.add('hidden');
 
     // Set texts
     titleEl.textContent = title;
@@ -269,6 +289,8 @@ export function showCustomConfirm(message, type = 'warning', title = 'Confirm Ac
     const iconEl = modal.querySelector('#customAlertIcon');
     const confirmBtn = modal.querySelector('#customAlertConfirmBtn');
     const cancelBtn = modal.querySelector('#customAlertCancelBtn');
+    const badgeEl = modal.querySelector('#customAlertBadge');
+    const boxEl = modal.querySelector('.custom-alert-box');
 
     // Set texts
     titleEl.textContent = title;
@@ -277,27 +299,49 @@ export function showCustomConfirm(message, type = 'warning', title = 'Confirm Ac
     // Set button visibility & labels
     cancelBtn.classList.remove('hidden');
     cancelBtn.textContent = cancelText;
-    confirmBtn.className = 'custom-alert-btn btn-primary';
-    confirmBtn.textContent = confirmText;
 
-    // Set icons and colors based on type
-    iconEl.className = 'custom-alert-icon ' + type;
-    if (type === 'warning') {
+    if (type === 'final') {
+      if (boxEl) boxEl.classList.add('is-final');
+      if (badgeEl) {
+        badgeEl.textContent = 'Final Step - Complete Test';
+        badgeEl.classList.remove('hidden');
+      }
+      confirmBtn.className = 'custom-alert-btn btn-gold';
+      confirmBtn.textContent = confirmText;
+
+      iconEl.className = 'custom-alert-icon final';
       iconEl.innerHTML = `
         <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path>
-          <line x1="12" y1="9" x2="12" y2="13"></line>
-          <line x1="12" y1="17" x2="12.01" y2="17"></line>
+          <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+          <polyline points="14 2 14 8 20 8"></polyline>
+          <path d="m9 15 2 2 4-4"></path>
         </svg>
       `;
     } else {
-      iconEl.innerHTML = `
-        <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <circle cx="12" cy="12" r="10"></circle>
-          <line x1="12" y1="16" x2="12" y2="12"></line>
-          <line x1="12" y1="8" x2="12.01" y2="8"></line>
-        </svg>
-      `;
+      if (boxEl) boxEl.classList.remove('is-final');
+      if (badgeEl) badgeEl.classList.add('hidden');
+      confirmBtn.className = 'custom-alert-btn btn-primary';
+      confirmBtn.textContent = confirmText;
+
+      // Set icons and colors based on type
+      iconEl.className = 'custom-alert-icon ' + type;
+      if (type === 'warning') {
+        iconEl.innerHTML = `
+          <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path>
+            <line x1="12" y1="9" x2="12" y2="13"></line>
+            <line x1="12" y1="17" x2="12.01" y2="17"></line>
+          </svg>
+        `;
+      } else {
+        iconEl.innerHTML = `
+          <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="10"></circle>
+            <line x1="12" y1="16" x2="12" y2="12"></line>
+            <line x1="12" y1="8" x2="12.01" y2="8"></line>
+          </svg>
+        `;
+      }
     }
 
     modal.classList.remove('hidden');

@@ -8,6 +8,7 @@ import {
   showCustomAlert
 } from './ui.js';
 import { pollForScoringResult, describeSubmitError } from './scoring.js';
+import { showInterSectionBreak } from './break.js';
 
 let autosaveInitialized = false;
 let autosaveTimer = null;
@@ -466,7 +467,20 @@ export async function submitModule(options = {}) {
   state.isSubmitting = true;
 
   if (!skipConfirm) {
-    const confirmNext = await showCustomConfirm("You are about to proceed to the next module/section.\n\nAre you ready to continue?", "warning", "Proceed to Next Section");
+    const isFinal = Boolean(window.isFinalModule);
+    const title = isFinal ? "Submit Test" : "Submit Module";
+    const message = isFinal
+      ? "This is the end of the test.\n\nSubmitting will finish your test and calculate your final score. You won't be able to change any answers after you submit."
+      : "Are you sure you want to submit?\n\nYou won't be able to change your answers after you move on.";
+    const confirmBtnText = isFinal ? "Submit Test" : "Submit";
+
+    const confirmNext = await showCustomConfirm(
+      message,
+      isFinal ? "final" : "warning",
+      title,
+      confirmBtnText,
+      "Cancel"
+    );
     if (!confirmNext) {
       state.isSubmitting = false;
       return;
@@ -652,7 +666,14 @@ export async function submitModule(options = {}) {
         }
       }, 1000);
     } else if (data.next_module_id) {
-      if (timedOut) {
+      const proceedToNextModule = () => {
+        navigateModule(`/engine/session/${data.next_module_id}`);
+      };
+
+      if (data.is_section_break) {
+        hideLoadingScreen();
+        showInterSectionBreak(data.break_duration_seconds || 600, proceedToNextModule);
+      } else if (timedOut) {
         hideLoadingScreen();
         let secondsLeft = 5;
         let continueTimer;
@@ -661,7 +682,7 @@ export async function submitModule(options = {}) {
           if (hasNavigated) return;
           hasNavigated = true;
           if (continueTimer) clearInterval(continueTimer);
-          navigateModule(`/engine/session/${data.next_module_id}`);
+          proceedToNextModule();
         };
 
         showCustomAlert(
@@ -679,7 +700,7 @@ export async function submitModule(options = {}) {
           if (secondsLeft <= 0) doNavigate();
         }, 1000);
       } else {
-        navigateModule(`/engine/session/${data.next_module_id}`);
+        proceedToNextModule();
       }
     } else {
       hideLoadingScreen();

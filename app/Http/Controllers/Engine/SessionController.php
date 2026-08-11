@@ -151,10 +151,17 @@ class SessionController extends Controller
             'section_number' => $section->order,
             'module_number' => $module->module_number,
             'module_id' => $module->id,
-            'username' => Auth::user()?->username ?? 'Guest',
+            'username' => Auth::user()?->name ?? Auth::user()?->username ?? 'Guest',
             'is_preview' => $isPreview,
             'duration_minutes' => $durationMinutes,
         ];
+
+        $isFinalModule = false;
+        try {
+            $isFinalModule = $this->progression->isTerminalSubmission($requestedAttempt, $module);
+        } catch (\Throwable $e) {
+            $isFinalModule = false;
+        }
 
         return view($viewName, [
             'testData' => $testData,
@@ -174,6 +181,7 @@ class SessionController extends Controller
             'savedQuestionTimes' => $savedQuestionTimes,
             'isAssignmentAttempt' => $isAssignmentAttempt,
             'serverRemainingSeconds' => $serverRemainingSeconds,
+            'isFinalModule' => $isFinalModule,
         ]);
     }
 
@@ -315,7 +323,7 @@ class SessionController extends Controller
             'section_number' => $type === 'math' ? 2 : 1,
             'module_number' => 1,
             'module_id' => $type === 'math' ? 99992 : 99991,
-            'username' => Auth::user()?->username ?? 'Guest',
+            'username' => Auth::user()?->name ?? Auth::user()?->username ?? 'Guest',
             'is_preview' => true,
             'duration_minutes' => 0,
         ];
