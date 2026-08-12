@@ -3,7 +3,7 @@ import {
 } from '../core/config.js';
 import { showAlert, showCustomConfirm } from '../utils/custom-alert.js';
 import { getTomSelectValue, captureTomSelectPreservation } from '../utils/tomselect.js';
-import { humanizeUnderscores, processMedia } from '../utils/text.js';
+import { humanizeUnderscores, escapeHtml } from '../utils/text.js';
 import { icon } from '../../../shared/icons.js';
 
 export function setBulkQuestionsJson(obj) {
@@ -427,17 +427,14 @@ export function renderPreview(items) {
 
     let html = '';
     items.forEach((item, index) => {
-        const stemProcessed = processMedia(item.stem || '');
+        // *_html comes from QuestionPreviewPresenter: rendered and sanitized by
+        // the same pipeline the test engine uses, so the preview cannot disagree
+        // with what students see. Everything else is plain text and gets escaped.
+        const stemProcessed = item.stem_html || '';
         let passageHtml = '';
         if (item.passage) {
-            let content = '';
-            let title = '';
-            if (typeof item.passage === 'string') {
-                content = processMedia(item.passage);
-            } else if (item.passage.content) {
-                content = processMedia(item.passage.content);
-                title = item.passage.source_title || '';
-            }
+            const content = item.passage_html || '';
+            const title = (typeof item.passage === 'object' && item.passage?.source_title) || '';
             if (content.trim()) {
                 passageHtml = `
                     <div class="p-3 mb-3 bg-slate-900/40 border-l-4 border-brand rounded-r-lg shadow-sm">
@@ -461,11 +458,11 @@ export function renderPreview(items) {
                 <h6 class="text-xs font-bold text-slate-400 mb-2">Choices:</h6>
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-2.5 mb-4">
                     ${item.choices.map(c => {
-                        const content = processMedia(c.content || '');
+                        const content = c.content_html || '';
                         return `
                             <div class="p-3 border rounded-xl h-100 ${c.is_correct ? 'bg-emerald-500/10 border-emerald-500/30 shadow-sm' : 'bg-slate-900/20 border-slate-800/80'}">
                                 <div class="flex items-center gap-2">
-                                    <strong class="flex items-center justify-center w-6 h-6 rounded-full bg-slate-800/80 border border-slate-700/60 text-xs text-slate-300">${c.label}</strong>
+                                    <strong class="flex items-center justify-center w-6 h-6 rounded-full bg-slate-800/80 border border-slate-700/60 text-xs text-slate-300">${escapeHtml(c.label)}</strong>
                                     <div class="grow text-xs text-slate-200">${content}</div>
                                     ${c.is_correct ? icon('check-circle-fill', 'w-4 h-4 text-emerald-400') : ''}
                                 </div>
@@ -482,9 +479,9 @@ export function renderPreview(items) {
                 <div class="mb-4">
                     <h6 class="text-xs font-bold text-slate-400 mb-2">Accepted Answers (SPR):</h6>
                     <div class="p-3 bg-emerald-500/5 border border-emerald-500/15 rounded-xl flex flex-wrap gap-2">
-                        ${item.spr_correct_answers.map(ans => `<span class="inline-flex items-center px-2.5 py-0.5 rounded-lg text-xs font-bold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">${ans}</span>`).join('')}
+                        ${item.spr_correct_answers.map(ans => `<span class="inline-flex items-center px-2.5 py-0.5 rounded-lg text-xs font-bold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">${escapeHtml(ans)}</span>`).join('')}
                     </div>
-                    ${item.spr_hint ? `<div class="mt-1.5 text-xs text-slate-500 italic">Hint: ${item.spr_hint}</div>` : ''}
+                    ${item.spr_hint ? `<div class="mt-1.5 text-xs text-slate-500 italic">Hint: ${escapeHtml(item.spr_hint)}</div>` : ''}
                 </div>
             `;
         }
@@ -494,7 +491,7 @@ export function renderPreview(items) {
             expHtml = `
                 <div class="mt-3 p-3 bg-slate-900/40 border border-slate-800/60 rounded-xl text-xs">
                     <h6 class="font-bold text-slate-400 mb-1.5 flex items-center gap-1">${icon('info-circle', 'w-4 h-4')} Explanation:</h6>
-                    <div class="text-slate-400 leading-relaxed">${processMedia(item.explanation)}</div>
+                    <div class="text-slate-400 leading-relaxed">${item.explanation_html || ''}</div>
                 </div>
             `;
         }
@@ -505,13 +502,13 @@ export function renderPreview(items) {
                     <div class="flex items-center gap-2 flex-wrap">
                         <span class="inline-flex items-center px-2 py-0.5 rounded bg-brand/10 text-brand border border-brand/20 font-extrabold text-[10px]">Item ${index + 1}</span>
                         ${sectionBadge}
-                        <span class="inline-flex items-center px-2 py-0.5 rounded bg-brand/10 text-brand border border-brand/20 font-extrabold text-[10px] uppercase">${humanizeUnderscores(item.skill_domain || '')}</span>
-                        ${item.skill_subdomain ? `<span class="inline-flex items-center px-2 py-0.5 rounded bg-slate-800 text-slate-400 border border-slate-700/60 font-semibold text-[10px]">${item.skill_subdomain}</span>` : ''}
+                        <span class="inline-flex items-center px-2 py-0.5 rounded bg-brand/10 text-brand border border-brand/20 font-extrabold text-[10px] uppercase">${escapeHtml(humanizeUnderscores(item.skill_domain || ''))}</span>
+                        ${item.skill_subdomain ? `<span class="inline-flex items-center px-2 py-0.5 rounded bg-slate-800 text-slate-400 border border-slate-700/60 font-semibold text-[10px]">${escapeHtml(item.skill_subdomain)}</span>` : ''}
                     </div>
                     <div class="flex items-center gap-2">
-                        <span class="inline-flex items-center px-2 py-0.5 rounded bg-slate-800 text-slate-300 border border-slate-700/60 font-bold text-[10px] uppercase">${humanizeUnderscores(item.difficulty || '')}</span>
+                        <span class="inline-flex items-center px-2 py-0.5 rounded bg-slate-800 text-slate-300 border border-slate-700/60 font-bold text-[10px] uppercase">${escapeHtml(humanizeUnderscores(item.difficulty || ''))}</span>
                         ${item.is_pretest ? '<span class="inline-flex items-center px-2 py-0.5 rounded bg-rose-500/10 text-rose-400 border border-rose-500/20 font-extrabold text-[10px] uppercase">Pretest</span>' : ''}
-                        ${item.external_id ? `<small class="text-slate-500 text-[10px]">ID: ${item.external_id}</small>` : ''}
+                        ${item.external_id ? `<small class="text-slate-500 text-[10px]">ID: ${escapeHtml(item.external_id)}</small>` : ''}
                     </div>
                 </div>
                 <div class="space-y-4">
@@ -542,6 +539,29 @@ export function renderPreview(items) {
             throwOnError: false
         });
     }
+}
+
+/**
+ * Laravel puts one summary line in `message` and the real detail in `errors`.
+ * Showing only `message` meant a package with six missing images reported a
+ * single problem, so the teacher fixed one and hit the next on the retry.
+ *
+ * @param {any} result parsed JSON body of a failed import response
+ * @param {string} fallback
+ */
+export function importFailureMessage(result, fallback) {
+    const lines = result?.errors && typeof result.errors === 'object'
+        ? Object.values(result.errors).flat().filter(Boolean)
+        : [];
+
+    if (!lines.length) return result?.message || fallback;
+
+    const shown = lines.slice(0, 8);
+    if (lines.length > shown.length) {
+        shown.push(`…and ${lines.length - shown.length} more.`);
+    }
+
+    return shown.join('\n');
 }
 
 export async function handlePreview(isCsv) {
@@ -750,7 +770,7 @@ export function initBulkImport() {
                     showAlert('warning', 'Import failed due to validation errors. We loaded them into the validation grid below for correction.');
                     openValidationGrid(result.data.items);
                 } else {
-                    showAlert('danger', result.message || 'Bulk import failed');
+                    showAlert('danger', importFailureMessage(result, 'Bulk import failed.'));
                 }
             }
         } catch (error) { showAlert('danger', 'Error: ' + error.message); }
@@ -784,7 +804,7 @@ export function initBulkImport() {
                     showAlert('warning', 'CSV Import failed due to validation errors. We loaded them into the validation grid below for correction.');
                     openValidationGrid(result.data.items);
                 } else {
-                    showAlert('danger', result.message || 'CSV import failed');
+                    showAlert('danger', importFailureMessage(result, 'CSV import failed.'));
                 }
             }
         } catch (error) { showAlert('danger', 'Error: ' + error.message); }
@@ -815,7 +835,7 @@ export function initBulkImport() {
                 fileInput.value = '';
                 await window.refreshTestDashboardData?.(captureTomSelectPreservation(null));
             } else {
-                showAlert('danger', result.message || 'ZIP import failed.');
+                showAlert('danger', importFailureMessage(result, 'ZIP import failed.'));
             }
         } catch (err) {
             showAlert('danger', 'Error: ' + err.message);
@@ -929,7 +949,7 @@ export function initBulkImport() {
 
                     await window.refreshTestDashboardData?.(captureTomSelectPreservation(null));
                 } else {
-                    showAlert('danger', result.message || 'Import submission failed.');
+                    showAlert('danger', importFailureMessage(result, 'Import submission failed.'));
                 }
             } catch (err) {
                 showAlert('danger', 'Import error: ' + err.message);

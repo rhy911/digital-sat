@@ -7,8 +7,8 @@ import {
     dashboardJsonResponse,
     dashboardResourceUrl,
 } from '../core/config.js';
-import { getPremiumToolbar } from '../utils/editor-toolbar.js';
-import { compileMarkdownToHtml, stripTags, humanizeUnderscores, escapeHtml } from '../utils/text.js';
+import { getPremiumToolbar, PREMIUM_EDITOR_OPTIONS } from '../utils/editor-toolbar.js';
+import { renderQuestionFields, stripTags, humanizeUnderscores, escapeHtml } from '../utils/text.js';
 import { getTomSelectValue } from '../utils/tomselect.js';
 import { showAlert, showCustomConfirm } from '../utils/custom-alert.js';
 import { debounce } from '../utils/debounce.js';
@@ -141,7 +141,11 @@ export function debouncedUpdateLivePreview(block) {
     debounce(`builderLivePreview:${index}`, () => renderLivePreviewCard(block), 250);
 }
 
-export function renderLivePreviewCard(block) {
+// Preview rendering is a server round-trip now, so a slow response for an older
+// keystroke must never overwrite a newer one.
+const builderPreviewRenderSequence = new Map();
+
+export async function renderLivePreviewCard(block) {
     const index = block.dataset.index;
     const drawer = document.getElementById('builderLivePreviewDrawer');
     if (!drawer) return;
@@ -174,21 +178,39 @@ export function renderLivePreviewCard(block) {
     const stemValue = builderEditors[`stem_${index}`] ? builderEditors[`stem_${index}`].value() : '';
     const passageValue = builderEditors[`passage_${index}`] ? builderEditors[`passage_${index}`].value() : '';
     const qType = block.querySelector('.builder-format-mcq').checked ? 'multiple_choice' : 'student_produced_response';
+    const explanationValue = block.querySelector('.builder-explanation').value.trim();
+
+    const type = document.getElementById('builderModuleId').selectedOptions[0]?.getAttribute('data-section-type');
+    const showPassage = type === 'reading_writing' && passageValue.trim() !== '';
+
+    const choiceInputs = [...block.querySelectorAll('.builder-choice-content')];
+    const fields = {
+        stem: stemValue,
+        passage: showPassage ? passageValue : '',
+        explanation: explanationValue,
+    };
+    choiceInputs.forEach(input => {
+        fields[`choice_${input.getAttribute('data-label')}`] = input.value.trim();
+    });
+
+    const sequence = (builderPreviewRenderSequence.get(index) || 0) + 1;
+    builderPreviewRenderSequence.set(index, sequence);
+    const rendered = await renderQuestionFields(fields);
+    if (builderPreviewRenderSequence.get(index) !== sequence) return;
 
     let passageHtml = '';
-    const type = document.getElementById('builderModuleId').selectedOptions[0]?.getAttribute('data-section-type');
-    if (type === 'reading_writing' && passageValue.trim()) {
-        passageHtml = `<div class="passage-preview p-3.5 mb-3.5 bg-slate-50 rounded-lg text-xs leading-relaxed text-slate-700 border border-slate-200">${compileMarkdownToHtml(passageValue)}</div>`;
+    if (showPassage) {
+        passageHtml = `<div class="passage-preview question-content p-3.5 mb-3.5 bg-slate-50 rounded-lg border border-slate-200">${rendered.passage || ''}</div>`;
     }
 
     let questionBodyHtml = '';
     if (qType === 'multiple_choice') {
         const correctLabel = block.querySelector('.builder-correct-radio:checked')?.value || 'A';
         let choicesHtml = '';
-        block.querySelectorAll('.builder-choice-content').forEach(input => {
+        choiceInputs.forEach(input => {
             const label = input.getAttribute('data-label');
             const rawVal = input.value.trim();
-            const content = rawVal ? compileMarkdownToHtml(rawVal) : `<span class="text-slate-500 italic">Option ${label} content...</span>`;
+            const content = rawVal ? (rendered[`choice_${label}`] || '') : `<span class="text-slate-500 italic">Option ${label} content...</span>`;
             const isCorrect = label === correctLabel;
 
             const choiceBorderClass = isCorrect ? 'border-emerald-250' : 'border-slate-200';
@@ -200,13 +222,13 @@ export function renderLivePreviewCard(block) {
                     <div class="rounded-full flex items-center justify-center font-bold text-white shrink-0 ${isCorrect ? 'bg-emerald-600' : 'bg-slate-400'}" style="width: 20px; height: 20px; font-size: 10px;">
                         ${label}
                     </div>
-                    <div class="grow text-xs leading-relaxed">${content}</div>
+                    <div class="grow question-content">${content}</div>
                 </div>
             `;
         });
         questionBodyHtml = `<div class="choices-preview mt-3.5">${choicesHtml}</div>`;
     } else {
-        const sprVal = block.querySelector('.builder-spr-answers').value.trim() || '______';
+        const sprVal = escapeHtml(block.querySelector('.builder-spr-answers').value.trim()) || '______';
         questionBodyHtml = `
             <div class="answer-input-container p-3.5 bg-amber-50/30 rounded-lg mt-3.5 border border-amber-200">
                 <label class="block mb-2 font-bold text-amber-800 text-[10px] uppercase tracking-wider">${icon('pencil-fill', 'w-4 h-4')} Student Produced Response:</label>
@@ -217,12 +239,12 @@ export function renderLivePreviewCard(block) {
         `;
     }
 
-    const explanationValue = block.querySelector('.builder-explanation').value.trim();
     let explanationHtml = '';
     if (explanationValue) {
         explanationHtml = `
-            <div class="explanation-preview p-3.5 mt-3 bg-slate-50 rounded-lg text-xs text-slate-600 border border-slate-200 leading-relaxed">
-                <strong class="text-slate-700 font-bold uppercase text-[10px] tracking-wider block mb-1">Explanation:</strong> ${compileMarkdownToHtml(explanationValue)}
+            <div class="explanation-preview p-3.5 mt-3 bg-slate-50 rounded-lg border border-slate-200">
+                <strong class="text-slate-700 font-bold uppercase text-[10px] tracking-wider block mb-1">Explanation</strong>
+                <div class="question-content">${rendered.explanation || ''}</div>
             </div>
         `;
     }
@@ -234,7 +256,7 @@ export function renderLivePreviewCard(block) {
         </div>
         <div class="p-4 space-y-3.5">
             ${passageHtml}
-            <div class="stem-preview font-semibold text-slate-800 text-sm leading-relaxed">${stemValue ? compileMarkdownToHtml(stemValue) : '<span class="text-slate-500 italic">Enter question stem to view preview...</span>'}</div>
+            <div class="stem-preview question-content">${stemValue ? (rendered.stem || '') : '<span class="text-slate-500 italic">Enter question stem to view preview...</span>'}</div>
             ${questionBodyHtml}
             ${explanationHtml}
         </div>
@@ -633,6 +655,7 @@ export function addBuilderBlock() {
         placeholder: "Enter question stem...",
         minHeight: "100px",
         toolbar: getPremiumToolbar('builderStem', () => debouncedUpdateLivePreview(block)),
+        ...PREMIUM_EDITOR_OPTIONS,
         status: false
     });
 
@@ -672,6 +695,7 @@ export function syncBuilderBlockDomain(block) {
                 placeholder: "Enter passage content...",
                 minHeight: "150px",
                 toolbar: getPremiumToolbar('builderPassage', () => debouncedUpdateLivePreview(block)),
+                ...PREMIUM_EDITOR_OPTIONS,
                 status: false
             });
 
@@ -878,6 +902,7 @@ export async function loadExistingQuestionIntoWorkspace(qId, autoScroll = true) 
             placeholder: "Enter question stem...",
             minHeight: "100px",
             toolbar: getPremiumToolbar('builderStem', () => debouncedUpdateLivePreview(block)),
+            ...PREMIUM_EDITOR_OPTIONS,
             status: false
         });
         builderEditors[`stem_${builderBlockCount}`].value(question.stem || '');
@@ -902,6 +927,7 @@ export async function loadExistingQuestionIntoWorkspace(qId, autoScroll = true) 
                 placeholder: "Enter passage content...",
                 minHeight: "150px",
                 toolbar: getPremiumToolbar('builderPassage', () => debouncedUpdateLivePreview(block)),
+                ...PREMIUM_EDITOR_OPTIONS,
                 status: false
             });
             builderEditors[`passage_${builderBlockCount}`].value(pContent || '');
@@ -1357,6 +1383,7 @@ export async function restoreBuilderDraft() {
                 placeholder: "Enter question stem...",
                 minHeight: "100px",
                 toolbar: getPremiumToolbar('builderStem', () => debouncedUpdateLivePreview(block)),
+                ...PREMIUM_EDITOR_OPTIONS,
                 status: false
             });
             builderEditors[`stem_${builderBlockCount}`].value(bData.stem || '');
@@ -1377,6 +1404,7 @@ export async function restoreBuilderDraft() {
                     placeholder: "Enter passage content...",
                     minHeight: "150px",
                     toolbar: getPremiumToolbar('builderPassage', () => debouncedUpdateLivePreview(block)),
+                    ...PREMIUM_EDITOR_OPTIONS,
                     status: false
                 });
                 builderEditors[`passage_${builderBlockCount}`].value(bData.passage_content || '');

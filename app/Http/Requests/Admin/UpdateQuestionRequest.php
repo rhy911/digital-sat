@@ -2,7 +2,9 @@
 
 namespace App\Http\Requests\Admin;
 
+use App\Support\SatTaxonomy;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
 
 class UpdateQuestionRequest extends FormRequest
 {
@@ -34,8 +36,11 @@ class UpdateQuestionRequest extends FormRequest
             'stem' => 'required|string',
             'question_type' => 'required|in:multiple_choice,student_produced_response',
             'difficulty' => 'nullable|in:easy,medium,hard',
-            'skill_domain' => 'nullable|string|max:255',
-            'skill_subdomain' => 'nullable|string|max:255',
+            // Constrained to config/sat_taxonomy.php: both columns are used as
+            // grouping keys by the score report and the analytics summaries, so
+            // an invented value silently becomes its own one-question "skill".
+            'skill_domain' => ['nullable', 'string', Rule::in(SatTaxonomy::domains())],
+            'skill_subdomain' => ['nullable', 'string'],
             'spr_hint' => 'nullable|string',
             'is_pretest' => 'boolean',
             'calculator_allowed' => 'boolean',
@@ -63,6 +68,18 @@ class UpdateQuestionRequest extends FormRequest
             if ($this->input('question_type') === \App\Models\Question::TYPE_SPR && empty($this->input('spr_answers'))) {
                 $validator->errors()->add('spr_answers', 'The spr answers field is required.');
             }
+
+            $domain = (string) $this->input('skill_domain', '');
+            $subdomain = trim((string) $this->input('skill_subdomain', ''));
+
+            if ($domain === '' || $subdomain === '' || SatTaxonomy::isValidSubdomain($domain, $subdomain)) {
+                return;
+            }
+
+            $belongsTo = SatTaxonomy::domainForSubdomain($subdomain);
+            $validator->errors()->add('skill_subdomain', $belongsTo !== null
+                ? "This skill belongs to \"{$belongsTo}\", not \"{$domain}\"."
+                : 'Allowed for '.$domain.': '.implode(', ', SatTaxonomy::subdomains($domain)).'.');
         });
     }
 }

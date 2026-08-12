@@ -1,11 +1,10 @@
 import {
     QUESTIONS_LIST_URL, QUESTIONS_SEARCH_URL, BULK_PREVIEW_URL, CSV_BULK_PREVIEW_URL,
-    BULK_STORE_URL, CSV_BULK_URL, MEDIA_UPLOAD_URL, BASE_URL, SKILL_DOMAINS
+    BULK_STORE_URL, CSV_BULK_URL, MEDIA_UPLOAD_URL, BASE_URL, SKILL_DOMAINS, skillSubdomainsFor
 } from '../core/config.js';
 import { showAlert, showCustomConfirm } from '../utils/custom-alert.js';
 import {
-    escapeHtml, stripTags, capitalizeFirstLetter, humanizeUnderscores,
-    processMedia, compileMarkdownToHtml
+    escapeHtml, stripTags, capitalizeFirstLetter, humanizeUnderscores
 } from '../utils/text.js';
 import { getTomSelectValue, destroyTomSelectIfAny, initTomSelectOn } from '../utils/tomselect.js';
 import {
@@ -215,7 +214,6 @@ export async function openEditQuestionModal(id) {
 
         document.getElementById('editQuestionType').value = question.question_type;
         document.getElementById('editDifficulty').value = question.difficulty || '';
-        document.getElementById('editSkillSubdomain').value = question.skill_subdomain || '';
         document.getElementById('editSprHint').value = question.spr_hint || '';
         document.getElementById('editIsPretest').checked = !!question.is_pretest;
         document.getElementById('editCalculatorAllowed').checked = !!question.calculator_allowed;
@@ -232,6 +230,22 @@ export async function openEditQuestionModal(id) {
         }
 
         const domainSelect = document.getElementById('editSkillDomain');
+        const subdomainSelect = document.getElementById('editSkillSubdomain');
+
+        // Subdomains are constrained to the selected domain: the two columns are
+        // grouping keys for the score report, and a skill filed under the wrong
+        // domain is as damaging as an invented one.
+        const fillSubdomains = (domain, selected) => {
+            subdomainSelect.innerHTML = '<option value="">Select subdomain...</option>';
+            skillSubdomainsFor(domain).forEach(subdomain => {
+                const opt = document.createElement('option');
+                opt.value = subdomain.value;
+                opt.textContent = subdomain.label;
+                if (subdomain.value === selected) opt.selected = true;
+                subdomainSelect.appendChild(opt);
+            });
+        };
+
         domainSelect.innerHTML = '<option value="">Select domain...</option>';
         if (SKILL_DOMAINS[sectionType]) {
             SKILL_DOMAINS[sectionType].forEach(domain => {
@@ -242,6 +256,9 @@ export async function openEditQuestionModal(id) {
                 domainSelect.appendChild(opt);
             });
         }
+
+        fillSubdomains(question.skill_domain, question.skill_subdomain);
+        domainSelect.onchange = () => fillSubdomains(domainSelect.value, null);
 
         const passageContainer = document.getElementById('editPassageContainer');
         if (sectionType === 'reading_writing' && (question.passage || question.passage_content)) {
@@ -312,6 +329,8 @@ export function initRemoteQuestionPicker(selectId, preservedValue) {
         loadThrottle: 250,
         maxOptions: 50,
         create: false,
+        sortField: [{ field: '$order' }, { field: '$score' }],
+        plugins: ['clear_button'],
         load: function (query, callback) {
             const params = new URLSearchParams();
             params.set('q', query || '');

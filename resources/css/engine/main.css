@@ -1,3 +1,4 @@
+@import url("../shared/question-content.css");
 @import url("test-header.css");
 @import url("test-footer.css");
 @import url("test-review.css");
@@ -72,38 +73,9 @@ header {
         margin-left 0.3s ease;
 }
 
-.passage-container,
-.stem-text {
-    font-family: "Noto Serif", Georgia, serif !important;
-    font-size: 1rem;
-    line-height: 1.6;
-    color: #1a1a1a;
-}
-
-.passage-container ol,
-.stem-text ol,
-.choice-content ol,
-.explanation ol {
-    list-style-type: decimal !important;
-    padding-left: 1.5rem !important;
-    margin-bottom: 1rem !important;
-}
-
-.passage-container ul,
-.stem-text ul,
-.choice-content ul,
-.explanation ul {
-    list-style-type: disc !important;
-    padding-left: 1.5rem !important;
-    margin-bottom: 1rem !important;
-}
-
-.passage-container li,
-.stem-text li,
-.choice-content li,
-.explanation li {
-    display: list-item !important;
-}
+/* Question-content typography (fonts, lists, tables, images) lives in
+   shared/question-content.css so the builder and edit-question previews render
+   it identically. Engine container classes are targeted there directly. */
 
 #review-section,
 #review-section * {
@@ -215,72 +187,7 @@ footer * {
     font-size: 1rem;
 }
 
-.stem-text p,
-.passage-container p {
-    white-space: pre-wrap;
-}
-
-.stem-text table,
-.passage-container table,
-.answer-option label table {
-    width: auto;
-    max-width: 100%;
-    margin: 1rem 0;
-    border-collapse: collapse;
-    border: 1px solid #6b7280;
-    font-family: "Noto Serif", Georgia, serif;
-    font-size: 0.95rem;
-    line-height: 1.45;
-    color: #111827;
-    background: #fff;
-}
-
-.stem-text table caption,
-.passage-container table caption,
-.answer-option label table caption {
-    caption-side: top;
-    padding: 0 0 0.45rem;
-    font-weight: 700;
-    text-align: left;
-    color: #111827;
-}
-
-.stem-text th,
-.stem-text td,
-.passage-container th,
-.passage-container td,
-.answer-option label th,
-.answer-option label td {
-    border: 1px solid #6b7280;
-    padding: 0.45rem 0.65rem;
-    vertical-align: top;
-    text-align: left;
-}
-
-.stem-text th,
-.passage-container th,
-.answer-option label th {
-    font-weight: 700;
-    background: #f3f4f6;
-}
-
-.stem-text thead th,
-.passage-container thead th,
-.answer-option label thead th {
-    border-bottom-width: 2px;
-}
-
-.stem-text img,
-.passage-container img,
-.question-media {
-    display: block;
-    margin: 0px auto;
-    width: auto;
-    max-width: min(100%, 720px);
-    max-height: min(52vh, 520px);
-    height: auto;
-    object-fit: contain;
-}
+/* Paragraph wrapping, tables and image sizing: see shared/question-content.css */
 
 .question-header {
     padding-bottom: 2px;

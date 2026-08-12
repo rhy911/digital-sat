@@ -201,6 +201,7 @@ Route::middleware(['auth', 'verified', 'role:admin,teacher', 'teacher.approved']
     Route::post('/questions/bulk-csv', [\App\Http\Controllers\Admin\QuestionController::class, 'bulkStoreCsv'])->name('questions.bulk-csv-store');
     Route::post('/questions/bulk-csv-preview', [\App\Http\Controllers\Admin\QuestionController::class, 'bulkPreviewCsv'])->name('questions.bulk-csv-preview');
     Route::post('/questions/bulk-zip', [\App\Http\Controllers\Admin\QuestionController::class, 'bulkStoreZip'])->name('questions.bulk-zip');
+    Route::post('/questions/render-preview', [\App\Http\Controllers\Admin\QuestionController::class, 'renderPreview'])->name('questions.render-preview');
     Route::post('/questions/attach', [\App\Http\Controllers\Admin\QuestionController::class, 'attach'])->name('questions.attach');
 
     // Tests

@@ -1,4 +1,7 @@
 @import "./easymde-toolbar-icons.css";
+/* Same typography the test engine applies to question content, so the builder
+   and edit-question previews cannot look different from the real test. */
+@import "../shared/question-content.css";
 
 /* ==================== 1. DESIGN TOKENS & CORE SYSTEMS ==================== */
 :root {
@@ -411,10 +414,37 @@ select.ts-hidden-accessible {
     background-color: #ffffff !important;
     color: var(--text-primary) !important;
     border-radius: var(--radius) !important;
-    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1) !important;
+    box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.12), 0 8px 10px -6px rgba(0, 0, 0, 0.05) !important;
     border: 1px solid var(--border-color) !important;
     overflow: hidden !important;
+    max-height: 280px !important;
     z-index: 9999 !important;
+}
+
+.ts-dropdown .ts-dropdown-content {
+    max-height: 260px !important;
+    overflow-y: auto !important;
+}
+
+.ts-wrapper.single.has-items .ts-control {
+    padding-right: 48px !important;
+}
+
+.ts-wrapper .clear-button {
+    color: #94a3b8 !important;
+    right: 28px !important;
+    top: 50% !important;
+    transform: translateY(-50%) !important;
+    font-size: 14px !important;
+    line-height: 1 !important;
+    opacity: 0.6;
+    transition: opacity 0.15s ease, color 0.15s ease;
+    z-index: 2;
+}
+
+.ts-wrapper .clear-button:hover {
+    color: #ef4444 !important;
+    opacity: 1;
 }
 
 .ts-dropdown .option {
@@ -950,6 +980,9 @@ select.ts-hidden-accessible {
 .editor-toolbar button.active,
 .editor-toolbar button:hover {
     background-color: #f1f5f9 !important;
+    /* EasyMDE's own hover adds border-color:#95a5a6, which reads as a grey box
+       around the icon. Its stylesheet loads after this one, hence !important. */
+    border-color: transparent !important;
     color: var(--text-primary) !important;
 }
 
@@ -965,15 +998,16 @@ select.ts-hidden-accessible {
 }
 
 /* ==================== 6. PREVIEW & SIDEBAR MARKUP ==================== */
+/* Chrome only. Font, size, colour, lists, tables and images for the rendered
+   content come from shared/question-content.css via the `question-content`
+   class, so the preview cannot drift from the test engine. */
 .passage-preview,
 .stem-preview,
 .edit-passage-preview,
 .edit-stem-preview,
 #editQuestionPreviewContent {
-    font-family: "Noto Serif", Georgia, serif !important;
     background-color: #f8fafc;
     border: 1px solid var(--border-color);
-    color: var(--text-primary);
     border-radius: var(--radius);
     padding: 16px;
 }
@@ -1114,6 +1148,7 @@ select.ts-hidden-accessible {
 .edit-question-modal .editor-toolbar button:hover,
 .edit-question-modal .editor-toolbar button.active {
     background: #eef2ff !important;
+    border-color: transparent !important;
     color: var(--primary) !important;
 }
 
@@ -1140,7 +1175,6 @@ select.ts-hidden-accessible {
 .edit-question-modal .edit-stem-preview {
     background-color: #f8fafc !important;
     border-color: var(--border-color) !important;
-    color: var(--text-primary) !important;
 }
 
 .edit-question-modal .edit-question-footer button:first-child,

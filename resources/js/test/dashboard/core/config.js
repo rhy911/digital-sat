@@ -1,19 +1,47 @@
-export const SKILL_DOMAINS = {
-    reading_writing: [
-        { value: 'craft_and_structure', label: 'Craft and Structure' },
-        { value: 'information_and_ideas', label: 'Information and Ideas' },
-        { value: 'standard_english_conventions', label: 'Standard English Conventions' },
-        { value: 'expression_of_ideas', label: 'Expression of Ideas' }
-    ],
-    math: [
-        { value: 'algebra', label: 'Algebra' },
-        { value: 'advanced_math', label: 'Advanced Math' },
-        { value: 'problem_solving_data_analysis', label: 'Problem-Solving and Data Analysis' },
-        { value: 'geometry_trigonometry', label: 'Geometry and Trigonometry' }
-    ]
-};
-
 export const config = window.TestDashboardConfig || {};
+
+/**
+ * Skill taxonomy, served from config/sat_taxonomy.php via the Blade layout.
+ *
+ * It used to be duplicated here by hand, which is how the importer, the builder
+ * and the teacher guide ended up disagreeing about which skills exist. The
+ * columns feed report grouping directly, so an unknown value does not error —
+ * it becomes a one-question "skill" and ruins weak-area reporting.
+ *
+ * @type {Record<string, Record<string, string[]>>}
+ */
+export const SKILL_TAXONOMY = config.SKILL_TAXONOMY || {};
+
+function toLabel(value) {
+    return String(value)
+        .split('_')
+        .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+        .join(' ');
+}
+
+/** @type {Record<string, Array<{value: string, label: string}>>} */
+export const SKILL_DOMAINS = Object.fromEntries(
+    Object.entries(SKILL_TAXONOMY).map(([sectionType, domains]) => [
+        sectionType,
+        Object.keys(domains).map(domain => ({ value: domain, label: toLabel(domain) })),
+    ])
+);
+
+/**
+ * Subdomains allowed for a domain, in taxonomy order.
+ *
+ * @param {string} domain
+ * @returns {Array<{value: string, label: string}>}
+ */
+export function skillSubdomainsFor(domain) {
+    for (const domains of Object.values(SKILL_TAXONOMY)) {
+        if (domains[domain]) {
+            return domains[domain].map(subdomain => ({ value: subdomain, label: toLabel(subdomain) }));
+        }
+    }
+
+    return [];
+}
 export const {
     SNAPSHOT_URL,
     QUESTIONS_LIST_URL,

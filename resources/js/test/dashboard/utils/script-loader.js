@@ -38,13 +38,17 @@ export async function loadHeavyDependencies() {
     // Load independent JS
     const tomSelectP = loadScript('https://cdn.jsdelivr.net/npm/tom-select@2.3.1/dist/js/tom-select.complete.min.js');
     const tabulatorP = loadScript('https://cdn.jsdelivr.net/npm/tabulator-tables@5.5.2/dist/js/tabulator.min.js');
-    const markedP = loadScript('https://cdn.jsdelivr.net/npm/marked@12.0.0/marked.min.js');
+
+    // No standalone `marked` any more. It backed a browser-side markdown pass
+    // that disagreed with the engine's renderer on every LaTeX escape; question
+    // content is now rendered server-side by QuestionContentRenderer. EasyMDE
+    // ships its own copy of marked inside easymde.min.js, so it needs nothing
+    // loaded ahead of it.
+    const easymdeP = loadScript('https://cdn.jsdelivr.net/npm/easymde/dist/easymde.min.js');
 
     // Load dependent JS
     const katexP = loadScript('https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js')
         .then(() => loadScript('https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/auto-render.min.js'));
-
-    const easymdeP = markedP.then(() => loadScript('https://cdn.jsdelivr.net/npm/easymde/dist/easymde.min.js'));
 
     await Promise.all([tomSelectP, tabulatorP, katexP, easymdeP]);
 }

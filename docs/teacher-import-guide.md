@@ -28,25 +28,60 @@ Tài liệu này hướng dẫn chi tiết các bước nhập liệu câu hỏi
 Để câu hỏi hiển thị đẹp mắt và chuẩn xác như phần mềm thi thật (Bluebook), giáo viên cần tuân thủ các quy chuẩn định dạng sau:
 
 ### 2.1. Công thức Toán & Ký hiệu (LaTeX)
-* **Bắt buộc**: Toàn bộ công thức toán, biến số ($$x$$, $$y$$), phép tính, đơn vị đo, góc phải được viết bằng định dạng LaTeX.
-* **Quy tắc bao bọc**: Phải bọc công thức trong ký hiệu **hai dấu đô-la** `$$...$$`, kể cả công thức viết nội dòng (inline math).
-  * *Ví dụ đúng*: `Tìm giá trị của $$x$$ trong phương trình $$x^2 + 5x = 6$$.`
-* **Ràng buộc LaTeX quan trọng**:
-  * **Phân số (`\frac`)**: Bắt buộc phải thêm `\displaystyle` ở ngay đầu chuỗi LaTeX để phân số hiển thị to rõ ràng, không bị co nhỏ dòng.
-    * *Ví dụ đúng*: `$$\displaystyle \frac{a}{b}$$`
-    * *Ví dụ sai*: `$$\frac{a}{b}$$`
-  * **Ký hiệu toán học / chữ cái đặc biệt**: Mọi ký hiệu toán học, chữ cái Hy Lạp, hoặc đơn vị đặc biệt phải dùng định dạng LaTeX, không dùng ký tự thuần văn bản.
-    * Ký hiệu đô-la ($): Viết là `\\$` (Ví dụ: `$$ \\$5 $$` hoặc `$$ \\$x $$`).
-    * Ký hiệu phần trăm (%): Viết là `\\%` (Ví dụ: `$$ 50\\% $$`).
-    * Các ký hiệu Hy Lạp: `$$\pi$$` viết là `$$\pi$$`, `$$\omega$$` viết là `$$\omega$$`, `$$\theta$$` viết là `$$\theta$$`.
-    * Các ký hiệu so sánh: `$$\le$$` viết là `$$\le$$`, `$$\ge$$` viết là `$$\ge$$`.
-  * **Quy tắc Escape gạch chéo ngược (`\`) trong JSON**: Khi viết các ký hiệu chứa dấu gạch chéo ngược trong file JSON, bắt buộc phải viết đúp thành hai dấu gạch chéo ngược `\\` để parser lưu đúng vào Database.
-    * Ví dụ trong file JSON: `"$$ \\\\$5 $$"`, `"$$ 100\\\\% $$"`, `"$$ \\\\pi $$"`, `"$$ \\\\displaystyle \\\\frac{1}{2} $$"`.
-  * *Các ký hiệu phổ biến*: 
-    * Phân số: `$$\displaystyle \frac{a}{b}$$`
-    * Góc/Độ: $$18^\circ$$ viết là `$$18^\circ$$`
-    * Số mũ: $$x^2$$ viết là `$$x^2$$`
-    * Căn thức: `$$\sqrt{x}$$`
+
+Chỉ có **ba quy tắc**. Không cần đếm dấu gạch chéo ngược.
+
+#### Quy tắc 1 — Bọc mọi công thức trong `$$...$$`
+
+Kể cả một biến đơn lẻ nằm giữa câu văn.
+
+* *Đúng*: `Tìm giá trị của $$x$$ trong phương trình $$x^2 + 5x = 6$$.`
+* *Sai*: `Tìm giá trị của x trong phương trình x^2 + 5x = 6.`
+
+#### Quy tắc 2 — Bên trong `$$...$$`, viết LaTeX bình thường
+
+Một dấu gạch chéo ngược, đúng như khi gõ trong bất kỳ tài liệu LaTeX nào. Hệ thống không cho Markdown động vào vùng công thức, nên không có ký hiệu nào cần "escape thêm".
+
+| Muốn hiện | Gõ |
+| :--- | :--- |
+| $ (đô-la) | `$$\$45$$` |
+| % (phần trăm) | `$$50\%$$` |
+| Phân số | `$$\frac{a}{b}$$` |
+| Căn thức | `$$\sqrt{x}$$` |
+| Số mũ | `$$x^2$$` |
+| Độ | `$$18^\circ$$` |
+| Chữ Hy Lạp | `$$\pi$$`, `$$\theta$$`, `$$\omega$$` |
+| So sánh | `$$\le$$`, `$$\ge$$`, `$$\neq$$` |
+| Tập hợp | `$$\{1, 2, 3\}$$` |
+| Đơn vị kèm số | `$$5\,\text{cm}$$` |
+| Phép nhân | `$$3 \times 4$$` hoặc `$$3 \cdot 4$$` |
+
+Ba lưu ý nhỏ:
+
+* **Không cần gõ `\displaystyle`.** Hệ thống tự thêm khi thấy `\frac`. Gõ thêm cũng không sao, không bị lặp.
+* **Không dùng dấu `*` để nhân** — dùng `\times` hoặc `\cdot`. Dấu `*` bị hiểu là cú pháp in nghiêng.
+* **Hệ phương trình**: nên tách thành hai khối `$$` đặt trên hai đoạn (cách nhau một dòng trống), vừa giống Bluebook vừa tránh rắc rối với `\\`:
+
+  ```text
+  $$3x + 4y = 26$$
+
+  $$5x - 2y = 13$$
+  ```
+
+#### Quy tắc 3 — Nếu nộp bằng file JSON, nhân đôi mọi dấu `\`
+
+Đây là **quy tắc của định dạng JSON**, không phải của hệ thống. File CSV và ô soạn thảo trên web thì gõ y hệt Quy tắc 2, không nhân đôi gì.
+
+| Trong ô soạn thảo / file CSV | Trong file JSON |
+| :--- | :--- |
+| `$$50\%$$` | `"$$50\\%$$"` |
+| `$$\$45$$` | `"$$\\$45$$"` |
+| `$$\frac{a}{b}$$` | `"$$\\frac{a}{b}$$"` |
+| `$$\pi$$` | `"$$\\pi$$"` |
+
+> **Cảnh báo quan trọng.** Nếu quên nhân đôi trong file JSON, phần lớn công thức **hỏng âm thầm chứ không báo lỗi**: `\frac` bị JSON đọc thành ký tự điều khiển form-feed, `\text` thành dấu Tab, `\neq` thành ký tự xuống dòng. Hệ thống nay đã tự phát hiện và chặn ở bước Preview, nhưng cách chắc chắn nhất vẫn là bảo AI *"output valid JSON"* — khi đó AI tự escape đúng.
+
+*Ghi chú tương thích*: nội dung cũ viết theo lối nhân đôi (`$$\\%$$`, `$$\\$45$$`) vẫn hiển thị đúng, không cần sửa lại.
 
 ### 2.2. Bảng dữ liệu (HTML Table)
 Nếu câu hỏi hoặc bài đọc chứa bảng biểu có thể đọc được, hãy chuyển đổi nó thành định dạng HTML dạng bảng:
@@ -213,12 +248,16 @@ multiple_choice,medium,craft_and_structure,words_in_context,"As used in the text
 student_produced_response,hard,algebra,linear_equations_in_one_variable,"If $$3x - 5 = 10$$, what is the value of $$x$$?",,,,,,,,5,Enter an integer.,Add 5 to both sides: $$3x = 15$$. Divide by 3: $$x = 5$$. ,Isolate the variable.,Check arithmetic carefully.,0,1,M-CSV-02
 ```
 *Lưu ý khi mở và lưu CSV bằng Excel*:
+
+- **LaTeX trong CSV viết y hệt như trong ô soạn thảo trên web**: một dấu gạch chéo ngược. `$$50\%$$`, `$$\$45$$`, `$$\frac{a}{b}$$`. **Không** nhân đôi — quy tắc nhân đôi chỉ áp dụng cho file JSON (xem mục 2.1, Quy tắc 3).
 - Đảm bảo lưu dưới định dạng **CSV UTF-8 (Comma delimited) (\*.csv)** để không bị lỗi hiển thị tiếng Việt hoặc các ký hiệu LaTeX.
 - Toàn bộ nội dung chứa dấu phẩy `,` hoặc dấu xuống dòng bắt buộc phải bọc trong cặp dấu nháy kép `""...""`. Dấu nháy kép nằm bên trong nội dung phải được nhân đôi thành `""""`.
 
 ---
 
 ## 4. DANH MỤC DOMAIN & SUBDOMAIN HỢP LỆ (BẮT BUỘC KHỚP 100%)
+
+> Danh mục này là bản sao của `config/sat_taxonomy.php`. Hệ thống **từ chối** mọi giá trị ngoài danh sách ngay ở bước Preview, kèm gợi ý các giá trị hợp lệ. Lý do: hai trường này là khoá gom nhóm của báo cáo điểm và phân tích điểm yếu — một giá trị tự chế không báo lỗi mà biến thành một "kỹ năng" chỉ có đúng một câu, làm hỏng báo cáo.
 
 ### 4.1. Reading & Writing
 * **`information_and_ideas`**
@@ -268,112 +307,58 @@ student_produced_response,hard,algebra,linear_equations_in_one_variable,"If $$3x
 
 Giáo viên sao chép toàn bộ prompt dưới đây, dán vào ChatGPT hoặc Claude để chuyển đổi file tài liệu Word/PDF đề thi thô thành file JSON sẵn sàng import.
 
+> Bản prompt này được sinh ra từ `resources/views/components/admin/test-builder/questions/ai-conversion-prompt.blade.php`, và danh mục kỹ năng trong đó lấy thẳng từ `config/sat_taxonomy.php`. Bản trong ứng dụng (nút **Copy AI Prompt** ở màn hình Bulk Import) luôn là bản mới nhất.
+
 ```text
-Role:
-You are a data conversion expert specialized in Digital SAT exam preparation materials. Your task is to extract questions from provided Question PDF/OCR/screenshots and merge them with correct answers and full explanations from provided Answer Explanation PDF/OCR/screenshots into import-ready JSON for a bulk ZIP/JSON question importer.
+Convert a Digital SAT exam (Word/Google Doc) into import JSON. You transcribe; you never author.
 
-Source Data Priority:
-- If any generated field can be directly determined from the source material, use the source material instead of inferring.
-- Only infer fields when the source does not explicitly provide them.
-- This applies to question_number, passage, stem, choices, correct answer, explanation, difficulty, skill_domain, skill_subdomain, media references, tables, and any other generated parameter.
-- If the source explicitly labels a domain, skill, difficulty, answer, or explanation, preserve that value after converting it to the required importer key format.
+Overriding rules:
+- Output only what the document contains. Never invent, rephrase, translate, reorder, or rebalance the answer key.
+- Copy passages, stems and choices verbatim; fix only conversion typos.
+- A field not in the document is omitted, never guessed.
+- Output ONLY valid JSON: no code fences, no commentary.
 
-Output Requirement:
-Output ONLY valid JSON. Do not include markdown code blocks, comments, preambles, explanations, or conversational text.
+Shape: {"items": [ ... ]}
 
-Output Shape:
-Return a JSON array of question objects under the key "items". For example:
-{
-  "items": [
-    // question objects here
-  ]
-}
+multiple_choice:
+{"question_number":1,"question_type":"multiple_choice","passage":"Reading and Writing only; omit for Math","stem":"...","difficulty":"easy|medium|hard","skill_domain":"...","skill_subdomain":"...","choices":{"A":"...","B":"...","C":"...","D":"..."},"correct_choice":"B"}
 
-Each question object must follow this schema.
+student_produced_response (Math grid-ins only):
+{"question_number":1,"question_type":"student_produced_response","stem":"...","difficulty":"...","skill_domain":"...","skill_subdomain":"...","spr_correct_answers":["4/3","1.33","1.333"]}
 
-For multiple-choice questions:
-{
-  "question_number": 1,
-  "question_type": "multiple_choice",
-  "passage": "Required for Reading and Writing only. Omit for Math.",
-  "stem": "The actual question or instruction.",
-  "difficulty": "easy",
-  "skill_domain": "information_and_ideas",
-  "skill_subdomain": "central_ideas_and_details",
-  "choices": {
-    "A": "Choice A text",
-    "B": "Choice B text",
-    "C": "Choice C text",
-    "D": "Choice D text"
-  },
-  "correct_choice": "B",
-  "explanation": "Full explanation from the answer document.",
-  "rationale_a": "Why choice A is wrong or right, if available.",
-  "rationale_b": "Why choice B is wrong or right, if available.",
-  "rationale_c": "Why choice C is wrong or right, if available.",
-  "rationale_d": "Why choice D is wrong or right, if available.",
-  "strategy_tip": "Optional strategy tip.",
-  "common_mistakes": "Optional common mistake explanation.",
-  "is_pretest": false,
-  "calculator_allowed": true,
-  "external_id": "Optional unique string identifier"
-}
+Add ONLY when the document contains it: explanation, rationale_a/b/c/d, strategy_tip, common_mistakes, spr_hint (answer format only, never revealing the answer), is_pretest:true (unscored trial item). No other keys — the system fills the rest.
 
-For Math student-produced response / grid-in questions:
-{
-  "question_number": 1,
-  "question_type": "student_produced_response",
-  "stem": "The actual question or instruction.",
-  "difficulty": "medium",
-  "skill_domain": "algebra",
-  "skill_subdomain": "linear_equations_in_one_variable",
-  "spr_correct_answers": ["5", "5.0"],
-  "spr_hint": "Enter a number.",
-  "explanation": "Full explanation from the answer document.",
-  "strategy_tip": "Optional strategy tip.",
-  "common_mistakes": "Optional common mistake explanation.",
-  "is_pretest": false,
-  "calculator_allowed": true,
-  "external_id": "Optional unique string identifier"
-}
+Field notes:
+- question_number: as printed, restarts at 1 per module; emit items in that order.
+- correct_choice: from the answer key, exactly one of A/B/C/D.
+- spr_correct_answers: every accepted form of the answer.
+- difficulty: the document's label if it has one, otherwise judge it.
+- skill_domain / skill_subdomain: copy exactly from the list below and keep the subdomain inside its own domain. The importer rejects anything else.
 
-Field Rules:
-- question_number: integer from the source material, restart when moving into another module.
-- question_type: use "multiple_choice" for A/B/C/D questions; use "student_produced_response" for Math grid-ins.
-- passage: required for Reading and Writing questions; omit for Math questions.
-- stem: the question text or instruction.
-- difficulty: infer as "easy", "medium", or "hard".
-- skill_domain: choose only from the allowed section-specific values:
-  * Reading & Writing: information_and_ideas, craft_and_structure, expression_of_ideas, standard_english_conventions
-  * Math: algebra, advanced_math, problem_solving_data_analysis, geometry_trigonometry
-- skill_subdomain: choose only from the allowed subdomain values corresponding to domains (e.g., words_in_context, central_ideas_and_details, linear_functions, right_triangles_and_trigonometry, etc.).
-- choices: required for multiple_choice; object with exactly keys "A", "B", "C", "D".
-- correct_choice: required for multiple_choice; one of "A", "B", "C", "D".
-- spr_correct_answers: required for student_produced_response; array of accepted answers as strings.
-- spr_hint: optional for student_produced_response; include if useful.
-- For multiple_choice, omit spr_correct_answers and spr_hint.
-- For student_produced_response, omit passage, choices, correct_choice, and rationales.
-- explanation: include the full explanation from the answer explanation document.
-- rationale_a/rationale_b/rationale_c/rationale_d: include only if the explanation explicitly discusses individual choices. If not available, omit these fields.
-- strategy_tip/common_mistakes: extract tips and traps from the explanation document if explicitly noted or easily inferred.
+Allowed skills:
+Reading and Writing
+  information_and_ideas: central_ideas_and_details, command_of_evidence, inferences
+  craft_and_structure: words_in_context, text_structure_and_purpose, cross_text_connections
+  expression_of_ideas: rhetorical_synthesis, transitions
+  standard_english_conventions: boundaries, form_structure_and_sense
+Math
+  algebra: linear_equations_in_one_variable, linear_functions, linear_equations_in_two_variables, systems_of_two_linear_equations_in_two_variables, linear_inequalities_in_one_or_two_variables
+  advanced_math: nonlinear_functions, nonlinear_equations_in_one_variable, systems_of_equations_in_two_variables, equivalent_expressions
+  problem_solving_data_analysis: ratios_rates_proportional_relationships_and_units, percentages, one_variable_data_distributions_and_measures_of_center_and_spread, two_variable_data_models_and_scatterplots, probability_and_conditional_probability, inference_from_sample_statistics_and_margin_of_error, evaluating_statistical_claims_observational_studies_and_experiments
+  geometry_trigonometry: area_and_volume, lines_angles_and_triangles, right_triangles_and_trigonometry, circles
 
-Formatting Rules:
-- Use LaTeX for all math formulas, variables, measurements, symbols, and expressions.
-- Always wrap math in $$...$$, even inline math. Example: $$x^2$$, $$\displaystyle \frac{1}{2}$$, $$18^\circ$$, $$y = mx + b$$.
-- If a LaTeX formula contains a fraction (\frac), you MUST prepend it with \displaystyle inside the formula. Example: $$\displaystyle \frac{a}{b}$$ instead of $$\frac{a}{b}$$.
-- Never use plain text for math variables, greek letters, or special symbols (e.g., $, %, \pi, \omega, \theta, \le, \ge). They must be formatted as LaTeX.
-- In the JSON output, escape all backslashes as double backslashes (\\). For example:
-  * For a dollar sign $, write: $$ \\$5 $$ (renders in JSON string as "$$ \\\\$5 $$").
-  * For a percentage sign %, write: $$ 50\\% $$ (renders in JSON string as "$$ 50\\\\% $$").
-  * For a fraction, write: $$ \\displaystyle \\frac{a}{b} $$ (renders in JSON string as "$$ \\\\displaystyle \\\\frac{a}{b} $$").
-  * For greek letters, write: $$ \\pi $$ (renders in JSON string as "$$ \\\\pi $$").
-- Preserve original paragraph breaks using \n\n inside strings.
-- Preserve single line breaks using \n inside strings.
-- Use <u>...</u> for underlined text.
-- Use Markdown **bold** and *italic* for bold and italic text.
-- If a passage, stem, choice, or explanation contains a readable table, encode it as an HTML <table> with valid child tags. Add class "min-w-full divide-y divide-slate-200" to the <table>.
-- If a question contains a graph, diagram, geometric figure, image, chart, or unreadable table image that cannot be represented as HTML, replace that visual with a unique media placeholder in the exact format [Media:q##_description.png], where ## is the question number (padded with 0 if single digit). Examples: [Media:q05_graph.png], [Media:q12_triangle.png], [Media:q18_scatterplot.png]. Do not reuse generic names like [Media:media.png]. Place the placeholder exactly where the image appears.
+LaTeX and formatting:
+- Wrap every formula, variable, unit and symbol in $$...$$, even a lone variable: $$x^2$$, $$18^\circ$$.
+- Inside $$...$$ use plain LaTeX with ONE backslash: $$50\%$$, $$\$45$$, $$\frac{a}{b}$$, $$\pi$$, $$\{1,2\}$$, $$5\,\text{cm}$$.
+- Never write \displaystyle (added automatically). Never use a bare * to multiply — use \times or \cdot.
+- Systems of equations: two separate $$...$$ blocks split by a blank line, not \begin{cases}.
+- JSON escaping: double every backslash — "$$50\\%$$", "$$\\frac{a}{b}$$". A lone backslash corrupts silently instead of erroring, because \f \t \n \b are valid JSON escapes, so \frac \text \neq \beta turn into control characters.
+- \n\n starts a new paragraph; a single \n is only a space.
+- **bold**, *italic*, <u>underline</u>. Never start a line with "- " or "| " unless you mean a list or table.
+- Readable table: HTML <table class="min-w-full divide-y divide-slate-200">.
+- Any graph, figure, chart or picture-only table: put [Media:q##_description.png] at its exact spot (q05_graph.png, q12_triangle.png — never a generic name) and export that image under that filename.
 
-Data Source:
-[Paste raw question text/OCR/screenshots here, followed by answers and explanations]
+Check before output: every field traceable to the document; stem, choices and explanation describe the same question; correct_choice matches the key; domain and subdomain are on the list and belong together; the count of $$ is even in every field; no repeated stem; question_number gapless; optional fields present only if the document had them; valid JSON with every backslash doubled.
+
+Do not convert yet and do not ask for the document yet. First reply, under 100 words and in your own words: what you may take from the source versus never invent, which fields you omit, how you write and escape LaTeX, what you check before output. Then wait.
 ```

@@ -74,7 +74,7 @@
                                         <option value="{{ $module->id }}" data-section-type="{{ $section->type }}">
                                             {{ $test->title }} |
                                             {{ $section->type === 'reading_writing' ? 'R&W' : 'Math' }} - Mod
-                                            {{ $module->module_number }} ({{ $module->difficulty_level }})
+                                            {{ $module->module_number }} ({{ ucfirst($module->difficulty_level) }})
                                         </option>
                                     @endif
                                 @endforeach

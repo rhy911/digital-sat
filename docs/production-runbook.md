@@ -25,10 +25,57 @@ Throughout this doc:
 
 ```bash
 PHP_BIN=/opt/cpanel/ea-php82/root/usr/bin/php
-APP_DIR=/home/USER/PROJECT        # the directory containing artisan
+APP_DIR=/home/eojhghfphosting/public_html/dsat        # the directory containing artisan
 ```
 
-Substitute your real path once and the rest copy-pastes.
+These are the real production values — every command and cron line below
+copy-pastes as-is. Laravel's web root is `$APP_DIR/public`; `$APP_DIR` itself is
+the project root and must never be the document root (see §0.1).
+
+### 0.1 The project root sits inside `public_html` — recheck after every deploy
+
+**Status: checked 2026-08-11 — returns `403`. Not currently exposed. Keep it that way.**
+
+The application root is `/home/eojhghfphosting/public_html/dsat`, which is *inside*
+the cPanel account's main document root (`public_html`). Laravel expects only
+`$APP_DIR/public` to be web-reachable. Were the main domain to map `public_html`
+to `/` with no deny rule, `.env`, `storage/logs/`, `config/` and `composer.lock`
+would all be addressable over HTTP as static files — `.env` holds the database
+credentials and `APP_KEY`.
+
+That is not the case today, but the `403` is **enforcement, not layout**: the
+files still sit under the document root and stay safe only while whatever rule
+produces that `403` survives. A zip extract that overwrites or drops an
+`.htaccess` (§2.0) re-opens it silently, with no error anywhere. Hence the
+recheck in §2.4.
+
+Test from a browser or any machine — not from the server:
+
+```bash
+curl -sI https://YOUR-MAIN-DOMAIN/dsat/.env
+curl -sI https://YOUR-MAIN-DOMAIN/dsat/storage/logs/laravel.log
+curl -sI https://YOUR-MAIN-DOMAIN/dsat/composer.lock
+```
+
+`404` or `403` on all three is the safe outcome, and is what production returned
+on 2026-08-11. **Any `200` is a live credential leak** — rotate the database
+password and `APP_KEY` after fixing it, since you cannot know whether it was read.
+(Rotating `APP_KEY` invalidates all sessions and makes existing encrypted column
+values undecryptable, so check what is encrypted before doing it.)
+
+If a future check returns `200`, the fix in order of preference:
+
+1. Move the project root outside `public_html` (e.g. `/home/eojhghfphosting/dsat`)
+   and point the site's document root at `/home/eojhghfphosting/dsat/public`. This
+   is the only fix that removes the exposure rather than masking it. It changes
+   `$APP_DIR` everywhere in this document and in the crontab.
+2. If the docroot cannot be moved, add `/home/eojhghfphosting/public_html/dsat/.htaccess`
+   denying everything, and rely on `public/.htaccess` to re-allow the public
+   directory. This is a mitigation, not a fix — one `.htaccess` overwrite during a
+   zip extract (§2.0) re-opens it silently.
+
+Whichever applies, `.htaccess` files are not in the deploy include list (§2.2), so
+confirm the protection still holds after every deploy.
 
 ---
 
@@ -39,16 +86,34 @@ Substitute your real path once and the rest copy-pastes.
 Three lines must exist. Add via **cPanel → Advanced → Cron Jobs**, or `crontab -e`.
 
 ```cron
-# 1. Queue worker — scoring, Module 2 routing, notifications.
-* * * * * /usr/bin/flock -n /tmp/sat-queue.lock /opt/cpanel/ea-php82/root/usr/bin/php /home/USER/PROJECT/artisan queue:work --max-time=55 --sleep=1 >> /dev/null 2>&1
+# 1. Queue worker #1 — scoring, Module 2 routing, notifications.
+* * * * * /usr/bin/flock -n /tmp/sat-queue.lock /opt/cpanel/ea-php82/root/usr/bin/php /home/eojhghfphosting/public_html/dsat/artisan queue:work --max-time=55 --sleep=1 >> /dev/null 2>&1
 
-# 2. Laravel scheduler — drives EVERY scheduled command (see §1.2).
-* * * * * /usr/bin/flock -n /tmp/sat-schedule.lock /opt/cpanel/ea-php82/root/usr/bin/php /home/USER/PROJECT/artisan schedule:run >> /dev/null 2>&1
+# 2. Queue worker #2 — identical except for the lock file.
+* * * * * /usr/bin/flock -n /tmp/sat-queue-2.lock /opt/cpanel/ea-php82/root/usr/bin/php /home/eojhghfphosting/public_html/dsat/artisan queue:work --max-time=55 --sleep=1 >> /dev/null 2>&1
+
+# 3. Laravel scheduler — drives EVERY scheduled command (see §1.2).
+* * * * * /usr/bin/flock -n /tmp/sat-schedule.lock /opt/cpanel/ea-php82/root/usr/bin/php /home/eojhghfphosting/public_html/dsat/artisan schedule:run >> /dev/null 2>&1
 ```
 
-For a mock exam, run a **second** worker line with its own lock file
-(`/tmp/sat-queue-2.lock`). The I2 invariant in `config/scoring.php` is derived
-assuming 2 workers at 70 students.
+**Both worker lines are permanent, not an exam-day step.** The I2 invariant in
+`config/scoring.php` (`lock_ttl >= max_queue_wait + job_timeout`) is derived
+assuming **2 workers at 70 students**, so running only one leaves production with
+a smaller safety margin than the config believes it has. An idle worker sleeps in
+1s increments and costs one PHP process (~40–80MB) and near-zero CPU — cheaper
+than remembering to add a cron line on exam morning.
+
+**The lock file must be unique per worker.** Two lines sharing
+`/tmp/sat-queue.lock` means the second one is skipped on every tick by `-n`, and
+you get one worker while `crontab -l` looks like two.
+
+**Adding a third+ worker:** same pattern, `/tmp/sat-queue-3.lock`. Do it from
+measurements, not in advance — read `queue_wait_ms` in `storage/logs/queue.log`
+after a real exam (§3.2). High `duration_ms` with low `queue_wait_ms` means the
+job itself is slow and more workers change nothing. Every worker is also another
+concurrent connection to the same MySQL that is writing answers, so past ~4 you
+trade scoring latency for answer-save latency. Re-derive I2 in
+`config/scoring.php` whenever the worker count changes.
 
 **Why `flock`:** without it, a slow run stacks a new PHP process every minute
 until the account hits its process limit. `-n` means "skip this tick if the
@@ -75,7 +140,7 @@ Adding the `schedule:run` line activates all four of these. Verify with
 ### 1.3 Verify setup
 
 ```bash
-crontab -l                                      # expect the two lines from §1.1
+crontab -l                                      # expect all three lines from §1.1, three distinct lock files
 $PHP_BIN -v                                     # expect 8.2+
 cd $APP_DIR && $PHP_BIN artisan schedule:list   # expect four entries
 cd $APP_DIR && $PHP_BIN artisan about           # confirm env=production, debug=false
@@ -188,8 +253,20 @@ invisible until the cache is dropped and rebuilt.
 $PHP_BIN artisan about              # env=production, debug=false
 $PHP_BIN artisan migrate:status | tail -n 15
 $PHP_BIN artisan schedule:list      # four entries
-ps -eo cmd | grep '[a]rtisan queue:work'
+ps -eo cmd | grep -c '^/opt/cpanel/ea-php82/root/usr/bin/php .*artisan queue:work'   # expect 2
 ```
+
+**Counting workers correctly.** A plain `grep 'artisan queue:work'` returns
+**three lines per worker**, not one — cron runs `/bin/bash -c`, which runs
+`/usr/bin/flock`, which runs the PHP process, and all three command lines contain
+the string. Two healthy workers therefore look like six matches. Anchoring the
+pattern to `^/opt/cpanel/...php` counts only the real workers. To see the grouping
+instead of a count, drop `-c` and pair the lines up by lock file — each
+`/tmp/sat-queue*.lock` should appear with its own complete bash → flock → php
+chain.
+
+Zero is expected for a few seconds right after `queue:restart`, until the next
+cron tick relaunches both.
 
 **Zero queue workers is a production incident**, not a warning. With no worker,
 terminal module submissions never score and students poll `/submit-status`
@@ -197,6 +274,13 @@ forever. Fix before anything else (§5.1).
 
 Then load the site and confirm assets render — a blank or unstyled page is the
 signature of a `public/build` mismatch.
+
+From outside the server, re-run the §0.1 exposure check — an extract can overwrite
+or drop a protective `.htaccess`:
+
+```bash
+curl -sI https://YOUR-MAIN-DOMAIN/dsat/.env      # must not be 200
+```
 
 ### 2.5 Deleted files do not disappear
 
@@ -225,12 +309,16 @@ route, remove the file on the server in the same session.
 ```bash
 cd $APP_DIR
 $PHP_BIN artisan sat:queue-health            # pending/reserved should be ~0
-crontab -l                                   # workers + scheduler still present
+crontab -l                                   # both workers + scheduler still present
+ps -eo cmd | grep -c '^/opt/cpanel/ea-php82/root/usr/bin/php .*artisan queue:work'   # expect 2 — see §2.4
 $PHP_BIN artisan queue:failed                # should be empty
 $PHP_BIN artisan assignments:finalize-expired --dry-run
 ```
 
-Add the second worker cron line if you expect 50+ concurrent students.
+Both workers from §1.1 should already be there. If `ps` shows only one while
+`crontab -l` shows two lines, the two lines are sharing a lock file — fix the
+lock path, not the worker count. Consider a third worker only for well over 70
+concurrent students, and read the sizing caveats in §1.1 first.
 
 **Consider staggering start times.** The load shape here is a synchronized
 burst — everyone starts, times out, and submits together — so the hot spot is
@@ -338,9 +426,9 @@ artisan logs:clear
 nothing consuming the queue, the client polls until its 300s budget expires.
 
 ```bash
-ps -eo cmd | grep '[a]rtisan queue:work'      # expect ≥1
+ps -eo cmd | grep -c '^/opt/cpanel/ea-php82/root/usr/bin/php .*artisan queue:work'   # expect 2; 1 degraded, 0 is the incident
 $PHP_BIN artisan sat:queue-health             # pending climbing, oldest age growing
-crontab -l                                    # is the worker line there? correct PHP path?
+crontab -l                                    # both worker lines there? correct PHP path? distinct lock files?
 ```
 
 Immediate mitigation — run a worker by hand in an SSH session:

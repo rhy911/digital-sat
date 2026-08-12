@@ -1,0 +1,130 @@
+/* ==========================================================================
+   Rendered question content — one look for every surface.
+
+   Question HTML comes from a single renderer (QuestionContentRenderer) and is
+   laid out by a single KaTeX config (smartRenderMath). This file is the third
+   leg: the typography that turns that HTML into what a student actually sees.
+
+   Without it the previews rendered the *correct* HTML and still looked wrong —
+   Tailwind's preflight strips list markers, so `* item` came out as plain lines
+   in the builder while the engine showed bullets, and tables lost their borders.
+
+   Applied via `.question-content` on any preview surface. The engine's existing
+   container classes are listed alongside it so engine markup needs no change
+   and there is still only one copy of these rules.
+   ========================================================================== */
+
+.question-content,
+.passage-container,
+.stem-text {
+    font-family: "Noto Serif", Georgia, serif !important;
+    font-size: 1rem;
+    line-height: 1.6;
+    color: #1a1a1a;
+}
+
+/* Tailwind preflight sets `list-style: none` on ul/ol, so markers have to be
+   put back explicitly wherever question content is rendered. */
+.question-content ol,
+.passage-container ol,
+.stem-text ol,
+.choice-content ol,
+.explanation ol {
+    list-style-type: decimal !important;
+    padding-left: 1.5rem !important;
+    margin-bottom: 1rem !important;
+}
+
+.question-content ul,
+.passage-container ul,
+.stem-text ul,
+.choice-content ul,
+.explanation ul {
+    list-style-type: disc !important;
+    padding-left: 1.5rem !important;
+    margin-bottom: 1rem !important;
+}
+
+.question-content li,
+.passage-container li,
+.stem-text li,
+.choice-content li,
+.explanation li {
+    display: list-item !important;
+}
+
+/* Single newlines inside a paragraph are meaningful in exam prose. */
+.question-content p,
+.stem-text p,
+.passage-container p {
+    white-space: pre-wrap;
+}
+
+.question-content table,
+.stem-text table,
+.passage-container table,
+.answer-option label table {
+    width: auto;
+    max-width: 100%;
+    margin: 1rem 0;
+    border-collapse: collapse;
+    border: 1px solid #6b7280;
+    font-family: "Noto Serif", Georgia, serif;
+    font-size: 0.95rem;
+    line-height: 1.45;
+    color: #111827;
+    background: #fff;
+}
+
+.question-content table caption,
+.stem-text table caption,
+.passage-container table caption,
+.answer-option label table caption {
+    caption-side: top;
+    padding: 0 0 0.45rem;
+    font-weight: 700;
+    text-align: left;
+    color: #111827;
+}
+
+.question-content th,
+.question-content td,
+.stem-text th,
+.stem-text td,
+.passage-container th,
+.passage-container td,
+.answer-option label th,
+.answer-option label td {
+    border: 1px solid #6b7280;
+    padding: 0.45rem 0.65rem;
+    vertical-align: top;
+    text-align: left;
+}
+
+.question-content th,
+.stem-text th,
+.passage-container th,
+.answer-option label th {
+    font-weight: 700;
+    background: #f3f4f6;
+}
+
+.question-content thead th,
+.stem-text thead th,
+.passage-container thead th,
+.answer-option label thead th {
+    border-bottom-width: 2px;
+}
+
+.question-content img,
+.stem-text img,
+.passage-container img,
+.question-media {
+    display: block;
+    margin: 0px auto;
+    width: auto;
+    max-width: min(100%, 720px);
+    max-height: min(52vh, 520px);
+    height: auto;
+    object-fit: contain;
+}

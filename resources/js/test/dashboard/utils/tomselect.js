@@ -35,7 +35,8 @@ export function initTomSelectOn(selectEl) {
     }
     new TomSelect(selectEl, {
         create: false,
-        sortField: { field: 'text', order: 'asc' }
+        sortField: [{ field: '$order' }, { field: '$score' }],
+        plugins: ['clear_button']
     });
 }
 
@@ -118,11 +119,13 @@ export function rebuildQuestionModuleTomSelect(tests, preserved, selectId) {
                 const opt = document.createElement('option');
                 opt.value = mod.id;
                 opt.setAttribute('data-section-type', section.type);
+                const diffStr = humanizeUnderscores(mod.difficulty_level || 'standard');
+                const capitalizedDiff = diffStr.charAt(0).toUpperCase() + diffStr.slice(1);
                 if (selectId === 'questionsTableModuleFilter') {
                     const secType = section.type === 'reading_writing' ? 'R&W' : 'Math';
-                    opt.textContent = test.title + ' | ' + secType + ' - Mod ' + mod.module_number;
+                    opt.textContent = test.title + ' | ' + secType + ' - Mod ' + mod.module_number + ' (' + capitalizedDiff + ')';
                 } else {
-                    opt.textContent = test.title + ' - ' + section.name + ' - Mod ' + mod.module_number + ' (' + humanizeUnderscores(mod.difficulty_level) + ')';
+                    opt.textContent = test.title + ' - ' + section.name + ' - Mod ' + mod.module_number + ' (' + capitalizedDiff + ')';
                 }
                 el.appendChild(opt);
             });

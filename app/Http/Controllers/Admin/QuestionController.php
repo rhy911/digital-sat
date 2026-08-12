@@ -10,6 +10,8 @@ use App\Services\BulkQuestionCsvImportService;
 use App\Services\BulkQuestionImportService;
 use App\Http\Requests\Admin\UpdateQuestionRequest;
 use App\Http\Requests\Admin\AttachQuestionRequest;
+use App\Support\QuestionContentRenderer;
+use App\Support\QuestionPreviewPresenter;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
@@ -260,7 +262,7 @@ class QuestionController extends Controller
             foreach ($items as &$item) {
                 $item['errors'] = [];
             }
-            return response()->json(['status' => 'success', 'data' => ['items' => $items, 'module_id' => $validated['module_id'] ?? null]]);
+            return response()->json(['status' => 'success', 'data' => ['items' => QuestionPreviewPresenter::decorate($items), 'module_id' => $validated['module_id'] ?? null]]);
         } catch (\Illuminate\Validation\ValidationException $e) {
             $items = $payload['items'] ?? [];
             $errors = $e->errors();
@@ -275,8 +277,28 @@ class QuestionController extends Controller
                     }
                 }
             }
-            return response()->json(['status' => 'success', 'data' => ['items' => $items, 'module_id' => $payload['module_id'] ?? null]]);
+            return response()->json(['status' => 'success', 'data' => ['items' => QuestionPreviewPresenter::decorate($items), 'module_id' => $payload['module_id'] ?? null]]);
         }
+    }
+
+    /**
+     * Render question-content fragments through the same pipeline the test
+     * engine uses, so the builder's live preview cannot drift from what
+     * students will actually see.
+     */
+    public function renderPreview(Request $request)
+    {
+        $validated = $request->validate([
+            'fields' => 'required|array|max:16',
+            'fields.*' => 'nullable|string|max:20000',
+        ]);
+
+        $rendered = [];
+        foreach ($validated['fields'] as $key => $value) {
+            $rendered[$key] = QuestionContentRenderer::markdown($value);
+        }
+
+        return response()->json(['status' => 'success', 'data' => ['fields' => $rendered]]);
     }
 
     public function bulkStore(Request $request, BulkQuestionImportService $bulkQuestionImport)
@@ -321,7 +343,7 @@ class QuestionController extends Controller
                 }
             }
         }
-        return response()->json(['status' => 'success', 'data' => ['items' => $items]]);
+        return response()->json(['status' => 'success', 'data' => ['items' => QuestionPreviewPresenter::decorate($items)]]);
     }
 
     public function bulkStoreCsv(Request $request, BulkQuestionCsvImportService $csvImport, BulkQuestionImportService $bulkQuestionImport)

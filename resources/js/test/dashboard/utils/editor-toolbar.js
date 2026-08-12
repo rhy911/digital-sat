@@ -1,6 +1,20 @@
 import { MEDIA_UPLOAD_URL } from '../core/config.js';
 import { showAlert } from './custom-alert.js';
 
+/**
+ * EasyMDE's own preview renders markdown with its bundled parser, which eats
+ * the backslash in `\%` and `\$` and therefore disagrees with both the live
+ * preview panel and the test engine. The toolbar button is gone; these keyboard
+ * shortcuts are the other way in, so they are disabled too. Spread this into
+ * every `new EasyMDE({...})` alongside the toolbar.
+ */
+export const PREMIUM_EDITOR_OPTIONS = {
+    shortcuts: {
+        togglePreview: null,
+        toggleSideBySide: null,
+    },
+};
+
 export function getPremiumToolbar(activeEditorKey, changeCallback) {
     const toggleBold = window.EasyMDE ? window.EasyMDE.toggleBold : (e) => e.toggleBold();
     const toggleItalic = window.EasyMDE ? window.EasyMDE.toggleItalic : (e) => e.toggleItalic();
@@ -8,7 +22,6 @@ export function getPremiumToolbar(activeEditorKey, changeCallback) {
     const toggleBlockquote = window.EasyMDE ? window.EasyMDE.toggleBlockquote : (e) => e.toggleBlockquote();
     const toggleUnorderedList = window.EasyMDE ? window.EasyMDE.toggleUnorderedList : (e) => e.toggleUnorderedList();
     const toggleOrderedList = window.EasyMDE ? window.EasyMDE.toggleOrderedList : (e) => e.toggleOrderedList();
-    const togglePreview = window.EasyMDE ? window.EasyMDE.togglePreview : (e) => e.togglePreview();
 
     return [
         { name: "bold", action: toggleBold, className: "bi bi-type-bold", title: "Bold" },
@@ -90,7 +103,10 @@ export function getPremiumToolbar(activeEditorKey, changeCallback) {
 
                 fileInput.click();
             }
-        },
-        "|", { name: "preview", action: togglePreview, className: "bi bi-eye text-brand font-bold", title: "Toggle Preview", noDisable: true }
+        }
+        // No EasyMDE preview button on purpose. Its built-in preview renders
+        // markdown with its own bundled parser, which eats the backslash in
+        // \% and \$ and so disagrees with the live preview panel and the test
+        // engine. The panel beside the editor is the single source of truth.
     ];
 }

@@ -1,5 +1,5 @@
-import { getPremiumToolbar } from '../utils/editor-toolbar.js';
-import { compileMarkdownToHtml, processMedia, escapeHtml, normalizeQuestionMediaUrl } from '../utils/text.js';
+import { getPremiumToolbar, PREMIUM_EDITOR_OPTIONS } from '../utils/editor-toolbar.js';
+import { renderQuestionFields, escapeHtml, normalizeQuestionMediaUrl } from '../utils/text.js';
 import { showAlert, showCustomConfirm } from '../utils/custom-alert.js';
 import { debounce } from '../utils/debounce.js';
 import { MEDIA_UPLOAD_URL, SKILL_DOMAINS, BASE_URL } from '../core/config.js';
@@ -18,6 +18,7 @@ export function initEditModalEditors() {
             placeholder: "Enter question stem...",
             minHeight: "120px",
             toolbar: getPremiumToolbar('editStem', () => debouncedEditQuestionPreview()),
+            ...PREMIUM_EDITOR_OPTIONS,
             status: false,
             autoDownloadFontAwesome: false
         });
@@ -32,6 +33,7 @@ export function initEditModalEditors() {
             placeholder: "Enter passage content...",
             minHeight: "150px",
             toolbar: getPremiumToolbar('editPassage', () => debouncedEditQuestionPreview()),
+            ...PREMIUM_EDITOR_OPTIONS,
             status: false,
             autoDownloadFontAwesome: false
         });
@@ -46,6 +48,7 @@ export function initEditModalEditors() {
             placeholder: "Enter explanation...",
             minHeight: "100px",
             toolbar: getPremiumToolbar('editExplanation', () => debouncedEditQuestionPreview()),
+            ...PREMIUM_EDITOR_OPTIONS,
             status: false,
             autoDownloadFontAwesome: false
         });
@@ -62,7 +65,11 @@ export function debouncedEditQuestionPreview() {
     }, 200);
 }
 
-export function updateEditQuestionPreview() {
+// Preview rendering is a server round-trip now, so a slow response for an older
+// keystroke must never overwrite a newer one.
+let editPreviewRenderSequence = 0;
+
+export async function updateEditQuestionPreview() {
     const previewContainer = document.getElementById('editQuestionPreviewContent');
     if (!previewContainer) return;
 
@@ -77,22 +84,42 @@ export function updateEditQuestionPreview() {
     const passageContainer = document.getElementById('editPassageContainer');
     const showPassage = passageContainer && !passageContainer.classList.contains('hidden');
 
-    let passageHtml = '';
-    if (showPassage && passageValue.trim()) {
-        passageHtml = `<div class="edit-passage-preview p-3 mb-3 rounded-lg text-sm border border-slate-200 bg-slate-50 text-slate-800">${compileMarkdownToHtml(processMedia(passageValue))}</div>`;
+    const choiceValues = {};
+    if (qType === 'multiple_choice') {
+        ['A', 'B', 'C', 'D'].forEach(label => {
+            choiceValues[label] = document.getElementById(`editChoice${label}Content`)?.value.trim() || '';
+        });
     }
 
-    const stemHtml = compileMarkdownToHtml(processMedia(stemValue));
+    const sequence = ++editPreviewRenderSequence;
+    const rendered = await renderQuestionFields({
+        stem: stemValue,
+        passage: showPassage ? passageValue : '',
+        explanation: explanationValue,
+        choice_A: choiceValues.A || '',
+        choice_B: choiceValues.B || '',
+        choice_C: choiceValues.C || '',
+        choice_D: choiceValues.D || '',
+    });
+
+    if (sequence !== editPreviewRenderSequence) return;
+
+    let passageHtml = '';
+    if (showPassage && passageValue.trim()) {
+        passageHtml = `<div class="edit-passage-preview question-content p-3 mb-3 rounded-lg border border-slate-200 bg-slate-50">${rendered.passage || ''}</div>`;
+    }
+
+    const stemHtml = rendered.stem || '';
 
     let questionBodyHtml = '';
     if (qType === 'multiple_choice') {
         let choicesHtml = '';
         ['A', 'B', 'C', 'D'].forEach(label => {
-            const contentInput = document.getElementById(`editChoice${label}Content`);
             const correctRadio = document.getElementById(`editChoice${label}Correct`);
 
-            const rawContent = contentInput ? contentInput.value.trim() : '';
-            const content = rawContent ? compileMarkdownToHtml(processMedia(rawContent)) : `<span class="text-slate-500 italic">Option ${label} content...</span>`;
+            const content = choiceValues[label]
+                ? (rendered[`choice_${label}`] || '')
+                : `<span class="text-slate-500 italic">Option ${label} content...</span>`;
             const isCorrect = correctRadio ? correctRadio.checked : false;
 
             choicesHtml += `
@@ -100,7 +127,7 @@ export function updateEditQuestionPreview() {
                     <div class="rounded-full flex items-center justify-center ${isCorrect ? 'text-emerald-900 bg-emerald-100' : 'text-slate-700 bg-slate-100'} fw-bold" style="width: 24px; height: 24px; font-size: 12px; flex-shrink: 0;">
                         ${label}
                     </div>
-                    <div class="grow text-sm text-slate-800">${content}</div>
+                    <div class="grow question-content">${content}</div>
                 </div>
             `;
         });
@@ -112,7 +139,7 @@ export function updateEditQuestionPreview() {
             <div class="answer-input-container p-3 bg-slate-50 rounded-lg mt-3 border border-amber-200">
                 <label class="d-block mb-2 fw-bold text-slate-800 small">${icon('pencil-fill', 'w-4 h-4 text-amber-750')} Student produced response</label>
                 <div class="form-control bg-white font-monospace text-slate-900 text-center py-2 fs-5 border-amber-300" style="max-width: 150px; letter-spacing: 2px;">
-                    ${sprVal || '______'}
+                    ${sprVal ? escapeHtml(sprVal) : '______'}
                 </div>
             </div>
         `;
@@ -121,15 +148,16 @@ export function updateEditQuestionPreview() {
     let explanationHtml = '';
     if (explanationValue.trim()) {
         explanationHtml = `
-            <div class="explanation-preview p-3 mt-3 bg-slate-50 rounded-lg text-sm text-slate-650 border border-slate-200">
-                <strong>Explanation:</strong> ${compileMarkdownToHtml(processMedia(explanationValue))}
+            <div class="explanation-preview p-3 mt-3 bg-slate-50 rounded-lg border border-slate-200">
+                <strong class="text-xs font-bold uppercase tracking-wider text-slate-500 block mb-1">Explanation</strong>
+                <div class="question-content">${rendered.explanation || ''}</div>
             </div>
         `;
     }
 
     previewContainer.innerHTML = `
         ${passageHtml}
-        <div class="edit-stem-preview fw-semibold text-slate-900">
+        <div class="edit-stem-preview question-content">
             ${stemHtml || '<span class="text-slate-500 italic">Enter question stem to view preview...</span>'}
         </div>
         ${questionBodyHtml}

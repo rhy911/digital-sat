@@ -1,25 +1,62 @@
-export function compileMarkdownToHtml(text) {
-    if (!text) return '';
-    try {
-        // Fix loose formatting like "** bold **" which standard marked.js ignores
-        text = text.replace(/\*\*\s*([^*]+?)\s*\*\*/g, '**$1**');
+import { BASE_URL, dashboardJsonResponse } from '../core/config.js';
 
-        if (window.marked) {
-            const markedOptions = { breaks: true, gfm: true };
-            if (typeof window.marked.parse === 'function') {
-                return window.marked.parse(text, markedOptions);
-            } else if (typeof window.marked === 'function') {
-                if (window.marked.setOptions) window.marked.setOptions(markedOptions);
-                return window.marked(text);
-            }
-        }
-        if (window.EasyMDE && typeof window.EasyMDE.prototype.markdown === 'function') {
-            return window.EasyMDE.prototype.markdown(text);
-        }
-    } catch (e) {
-        console.error('Markdown compile failed', e);
+const renderedFieldCache = new Map();
+const RENDERED_FIELD_CACHE_LIMIT = 200;
+
+/**
+ * Render question-content fields on the server, through the exact pipeline the
+ * test engine uses (QuestionContentRenderer).
+ *
+ * Rendering in the browser used to mean a second, subtly different markdown
+ * implementation: `marked` with `breaks: true` here, league/commonmark with
+ * `breaks: false` in the engine, and no markdown at all in the import preview.
+ * They disagreed on every LaTeX backslash escape, so a preview could look right
+ * while the live test looked wrong. One request per preview update keeps a
+ * single source of truth.
+ *
+ * @param {Record<string, string>} fields
+ * @returns {Promise<Record<string, string>>} field name -> sanitized HTML
+ */
+export async function renderQuestionFields(fields) {
+    const entries = Object.entries(fields || {})
+        .filter(([, value]) => typeof value === 'string' && value.trim() !== '');
+
+    if (!entries.length) return {};
+
+    const payload = Object.fromEntries(entries);
+    const cacheKey = JSON.stringify(payload);
+    if (renderedFieldCache.has(cacheKey)) {
+        return { ...renderedFieldCache.get(cacheKey) };
     }
-    return text.replace(/\n/g, '<br>');
+
+    try {
+        const response = await fetch(`${BASE_URL || '/admin'}/questions/render-preview`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Accept': 'application/json',
+                'X-Requested-With': 'XMLHttpRequest',
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content || '',
+            },
+            body: JSON.stringify({ fields: payload }),
+        });
+
+        const data = await dashboardJsonResponse(response, 'POST');
+        const rendered = data?.data?.fields || {};
+
+        if (renderedFieldCache.size >= RENDERED_FIELD_CACHE_LIMIT) {
+            renderedFieldCache.clear();
+        }
+        renderedFieldCache.set(cacheKey, rendered);
+
+        return { ...rendered };
+    } catch (error) {
+        console.error('Question preview render failed', error);
+
+        // Never leave the author staring at a blank preview: fall back to the
+        // raw text, escaped, so the content is at least readable.
+        return Object.fromEntries(entries.map(([key, value]) => [key, `<p>${escapeHtml(value)}</p>`]));
+    }
 }
 
 export function normalizeQuestionMediaUrl(url) {
@@ -62,23 +99,6 @@ export function normalizeQuestionMediaUrl(url) {
     }
 
     return value;
-}
-
-export function processMedia(text) {
-    if (!text || typeof text !== 'string') return text;
-    // Convert backslash delimiters to $$ for consistent preview rendering
-    text = text.replace(/\\\(/g, '$$').replace(/\\\)/g, '$$');
-    text = text.replace(/!\[([^\]]*)\]\(([^)]+)\)/g, (match, alt, url) => {
-        return `![${alt}](${normalizeQuestionMediaUrl(url)})`;
-    });
-    return text.replace(/(?<!\!)\[Media:([^\]]+)\]/gi, (match, filename) => {
-        const safeFilename = filename.trim();
-        if (!/^[A-Za-z0-9]{20}\.(jpe?g|png|gif|webp|svg)$/i.test(safeFilename)) {
-            return match;
-        }
-
-        return `<img src="/media/${safeFilename}" alt="${safeFilename}" class="question-media img-fluid mb-2 d-block mx-auto" style="max-height: 300px;">`;
-    });
 }
 
 export function escapeHtml(str) {

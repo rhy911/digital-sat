@@ -85,16 +85,64 @@ class QuestionContentRenderer
 
     public static function markdown(?string $content): string
     {
-        $normalized = QuestionMediaUrl::normalizeMarkdown(
-            str_replace(['\(', '\)'], ['$$', '$$'], $content ?? '')
-        );
+        $source = str_replace(['\(', '\)'], ['$$', '$$'], $content ?? '');
 
-        $html = Str::markdown($normalized, [
+        // Math is pulled out before CommonMark runs: CommonMark treats `\` +
+        // punctuation as an escape and would silently eat the backslash of
+        // `\%`, `\$`, `\{` or a `\\` row break. Authors write plain LaTeX and
+        // KaTeX receives it verbatim.
+        [$source, $mathSpans] = self::extractMathSpans($source);
+
+        $html = Str::markdown(QuestionMediaUrl::normalizeMarkdown($source), [
             'html_input' => 'allow',
             'allow_unsafe_links' => false,
         ]);
 
-        return self::sanitize($html);
+        return self::restoreMathSpans(self::sanitize($html), $mathSpans);
+    }
+
+    /**
+     * Swap every `$$...$$` span for an inert alphanumeric token that CommonMark
+     * cannot reinterpret, keeping the normalized LaTeX aside for restoration.
+     *
+     * @return array{0: string, 1: array<string, string>}
+     */
+    private static function extractMathSpans(string $content): array
+    {
+        if (! str_contains($content, '$$')) {
+            return [$content, []];
+        }
+
+        $nonce = bin2hex(random_bytes(8));
+        $spans = [];
+        $index = 0;
+
+        $replaced = preg_replace_callback(
+            '/\$\$(.*?)\$\$/s',
+            function (array $matches) use ($nonce, &$spans, &$index): string {
+                $token = 'mathspan'.$nonce.'i'.$index.'end';
+                $index++;
+                $spans[$token] = LatexNormalizer::normalizeMath($matches[1]);
+
+                return $token;
+            },
+            $content
+        );
+
+        return [$replaced ?? $content, $spans];
+    }
+
+    /**
+     * @param  array<string, string>  $spans
+     */
+    private static function restoreMathSpans(string $html, array $spans): string
+    {
+        foreach ($spans as $token => $math) {
+            $escaped = htmlspecialchars($math, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
+            $html = str_replace($token, '$$'.$escaped.'$$', $html);
+        }
+
+        return $html;
     }
 
     private static function sanitize(string $html): string

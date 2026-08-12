@@ -219,7 +219,10 @@
                 MODULE_UPDATE_URL_TEMPLATE: "{{ route('home-dashboard.modules.update', ['id' => '__ID__'], false) }}",
                 QUESTION_UPDATE_URL_TEMPLATE: "{{ route('home-dashboard.questions.update', ['id' => '__ID__'], false) }}",
                 BASE_URL: "/admin",
-                QUESTIONS_PER_PAGE: 30
+                QUESTIONS_PER_PAGE: 30,
+                {{-- Served from config/sat_taxonomy.php so the builder, the importer and the
+                     docs cannot drift apart on what counts as a valid skill. --}}
+                SKILL_TAXONOMY: @json(\App\Support\SatTaxonomy::all())
             };
         </script>
         @vite(['resources/js/test-dashboard.js'])

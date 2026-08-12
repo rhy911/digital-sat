@@ -112,25 +112,59 @@
                             <x-ui.icon name="calculator" class="w-4 h-4" /> 1. Công thức Toán &amp; Biến số (LaTeX)
                         </strong>
                         <p class="text-xs text-slate-700 leading-normal">
-                            Mọi biểu thức toán, phương trình, biến số (ví dụ: $$x$$, $$y$$), phép nhân chia, góc độ,
-                            phân số đều phải được biểu diễn bằng LaTeX và bọc trong <strong>hai dấu đô-la</strong>
-                            <code>$$...$$</code> (bao gồm cả dạng viết nội dòng).
+                            Chỉ có <strong>ba quy tắc</strong>. Không cần đếm dấu gạch chéo ngược.
                         </p>
-                        <p class="text-xs text-slate-700 leading-normal font-bold">
-                            Ràng buộc LaTeX quan trọng:
-                        </p>
-                        <ul class="list-disc pl-5 text-xs text-slate-600 space-y-1 mt-1">
-                            <li><strong>Phân số (\frac)</strong>: Bắt buộc phải thêm <code>\displaystyle</code> ở đầu công thức. Ví dụ: <code class="text-rose-600">$$\displaystyle \frac{1}{2}$$</code> thay vì <code class="text-rose-600">$$\frac{1}{2}$$</code>.</li>
-                            <li><strong>Ký hiệu Hy Lạp &amp; Đặc biệt</strong>: Mọi ký hiệu như đô-la ($), phần trăm (%), pi (\pi), omega (\omega), theta (\theta), lớn hơn hoặc bằng (\ge), nhỏ hơn hoặc bằng (\le) đều bắt buộc phải dùng LaTeX, không dùng text trần.</li>
-                            <li><strong>Escape dấu gạch chéo ngược (\) trong JSON</strong>: Khi viết trong JSON, bắt buộc phải viết đúp thành hai dấu gạch chéo ngược <code>\\</code> để tránh lỗi parser. Ví dụ: <code>"$$ \\\\$5 $$"</code>, <code>"$$ 50\\\\% $$"</code>, <code>"$$ \\\\pi $$"</code>, <code>"$$ \\\\displaystyle \\\\frac{1}{2} $$"</code>.</li>
-                        </ul>
+                        <ol class="list-decimal pl-5 text-xs text-slate-600 space-y-1.5 mt-1">
+                            <li>
+                                <strong>Bọc mọi công thức trong <code>$$...$$</code></strong> — kể cả một biến đơn lẻ
+                                giữa câu văn: <code class="text-rose-600">Tìm $$x$$ biết $$x^2 + 5x = 6$$.</code>
+                            </li>
+                            <li>
+                                <strong>Bên trong <code>$$...$$</code>, viết LaTeX bình thường</strong> — một dấu gạch
+                                chéo ngược, đúng như mọi tài liệu LaTeX. Hệ thống không cho Markdown động vào vùng công
+                                thức nên không ký hiệu nào cần escape thêm.
+                            </li>
+                            <li>
+                                <strong>Chỉ file JSON mới nhân đôi dấu <code>\</code></strong> — đó là quy tắc của định
+                                dạng JSON, không phải của hệ thống. Ô soạn thảo này và file CSV gõ y hệt quy tắc 2.
+                            </li>
+                        </ol>
                         <div
-                            class="bg-white/95 rounded-lg p-2.5 font-mono text-xs border border-brand/20 mt-1.5 text-slate-800">
-                            Ví dụ thực tế:<br>
-                            - Phân số hiển thị rộng: <code class="text-rose-600">$$\displaystyle \frac{1}{2}$$</code><br>
-                            - Số mũ: <code class="text-rose-600">$$x^2 + 5x = 6$$</code><br>
-                            - Độ: <code class="text-rose-600">$$180^\circ$$</code>
+                            class="bg-white/95 rounded-lg p-2.5 font-mono text-xs border border-brand/20 mt-1.5 text-slate-800 overflow-x-auto">
+                            <table class="w-full text-left">
+                                <thead class="text-slate-500">
+                                    <tr>
+                                        <th class="pr-3 pb-1 font-semibold">Muốn hiện</th>
+                                        <th class="pr-3 pb-1 font-semibold">Gõ ở đây / CSV</th>
+                                        <th class="pb-1 font-semibold">Trong file JSON</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="align-top">
+                                    <tr><td class="pr-3">Phần trăm</td><td class="pr-3"><code class="text-rose-600">$$50\%$$</code></td><td><code>"$$50\\%$$"</code></td></tr>
+                                    <tr><td class="pr-3">Đô-la</td><td class="pr-3"><code class="text-rose-600">$$\$45$$</code></td><td><code>"$$\\$45$$"</code></td></tr>
+                                    <tr><td class="pr-3">Phân số</td><td class="pr-3"><code class="text-rose-600">$$\frac{a}{b}$$</code></td><td><code>"$$\\frac{a}{b}$$"</code></td></tr>
+                                    <tr><td class="pr-3">Chữ Hy Lạp</td><td class="pr-3"><code class="text-rose-600">$$\pi$$</code></td><td><code>"$$\\pi$$"</code></td></tr>
+                                    <tr><td class="pr-3">Tập hợp</td><td class="pr-3"><code class="text-rose-600">$$\{1,2\}$$</code></td><td><code>"$$\\{1,2\\}$$"</code></td></tr>
+                                    <tr><td class="pr-3">Đơn vị</td><td class="pr-3"><code class="text-rose-600">$$5\,\text{cm}$$</code></td><td><code>"$$5\\,\\text{cm}$$"</code></td></tr>
+                                </tbody>
+                            </table>
                         </div>
+                        <ul class="list-disc pl-5 text-xs text-slate-600 space-y-1 mt-1.5">
+                            <li><strong>Không cần gõ <code>\displaystyle</code></strong> — hệ thống tự thêm khi thấy <code>\frac</code>.</li>
+                            <li><strong>Không dùng <code>*</code> để nhân</strong> — dùng <code>\times</code> hoặc <code>\cdot</code>, vì <code>*</code> bị hiểu là in nghiêng.</li>
+                            <li><strong>Hệ phương trình</strong>: tách thành hai khối <code>$$</code> cách nhau một dòng trống, thay cho <code>\begin{cases}</code>.</li>
+                            <li><strong>Xuống đoạn</strong>: để một dòng trống. Một lần xuống dòng đơn chỉ hiện thành dấu cách.</li>
+                        </ul>
+                        <p class="text-xs text-rose-700 leading-normal mt-1.5 bg-rose-50 border border-rose-200 rounded-lg p-2">
+                            <strong>Cảnh báo:</strong> quên nhân đôi trong file JSON thì phần lớn công thức
+                            <strong>hỏng âm thầm chứ không báo lỗi</strong> — <code>\frac</code> bị đọc thành ký tự
+                            form-feed, <code>\text</code> thành Tab, <code>\neq</code> thành xuống dòng. Preview nay đã
+                            tự phát hiện và chặn, nhưng cách chắc nhất là bảo AI <em>“output valid JSON”</em>.
+                        </p>
+                        <p class="text-xs text-slate-500 leading-normal">
+                            Nội dung cũ viết theo lối nhân đôi (<code>$$\\%$$</code>, <code>$$\\$45$$</code>) vẫn hiển
+                            thị đúng, không cần sửa lại.
+                        </p>
                     </div>
 
                     <div class="h-px bg-[var(--color-brand-soft)]/60"></div>
@@ -164,6 +198,41 @@
                             <code>[Media:q12_triangle.jpg]</code>.
                             <br>Tải lên bằng phương thức **ZIP** chứa các file ảnh tương ứng này.
                         </p>
+                    </div>
+
+                    <div class="h-px bg-[var(--color-brand-soft)]/60"></div>
+
+                    <div class="space-y-1.5">
+                        <strong
+                            class="text-brand flex items-center gap-1.5 font-bold text-xs uppercase tracking-wider">
+                            <x-ui.icon name="tag" class="w-4 h-4" /> 4. Danh mục kỹ năng hợp lệ (bắt buộc khớp 100%)
+                        </strong>
+                        <p class="text-xs text-slate-700 leading-normal">
+                            Hệ thống <strong>từ chối</strong> mọi <code>skill_domain</code> / <code>skill_subdomain</code>
+                            nằm ngoài danh sách này ngay ở bước Preview. Hai trường đó là khoá gom nhóm của báo cáo điểm
+                            và phân tích điểm yếu — một giá trị tự chế không báo lỗi mà biến thành một “kỹ năng” chỉ có
+                            đúng một câu, làm hỏng báo cáo.
+                        </p>
+                        {{-- Generated from config/sat_taxonomy.php so this list cannot drift from what the importer accepts. --}}
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-3 mt-1.5">
+                            @foreach (\App\Support\SatTaxonomy::all() as $sectionType => $domains)
+                                <div class="bg-white/95 rounded-lg p-2.5 border border-brand/20">
+                                    <div class="text-[10px] font-extrabold uppercase tracking-wider text-brand mb-1.5">
+                                        {{ $sectionType === 'reading_writing' ? 'Reading & Writing' : 'Math' }}
+                                    </div>
+                                    <dl class="m-0 space-y-1.5">
+                                        @foreach ($domains as $domain => $subdomains)
+                                            <div>
+                                                <dt class="font-mono text-xs font-bold text-slate-800">{{ $domain }}</dt>
+                                                <dd class="m-0 pl-3 font-mono text-[11px] text-slate-600 leading-snug">
+                                                    {{ implode(' · ', $subdomains) }}
+                                                </dd>
+                                            </div>
+                                        @endforeach
+                                    </dl>
+                                </div>
+                            @endforeach
+                        </div>
                     </div>
                 </div>
             </div>
