@@ -614,7 +614,7 @@ class BulkQuestionImportService
         $sectionType = $module->section?->type;
 
         $usedPassageIds = [];
-        $seenStems = [];
+        $seenSignatures = [];
 
         foreach ($validated['items'] as $index => &$item) {
             $item['section_type'] = $sectionType;
@@ -658,13 +658,27 @@ class BulkQuestionImportService
             $this->assertAnswerKeyIsUsable($item, $path, $label);
             $this->assertContentIsImportable($item, $path, $label);
 
-            $stemKey = preg_replace('/\s+/', ' ', trim((string) $item['stem']));
-            if ($stemKey !== '' && isset($seenStems[$stemKey])) {
+            $passageContent = '';
+            if (isset($item['passage']) && is_array($item['passage'])) {
+                $passageContent = (string) ($item['passage']['content'] ?? $item['passage']['text'] ?? '');
+            } elseif (isset($item['passage']) && is_string($item['passage'])) {
+                $passageContent = $item['passage'];
+            }
+
+            $choicesJson = isset($item['choices']) ? json_encode($item['choices']) : '';
+
+            $itemSignature = md5(implode('|', [
+                preg_replace('/\s+/', ' ', trim((string) $item['stem'])),
+                preg_replace('/\s+/', ' ', trim($passageContent)),
+                $choicesJson,
+            ]));
+
+            if ($itemSignature !== '' && isset($seenSignatures[$itemSignature])) {
                 throw ValidationException::withMessages([
-                    $path.'.stem' => [$label.' has the same stem as question '.($seenStems[$stemKey] + 1).' in this import.'],
+                    $path.'.stem' => [$label.' is an exact duplicate of question '.($seenSignatures[$itemSignature] + 1).' in this import.'],
                 ]);
             }
-            $seenStems[$stemKey] = $index;
+            $seenSignatures[$itemSignature] = $index;
 
             // Ensure explanation fields are carried over
             $item['explanation'] = $item['explanation'] ?? null;

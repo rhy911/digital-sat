@@ -213,13 +213,28 @@ class BulkQuestionImportTest extends TestCase
         );
     }
 
-    public function test_it_rejects_duplicate_stems_within_one_import(): void
+    public function test_it_rejects_exact_duplicate_questions_within_one_import(): void
     {
         $this->assertImportRejects(
             [$this->readingWritingItem(), $this->readingWritingItem()],
             'items.1.stem',
-            'Question 2 has the same stem as question 1'
+            'Question 2 is an exact duplicate of question 1'
         );
+    }
+
+    public function test_it_allows_identical_stems_if_passages_differ(): void
+    {
+        $q1 = $this->readingWritingItem([
+            'stem' => 'Which choice completes the text with the most logical and precise word or phrase?',
+            'passage' => ['content' => 'Passage one content here.', 'genre' => 'humanities'],
+        ]);
+        $q2 = $this->readingWritingItem([
+            'stem' => 'Which choice completes the text with the most logical and precise word or phrase?',
+            'passage' => ['content' => 'Passage two content here.', 'genre' => 'humanities'],
+        ]);
+
+        $response = $this->importItems([$q1, $q2]);
+        $response->assertCreated();
     }
 
     /**
