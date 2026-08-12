@@ -197,6 +197,11 @@ class BulkQuestionCsvImportService
         if ($g('calculator_allowed') !== '') {
             $item['calculator_allowed'] = $this->parseBool($g('calculator_allowed'));
         }
+        if ($g('expected_time') !== '' && is_numeric($g('expected_time'))) {
+            $item['expected_time'] = (int) $g('expected_time');
+        } elseif ($g('time_expected') !== '' && is_numeric($g('time_expected'))) {
+            $item['expected_time'] = (int) $g('time_expected');
+        }
         if ($g('question_number') !== '' && is_numeric($g('question_number'))) {
             $item['question_number'] = (int) $g('question_number');
         }

@@ -799,4 +799,32 @@ class BulkQuestionImportTest extends TestCase
             unlink($secretPath);
         }
     }
+
+    public function test_bulk_import_saves_expected_time(): void
+    {
+        $response = $this->importItems([
+            $this->readingWritingItem([
+                'expected_time' => 90,
+            ]),
+        ]);
+
+        $response->assertCreated();
+
+        $question = Question::firstOrFail();
+        $this->assertSame(90, $question->expected_time);
+    }
+
+    public function test_bulk_import_accepts_time_expected_alias(): void
+    {
+        $response = $this->importItems([
+            $this->readingWritingItem([
+                'time_expected' => 120,
+            ]),
+        ]);
+
+        $response->assertCreated();
+
+        $question = Question::firstOrFail();
+        $this->assertSame(120, $question->expected_time);
+    }
 }

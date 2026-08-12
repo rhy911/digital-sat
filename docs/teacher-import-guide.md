@@ -167,6 +167,7 @@ File JSON chứa một mảng các đối tượng câu hỏi dưới khóa `ite
       "common_mistakes": "Picking choice A which is too broad and ignores the critics' reservations.",
       "is_pretest": false,
       "calculator_allowed": true,
+      "expected_time": 75,
       "external_id": "RW-01-T1"
     },
     {
@@ -237,6 +238,7 @@ File CSV cần có dòng tiêu đề đầu tiên khớp chính xác các tiêu 
 | `common_mistakes` | Không | Lỗi sai học sinh thường mắc phải |
 | `is_pretest` | Không | `1` nếu là câu thử nghiệm không tính điểm, `0` nếu tính điểm (mặc định) |
 | `calculator_allowed`| Không | `1` nếu cho phép dùng máy tính (mặc định cho Toán), `0` nếu không |
+| `expected_time` | Không | Thời gian làm bài dự kiến (tính theo giây, ví dụ: `75` cho 75 giây) |
 | `external_id` | Không | Mã định danh duy nhất của câu hỏi để ánh xạ hệ thống |
 
 #### Ví dụ file CSV hoàn chỉnh (Raw CSV Text):
@@ -326,7 +328,7 @@ multiple_choice:
 student_produced_response (Math grid-ins only):
 {"question_number":1,"question_type":"student_produced_response","stem":"...","difficulty":"...","skill_domain":"...","skill_subdomain":"...","spr_correct_answers":["4/3","1.33","1.333"]}
 
-Add ONLY when the document contains it: explanation, rationale_a/b/c/d, strategy_tip, common_mistakes, spr_hint (answer format only, never revealing the answer), is_pretest:true (unscored trial item). No other keys — the system fills the rest.
+Add ONLY when the document contains it: explanation, rationale_a/b/c/d, strategy_tip, common_mistakes, spr_hint (answer format only, never revealing the answer), is_pretest:true (unscored trial item), expected_time (estimated seconds to answer). No other keys — the system fills the rest.
 
 Field notes:
 - question_number: as printed, restarts at 1 per module; emit items in that order.

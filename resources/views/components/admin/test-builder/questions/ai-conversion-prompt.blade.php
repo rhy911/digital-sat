@@ -19,7 +19,7 @@ multiple_choice:
 student_produced_response (Math grid-ins only):
 {"question_number":1,"question_type":"student_produced_response","stem":"...","difficulty":"...","skill_domain":"...","skill_subdomain":"...","spr_correct_answers":["4/3","1.33","1.333"]}
 
-Add ONLY when the document contains it: explanation, rationale_a/b/c/d, strategy_tip, common_mistakes, spr_hint (answer format only, never revealing the answer), is_pretest:true (unscored trial item). No other keys — the system fills the rest.
+Add ONLY when the document contains it: explanation, rationale_a/b/c/d, strategy_tip, common_mistakes, spr_hint (answer format only, never revealing the answer), is_pretest:true (unscored trial item), expected_time (estimated seconds to answer). No other keys — the system fills the rest.
 
 Field notes:
 - question_number: as printed, restarts at 1 per module; emit items in that order.

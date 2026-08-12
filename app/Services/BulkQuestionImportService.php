@@ -547,6 +547,7 @@ class BulkQuestionImportService
                     'section_type' => $sectionType,
                     'skill_domain' => $item['skill_domain'],
                     'skill_subdomain' => $item['skill_subdomain'] ?? null,
+                    'expected_time' => isset($item['expected_time']) && is_numeric($item['expected_time']) ? (int) $item['expected_time'] : null,
                     'spr_hint' => $item['spr_hint'] ?? null,
                     'calculator_allowed' => (bool) ($item['calculator_allowed'] ?? true),
                     'external_id' => $item['external_id'] ?? null,
@@ -859,9 +860,12 @@ class BulkQuestionImportService
     {
         if (! isset($payload['items'])) return $payload;
         foreach ($payload['items'] as $i => $row) {
-            // 1. Map "domain" to "skill_domain"
+            // 1. Map "domain" to "skill_domain" and "time_expected" to "expected_time"
             if (!isset($row['skill_domain']) && isset($row['domain'])) {
                 $payload['items'][$i]['skill_domain'] = $row['domain'];
+            }
+            if (!isset($row['expected_time']) && isset($row['time_expected'])) {
+                $payload['items'][$i]['expected_time'] = $row['time_expected'];
             }
 
             // 2. Detect and normalize question_type
@@ -949,6 +953,7 @@ class BulkQuestionImportService
         'spr_hint_text' => 'answer hint',
         'is_pretest' => 'pretest flag',
         'calculator_allowed' => 'calculator flag',
+        'expected_time' => 'expected time',
         'external_id' => 'external id',
         'media' => 'media',
     ];
@@ -1012,6 +1017,8 @@ class BulkQuestionImportService
             'items.*.paired_passage_id.exists' => ':attribute points at a passage that does not exist.',
             'items.*.is_pretest.boolean' => ':attribute must be true or false (or 1 / 0).',
             'items.*.calculator_allowed.boolean' => ':attribute must be true or false (or 1 / 0).',
+            'items.*.expected_time.integer' => ':attribute must be an integer (seconds).',
+            'items.*.expected_time.min' => ':attribute must be greater than or equal to 0.',
         ];
     }
 
@@ -1041,6 +1048,7 @@ class BulkQuestionImportService
             'items.*.spr_hint' => 'nullable|string',
             'items.*.calculator_allowed' => 'nullable|boolean',
             'items.*.is_pretest' => 'nullable|boolean',
+            'items.*.expected_time' => 'nullable|integer|min:0',
             'items.*.external_id' => 'nullable|string',
         ];
     }
