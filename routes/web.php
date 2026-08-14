@@ -116,6 +116,27 @@ Route::middleware(['auth', 'verified', 'role:student'])->get('/join/{code}', fun
     return redirect()->route('student.classes.index', ['code' => strtoupper($code)]);
 })->name('student.classes.join-link');
 
+// Standalone exam-session join flow. No 'auth'/'verified' here on purpose: a
+// fresh candidate has neither, and the guest User is provisioned inside
+// GuestExamController rather than gated by middleware.
+Route::prefix('exam-join')->name('exam-join.')->group(function () {
+    // Declared before the /{code} routes so the literal segments win the match.
+    Route::get('/', [\App\Http\Controllers\Guest\GuestExamController::class, 'showCodeEntry'])->name('entry');
+    Route::post('/', [\App\Http\Controllers\Guest\GuestExamController::class, 'submitCode'])
+        ->middleware('throttle:20,1')
+        ->name('entry.submit');
+    Route::get('/{code}', [\App\Http\Controllers\Guest\GuestExamController::class, 'showJoinForm'])
+        ->middleware('throttle:20,1')
+        ->name('show');
+    Route::post('/{code}', [\App\Http\Controllers\Guest\GuestExamController::class, 'processJoin'])
+        ->middleware('throttle:10,1')
+        ->name('process');
+    Route::get('/result/{userTest}', [\App\Http\Controllers\Guest\GuestExamController::class, 'showResult'])
+        ->name('result');
+    Route::get('/link-account/{destination}', [\App\Http\Controllers\Guest\GuestExamController::class, 'beginAccountLink'])
+        ->name('link-account');
+});
+
 Route::middleware(['auth', 'verified', 'role:admin,teacher'])->prefix('teacher')->name('teacher.')->group(function () {
     Route::get('/application', \App\Http\Controllers\Teacher\ApplicationStatusController::class)->name('application.status');
 
@@ -158,6 +179,17 @@ Route::middleware(['auth', 'verified', 'role:admin,teacher'])->prefix('teacher')
         Route::post('/assignments/{assignment}/close', [\App\Http\Controllers\Teacher\AssignmentController::class, 'close'])->name('assignments.close');
         Route::post('/assignments/{assignment}/reopen', [\App\Http\Controllers\Teacher\AssignmentController::class, 'reopen'])->name('assignments.reopen');
         Route::delete('/assignments/{assignment}', [\App\Http\Controllers\Teacher\AssignmentController::class, 'destroy'])->name('assignments.destroy');
+
+        Route::get('/exam-sessions', [\App\Http\Controllers\Teacher\ExamSessionController::class, 'index'])->name('exam-sessions.index');
+        Route::post('/exam-sessions', [\App\Http\Controllers\Teacher\ExamSessionController::class, 'store'])->name('exam-sessions.store');
+        Route::get('/exam-sessions/{examSession}', [\App\Http\Controllers\Teacher\ExamSessionController::class, 'show'])->name('exam-sessions.show');
+        Route::put('/exam-sessions/{examSession}/status', [\App\Http\Controllers\Teacher\ExamSessionController::class, 'updateStatus'])->name('exam-sessions.status.update');
+        Route::post('/exam-sessions/{examSession}/attempts/{userTest}/reset', [\App\Http\Controllers\Teacher\ExamSessionController::class, 'resetAttempt'])->name('exam-sessions.attempts.reset');
+        Route::post('/exam-sessions/{examSession}/attempts/{userTest}/force-submit', [\App\Http\Controllers\Teacher\ExamSessionController::class, 'forceSubmit'])->name('exam-sessions.attempts.force-submit');
+        Route::get('/exam-sessions/{examSession}/live-status', [\App\Http\Controllers\Teacher\ExamSessionController::class, 'liveStatus'])->name('exam-sessions.live-status');
+        Route::get('/exam-sessions/{examSession}/export.csv', [\App\Http\Controllers\Teacher\ExamSessionController::class, 'exportCsv'])->name('exam-sessions.export.csv');
+        Route::get('/exam-sessions/{examSession}/attempts/{userTest}', [\App\Http\Controllers\Teacher\ExamSessionController::class, 'showAttempt'])->name('exam-sessions.attempts.show');
+        Route::get('/exam-sessions/{examSession}/answers/{userAnswer}/preview', [\App\Http\Controllers\Teacher\ExamSessionController::class, 'questionPreview'])->name('exam-sessions.attempts.question-preview');
     });
 });
 

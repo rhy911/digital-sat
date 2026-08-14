@@ -89,6 +89,19 @@ function getBreakOverlay() {
 
 let interSectionOverlay = null;
 let interSectionTimer = null;
+let isFinishingBreak = false;
+
+function showBreakTransitionState() {
+  if (!interSectionOverlay) return;
+
+  interSectionOverlay.innerHTML = `
+    <div class="max-w-lg text-center font-sans">
+      <div class="w-12 h-12 mx-auto mb-6 rounded-full border-4 border-slate-200 border-t-slate-800 animate-spin"></div>
+      <h2 class="text-2xl font-bold text-slate-900 mb-2">Starting Section 2</h2>
+      <p class="text-slate-600 text-base">Loading your next module. Please keep this page open.</p>
+    </div>
+  `;
+}
 
 export function showInterSectionBreak(durationSeconds = 600, onComplete) {
   if (interSectionOverlay) {
@@ -99,6 +112,7 @@ export function showInterSectionBreak(durationSeconds = 600, onComplete) {
     clearInterval(interSectionTimer);
     interSectionTimer = null;
   }
+  isFinishingBreak = false;
 
   let remainingSeconds = durationSeconds;
 
@@ -147,21 +161,45 @@ export function showInterSectionBreak(durationSeconds = 600, onComplete) {
 
   document.body.appendChild(interSectionOverlay);
 
-  const finishBreak = () => {
-    if (interSectionTimer) {
-      clearInterval(interSectionTimer);
-      interSectionTimer = null;
-    }
+  const removeOverlay = () => {
     if (interSectionOverlay) {
       interSectionOverlay.remove();
       interSectionOverlay = null;
     }
+  };
+
+  // The overlay stays mounted until the next module is actually on screen.
+  // Removing it before navigation is what exposed the finished module — timer
+  // frozen at 00:00 — for the whole length of the transition.
+  const finishBreak = async () => {
+    if (isFinishingBreak) return;
+    isFinishingBreak = true;
+
+    if (interSectionTimer) {
+      clearInterval(interSectionTimer);
+      interSectionTimer = null;
+    }
+
+    showBreakTransitionState();
+
+    let outcome;
     if (typeof onComplete === 'function') {
-      onComplete();
+      try {
+        outcome = await onComplete();
+      } catch (error) {
+        console.error('Failed to start the next section:', error);
+      }
+    }
+
+    // A hard redirect keeps rendering this document until the new one paints,
+    // so tearing the overlay down there would put the flash straight back.
+    if (outcome !== 'redirecting') {
+      removeOverlay();
     }
   };
 
   interSectionOverlay.querySelector('#resumeTestBtn').addEventListener('click', async () => {
+    if (isFinishingBreak) return;
     const confirmed = await showCustomConfirm(
       'Are you sure you want to end your break and start Section 2 now?',
       'info',

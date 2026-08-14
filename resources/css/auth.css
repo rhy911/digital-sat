@@ -339,6 +339,82 @@ main {
     color: #3b52c9;
 }
 
+/* --- Inline notices -------------------------------------------------------
+
+   #errorMessage above is written into by AuthForm (resources/js/auth.js), so it
+   only exists on the AJAX auth screens. The standalone exam-join screens render
+   their messages server-side from $errors / session('error') and needed a real
+   block of their own — they were previously emitting a class name that was
+   defined nowhere, i.e. unstyled body text where a warning belonged.
+   -------------------------------------------------------------------------- */
+
+/* Uniform 1px border + hue-matched tint, not a thick side stripe:
+   docs/styling-system.md §6.4 bans the side-stripe, and the /home callouts
+   already settled on this shape. */
+.auth-notice {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    width: 91.666667%;
+    padding: 12px 14px;
+    border: 1px solid;
+    border-radius: 8px;
+    font-size: 13.5px;
+    line-height: 1.45;
+    font-weight: 500;
+    text-align: left;
+}
+
+.auth-notice__icon {
+    flex-shrink: 0;
+    width: 18px;
+    height: 18px;
+    margin-top: 1px;
+}
+
+.auth-notice__title {
+    display: block;
+    margin-bottom: 2px;
+    font-weight: 700;
+}
+
+.auth-notice--error {
+    background-color: #fef2f2;
+    border-color: #fecaca;
+    color: #b42318;
+}
+
+.auth-notice--info {
+    background-color: #eff6ff;
+    border-color: #bfdbfe;
+    color: #1e40af;
+}
+
+/* --- Submit button states -------------------------------------------------
+
+   .submit-btn is grey + not-allowed until something adds .active — on the auth
+   screens that is AuthForm's validity watcher. Screens that post a plain form
+   toggle it themselves; .is-busy is the in-flight state so a submit that waits
+   on the server visibly acknowledges the click.
+   -------------------------------------------------------------------------- */
+
+.submit-btn.is-busy,
+.submit-btn.active.is-busy {
+    background-color: #fde68a;
+    color: #78350f;
+    cursor: progress;
+    box-shadow: 0 0 0 1px #000;
+}
+
+/* Anchors borrowing the button look are never "pending validation", so they
+   must not inherit the greyed-out resting state. */
+a.submit-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    text-decoration: none;
+}
+
 .encouraging-footer {
     display: flex;
     align-items: center;

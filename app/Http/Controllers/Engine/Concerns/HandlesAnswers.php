@@ -102,6 +102,13 @@ trait HandlesAnswers
             throw new AuthorizationException('This test attempt is no longer available.');
         }
 
+        if ($userTest->exam_session_id) {
+            $userTest->loadMissing('examSession');
+            if ($userTest->examSession && $userTest->examSession->status === 'paused') {
+                throw new ConflictHttpException('session_paused');
+            }
+        }
+
         $module = Module::with(['section.test', 'questions'])->findOrFail($validated['module_id']);
         $section = $module->section;
 

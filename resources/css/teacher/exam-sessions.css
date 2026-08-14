@@ -1,0 +1,698 @@
+/* ==========================================================================
+   Exam sessions (teacher)
+
+   The pages reuse the /home dashboard grammar wholesale — `.home`, `.home-head`,
+   `.home-stat*`, `.home-row*`, `.home-empty*` all come from
+   `resources/css/student/analytics.css`, which both pages also load. Only what
+   /home has no vocabulary for lives here: the share-code hero, the status
+   segmented control's live dot, and form controls (/home is read-only, so it
+   never needed inputs).
+
+   Everything is built on the global --ds-* tokens, same as the .home block, so
+   the two surfaces stay one system.
+   ========================================================================== */
+
+/* --- Share-code hero ------------------------------------------------------- */
+
+.exam-hero {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1.25rem 2rem;
+}
+
+.exam-hero__lead {
+    min-width: 0;
+}
+
+.exam-hero__label {
+    margin: 0;
+    font-size: 0.75rem;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+    text-transform: uppercase;
+    color: var(--ds-text-secondary);
+}
+
+.exam-hero__code {
+    display: block;
+    margin-top: 0.25rem;
+    font-family: var(--font-mono);
+    font-variant-numeric: tabular-nums;
+    font-size: 2.5rem;
+    line-height: 1.05;
+    font-weight: 700;
+    letter-spacing: 0.18em;
+    color: var(--ds-text-primary);
+}
+
+.exam-hero__url {
+    display: block;
+    margin: 0.625rem 0 0;
+    overflow: hidden;
+    max-width: 46ch;
+    font-size: 0.8125rem;
+    color: var(--ds-text-secondary);
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.exam-hero__actions {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+/* --- Live-polling indicator ------------------------------------------------ */
+
+.exam-live {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4375rem;
+    flex-shrink: 0;
+    font-size: 0.75rem;
+    font-weight: 650;
+    color: var(--ds-text-secondary);
+    white-space: nowrap;
+}
+
+.exam-live__dot {
+    width: 0.4375rem;
+    height: 0.4375rem;
+    flex-shrink: 0;
+    border-radius: 999px;
+    background: var(--ds-brand);
+    animation: exam-pulse 2s ease-in-out infinite;
+}
+
+@keyframes exam-pulse {
+    0%,
+    100% {
+        opacity: 1;
+    }
+    50% {
+        opacity: 0.3;
+    }
+}
+
+/* --- Status segmented control ---------------------------------------------- */
+
+/* Shares .home-switch's shape; the active pill is tinted by meaning rather than
+   neutral, because this control sets exam state and not just which view is on
+   screen — a teacher scanning the page has to be able to read "is this session
+   open?" without parsing the labels. */
+.exam-switch__btn.is-active[data-status='active'] {
+    background: var(--ds-brand);
+    color: var(--ds-text-inverse);
+    box-shadow: none;
+}
+
+.exam-switch__btn.is-active[data-status='paused'] {
+    background: var(--ds-warning-strong);
+    color: var(--ds-text-inverse);
+    box-shadow: none;
+}
+
+.exam-switch__btn.is-active[data-status='closed'] {
+    background: var(--ds-text-secondary);
+    color: var(--ds-text-inverse);
+    box-shadow: none;
+}
+
+.exam-switch__btn.is-active:hover {
+    color: var(--ds-text-inverse);
+}
+
+/* --- Forms ----------------------------------------------------------------- */
+
+.exam-form {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.exam-field {
+    display: flex;
+    flex-direction: column;
+    gap: 0.375rem;
+    min-width: 0;
+}
+
+.exam-field__label {
+    font-size: 0.75rem;
+    font-weight: 650;
+    letter-spacing: 0.02em;
+    text-transform: uppercase;
+    color: var(--ds-text-secondary);
+}
+
+.exam-field__hint {
+    font-size: 0.75rem;
+    color: var(--ds-text-tertiary);
+}
+
+.exam-input {
+    width: 100%;
+    min-height: 2.5rem;
+    padding: 0 0.75rem;
+    border: 1px solid var(--ds-border-default);
+    border-radius: 0.5rem;
+    background: var(--ds-surface);
+    font-family: inherit;
+    font-size: 0.875rem;
+    color: var(--ds-text-primary);
+    transition:
+        border-color var(--motion-fast),
+        box-shadow var(--motion-fast);
+}
+
+.exam-input::placeholder {
+    color: var(--ds-text-disabled);
+}
+
+.exam-input:hover {
+    border-color: var(--ds-border-strong);
+}
+
+.exam-input:focus {
+    outline: none;
+    border-color: var(--ds-brand);
+    box-shadow: 0 0 0 3px var(--ds-brand-soft);
+}
+
+select.exam-input {
+    padding-right: 2rem;
+    /* Native select arrows differ per platform and clash with the flat inputs
+       beside them, so paint one that matches the border token. */
+    appearance: none;
+    background-image: linear-gradient(45deg, transparent 50%, var(--ds-text-secondary) 50%),
+        linear-gradient(135deg, var(--ds-text-secondary) 50%, transparent 50%);
+    background-position:
+        calc(100% - 1.0625rem) calc(50% + 0.125rem),
+        calc(100% - 0.75rem) calc(50% + 0.125rem);
+    background-size:
+        0.3125rem 0.3125rem,
+        0.3125rem 0.3125rem;
+    background-repeat: no-repeat;
+}
+
+/* --- Candidate roster ------------------------------------------------------
+
+   Rows are a three-track grid rather than one flex line: identity, figures and
+   actions then land on the same x-positions in every row, which is what stops a
+   list of candidates reading as a jumble. The figures track has a fixed width
+   because its contents swap between a progress meter and three scores as an
+   attempt finishes, and the actions must not shuffle sideways when it does.
+   -------------------------------------------------------------------------- */
+
+.exam-roster {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.625rem;
+}
+
+.exam-candidate {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 11rem auto;
+    align-items: center;
+    gap: 1.5rem;
+    padding: 1rem 1.25rem;
+    border: 1px solid var(--ds-border-default);
+    border-radius: 0.625rem;
+    background: var(--ds-surface);
+}
+
+.exam-candidate__identity {
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.375rem;
+}
+
+.exam-candidate__name {
+    overflow: hidden;
+    font-size: 0.9375rem;
+    font-weight: 650;
+    color: var(--ds-text-primary);
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.exam-candidate__meta {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.8125rem;
+    color: var(--ds-text-secondary);
+}
+
+.exam-candidate__figures {
+    min-width: 0;
+}
+
+.exam-candidate__actions {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    justify-self: end;
+}
+
+/* --- Actions menu ----------------------------------------------------------
+
+   The state-changing actions (force submit, reset) sit behind one trigger:
+   three equal-weight buttons per row was the bulk of what made the roster feel
+   crowded, and these two are occasional rather than everyday.
+   -------------------------------------------------------------------------- */
+
+.exam-actions {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.375rem;
+    min-height: 2.25rem;
+    padding: 0 0.75rem;
+    border: 1px solid var(--ds-border-default);
+    border-radius: 0.5rem;
+    background: var(--ds-surface);
+    font-family: inherit;
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: var(--ds-text-secondary);
+    white-space: nowrap;
+    cursor: pointer;
+    transition:
+        border-color var(--motion-fast),
+        color var(--motion-fast);
+}
+
+.exam-actions:hover {
+    border-color: var(--ds-border-strong);
+    color: var(--ds-text-primary);
+}
+
+.exam-actions:focus-visible {
+    outline: none;
+    box-shadow:
+        0 0 0 2px var(--ds-surface),
+        0 0 0 4px var(--ds-focus);
+}
+
+.exam-actions__caret {
+    width: 0.875rem;
+    height: 0.875rem;
+    transition: transform var(--motion-fast);
+}
+
+.exam-actions__caret.is-open {
+    transform: rotate(180deg);
+}
+
+.exam-menuitem {
+    display: block;
+    width: 100%;
+    padding: 0.5rem 0.875rem;
+    border: 0;
+    background: transparent;
+    font-family: inherit;
+    font-size: 0.8125rem;
+    font-weight: 600;
+    color: var(--ds-text-primary);
+    text-align: left;
+    white-space: nowrap;
+    cursor: pointer;
+    transition: background-color var(--motion-fast);
+}
+
+.exam-menuitem:hover {
+    background: var(--ds-surface-muted);
+}
+
+.exam-menuitem:focus-visible {
+    outline: none;
+    box-shadow: inset 0 0 0 2px var(--ds-focus);
+}
+
+.exam-menuitem--danger {
+    color: var(--ds-danger);
+}
+
+.exam-menuitem--danger:hover {
+    background: var(--ds-danger-soft);
+}
+
+/* --- Progress meter (in-progress attempts) --------------------------------- */
+
+.exam-progress {
+    display: flex;
+    flex-direction: column;
+    gap: 0.3125rem;
+}
+
+.exam-progress__head {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 0.5rem;
+}
+
+.exam-progress__label {
+    font-size: 0.625rem;
+    font-weight: 650;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: var(--ds-text-tertiary);
+}
+
+.exam-progress__value {
+    font-family: var(--font-mono);
+    font-variant-numeric: tabular-nums;
+    font-size: 0.9375rem;
+    font-weight: 700;
+    color: var(--ds-text-primary);
+}
+
+.exam-progress__track {
+    display: block;
+    height: 0.375rem;
+    overflow: hidden;
+    border-radius: 999px;
+    background: var(--ds-surface-muted);
+}
+
+/* No transition on the fill: the live poll swaps the whole roster via
+   innerHTML, so every bar is a brand-new node with no previous width to
+   animate from — a transition here would never play. */
+.exam-progress__track i {
+    display: block;
+    height: 100%;
+    border-radius: inherit;
+    background: var(--ds-brand);
+}
+
+.exam-progress__count {
+    font-size: 0.6875rem;
+    color: var(--ds-text-tertiary);
+}
+
+/* --- Candidate scores (finished attempts) ---------------------------------- */
+
+/* Scores sit in a fixed-width strip so the numbers line up down the list even
+   though each row is a flex box rather than a table cell. */
+.exam-scores {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+}
+
+.exam-score {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 0.0625rem;
+    min-width: 2.75rem;
+}
+
+.exam-score__label {
+    font-size: 0.625rem;
+    font-weight: 650;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: var(--ds-text-tertiary);
+}
+
+.exam-score__value {
+    font-family: var(--font-mono);
+    font-variant-numeric: tabular-nums;
+    font-size: 0.875rem;
+    font-weight: 650;
+    color: var(--ds-text-secondary);
+}
+
+.exam-score--total .exam-score__value {
+    font-size: 1.0625rem;
+    color: var(--ds-text-primary);
+}
+
+.exam-row__actions {
+    display: flex;
+    align-items: center;
+    gap: 0.375rem;
+}
+
+/* --- Question map ----------------------------------------------------------
+
+   The attempt tracker's core surface. It answers two questions at a glance —
+   how far along is this candidate, and where are they right now — so it carries
+   ONE dimension per question (answered/blank, or correct/incorrect/omitted) and
+   nothing else. Domain, difficulty, timing and the stem itself are review data
+   and live in the click-through detail; putting them here is what made the
+   previous list unreadable at 98 questions.
+
+   Deliberately echoes the engine's own review navigator (.question-btn in
+   engine/module/partials/review-section.blade.php) so a teacher reads the grid
+   the same way the student sees it.
+   -------------------------------------------------------------------------- */
+
+.qmap {
+    display: flex;
+    flex-direction: column;
+    gap: 1.25rem;
+}
+
+.qmap-legend {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.875rem;
+    font-size: 0.75rem;
+    color: var(--ds-text-secondary);
+}
+
+.qmap-legend li {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.375rem;
+}
+
+.qmap-key {
+    width: 0.75rem;
+    height: 0.75rem;
+    flex-shrink: 0;
+    border-radius: 0.25rem;
+}
+
+.qmap-key--answered {
+    background: var(--ds-brand);
+}
+
+.qmap-key--blank {
+    border: 1px dashed var(--ds-border-strong);
+    background: var(--ds-surface);
+}
+
+.qmap-key--current {
+    background: var(--ds-surface);
+    box-shadow:
+        0 0 0 1px var(--ds-brand),
+        0 0 0 3px var(--ds-brand-soft);
+}
+
+.qmap-key--correct {
+    background: oklch(58% 0.13 155);
+}
+
+.qmap-key--wrong {
+    background: var(--ds-danger);
+}
+
+.qmap-key--omitted {
+    background: var(--ds-border-strong);
+}
+
+.qmap-module__head {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.625rem;
+    margin-bottom: 0.625rem;
+}
+
+.qmap-module__title {
+    margin: 0;
+    font-size: 0.8125rem;
+    font-weight: 700;
+    color: var(--ds-text-primary);
+}
+
+.qmap-module__meta {
+    font-size: 0.75rem;
+    font-weight: 650;
+    color: var(--ds-text-secondary);
+}
+
+/* auto-fill rather than fixed columns: 27 cells wrap naturally to the panel
+   width instead of forcing a horizontal scroller on a narrow screen. */
+.qmap-grid {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(2.25rem, 1fr));
+    gap: 0.375rem;
+}
+
+.qmap-cell {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    aspect-ratio: 1;
+    padding: 0;
+    border: 1px solid transparent;
+    border-radius: 0.375rem;
+    font-family: var(--font-mono);
+    font-variant-numeric: tabular-nums;
+    font-size: 0.75rem;
+    font-weight: 650;
+    line-height: 1;
+    cursor: pointer;
+    transition:
+        transform var(--motion-fast),
+        box-shadow var(--motion-fast);
+}
+
+button.qmap-cell:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 2px 6px oklch(20% 0.045 255 / 0.18);
+}
+
+.qmap-cell:focus-visible {
+    outline: none;
+    box-shadow:
+        0 0 0 2px var(--ds-surface),
+        0 0 0 4px var(--ds-focus);
+}
+
+/* Not clickable because no answer row exists yet — keep it readable but make
+   the lack of affordance obvious. */
+.qmap-cell.is-inert {
+    cursor: default;
+}
+
+.qmap-cell.is-selected {
+    box-shadow:
+        0 0 0 2px var(--ds-surface),
+        0 0 0 4px var(--ds-brand);
+}
+
+.qmap-cell--answered {
+    background: var(--ds-brand);
+    color: var(--ds-text-inverse);
+}
+
+.qmap-cell--blank {
+    border-color: var(--ds-border-strong);
+    border-style: dashed;
+    background: var(--ds-surface);
+    color: var(--ds-text-tertiary);
+}
+
+.qmap-cell--correct {
+    background: oklch(58% 0.13 155);
+    color: var(--ds-text-inverse);
+}
+
+.qmap-cell--wrong {
+    background: var(--ds-danger);
+    color: var(--ds-text-inverse);
+}
+
+.qmap-cell--omitted {
+    background: var(--ds-surface-muted);
+    border-color: var(--ds-border-default);
+    color: var(--ds-text-tertiary);
+}
+
+@media (prefers-reduced-motion: reduce) {
+    button.qmap-cell:hover {
+        transform: none;
+    }
+}
+
+/* --- QR dialog ------------------------------------------------------------- */
+
+.exam-qr__frame {
+    display: inline-block;
+    padding: 0.875rem;
+    border: 1px solid var(--ds-border-subtle);
+    border-radius: 0.75rem;
+    background: var(--ds-surface-muted);
+}
+
+.exam-qr__img {
+    display: block;
+    width: 11rem;
+    height: 11rem;
+}
+
+.exam-qr__code {
+    margin: 0;
+    font-family: var(--font-mono);
+    font-size: 1.375rem;
+    font-weight: 700;
+    letter-spacing: 0.16em;
+    color: var(--ds-text-primary);
+}
+
+/* --- Responsive ------------------------------------------------------------ */
+
+@media (max-width: 900px) {
+    .exam-hero__actions,
+    .exam-hero {
+        width: 100%;
+    }
+}
+
+@media (max-width: 900px) {
+    /* Below this the three tracks cannot hold their columns without squeezing
+       the name, so the row stacks and each block takes the full width. */
+    .exam-candidate {
+        grid-template-columns: minmax(0, 1fr);
+        gap: 0.875rem;
+    }
+
+    .exam-candidate__actions {
+        justify-self: stretch;
+        justify-content: space-between;
+    }
+}
+
+@media (max-width: 640px) {
+    .exam-hero__code {
+        font-size: 2rem;
+    }
+
+    .exam-scores {
+        gap: 0.75rem;
+    }
+
+    .exam-row__actions {
+        width: 100%;
+        justify-content: flex-end;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .exam-live__dot {
+        animation: none;
+    }
+}

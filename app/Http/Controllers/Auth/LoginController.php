@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
+use App\Services\ExamSessionService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
@@ -10,6 +11,8 @@ use Illuminate\Validation\ValidationException;
 
 class LoginController extends Controller
 {
+    public function __construct(private ExamSessionService $examSessions) {}
+
     public function __invoke(Request $request)
     {
         try {
@@ -61,6 +64,10 @@ class LoginController extends Controller
             }
 
             $request->session()->regenerate();
+
+            if ($guestId = $request->session()->pull('link_guest_user_id')) {
+                $this->examSessions->mergeGuestAccount((int) $guestId, $user);
+            }
 
             // Check if email is verified
             if (!$user->hasVerifiedEmail()) {

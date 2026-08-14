@@ -147,10 +147,8 @@ class TestProgressionService
             return [
                 'status' => 'success',
                 'test_completed' => true,
-                'redirect_url' => route('home'),
-                'results_url' => route('student.scores.show', $finalAttempt),
                 'message' => 'Section completed.',
-            ];
+            ] + $this->completionDestination($finalAttempt);
         }
 
         $nextSection = $sections->first(fn ($candidate) => (int) $candidate->order > (int) $section->order);
@@ -171,9 +169,28 @@ class TestProgressionService
         return [
             'status' => 'success',
             'test_completed' => true,
+            'message' => 'Test completed.',
+        ] + $this->completionDestination($attempt);
+    }
+
+    /**
+     * Guests have no authenticated app to land in — /home and the full score
+     * report both render the icon-rail/profile/logout shell (see
+     * ExamSessionService::provisionGuest for why a guest is a real `User` row
+     * that would otherwise sail straight through those pages). Route them to
+     * the minimal, ownership-gated result view instead.
+     */
+    private function completionDestination(UserTest $attempt): array
+    {
+        if (optional($attempt->user)->is_guest) {
+            $url = route('exam-join.result', $attempt);
+
+            return ['redirect_url' => $url, 'results_url' => $url];
+        }
+
+        return [
             'redirect_url' => route('home'),
             'results_url' => route('student.scores.show', $attempt),
-            'message' => 'Test completed.',
         ];
     }
 

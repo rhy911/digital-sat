@@ -29,6 +29,11 @@
             </div>
 
             <div class="flex items-center gap-3 sm:gap-4">
+                {{-- Walk-in candidates arrive with a code read out to them and no
+                     account; without this the only way in is a link they do not have. --}}
+                <a href="{{ route('exam-join.entry') }}"
+                    class="rounded-md text-sm font-semibold transition-colors hover:text-brand focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-brand">Have
+                    a code?</a>
                 <a href="/signin"
                     class="rounded-md text-sm font-semibold transition-colors hover:text-brand focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-brand">Sign
                     in</a>

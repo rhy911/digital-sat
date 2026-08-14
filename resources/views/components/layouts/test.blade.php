@@ -154,30 +154,37 @@
                     <p class="m-0" data-text="Calculator">Calculator</p>
                 </div>
             @endif
-            <div class="relative inline-block text-left" x-data="{ open: false }" @click.outside="open = false">
-                <div class="icon-container" id="moreBtn" :class="open ? 'highlight-mode-active' : ''"
-                    @click="open = !open">
-                    <div class="icon">
-                        <img src="{{ asset('/images/more.png') }}" alt="More">
+            {{-- Guest exam-session candidates have no authenticated app to exit
+                 into (see ExamSessionService::provisionGuest) — the completion
+                 flow sends them straight to their result instead, so this menu
+                 (its only real item is "Exit the exam") is dropped entirely
+                 rather than left open onto an empty dropdown. --}}
+            @unless (auth()->user()?->is_guest)
+                <div class="relative inline-block text-left" x-data="{ open: false }" @click.outside="open = false">
+                    <div class="icon-container" id="moreBtn" :class="open ? 'highlight-mode-active' : ''"
+                        @click="open = !open">
+                        <div class="icon">
+                            <img src="{{ asset('/images/more.png') }}" alt="More">
+                        </div>
+                        <p class="m-0" data-text="More">More</p>
                     </div>
-                    <p class="m-0" data-text="More">More</p>
-                </div>
-                <div id="moreMenu"
-                    class="absolute right-0 mt-2 w-48 bg-white border border-gray-200 rounded-md shadow-lg z-50"
-                    x-show="open" x-cloak style="display: none;">
-                    <div>
-                        <button id="takeBreakBtn"
-                            class="hidden block w-full text-left px-4 py-3 text-sm text-gray-700 hover:bg-gray-100"
-                            @click="open = false">
-                            Take a break
-                        </button>
-                        <button class="block w-full text-left px-4 py-3 text-sm text-red-600 hover:bg-red-50"
-                            @click="open = false; window.showCustomConfirm('Are you sure you want to exit the exam? Your progress will be saved.', 'warning', 'Exit Exam').then(confirmed => { if(confirmed) { window.isNavigatingLegitimately = true; window.location.href = '{{ route('home') }}'; } })">
-                            Exit the exam
-                        </button>
+                    <div id="moreMenu"
+                        class="absolute right-0 mt-2 w-48 bg-white border border-gray-200 rounded-md shadow-lg z-50"
+                        x-show="open" x-cloak style="display: none;">
+                        <div>
+                            <button id="takeBreakBtn"
+                                class="hidden block w-full text-left px-4 py-3 text-sm text-gray-700 hover:bg-gray-100"
+                                @click="open = false">
+                                Take a break
+                            </button>
+                            <button class="block w-full text-left px-4 py-3 text-sm text-red-600 hover:bg-red-50"
+                                @click="open = false; window.showCustomConfirm('Are you sure you want to exit the exam? Your progress will be saved.', 'warning', 'Exit Exam').then(confirmed => { if(confirmed) { window.isNavigatingLegitimately = true; window.location.href = '{{ route('home') }}'; } })">
+                                Exit the exam
+                            </button>
+                        </div>
                     </div>
                 </div>
-            </div>
+            @endunless
         </div>
     </header>
     <main translate="no" class="notranslate">
@@ -334,6 +341,21 @@
             <h2>Your screen is too small</h2>
             <p>This test requires a larger screen. Please resize your window, rotate your device, or switch to a
                 laptop/desktop to continue.</p>
+        </div>
+    </div>
+
+    <div id="sessionPausedGuard" class="screen-size-guard {{ !empty($isSessionPaused) ? '' : 'hidden' }}" role="alertdialog" aria-modal="true" style="z-index: 10000; background: rgba(15, 23, 42, 0.92); backdrop-filter: blur(6px);">
+        <div class="screen-size-guard__box" style="text-align: center; max-width: 440px;">
+            <div style="width: 56px; height: 56px; background: rgba(245, 158, 11, 0.15); color: #f59e0b; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 16px;">
+                <svg width="28" height="28" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M10 9v6m4-6v6m7-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                </svg>
+            </div>
+            <h2 style="font-size: 1.35rem; font-weight: 700; color: #0f172a; margin-bottom: 8px;">Exam Session Paused</h2>
+            <p style="font-size: 0.95rem; color: #475569; margin-bottom: 20px; line-height: 1.5;">Your teacher has paused this test session. Please wait for the teacher to resume the test.</p>
+            <div style="display: inline-flex; align-items: center; gap: 8px; font-size: 0.8rem; font-weight: 600; color: #d97706; background: #fef3c7; padding: 6px 14px; border-radius: 9999px;">
+                Waiting for teacher...
+            </div>
         </div>
     </div>
 

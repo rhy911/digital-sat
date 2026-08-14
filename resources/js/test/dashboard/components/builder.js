@@ -1275,7 +1275,8 @@ export function saveBuilderDraft() {
             question_type: questionType,
             choices,
             correct_choice: correctChoice,
-            spr_answers: sprAnswers
+            spr_answers: sprAnswers,
+            explanation
         });
     });
 

@@ -65,6 +65,12 @@ class NavRail
                 'icon' => '<svg viewBox=\'0 0 24 24\' fill=\'none\' stroke=\'currentColor\' stroke-width=\'1.8\'><path d=\'M12 6.5c-1.6-1.2-3.7-1.8-6-1.8-.7 0-1.4.05-2 .15v13.5c.6-.1 1.3-.15 2-.15 2.3 0 4.4.6 6 1.8m0-13.5c1.6-1.2 3.7-1.8 6-1.8.7 0 1.4.05 2 .15v13.5c-.6-.1-1.3-.15-2-.15-2.3 0-4.4.6-6 1.8m0-13.5v13.5\' stroke-linecap=\'round\' stroke-linejoin=\'round\' /></svg>',
             ],
             [
+                'key' => 'exam-sessions',
+                'route' => route('teacher.exam-sessions.index'),
+                'label' => 'Exam Sessions',
+                'icon' => '<svg viewBox=\'0 0 24 24\' fill=\'none\' stroke=\'currentColor\' stroke-width=\'1.8\'><rect x=\'3\' y=\'4\' width=\'18\' height=\'16\' rx=\'2\' /><path d=\'M8 2v4M16 2v4M3 10h18\' stroke-linecap=\'round\' /><path d=\'M9 14h1M9 17h1M14 14h1M14 17h1\' stroke-linecap=\'round\' /></svg>',
+            ],
+            [
                 'key' => 'scores',
                 'route' => route('student.scores.index'),
                 'label' => 'My Scores',

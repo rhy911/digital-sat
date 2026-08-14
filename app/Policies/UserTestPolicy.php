@@ -21,6 +21,16 @@ class UserTestPolicy
                 ->exists();
         }
 
+        // A standalone exam session is the teacher's own event, so its results
+        // are theirs to read — but only the teacher who hosts that session, and
+        // only for attempts belonging to it. Without this the attempt-detail
+        // page could not link to a score report a teacher plainly owns.
+        if ($user->role === 'teacher' && $userTest->exam_session_id) {
+            return $userTest->examSession()
+                ->where('teacher_id', $user->id)
+                ->exists();
+        }
+
         return (int) $userTest->user_id === (int) $user->id;
     }
 

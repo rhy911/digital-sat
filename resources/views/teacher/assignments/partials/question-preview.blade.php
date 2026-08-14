@@ -1,26 +1,157 @@
+@php
+    // $context is optional and only the exam-session tracker passes it, so the
+    // assignment attempt monitor's modal renders exactly as it did before.
+    $context = $context ?? null;
+
+    $question = $userAnswer->question;
+    $snapshot = is_array($userAnswer->question_snapshot) ? $userAnswer->question_snapshot : [];
+
+    // Snapshot first: it is what the student was actually graded against, and it
+    // can legitimately differ from the live question row (see the warning on
+    // TestProgressionService::responsesForModule).
+    $domain = $snapshot['skill_domain'] ?? $question?->skill_domain;
+    $subdomain = $snapshot['skill_subdomain'] ?? $question?->skill_subdomain;
+    $difficulty = $snapshot['difficulty'] ?? $question?->difficulty;
+    $isPretest = (bool) ($snapshot['is_pretest'] ?? $question?->is_pretest);
+
+    $domainLabel = $domain ? \Illuminate\Support\Str::of($domain)->replace('_', ' ')->title()->toString() : null;
+    $subdomainLabel = $subdomain ? \Illuminate\Support\Str::of($subdomain)->replace('_', ' ')->title()->toString() : null;
+
+    $hasResponse = filled($userAnswer->selected_answer);
+    $resultLabel = $isInProgress
+        ? ($hasResponse ? 'Answered' : 'Not answered')
+        : (! $hasResponse ? 'Omitted' : ($userAnswer->is_correct ? 'Correct' : 'Incorrect'));
+    $resultClasses = match ($resultLabel) {
+        'Correct' => 'bg-emerald-100 text-emerald-800 border-emerald-200',
+        'Incorrect' => 'bg-rose-100 text-rose-800 border-rose-200',
+        'Answered' => 'bg-indigo-100 text-indigo-800 border-indigo-200',
+        default => 'bg-slate-100 text-slate-600 border-slate-200',
+    };
+
+    $chipClasses = 'text-[10px] font-semibold uppercase tracking-wider px-2 py-0.5 rounded border';
+
+    // Time is reported unconditionally in the context strip, including a plain
+    // "0s". The old header badge rendered nothing when both figures were zero,
+    // which is the common case for a question the candidate never opened — and
+    // a silently missing row reads as "no data captured" rather than "no time
+    // spent on it", which is the opposite of what a teacher needs to see.
+    $spentSeconds = (int) ($userAnswer->time_spent ?? 0);
+    $expectedSeconds = (int) ($snapshot['expected_time'] ?? $question?->expected_time ?? 0);
+
+    $humanSeconds = function (int $seconds): string {
+        if ($seconds < 60) {
+            return $seconds.'s';
+        }
+
+        $remainder = $seconds % 60;
+
+        return intdiv($seconds, 60).'m'.($remainder > 0 ? ' '.$remainder.'s' : '');
+    };
+
+    // Same 1.2x threshold the score report's pacing column uses.
+    $isSlow = $expectedSeconds > 0 && $spentSeconds > $expectedSeconds * 1.2;
+@endphp
+
 <div class="flex flex-col h-full bg-white border border-slate-200 rounded-lg shadow-sm overflow-hidden">
     <!-- Header with Metadata -->
     <div class="px-4 py-3 bg-slate-50 border-b border-slate-200 flex justify-between items-center gap-4 pr-10">
         <span class="text-xs font-bold uppercase tracking-wider text-slate-500">
-            Question Details
+            @if ($context)
+                {{ $context['sectionName'] ?? 'Question' }}
+                @if (!empty($context['moduleNumber']))
+                    &middot; Module {{ $context['moduleNumber'] }}
+                @endif
+                @if (!empty($context['questionNumber']))
+                    &middot; Q{{ $context['questionNumber'] }}
+                @endif
+            @else
+                Question Details
+            @endif
         </span>
         <div class="flex items-center gap-2">
-            <?php 
-                $expectedTime = $userAnswer->question_snapshot['expected_time'] ?? $userAnswer->question?->expected_time ?? 0;
-                $timeSpent = $userAnswer->time_spent ?? 0;
-            ?>
-            @if($expectedTime > 0)
-                <?php $timeWarning = $timeSpent > ($expectedTime * 1.2); ?>
-                <span class="text-xs font-semibold px-2 py-0.5 rounded border {{ $timeWarning ? 'bg-rose-50 text-rose-700 border-rose-200' : 'bg-slate-50 text-slate-600 border-slate-200' }}">
-                    ⏱️ {{ $timeSpent }}s / {{ $expectedTime }}s
+            {{-- Callers that pass $context get the fuller, always-present timing
+                 chip in the strip below instead, so it is not shown twice. --}}
+            @unless ($context)
+                <?php
+                    $expectedTime = $userAnswer->question_snapshot['expected_time'] ?? $userAnswer->question?->expected_time ?? 0;
+                    $timeSpent = $userAnswer->time_spent ?? 0;
+                ?>
+                @if($expectedTime > 0)
+                    <?php $timeWarning = $timeSpent > ($expectedTime * 1.2); ?>
+                    <span class="text-xs font-semibold px-2 py-0.5 rounded border {{ $timeWarning ? 'bg-rose-50 text-rose-700 border-rose-200' : 'bg-slate-50 text-slate-600 border-slate-200' }}">
+                        ⏱️ {{ $timeSpent }}s / {{ $expectedTime }}s
+                    </span>
+                @elseif($timeSpent > 0)
+                    <span class="text-xs font-semibold px-2 py-0.5 rounded border bg-slate-50 text-slate-600 border-slate-200">
+                        ⏱️ {{ $timeSpent }}s
+                    </span>
+                @endif
+            @endunless
+        </div>
+    </div>
+
+    @if ($context)
+        {{-- Everything a teacher would otherwise have to infer: how it was
+             graded, which skill it tests, how hard it is, and whether it counts
+             toward the score at all. --}}
+        <div class="px-4 py-3 border-b border-slate-200 flex flex-wrap items-center gap-2">
+            <span class="{{ $chipClasses }} {{ $resultClasses }}">{{ $resultLabel }}</span>
+
+            @if ($hasResponse)
+                <span class="{{ $chipClasses }} bg-white text-slate-700 border-slate-200">
+                    Response: {{ $userAnswer->selected_answer }}
                 </span>
-            @elseif($timeSpent > 0)
-                <span class="text-xs font-semibold px-2 py-0.5 rounded border bg-slate-50 text-slate-600 border-slate-200">
-                    ⏱️ {{ $timeSpent }}s
+            @endif
+
+            {{-- Always rendered, 0s included: "spent no time here" is itself the
+                 signal a teacher is looking for on a skipped question. --}}
+            <span class="{{ $chipClasses }} {{ $isSlow
+                ? 'bg-rose-50 text-rose-700 border-rose-100'
+                : 'bg-white text-slate-700 border-slate-200' }}"
+                title="{{ $expectedSeconds > 0
+                    ? 'Time spent versus the expected time for this question'
+                    : 'Time spent on this question' }}">
+                Time: {{ $humanSeconds($spentSeconds) }}@if ($expectedSeconds > 0)
+                    / {{ $humanSeconds($expectedSeconds) }} expected
+                @endif
+            </span>
+
+            @if ($isSlow)
+                <span class="{{ $chipClasses }} bg-rose-50 text-rose-700 border-rose-100">Over pace</span>
+            @endif
+
+            @if ($domainLabel)
+                <span class="{{ $chipClasses }} bg-indigo-50 text-indigo-700 border-indigo-100"
+                    @if ($subdomainLabel) title="{{ $subdomainLabel }}" @endif>
+                    {{ $domainLabel }}
+                </span>
+            @endif
+
+            @if ($subdomainLabel)
+                <span class="{{ $chipClasses }} bg-white text-slate-600 border-slate-200">{{ $subdomainLabel }}</span>
+            @endif
+
+            @if ($difficulty)
+                <span class="{{ $chipClasses }} {{ match (strtolower($difficulty)) {
+                    'easy' => 'bg-emerald-50 text-emerald-700 border-emerald-100',
+                    'hard' => 'bg-rose-50 text-rose-700 border-rose-100',
+                    default => 'bg-amber-50 text-amber-700 border-amber-100',
+                } }}">
+                    {{ ucfirst($difficulty) }}
+                </span>
+            @endif
+
+            @if ($isPretest)
+                {{-- Pretest items are excluded from IRT scoring (PRODUCT.md §4),
+                     so a teacher reading a wrong answer here should know it did
+                     not cost the candidate anything. --}}
+                <span class="{{ $chipClasses }} bg-slate-100 text-slate-600 border-slate-200"
+                    title="Pretest items do not count toward the score">
+                    Unscored pretest
                 </span>
             @endif
         </div>
-    </div>
+    @endif
 
     <!-- Content (Passage + Stem + Choices) -->
     <div class="p-5 overflow-y-auto flex-1 space-y-4">

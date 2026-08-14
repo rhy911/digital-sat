@@ -43,7 +43,7 @@ class AnswerController extends Controller
                     return ['expired' => false, 'submitting' => true, 'saved_count' => 0];
                 }
 
-                if ($userTest->assignment_id) {
+                if ($userTest->runsOnChainedClock()) {
                     $timing = $this->assignmentTiming->syncElapsed($userTest, $module);
                     if ($timing['expired']) {
                         return ['expired' => true, 'saved_count' => 0];

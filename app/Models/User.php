@@ -36,6 +36,7 @@ class User extends Authenticatable implements MustVerifyEmail
         'teacher_reviewed_at',
         'teacher_rejection_reason',
         'share_independent_practice',
+        'is_guest',
     ];
 
     /**
@@ -61,6 +62,7 @@ class User extends Authenticatable implements MustVerifyEmail
             'password' => 'hashed',
             'is_2FA_enabled' => 'boolean',
             'is_active' => 'boolean',
+            'is_guest' => 'boolean',
             'share_independent_practice' => 'boolean',
             'two_factor_expired_at' => 'datetime',
             'teacher_reviewed_at' => 'datetime',
@@ -97,4 +99,5 @@ class User extends Authenticatable implements MustVerifyEmail
     public function assignmentRecipients() { return $this->hasMany(AssignmentRecipient::class, 'student_id'); }
     public function sharedTests() { return $this->belongsToMany(Test::class, 'test_shares')->withTimestamps(); }
     public function isApprovedTeacher(): bool { return $this->role === 'teacher' && $this->teacher_approval_status === 'approved'; }
+    public function examSessions() { return $this->hasMany(ExamSession::class, 'teacher_id'); }
 }

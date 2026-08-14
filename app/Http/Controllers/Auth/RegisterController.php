@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Auth;
 use App\Http\Controllers\Controller;
 use App\Models\User;
 use App\Notifications\VerifyEmailNotification;
+use App\Services\ExamSessionService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
@@ -12,6 +13,8 @@ use Illuminate\Support\Facades\Log;
 
 class RegisterController extends Controller
 {
+    public function __construct(private ExamSessionService $examSessions) {}
+
     public function __invoke(Request $request)
     {
         try {
@@ -39,6 +42,10 @@ class RegisterController extends Controller
             $user->notify(new VerifyEmailNotification());
 
             Auth::login($user);
+
+            if ($guestId = $request->session()->pull('link_guest_user_id')) {
+                $this->examSessions->mergeGuestAccount((int) $guestId, $user);
+            }
 
             // Return JSON for AJAX requests
             if ($request->wantsJson()) {

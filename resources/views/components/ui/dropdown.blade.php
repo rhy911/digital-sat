@@ -31,8 +31,10 @@
     }
 @endphp
 
-<div class="relative" x-data="{ open: false }" @click.outside="open = false" @close.stop="open = false"
-    @keydown.escape.window="open = false">
+{{-- Attributes are merged onto the root so a caller can observe the menu's own
+     state (e.g. x-bind:data-menu-open="open"); they were silently dropped before. --}}
+<div {{ $attributes->merge(['class' => 'relative']) }} x-data="{ open: false }" @click.outside="open = false"
+    @close.stop="open = false" @keydown.escape.window="open = false">
     <div @click="open = ! open" aria-haspopup="true" :aria-expanded="open">
         {{ $trigger }}
     </div>

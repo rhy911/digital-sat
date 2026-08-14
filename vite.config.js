@@ -14,6 +14,7 @@ export default defineConfig({
                 'resources/css/student/progress.css',
                 'resources/css/student/profile.css',
                 'resources/css/admin/test-builder.css',
+                'resources/css/teacher/exam-sessions.css',
                 'resources/css/classroom-workspace.css',
                 'resources/css/engine/main.css',
                 'resources/js/app.js',

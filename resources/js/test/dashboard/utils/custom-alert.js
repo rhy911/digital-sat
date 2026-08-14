@@ -60,7 +60,7 @@ export function getOrCreateAlertModal() {
             .custom-alert-title { font-size: 1.1rem; font-weight: 700; color: #0f172a; margin-bottom: 10px; font-family: system-ui, -apple-system, sans-serif; }
             /* pre-line so multi-line import errors list one problem per line;
                the text is still set via textContent, never innerHTML. */
-            .custom-alert-message { font-size: 0.9rem; color: #475569; line-height: 1.6; margin: 0; font-family: system-ui, -apple-system, sans-serif; white-space: pre-line; text-align: left; max-height: 45vh; overflow-y: auto; }
+            .custom-alert-message { font-size: 0.9rem; color: #475569; line-height: 1.6; margin: 0; font-family: system-ui, -apple-system, sans-serif; white-space: pre-line; text-align: center; max-height: 45vh; overflow-y: auto; }
             .custom-alert-input {
                 width: 100%; margin-top: 16px; padding: 10px 14px; background: #ffffff; color: #0f172a;
                 border: 1px solid #cbd5e1; border-radius: 8px; font-size: 0.95rem; outline: none;

@@ -666,9 +666,7 @@ export async function submitModule(options = {}) {
         }
       }, 1000);
     } else if (data.next_module_id) {
-      const proceedToNextModule = () => {
-        navigateModule(`/engine/session/${data.next_module_id}`);
-      };
+      const proceedToNextModule = () => navigateModule(`/engine/session/${data.next_module_id}`);
 
       if (data.is_section_break) {
         hideLoadingScreen();
@@ -791,10 +789,12 @@ export async function navigateModule(url) {
     confirmBtn.click();
   }
 
+  // 'redirecting' tells the caller this document stays on screen until the
+  // browser paints the new one, so any covering overlay must be left in place.
   if (!isFullscreen) {
     window.isNavigatingLegitimately = true;
     window.location.href = url;
-    return;
+    return 'redirecting';
   }
 
   showLoadingScreen("Saving responses and loading next section...");
@@ -931,9 +931,12 @@ export async function navigateModule(url) {
     // Done! Hide loading
     hideLoadingScreen();
 
+    return 'swapped';
+
   } catch (err) {
     console.error("Dynamic transition failed, falling back to standard redirect:", err);
     window.isNavigatingLegitimately = true;
     window.location.href = url;
+    return 'redirecting';
   }
 }

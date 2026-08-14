@@ -127,7 +127,7 @@ class SubmissionController extends Controller
                 $timedOut = false;
                 $nextStartsAt = null;
 
-                if ($userTest->assignment_id) {
+                if ($userTest->runsOnChainedClock()) {
                     $timedOut = $this->assignmentTiming->syncElapsed($userTest, $module)['expired'];
                     // On a timed-out submission the next module's clock starts at
                     // this module's deadline, not at now(). The POST can land well

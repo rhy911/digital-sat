@@ -48,7 +48,7 @@ class SessionController extends Controller
         // module whose deadline already passed would restart nothing — the clock is
         // server-side — but it would show them a live-looking test, so close the
         // attempt out first and send them to their score instead.
-        if ($requestedAttempt->assignment_id && $requestedAttempt->status === 'in_progress') {
+        if ($requestedAttempt->runsOnChainedClock() && $requestedAttempt->status === 'in_progress') {
             if ($this->timeouts->finalizeExpired($requestedAttempt) > 0) {
                 $requestedAttempt->refresh();
 
@@ -62,7 +62,7 @@ class SessionController extends Controller
         abort_unless($requestedAttempt->status === 'in_progress', 409, 'This attempt is no longer active.');
 
         $moduleQuery = Module::query();
-        if (!$requestedAttempt->assignment_id) {
+        if (!$requestedAttempt->runsOnChainedClock()) {
             $moduleQuery->visibleTo($user);
         } else {
             $moduleQuery->whereHas('sections', fn ($query) => $query->where('test_id', $requestedAttempt->test_id));
@@ -115,7 +115,7 @@ class SessionController extends Controller
                 $userTest->current_module_elapsed_seconds = 0;
                 $userTest->save();
             } else if ($userTest->current_module_started_at && !$isPreview) {
-                if (!$userTest->assignment_id) {
+                if (!$userTest->runsOnChainedClock()) {
                     // Practice resumption pauses while away and resumes from saved elapsed time.
                     $userTest->current_module_started_at = now();
                     $userTest->save();
@@ -127,7 +127,7 @@ class SessionController extends Controller
                 }
             }
 
-            $isAssignmentAttempt = (bool) $userTest->assignment_id;
+            $isAssignmentAttempt = $userTest->runsOnChainedClock();
             if ($isAssignmentAttempt && !$isPreview) {
                 $timing = $this->assignmentTiming->syncElapsed($userTest, $module);
                 $serverRemainingSeconds = $timing['remaining_seconds'];
@@ -163,6 +163,11 @@ class SessionController extends Controller
             $isFinalModule = false;
         }
 
+        if ($userTest?->exam_session_id) {
+            $userTest->loadMissing('examSession');
+        }
+        $isSessionPaused = $userTest?->examSession?->status === 'paused';
+
         return view($viewName, [
             'testData' => $testData,
             'questions' => $questions,
@@ -182,6 +187,7 @@ class SessionController extends Controller
             'isAssignmentAttempt' => $isAssignmentAttempt,
             'serverRemainingSeconds' => $serverRemainingSeconds,
             'isFinalModule' => $isFinalModule,
+            'isSessionPaused' => $isSessionPaused,
         ]);
     }
 

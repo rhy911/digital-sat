@@ -297,6 +297,13 @@
                             @include('student.analytics.partials.view-switcher')
                         @endif
 
+                        {{-- A signed-in student handed an exam code needs a way in
+                             that is not the public landing page. --}}
+                        <x-ui.button size="sm" variant="secondary" :href="route('exam-join.entry')">
+                            <x-slot:icon><x-ui.icon name="box-arrow-right" class="w-4 h-4" /></x-slot:icon>
+                            Join with a code
+                        </x-ui.button>
+
                         @if($hasActiveAssignments)
                             <x-ui.button size="sm" variant="secondary" :href="route('student.assignments.index')">
                                 My class assignments

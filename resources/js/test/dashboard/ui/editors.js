@@ -56,6 +56,34 @@ export function initEditModalEditors() {
             debouncedEditQuestionPreview();
         });
     }
+
+    const modalForm = document.getElementById('editQuestionForm');
+    if (modalForm) {
+        const qTypeSelect = document.getElementById('editQuestionType');
+        if (qTypeSelect && !qTypeSelect.dataset.previewBound) {
+            qTypeSelect.dataset.previewBound = 'true';
+            qTypeSelect.addEventListener('change', () => {
+                const mcqWrap = document.getElementById('editMcqChoicesContainer');
+                const sprWrap = document.getElementById('editSprAnswersContainer');
+                if (qTypeSelect.value === 'multiple_choice') {
+                    mcqWrap?.classList.remove('hidden');
+                    sprWrap?.classList.add('hidden');
+                } else {
+                    mcqWrap?.classList.add('hidden');
+                    sprWrap?.classList.remove('hidden');
+                }
+                debouncedEditQuestionPreview();
+            });
+        }
+
+        modalForm.querySelectorAll('input, select, textarea').forEach(el => {
+            if (el.dataset.previewBound || el.classList.contains('easy-mde-textarea')) return;
+            el.dataset.previewBound = 'true';
+            const handleInput = () => debouncedEditQuestionPreview();
+            el.addEventListener('input', handleInput);
+            el.addEventListener('change', handleInput);
+        });
+    }
 }
 
 export function debouncedEditQuestionPreview() {

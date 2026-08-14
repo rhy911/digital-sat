@@ -54,7 +54,8 @@ class AttemptProgressionService
     /**
      * Issue the next module and start its clock.
      *
-     * Assignment attempts run on a CHAINED clock: the next module's timer starts
+     * Chained-clock attempts (see UserTest::runsOnChainedClock — assignments and
+     * exam-session attempts) run on a CHAINED clock: the next module's timer starts
      * the moment the previous one ends, whether or not the student ever opens the
      * page. A null start date here is what used to make an unopened module
      * unexpirable, so a student who closed the tab left the attempt in_progress
@@ -94,7 +95,7 @@ class AttemptProgressionService
 
         $attempt->forceFill([
             'current_module_id' => $nextModule->id,
-            'current_module_started_at' => $attempt->assignment_id
+            'current_module_started_at' => $attempt->runsOnChainedClock()
                 ? ($startNextAt ? $startNextAt->copy() : now())
                 : null,
             'current_module_elapsed_seconds' => 0,

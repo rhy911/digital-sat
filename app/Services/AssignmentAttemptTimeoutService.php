@@ -12,10 +12,12 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 
 /**
- * Finish assignment attempts whose module time ran out while nobody was watching.
+ * Finish chained-clock attempts (see UserTest::runsOnChainedClock — classroom
+ * assignments and standalone exam-session attempts) whose module time ran out
+ * while nobody was watching.
  *
- * An assignment is a fixed-time exam simulator, so the clock does not care whether
- * the browser is open. Auto-submit used to live only in the client
+ * Both are fixed-time exam simulators, so the clock does not care whether the
+ * browser is open. Auto-submit used to live only in the client
  * (`test-timer-expired` in resources/js/test/navigation.js), which meant closing
  * the tab froze the attempt in `in_progress` forever: the student had to come
  * back, open the module, and let the timer expire again for EACH remaining module.
@@ -59,7 +61,7 @@ class AssignmentAttemptTimeoutService
     public function candidateAttemptsQuery()
     {
         return UserTest::query()
-            ->whereNotNull('assignment_id')
+            ->where(fn ($q) => $q->whereNotNull('assignment_id')->orWhereNotNull('exam_session_id'))
             ->where('status', 'in_progress')
             ->whereNotNull('current_module_id')
             ->whereNotNull('current_module_started_at');
@@ -73,7 +75,7 @@ class AssignmentAttemptTimeoutService
      */
     public function finalizeExpired(UserTest $attempt): int
     {
-        if (! $attempt->assignment_id || $attempt->status !== 'in_progress') {
+        if (! $attempt->runsOnChainedClock() || $attempt->status !== 'in_progress') {
             return 0;
         }
 

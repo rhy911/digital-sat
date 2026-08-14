@@ -11,6 +11,8 @@ class UserTest extends Model
         'user_id',
         'test_id',
         'assignment_id',
+        'exam_session_id',
+        'guest_name',
         'attempt_type',
         'section_type',
         'attempt_number',
@@ -75,6 +77,27 @@ class UserTest extends Model
     public function assignment()
     {
         return $this->belongsTo(Assignment::class);
+    }
+
+    public function examSession()
+    {
+        return $this->belongsTo(ExamSession::class);
+    }
+
+    /**
+     * Whether this attempt runs on a fixed, non-pausable clock — chained
+     * module deadlines, server-side auto-submit sweep (see
+     * AssignmentAttemptTimeoutService) — rather than practice-style
+     * pause/resume timing. True for classroom assignments AND standalone
+     * exam-session attempts: a candidate walking away from a live exam must
+     * not be able to stop the clock by closing the tab, same as an
+     * assignment. Single source of truth for every `assignment_id`-keyed
+     * timing branch in SessionController, AttemptProgressionService,
+     * SubmissionController, AnswerController and the timeout sweep.
+     */
+    public function runsOnChainedClock(): bool
+    {
+        return (bool) ($this->assignment_id || $this->exam_session_id);
     }
 
     public function userAnswers()
