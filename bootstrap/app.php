@@ -30,6 +30,9 @@ return Application::configure(basePath: dirname(__DIR__))
     })
     ->withSchedule(function (\Illuminate\Console\Scheduling\Schedule $schedule): void {
         $schedule->command('logs:clear')->daily();
+        // Soft-deleted content stays recoverable for the configured retention
+        // period before this bounded cleanup permanently removes it.
+        $schedule->command('recycle-bin:purge')->dailyAt('02:30')->withoutOverlapping(30);
         // Nothing pruned this table before; it grows unbounded.
         $schedule->command('queue:prune-failed --hours=168')->daily();
         // Queue depth / oldest job age. Cheap enough to run during an exam, and

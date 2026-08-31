@@ -272,10 +272,17 @@ class TestManagementService
             $questionIds = DB::table('module_questions')->whereIn('module_id', $moduleIds)->pluck('question_id');
         }
 
+        $exclusiveQuestionIds = $questionIds->filter(function ($questionId) use ($moduleIds) {
+            return ! DB::table('module_questions')
+                ->where('question_id', $questionId)
+                ->whereNotIn('module_id', $moduleIds)
+                ->exists();
+        })->values();
+
         $userTestIds = DB::table('user_tests')->where('test_id', $test->id)->pluck('id');
 
-        if ($questionIds->isNotEmpty()) {
-            DB::table('user_test_answers')->whereIn('question_id', $questionIds)->delete();
+        if ($exclusiveQuestionIds->isNotEmpty()) {
+            DB::table('user_test_answers')->whereIn('question_id', $exclusiveQuestionIds)->delete();
         }
 
         if ($userTestIds->isNotEmpty()) {
@@ -302,14 +309,57 @@ class TestManagementService
 
     private function cascadeDeleteTestChildren(Test $test, bool $force): void
     {
+        $modules = $test->sections->flatMap(fn (Section $section) => $section->modules)->values();
+        $this->deleteQuestionsOwnedByModules($modules, $force);
+
         foreach ($test->sections as $section) {
             foreach ($section->modules as $module) {
-                foreach ($module->questions as $question) {
-                    $force ? $question->forceDelete() : $question->delete();
-                }
                 $force ? $module->forceDelete() : $module->delete();
             }
             $force ? $section->forceDelete() : $section->delete();
+        }
+    }
+
+    /**
+     * Delete question rows only when the modules being deleted are their sole
+     * owners. Test/module clones intentionally share question-bank rows.
+     */
+    private function deleteQuestionsOwnedByModules(iterable $modules, bool $force): void
+    {
+        $modules = collect($modules);
+        $moduleIds = $modules->pluck('id')->filter()->values();
+
+        if ($moduleIds->isEmpty()) {
+            return;
+        }
+
+        $questionIds = DB::table('module_questions')
+            ->whereIn('module_id', $moduleIds)
+            ->distinct()
+            ->pluck('question_id');
+
+        foreach ($questionIds as $questionId) {
+            $hasOtherModuleReference = DB::table('module_questions')
+                ->where('question_id', $questionId)
+                ->whereNotIn('module_id', $moduleIds)
+                ->exists();
+
+            if ($hasOtherModuleReference) {
+                continue;
+            }
+
+            $question = Question::withTrashed()->find($questionId);
+            if (! $question) {
+                continue;
+            }
+
+            // Historical answers retain a restricted FK to the question. Keep
+            // the row rather than breaking score history during a force purge.
+            if ($force && DB::table('user_test_answers')->where('question_id', $questionId)->exists()) {
+                continue;
+            }
+
+            $force ? $question->forceDelete() : $question->delete();
         }
     }
 
@@ -328,10 +378,8 @@ class TestManagementService
 
         DB::transaction(function () use ($section, $deleteChildren) {
             if ($deleteChildren) {
+                $this->deleteQuestionsOwnedByModules($section->modules, false);
                 foreach ($section->modules as $module) {
-                    foreach ($module->questions as $question) {
-                        $question->delete();
-                    }
                     $module->delete();
                 }
             }
@@ -358,9 +406,7 @@ class TestManagementService
 
         DB::transaction(function () use ($module, $deleteChildren) {
             if ($deleteChildren) {
-                foreach ($module->questions as $question) {
-                    $question->delete();
-                }
+                $this->deleteQuestionsOwnedByModules([$module], false);
             }
             $module->delete();
         });

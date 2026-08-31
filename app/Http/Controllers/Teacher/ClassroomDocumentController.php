@@ -68,10 +68,8 @@ class ClassroomDocumentController extends Controller
         $this->authorize('manage', $document);
         abort_if($classroom->status === 'archived', 409, 'Archived classes are read-only. Restore this class first.');
 
-        if ($document->isFile() && $document->disk && $document->path) {
-            Storage::disk($document->disk)->delete($document->path);
-        }
-
+        // Keep the file while the soft-deleted row is in the recycle bin.
+        // RecycleBinService removes it only after the retention period ends.
         $document->delete();
 
         return back()->with('success', 'Study document removed.');

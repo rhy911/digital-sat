@@ -141,18 +141,18 @@ export function initTestDashboardDelegatedActions() {
                     return;
                 }
             } else {
-                if (!await showCustomConfirm('Permanently delete this test?', 'warning', 'Delete Test')) return;
+                if (!await showCustomConfirm('Move this test to the recycle bin? It will be kept for 7 days before permanent cleanup.', 'warning', 'Move to Recycle Bin')) return;
             }
-            if (await showCustomConfirm('Also delete all sections, modules, and questions inside this test?', 'warning', 'Delete Child Elements')) deleteChildren = true;
+            if (await showCustomConfirm('Also move all sections and modules inside this test to the recycle bin?', 'warning', 'Move Child Elements')) deleteChildren = true;
         } else {
-            if (!await showCustomConfirm('Permanently delete this item?', 'warning', 'Permanently Delete')) return;
+            if (!await showCustomConfirm('Move this item to the recycle bin? It will be kept for 7 days before permanent cleanup.', 'warning', 'Move to Recycle Bin')) return;
 
             if (btn.classList.contains('delete-section-btn')) {
                 url = `${BASE_URL}/sections/${id}`;
-                if (await showCustomConfirm('Also delete all modules and questions inside this section?', 'warning', 'Delete Child Elements')) deleteChildren = true;
+                if (await showCustomConfirm('Also move all modules inside this section to the recycle bin?', 'warning', 'Move Child Elements')) deleteChildren = true;
             } else if (btn.classList.contains('delete-module-btn')) {
                 url = `${BASE_URL}/modules/${id}`;
-                if (await showCustomConfirm('Also delete all questions linked to this module?', 'warning', 'Delete Child Elements')) deleteChildren = true;
+                if (await showCustomConfirm('Also move questions used only by this module to the recycle bin?', 'warning', 'Move Child Elements')) deleteChildren = true;
             } else if (btn.classList.contains('delete-question-btn')) {
                 url = `${BASE_URL}/questions/${id}`;
             } else return;
@@ -173,11 +173,35 @@ export function initTestDashboardDelegatedActions() {
                 credentials: 'same-origin'
             });
             if (response.ok) {
-                showAlert('success', 'Deleted successfully');
+                showAlert('success', 'Moved to recycle bin. Restore within 7 days.');
                 await refreshTestDashboardData(preserve);
             } else {
                 let msg = 'Delete failed';
-                try { const j = await response.json(); msg = j.message || msg; } catch (err) { }
+                let json = null;
+                try { json = await response.json(); msg = json.message || msg; } catch (err) { }
+
+                if (json && json.can_force) {
+                    if (await showCustomConfirm(msg, 'warning', 'Force Delete Question')) {
+                        const forceUrl = requestUrl + (requestUrl.includes('?') ? '&' : '?') + 'force=1';
+                        const forceResp = await fetch(forceUrl, {
+                            method: 'DELETE',
+                            headers: { 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content, 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
+                            credentials: 'same-origin'
+                        });
+                        if (forceResp.ok) {
+                            showAlert('success', 'Question force-deleted and detached.');
+                            await refreshTestDashboardData(preserve);
+                            return;
+                        } else {
+                            let fMsg = 'Force delete failed';
+                            try { const fj = await forceResp.json(); fMsg = fj.message || fMsg; } catch (e) { }
+                            showAlert('danger', fMsg);
+                            return;
+                        }
+                    }
+                    return;
+                }
+
                 showAlert('danger', msg);
             }
         } catch (error) { showAlert('danger', 'Error: ' + error.message); }

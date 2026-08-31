@@ -12,13 +12,13 @@
         x-data="{
             activeTab: (() => {
                 const hashTab = window.location.hash.replace('#', '');
-                const tabs = ['tests', 'builder', 'sections', 'modules', 'questions'];
+                const tabs = ['tests', 'builder', 'sections', 'modules', 'questions', 'recycle-bin'];
                 if (tabs.includes(hashTab)) return hashTab;
                 const stored = sessionStorage.getItem('testDashboardActiveTab');
                 return stored ? stored.replace('#', '') : 'tests';
             })(),
             mobileSidebarOpen: false,
-            tabs: ['tests', 'builder', 'sections', 'modules', 'questions'],
+            tabs: ['tests', 'builder', 'sections', 'modules', 'questions', 'recycle-bin'],
             activateTab(tab) {
                 if (tab !== 'builder' && window.confirmBuilderNavigation && !window.confirmBuilderNavigation()) {
                     return;
@@ -121,6 +121,15 @@
                     <x-ui.icon name="database" class="w-5 h-5" /><span class="test-builder-sidebar-label">Question
                         Bank</span>
                 </button>
+                <p class="test-builder-nav-group test-builder-sidebar-label mt-6">Recovery</p>
+                <button
+                    class="sidebar-link mt-1 w-full text-left px-3 py-2.5 rounded-lg text-sm flex items-center gap-3 cursor-pointer"
+                    :class="{ 'active': activeTab === 'recycle-bin' }" id="recycle-bin-tab"
+                    x-on:click="activateTab('recycle-bin')" data-bs-target="#recycle-bin" type="button" role="tab"
+                    :aria-selected="activeTab === 'recycle-bin' ? 'true' : 'false'" aria-controls="recycle-bin"
+                    :tabindex="activeTab === 'recycle-bin' ? '0' : '-1'" title="Recycle bin">
+                    <x-ui.icon name="trash" class="w-5 h-5" /><span class="test-builder-sidebar-label">Recycle bin</span>
+                </button>
             </nav>
         </aside>
 
@@ -188,6 +197,7 @@
                     <x-admin.test-builder.modules-tab :tests="$tests" :all-modules="$allModules" />
                     <x-admin.test-builder.questions-tab :tests="$tests" :questions="$questions" :questions-total="$questionsTotal" />
                     <x-admin.test-builder.builder-tab :tests="$tests" />
+                    <x-admin.test-builder.recycle-bin-tab />
                 </div>
             </div>
         </main>
@@ -218,6 +228,10 @@
                 SECTION_UPDATE_URL_TEMPLATE: "{{ route('home-dashboard.sections.update', ['id' => '__ID__'], false) }}",
                 MODULE_UPDATE_URL_TEMPLATE: "{{ route('home-dashboard.modules.update', ['id' => '__ID__'], false) }}",
                 QUESTION_UPDATE_URL_TEMPLATE: "{{ route('home-dashboard.questions.update', ['id' => '__ID__'], false) }}",
+                RECYCLE_BIN_URL: "{{ route('home-dashboard.recycle-bin.index') }}",
+                RECYCLE_BIN_RESTORE_URL_TEMPLATE: "{{ route('home-dashboard.recycle-bin.restore', ['type' => '__TYPE__', 'id' => '__ID__'], false) }}",
+                RECYCLE_BIN_CLEAR_URL: "{{ route('home-dashboard.recycle-bin.destroy-all') }}",
+                RECYCLE_BIN_DELETE_URL_TEMPLATE: "{{ route('home-dashboard.recycle-bin.destroy', ['type' => '__TYPE__', 'id' => '__ID__'], false) }}",
                 BASE_URL: "/admin",
                 QUESTIONS_PER_PAGE: 30,
                 {{-- Served from config/sat_taxonomy.php so the builder, the importer and the

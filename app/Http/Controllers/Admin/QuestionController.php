@@ -381,18 +381,55 @@ class QuestionController extends Controller
         }
     }
 
-    public function destroy($id): \Illuminate\Http\JsonResponse
+    public function destroy(Request $request, $id): \Illuminate\Http\JsonResponse
     {
         // Scope to visibleTo BEFORE findOrFail to prevent ID enumeration via 403 vs 404.
         $question = Question::visibleTo(auth()->user())->findOrFail($id);
         $this->authorize('delete', $question);
         $this->contentLock->ensureQuestionUnlocked($question);
 
-        if (DB::table('user_test_answers')->where('question_id', $question->id)->exists()) {
-            return response()->json(['status' => 'error', 'message' => 'Cannot delete question with existing student attempts.'], 422);
+        $force = $request->boolean('force', false) || $request->boolean('force_delete_attempts', false);
+        $user = auth()->user();
+        $isAdmin = $user && $user->role === 'admin';
+
+        $moduleCount = DB::table('module_questions')->where('question_id', $question->id)->count();
+        $attemptCount = DB::table('user_test_answers')->where('question_id', $question->id)->count();
+
+        if (($moduleCount > 0 || $attemptCount > 0) && ! $force) {
+            $blockers = [];
+            if ($moduleCount > 0) {
+                $blockers[] = "$moduleCount module(s)";
+            }
+            if ($attemptCount > 0) {
+                $blockers[] = "$attemptCount student attempt(s)";
+            }
+            $msg = 'Question is used by ' . implode(' and ', $blockers) . '.';
+
+            return response()->json([
+                'status' => 'error',
+                'can_force' => $isAdmin,
+                'has_blockers' => true,
+                'message' => $msg . ($isAdmin ? ' Force delete to detach and delete?' : ' Remove from modules first.'),
+            ], 422);
+        }
+
+        if ($force) {
+            if (! $isAdmin) {
+                abort(403, 'Only administrators can force-delete questions.');
+            }
+
+            DB::transaction(function () use ($question) {
+                DB::table('module_questions')->where('question_id', $question->id)->delete();
+                DB::table('user_test_answers')->where('question_id', $question->id)->delete();
+                $question->delete();
+            });
+
+            return response()->json(['status' => 'success', 'message' => 'Question force-deleted and detached.']);
         }
 
         $question->delete();
+
         return response()->json(['status' => 'success', 'message' => 'Question deleted.']);
     }
 }
+

@@ -224,6 +224,14 @@ Route::middleware(['auth', 'verified'])->prefix('engine')->group(function () {
 Route::middleware(['auth', 'verified', 'role:admin,teacher', 'teacher.approved'])->prefix('admin')->name('home-dashboard.')->group(function () {
     Route::get('/teacher/test-builder', [\App\Http\Controllers\Admin\TestBuilderController::class, 'index'])->name('index');
     Route::get('/teacher/test-builder/snapshot', [\App\Http\Controllers\Admin\TestBuilderController::class, 'snapshot'])->name('snapshot');
+    Route::get('/recycle-bin', [\App\Http\Controllers\Admin\RecycleBinController::class, 'index'])->name('recycle-bin.index');
+    Route::delete('/recycle-bin', [\App\Http\Controllers\Admin\RecycleBinController::class, 'destroyAll'])->name('recycle-bin.destroy-all');
+    Route::delete('/recycle-bin/{type}/{id}', [\App\Http\Controllers\Admin\RecycleBinController::class, 'destroy'])
+        ->whereIn('type', ['test', 'section', 'module', 'question'])
+        ->name('recycle-bin.destroy');
+    Route::post('/recycle-bin/{type}/{id}/restore', [\App\Http\Controllers\Admin\RecycleBinController::class, 'restore'])
+        ->whereIn('type', ['test', 'section', 'module', 'question'])
+        ->name('recycle-bin.restore');
 
     // Questions list and search
     Route::get('/questions/list', [\App\Http\Controllers\Admin\QuestionController::class, 'index'])->name('questions.list');

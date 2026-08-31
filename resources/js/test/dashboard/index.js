@@ -15,6 +15,7 @@ import * as BulkImport from './components/bulk-import.js';
 import './ui/sidebar.js';
 import { rememberTestDashboardTab, renderActiveTab, refreshQuestionsTableOnly, refreshTestDashboardData } from './dashboard-data.js';
 import { initTestDashboardDelegatedActions } from './dashboard-crud-actions.js';
+import { initRecycleBin } from './components/recycle-bin.js';
 import { initEditQuestionModal } from './edit-question-modal.js';
 import { initBladeGlobalHelpers } from './blade-globals.js';
 
@@ -73,6 +74,7 @@ document.addEventListener('DOMContentLoaded', async function () {
 
     // Initializations
     initTestDashboardDelegatedActions();
+    initRecycleBin();
     initModulesSearch();
 
     document.querySelectorAll('#dashboardTabs .sidebar-link, #dashboardTabs .sidebar-link-builder').forEach(btn => {

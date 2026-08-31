@@ -8,6 +8,7 @@ import {
 import { renderTestsTable } from './components/tests.js';
 import { renderSectionsTable } from './components/sections.js';
 import { renderModulesTable } from './components/modules.js';
+import { refreshRecycleBin } from './components/recycle-bin.js';
 import {
     renderQuestionsTable, renderQuestionsPagination, questionsListFetchUrl,
     initRemoteQuestionPicker,
@@ -31,7 +32,7 @@ export function rememberTestDashboardTab() {
 export async function renderActiveTab(targetId = null) {
     if (!targetId) {
         const hashTab = window.location.hash;
-        if (hashTab && ['#tests', '#builder', '#sections', '#modules', '#questions'].includes(hashTab)) {
+        if (hashTab && ['#tests', '#builder', '#sections', '#modules', '#questions', '#recycle-bin'].includes(hashTab)) {
             targetId = hashTab;
         }
     }
@@ -53,6 +54,7 @@ export async function renderActiveTab(targetId = null) {
             '#modules': 'Modules',
             '#questions': 'Question Bank',
             '#builder': 'Easy Builder',
+            '#recycle-bin': 'Recycle bin',
         };
         activeTitle.textContent = titleMap[targetId] || 'Test Dashboard';
     }
@@ -63,6 +65,7 @@ export async function renderActiveTab(targetId = null) {
             '#sections': 'Organize Reading & Writing and Math sections.',
             '#modules': 'Manage module timing, difficulty, and capacity.',
             '#questions': 'Search, review, and reuse assessment content.',
+            '#recycle-bin': 'Recover deleted content before it is permanently cleaned up.',
         };
         activeDescription.textContent = descriptionMap[targetId] || 'Manage SAT assessment content.';
     }
@@ -82,6 +85,8 @@ export async function renderActiveTab(targetId = null) {
         renderQuestionsPagination(listJson, refreshQuestionsTableOnly);
         const qBadge = document.getElementById('questionsPoolCountBadge');
         if (qBadge && listJson.total != null) qBadge.textContent = listJson.total + ' Total';
+    } else if (targetId === '#recycle-bin') {
+        await refreshRecycleBin();
     }
 }
 

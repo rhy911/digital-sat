@@ -242,7 +242,7 @@ export function smartRenderMath(element, options = {}) {
 
     const defaultOptions = {
         delimiters: [
-            { left: '$$', right: '$$', display: true },
+            { left: '$$', right: '$$', display: false },
             { left: '$', right: '$', display: false },
             { left: '\\(', right: '\\)', display: false },
             { left: '\\[', right: '\\]', display: true },
@@ -405,7 +405,7 @@ window.showCustomConfirm = showCustomConfirm;
 export function initScoreDetailsPage() {
     // ── Sticky tabs bar ─────────────────────────────────────────
     const sentinel = document.getElementById('sd-tabs-sentinel');
-    const tabsBar  = document.getElementById('sd-tabs-bar');
+    const tabsBar = document.getElementById('sd-tabs-bar');
     const pageHeader = document.querySelector('body > header');
 
     const syncStickyHeaderOffset = () => {
@@ -429,17 +429,17 @@ export function initScoreDetailsPage() {
     );
 
     // ── State ───────────────────────────────────────────────────
-    let activeSection      = 'all';
+    let activeSection = 'all';
     let activeStatusFilter = 'all';
-    let currentPage        = 1;
-    const pageSize         = 30;
+    let currentPage = 1;
+    const pageSize = 30;
 
     const getQuestionRows = () => Array.from(
         document.querySelectorAll('#table-main tbody tr[data-section][data-status]')
     );
 
     const getMatchingRows = () => getQuestionRows().filter(row => {
-        const secOk    = activeSection === 'all' || row.dataset.section === activeSection;
+        const secOk = activeSection === 'all' || row.dataset.section === activeSection;
         const statusOk = activeStatusFilter === 'all' || row.dataset.status === activeStatusFilter;
         return secOk && statusOk;
     });
@@ -521,9 +521,9 @@ export function initScoreDetailsPage() {
 
         // Update stat counters
         const s = statsData[activeSection] ?? statsData['all'] ?? {};
-        if (document.getElementById('stat-total'))   document.getElementById('stat-total').textContent   = s.total   ?? '';
+        if (document.getElementById('stat-total')) document.getElementById('stat-total').textContent = s.total ?? '';
         if (document.getElementById('stat-correct')) document.getElementById('stat-correct').textContent = s.correct ?? '';
-        if (document.getElementById('stat-wrong'))   document.getElementById('stat-wrong').textContent   = s.wrong   ?? '';
+        if (document.getElementById('stat-wrong')) document.getElementById('stat-wrong').textContent = s.wrong ?? '';
     }
 
     // ── Tab switching ───────────────────────────────────────────
@@ -531,7 +531,7 @@ export function initScoreDetailsPage() {
         btn.addEventListener('click', () => {
             document.querySelectorAll('#skillTabs .sd-tab').forEach(b => b.classList.remove('active'));
             btn.classList.add('active');
-            activeSection      = btn.getAttribute('data-target');
+            activeSection = btn.getAttribute('data-target');
             activeStatusFilter = 'all';
             // Reset filter buttons
             document.querySelectorAll('.sd-view-btn[data-filter]').forEach(b => {
@@ -604,17 +604,17 @@ export function initScoreDetailsPage() {
             activeReviewData = data;
 
             // 1. Populate text & HTML contents
-            document.getElementById('modalQuestionStem').innerHTML  = data.stem ?? '';
+            document.getElementById('modalQuestionStem').innerHTML = data.stem ?? '';
             document.getElementById('modalCorrectAnswer').innerHTML = data.correct_answer ?? 'N/A';
-            document.getElementById('modalExplanation').innerHTML   = data.explanation ?? '';
+            document.getElementById('modalExplanation').innerHTML = data.explanation ?? '';
 
-            const answerEl  = document.getElementById('modalYourAnswer');
+            const answerEl = document.getElementById('modalYourAnswer');
             const answerBox = document.getElementById('modalYourAnswerBox');
             answerEl.innerHTML = data.your_answer ?? 'Omitted';
             answerBox.className = 'sd-modal-answer-box your-answer';
-            if (data.status === 'correct')    answerBox.classList.add('is-correct');
+            if (data.status === 'correct') answerBox.classList.add('is-correct');
             else if (data.status === 'wrong') answerBox.classList.add('is-wrong');
-            else                              answerBox.classList.add('is-omitted');
+            else answerBox.classList.add('is-omitted');
 
             // Dynamic Choice Review rendering
             const mcLabel = document.querySelector('.js-mc-label');

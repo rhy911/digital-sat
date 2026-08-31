@@ -17,6 +17,7 @@ const PATHS = {
     'check-circle-fill': '<circle cx="12" cy="12" r="10" /> <path d="m9 12 2 2 4-4" />',
     'check-lg': '<path d="M20 6 9 17l-5-5" />',
     'chevron-down': '<path d="m6 9 6 6 6-6" />',
+    'clock': '<circle cx="12" cy="12" r="10" /> <polyline points="12 6 12 12 16 14" />',
     'chevron-right': '<path d="m9 18 6-6-6-6" />',
     'cloud-arrow-up': '<path d="M12 13v8" /> <path d="M4 14.899A7 7 0 1 1 15.71 8h1.79a4.5 4.5 0 0 1 2.5 8.242" /> <path d="m8 17 4-4 4 4" />',
     'cloud-check': '<path d="m17 15-5.5 5.5L9 18" /> <path d="M5.516 16.07A7 7 0 1 1 15.71 8h1.79a4.5 4.5 0 0 1 3.501 7.327" />',
