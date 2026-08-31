@@ -45,6 +45,20 @@ class AnalyticsController extends Controller
             ->limit(10)
             ->get();
 
+        $scoredAttempts = $recentCompleted
+            ->whereNotNull('total_score')
+            ->take(5)
+            ->reverse()
+            ->values();
+
+        $homeScoreTrend = [
+            'attempts' => $scoredAttempts->map(fn ($attempt) => [
+                'score' => (int) $attempt->total_score,
+                'date' => $attempt->completed_at ? $attempt->completed_at->format('M j') : null,
+            ])->all(),
+            'target_score' => $user->target_score ? (int) $user->target_score : null,
+        ];
+
         $tip = $recentCompleted->isNotEmpty()
             ? (new PerformanceAnalytics)->summarize($recentCompleted)['recommendations'][0]
             : 'Take your first practice test to unlock a personalized study tip here.';
@@ -131,6 +145,7 @@ class AnalyticsController extends Controller
             'assignments' => $assignments,
             'assignmentFocus' => $assignmentFocus,
             'teacherStats' => $teacherStats,
+            'homeScoreTrend' => $homeScoreTrend,
         ];
     }
 }

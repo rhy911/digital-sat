@@ -7,6 +7,7 @@ use App\Models\UserTest;
 use App\Services\ScoreReportService;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Str;
 
 class ScoreController extends Controller
@@ -76,7 +77,7 @@ class ScoreController extends Controller
 
     private function loadForReport(UserTest $userTest): UserTest
     {
-        $userTest->load([
+        $relations = [
             'test',
             'user',
             'scoreConversionSet',
@@ -84,7 +85,11 @@ class ScoreController extends Controller
             'userAnswers.question.explanation',
             'userAnswers.question.answerChoices',
             'userAnswers.question.sprCorrectAnswers',
-        ]);
+        ];
+        if (Schema::hasTable('user_test_answer_reviews')) {
+            $relations[] = 'userAnswers.review';
+        }
+        $userTest->load($relations);
 
         return $userTest;
     }

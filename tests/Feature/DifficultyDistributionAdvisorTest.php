@@ -78,6 +78,38 @@ class DifficultyDistributionAdvisorTest extends TestCase
         $this->assertStringContainsString('hard', $response->json('warnings.0.message'));
     }
 
+    public function test_adaptive_module_two_low_separation_surfaces_warning(): void
+    {
+        $test = Test::create(['title' => 'Low Separation Adaptive', 'test_type' => 'adaptive_full_length', 'status' => 'draft']);
+        $section = Section::create(['test_id' => $test->id, 'name' => 'Reading & Writing', 'type' => Section::TYPE_RW, 'order' => 1]);
+        $easy = $this->module($section, 2, Module::DIFFICULTY_EASY);
+        $hard = $this->module($section, 2, Module::DIFFICULTY_HARD);
+
+        $this->fillWithIrt($easy, Section::TYPE_RW, 0.1, 5);
+        $this->fillWithIrt($hard, Section::TYPE_RW, 0.4, 5); // difference = 0.3 < 0.5
+
+        $warnings = app(DifficultyDistributionAdvisor::class)->warnings($test->fresh());
+
+        $this->assertCount(1, $warnings);
+        $this->assertStringContainsString('separation', $warnings[0]['message']);
+        $this->assertSame(2, $warnings[0]['module_number']);
+    }
+
+    public function test_adaptive_module_two_adequate_separation_does_not_warn(): void
+    {
+        $test = Test::create(['title' => 'Good Separation Adaptive', 'test_type' => 'adaptive_full_length', 'status' => 'draft']);
+        $section = Section::create(['test_id' => $test->id, 'name' => 'Reading & Writing', 'type' => Section::TYPE_RW, 'order' => 1]);
+        $easy = $this->module($section, 2, Module::DIFFICULTY_EASY);
+        $hard = $this->module($section, 2, Module::DIFFICULTY_HARD);
+
+        $this->fillWithIrt($easy, Section::TYPE_RW, -0.5, 5);
+        $this->fillWithIrt($hard, Section::TYPE_RW, 0.5, 5); // difference = 1.0 >= 0.5
+
+        $warnings = app(DifficultyDistributionAdvisor::class)->warnings($test->fresh());
+
+        $this->assertSame([], $warnings);
+    }
+
     private function module(Section $section, int $number, string $difficulty): Module
     {
         return Module::create([
@@ -102,6 +134,26 @@ class DifficultyDistributionAdvisorTest extends TestCase
                 'skill_domain' => 'fixture',
                 'is_complete' => true,
                 'is_pretest' => false,
+            ]);
+            $module->questions()->attach($question->id, ['position' => $base + $i + 1]);
+        }
+    }
+
+    private function fillWithIrt(Module $module, string $sectionType, float $irtB, int $count): void
+    {
+        $base = $module->questions()->count();
+        for ($i = 0; $i < $count; $i++) {
+            $question = Question::create([
+                'stem' => "IRT item {$i}",
+                'question_type' => Question::TYPE_MCQ,
+                'difficulty' => $irtB >= 0.5 ? 'hard' : ($irtB <= -0.5 ? 'easy' : 'medium'),
+                'section_type' => $sectionType,
+                'skill_domain' => 'fixture',
+                'is_complete' => true,
+                'is_pretest' => false,
+                'irt_a' => 1.0,
+                'irt_b' => $irtB,
+                'irt_c' => 0.2,
             ]);
             $module->questions()->attach($question->id, ['position' => $base + $i + 1]);
         }

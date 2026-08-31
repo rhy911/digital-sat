@@ -655,7 +655,7 @@
                             @foreach ($tests as $test)
                                 @php($isShared = auth()->user()->role !== 'admin' && $test->created_by !== auth()->id())
                                 <option value="{{ $test->id }}">
-                                    {{ $test->title }}{{ $isShared ? ' (shared)' : '' }}{{ $test->isContentLocked() ? ' (locked)' : '' }}
+                                    {{ $test->title }}{{ $isShared ? ' (shared)' : '' }}
                                 </option>
                             @endforeach
                         </select>

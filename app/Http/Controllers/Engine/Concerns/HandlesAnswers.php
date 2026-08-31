@@ -196,6 +196,7 @@ trait HandlesAnswers
                 'skill_domain' => $question->skill_domain,
                 'skill_subdomain' => $question->skill_subdomain,
                 'spr_hint' => $question->spr_hint,
+                'module_position' => $question->pivot?->position,
                 'calculator_allowed' => (bool) $question->calculator_allowed,
                 'expected_time' => $question->expected_time,
                 'irt_a' => (float) $question->irt_a,

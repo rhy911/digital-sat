@@ -69,7 +69,7 @@ class AttemptController extends Controller
                 }
             }
 
-            $this->structures->validateForPublication($test);
+            $this->structures->validate($test);
 
             if ($mode === 'fresh') {
                 UserTest::where('user_id', $user->id)

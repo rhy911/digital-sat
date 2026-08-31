@@ -4,12 +4,13 @@
     'searchPlaceholder' => '',
     'items' => [],
     'filters' => [
+        ['value' => 'all', 'label' => 'All'],
         ['value' => 'active', 'label' => 'Active'],
         ['value' => 'archived', 'label' => 'Archived'],
     ],
 ])
 
-{{-- Expects an ancestor with x-data containing: searchQuery (string), statusFilter (matches one of the filters' values) --}}
+{{-- Expects an ancestor with x-data containing: searchQuery (string), statusFilter (string) --}}
 <div class="class-col">
     <div class="class-col-head">
         <h1>{{ $title }}</h1>
@@ -20,11 +21,12 @@
             <circle cx="11" cy="11" r="7" />
             <path d="m21 21-4.3-4.3" stroke-linecap="round" />
         </svg>
-        <input type="text" placeholder="{{ $searchPlaceholder }}" x-model="searchQuery">
+        <input type="text" placeholder="{{ $searchPlaceholder }}" aria-label="{{ $searchPlaceholder }}"
+            autocomplete="off" x-model="searchQuery">
     </div>
     <div class="filter-row">
         @foreach ($filters as $filter)
-            <button class="filter-chip" :class="{ 'active': statusFilter === '{{ $filter['value'] }}' }"
+            <button type="button" class="filter-chip" :class="{ 'active': statusFilter === '{{ $filter['value'] }}' }"
                 @click="statusFilter = '{{ $filter['value'] }}'">{{ $filter['label'] }}</button>
         @endforeach
     </div>
@@ -33,9 +35,15 @@
 
     <div class="class-list">
         @foreach ($items as $item)
+            @php
+                $searchText = mb_strtolower(($item['name'] ?? '') . ' ' . implode(' ', $item['meta'] ?? []));
+                $status = (string) ($item['status'] ?? 'all');
+            @endphp
             <a href="{{ $item['route'] }}"
-                class="class-item {{ !empty($item['selected']) ? 'selected' : '' }} block! text-inherit no-underline"
-                x-show="(statusFilter === 'all' || '{{ $item['status'] }}' === statusFilter) && ('{{ strtolower(addslashes($item['name'])) }}'.includes(searchQuery.toLowerCase()))">
+                data-search="{{ $searchText }}"
+                data-status="{{ $status }}"
+                class="class-item {{ !empty($item['selected']) ? 'selected' : '' }} text-inherit no-underline"
+                x-show="(statusFilter === 'all' || $el.dataset.status === statusFilter) && (!searchQuery.trim() || $el.dataset.search.includes(searchQuery.toLowerCase().trim()))">
                 <div class="ci-top">
                     <span class="ci-name">{{ $item['name'] }}</span>
                 </div>

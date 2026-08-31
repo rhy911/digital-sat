@@ -88,6 +88,50 @@ export function updateBuilderGridState() {
             badge.className = "bg-[var(--color-brand-soft)] border border-brand/20 text-brand font-bold px-3 py-1 text-xs rounded-full";
         }
     }
+
+    updateBuilderAdaptiveIrtBadge();
+}
+
+export function updateBuilderAdaptiveIrtBadge() {
+    const badge = document.getElementById('builderAdaptiveIrtBadge');
+    if (!badge) return;
+
+    const selectEl = document.getElementById('builderModuleId');
+    const selectedOpt = selectEl?.selectedOptions?.[0];
+    const sectionId = selectedOpt?.getAttribute('data-section-id');
+
+    if (!sectionId || !Array.isArray(window.__tdSectionsData)) {
+        badge.classList.add('hidden');
+        return;
+    }
+
+    const section = window.__tdSectionsData.find(s => String(s.id) === String(sectionId));
+    if (!section || !section.adaptive_irt) {
+        badge.classList.add('hidden');
+        return;
+    }
+
+    badge.classList.remove('hidden');
+    if (section.adaptive_irt.has_data) {
+        const diff = Number(section.adaptive_irt.diff);
+        const prefix = diff >= 0 ? '+' : '';
+        const tooltip = `Hard mean: ${section.adaptive_irt.hard_mean} | Easy mean: ${section.adaptive_irt.easy_mean} (Target ≥ +0.50b)`;
+        badge.title = tooltip;
+
+        if (section.adaptive_irt.meets_target) {
+            badge.textContent = `M2 IRT Δb: ${prefix}${diff.toFixed(2)}b (Optimal)`;
+            badge.className = 'bg-emerald-50 text-emerald-700 ring-1 ring-inset ring-emerald-600/20 font-bold px-3 py-1 text-xs rounded-full';
+        } else {
+            badge.textContent = `M2 IRT Δb: ${prefix}${diff.toFixed(2)}b (<0.50)`;
+            badge.className = 'bg-amber-50 text-amber-700 ring-1 ring-inset ring-amber-600/20 font-bold px-3 py-1 text-xs rounded-full';
+        }
+    } else {
+        const easyTxt = section.adaptive_irt.easy_mean !== null ? section.adaptive_irt.easy_mean : 'None';
+        const hardTxt = section.adaptive_irt.hard_mean !== null ? section.adaptive_irt.hard_mean : 'None';
+        badge.title = `Easy: ${easyTxt} | Hard: ${hardTxt}`;
+        badge.textContent = 'M2 IRT Δb: Pending items';
+        badge.className = 'bg-slate-100 text-slate-500 ring-1 ring-inset ring-slate-200 font-medium px-3 py-1 text-xs rounded-full';
+    }
 }
 
 export function setupBlockBindings(block) {

@@ -12,6 +12,12 @@ class ClassroomRoster extends Component
     use WithPagination, WithoutUrlPagination;
 
     public Classroom $classroom;
+    public string $search = '';
+
+    public function updatedSearch(): void
+    {
+        $this->resetPage('rosterPage');
+    }
 
     public function mount(Classroom $classroom): void
     {
@@ -26,9 +32,18 @@ class ClassroomRoster extends Component
             ->oldest()
             ->get();
 
+        $search = trim($this->search);
+
         $rosterPage = $this->classroom->memberships()
             ->where('status', 'active')
             ->with('student')
+            ->when($search !== '', function ($query) use ($search) {
+                $query->whereHas('student', function ($q) use ($search) {
+                    $like = '%'.str_replace(['\\', '%', '_'], ['\\\\', '\\%', '\\_'], $search).'%';
+                    $q->where('name', 'like', $like)
+                      ->orWhere('email', 'like', $like);
+                });
+            })
             ->orderByDesc('decided_at')
             ->paginate(15, ['*'], 'rosterPage', $this->getPage('rosterPage'));
 

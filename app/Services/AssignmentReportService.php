@@ -38,7 +38,7 @@ class AssignmentReportService
         ];
     }
 
-    public function build(Assignment $assignment, ?int $perPage = 15, ?int $page = null, bool $includeAnalysis = true): array
+    public function build(Assignment $assignment, ?int $perPage = 15, ?int $page = null, bool $includeAnalysis = true, ?string $search = null): array
     {
         $assignment->load(['classroom', 'test']);
 
@@ -69,6 +69,16 @@ class AssignmentReportService
             ->with('student')
             ->orderBy('users.name', 'asc')
             ->orderBy('assignment_recipients.id', 'asc');
+
+        $search = trim((string) $search);
+        if ($search !== '') {
+            $like = '%'.str_replace(['\\', '%', '_'], ['\\\\', '\\%', '\\_'], $search).'%';
+            $recipientsQuery->where(function ($q) use ($like) {
+                $q->where('users.name', 'like', $like)
+                  ->orWhere('users.email', 'like', $like);
+            });
+        }
+
         $recipientsPaginator = $perPage !== null ? $recipientsQuery->paginate($perPage, ['*'], 'page', $page)->withQueryString() : $recipientsQuery->get();
 
         $attempts = \App\Models\UserTest::where('assignment_id', $assignment->id)

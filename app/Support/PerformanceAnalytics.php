@@ -162,13 +162,27 @@ class PerformanceAnalytics
         foreach ($domainStats as $data) {
             $percentCorrect = $data['total'] > 0 ? (int) round(($data['correct'] / $data['total']) * 100) : 0;
 
-            $skillsList = [];
+            $aggregatedSkills = [];
             foreach ($data['skills'] as $skillData) {
-                $skillPercent = $skillData['total'] > 0 ? (int) round(($skillData['correct'] / $skillData['total']) * 100) : 0;
+                $skillName = $this->subdomainLabel($skillData['subdomain']);
+                if (!isset($aggregatedSkills[$skillName])) {
+                    $aggregatedSkills[$skillName] = [
+                        'name' => $skillName,
+                        'total' => 0,
+                        'correct' => 0,
+                    ];
+                }
+                $aggregatedSkills[$skillName]['total'] += $skillData['total'];
+                $aggregatedSkills[$skillName]['correct'] += $skillData['correct'];
+            }
+
+            $skillsList = [];
+            foreach ($aggregatedSkills as $skill) {
+                $skillPercent = $skill['total'] > 0 ? (int) round(($skill['correct'] / $skill['total']) * 100) : 0;
                 $skillsList[] = [
-                    'name' => $this->subdomainLabel($skillData['subdomain']),
-                    'total' => $skillData['total'],
-                    'correct' => $skillData['correct'],
+                    'name' => $skill['name'],
+                    'total' => $skill['total'],
+                    'correct' => $skill['correct'],
                     'percentCorrect' => $skillPercent,
                     'performance' => $skillPercent >= 80 ? 'High' : ($skillPercent >= 50 ? 'Medium' : 'Low'),
                 ];
@@ -193,7 +207,7 @@ class PerformanceAnalytics
 
     private function subdomainLabel(string $subdomain): string
     {
-        return Str::of($subdomain)->replace('_', ' ')->title()->toString();
+        return SatTaxonomy::subdomainLabel($subdomain);
     }
 
     private function difficultyPerformanceSummaries(array $difficultyStats): array
@@ -246,17 +260,6 @@ class PerformanceAnalytics
 
     private function domainLabel(string $domain): string
     {
-        return [
-            'craft_and_structure' => 'Craft and Structure',
-            'information_and_ideas' => 'Information and Ideas',
-            'standard_english_conventions' => 'Standard English Conventions',
-            'expression_of_ideas' => 'Expression of Ideas',
-            'algebra' => 'Algebra',
-            'advanced_math' => 'Advanced Math',
-            'problem_solving' => 'Problem-Solving and Data Analysis',
-            'problem_solving_and_data_analysis' => 'Problem-Solving and Data Analysis',
-            'geometry' => 'Geometry and Trigonometry',
-            'geometry_and_trigonometry' => 'Geometry and Trigonometry',
-        ][$domain] ?? Str::of($domain)->replace('_', ' ')->title()->toString();
+        return SatTaxonomy::domainLabel($domain);
     }
 }

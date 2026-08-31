@@ -12,6 +12,7 @@
                     class="inline-flex min-h-10 items-center gap-2 rounded-lg border border-slate-300 bg-white px-3 py-2 text-xs font-bold text-slate-700 hover:bg-slate-50 xl:hidden">
                     <x-ui.icon name="eye" class="w-4 h-4" aria-hidden="true" /><span>Show preview</span>
                 </button>
+                <span id="builderAdaptiveIrtBadge" class="hidden font-bold px-3 py-1 text-xs rounded-full"></span>
                 <span id="builderActiveCountBadge"
                     class="bg-[var(--color-brand-soft)] border border-brand/20 text-brand font-bold px-3 py-1 text-xs rounded-full">0
                     questions</span>
@@ -71,7 +72,7 @@
                             @foreach ($test->sections as $section)
                                 @foreach ($section->modules as $module)
                                     @if (auth()->user()->role !== 'teacher' || $module->created_by === auth()->id())
-                                        <option value="{{ $module->id }}" data-section-type="{{ $section->type }}">
+                                        <option value="{{ $module->id }}" data-section-type="{{ $section->type }}" data-section-id="{{ $section->id }}">
                                             {{ $test->title }} |
                                             {{ $section->type === 'reading_writing' ? 'R&W' : 'Math' }} - Mod
                                             {{ $module->module_number }} ({{ ucfirst($module->difficulty_level) }})

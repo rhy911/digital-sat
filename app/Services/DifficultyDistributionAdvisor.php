@@ -14,9 +14,10 @@ use App\Models\Test;
  * (garbage-in, garbage-out). This surfaces a soft warning so the author can notice —
  * it does not stop publication.
  *
- * Intentionally-skewed adaptive Module 2 branches (difficulty_level easy/hard) are
- * excluded: their skew is by design and is already validated for separation by
- * TestStructureService::validateAdaptiveMeasurement().
+ * Adaptive Module 2 branches (difficulty_level easy/hard) are also checked for
+ * mean difficulty separation: if the gap between hard and easy mean difficulty is
+ * below 0.5, a soft warning is surfaced so the author can improve separation without
+ * blocking test day publication.
  */
 class DifficultyDistributionAdvisor
 {
@@ -25,6 +26,9 @@ class DifficultyDistributionAdvisor
 
     /** Dominant-difficulty share at or above this fraction triggers a warning. */
     private const DOMINANT_THRESHOLD = 0.9;
+
+    /** Minimum recommended mean IRT difficulty separation between Hard and Easy M2 branches. */
+    private const MIN_ADAPTIVE_SEPARATION = 0.5;
 
     /**
      * @return array<int, array{section:string,module_number:int,message:string}>
@@ -67,6 +71,30 @@ class DifficultyDistributionAdvisor
                         $dominant,
                     ),
                 ];
+            }
+
+            if ($test->test_type === Test::TYPE_ADAPTIVE_FULL) {
+                $easy = $section->modules->first(fn ($module) => (int) $module->module_number === 2 && $module->difficulty_level === Module::DIFFICULTY_EASY);
+                $hard = $section->modules->first(fn ($module) => (int) $module->module_number === 2 && $module->difficulty_level === Module::DIFFICULTY_HARD);
+                if ($easy && $hard) {
+                    $easyMean = $easy->questions->where('is_pretest', false)->avg('irt_b');
+                    $hardMean = $hard->questions->where('is_pretest', false)->avg('irt_b');
+                    if ($easyMean !== null && $hardMean !== null) {
+                        $diff = (float) $hardMean - (float) $easyMean;
+                        if ($diff < self::MIN_ADAPTIVE_SEPARATION) {
+                            $warnings[] = [
+                                'section' => (string) $section->name,
+                                'module_number' => 2,
+                                'message' => sprintf(
+                                    '%s Module 2 hard/easy branches have mean IRT difficulty separation of %.2f (< %.2f). Adaptive ability estimation may be less discriminating.',
+                                    $section->name,
+                                    $diff,
+                                    self::MIN_ADAPTIVE_SEPARATION,
+                                ),
+                            ];
+                        }
+                    }
+                }
             }
         }
 

@@ -57,6 +57,7 @@ class TestStructureService
     public function validateForPublication(Test $test): array
     {
         $shape = $this->validate($test);
+
         if (! in_array($test->test_type, [Test::TYPE_FULL, Test::TYPE_ADAPTIVE_FULL], true)) {
             return $shape;
         }
@@ -267,14 +268,6 @@ class TestStructureService
                     $this->fail("Question {$question->id} has invalid IRT parameters for Adaptive Full.");
                 }
             }
-        }
-
-        $easy = $section->modules->first(fn ($module) => (int) $module->module_number === 2 && $module->difficulty_level === Module::DIFFICULTY_EASY);
-        $hard = $section->modules->first(fn ($module) => (int) $module->module_number === 2 && $module->difficulty_level === Module::DIFFICULTY_HARD);
-        $easyMean = $easy?->questions->where('is_pretest', false)->avg('irt_b');
-        $hardMean = $hard?->questions->where('is_pretest', false)->avg('irt_b');
-        if ($easyMean === null || $hardMean === null || ((float) $hardMean - (float) $easyMean) < 0.5) {
-            $this->fail("{$section->name} hard/easy branches require mean IRT difficulty separation of at least 0.5.");
         }
     }
 

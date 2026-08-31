@@ -316,6 +316,115 @@
                     </div>
                 </header>
 
+                {{-- Progress Portal Card --}}
+                <x-ui.card class="home-portal" aria-labelledby="progress-portal-title">
+                    <x-slot:header>
+                        <div class="home-panel__headline">
+                            <h2 id="progress-portal-title" class="home-panel__title">Progress at a glance</h2>
+                            <p class="home-panel__sub">Recent performance and score progression</p>
+                        </div>
+                        <a href="{{ route('student.progress') }}" class="home-link">
+                            View full progress
+                            <x-ui.icon name="arrow-right" class="w-3.5 h-3.5" />
+                        </a>
+                    </x-slot:header>
+
+                    @if(!empty($homeScoreTrend['attempts']))
+                        <div class="home-portal__grid">
+                            <div class="home-portal__metrics">
+                                <div class="home-portal__metric">
+                                    <span class="home-portal__metric-label">Latest score</span>
+                                    <span class="home-portal__metric-value home-num">{{ end($homeScoreTrend['attempts'])['score'] }}</span>
+                                </div>
+                                <div class="home-portal__metric">
+                                    <span class="home-portal__metric-label">Personal best</span>
+                                    <span class="home-portal__metric-value home-num">{{ $bestScore ?? '—' }}</span>
+                                </div>
+                                <div class="home-portal__metric">
+                                    <span class="home-portal__metric-label">Tests completed</span>
+                                    <span class="home-portal__metric-value home-num">{{ $completedCount }}</span>
+                                </div>
+                                <div class="home-portal__metric">
+                                    <span class="home-portal__metric-label">Target goal</span>
+                                    <span class="home-portal__metric-value home-num">{{ $user->target_score ?? 1600 }}</span>
+                                    @if($user->target_score)
+                                        <span class="home-portal__target-tag">Target set</span>
+                                    @endif
+                                </div>
+                            </div>
+
+                            <div class="home-portal__chart">
+                                <div class="home-portal__chart-head">
+                                    <span class="home-portal__chart-title">Score trend</span>
+                                    @if($user->target_score)
+                                        <span class="home-portal__target-indicator">
+                                            <span class="home-portal__target-line-sample"></span>
+                                            Target ({{ $user->target_score }})
+                                        </span>
+                                    @endif
+                                </div>
+
+                                @php
+                                    $trendAttempts = $homeScoreTrend['attempts'];
+                                    $attemptCount = count($trendAttempts);
+                                    $targetScore = $user->target_score;
+                                    $svgWidth = 300;
+                                    $svgHeight = 80;
+                                    $padX = 20;
+                                    $padY = 14;
+                                    $minScore = 400;
+                                    $maxScore = 1600;
+
+                                    $getY = function($score) use ($svgHeight, $padY, $minScore, $maxScore) {
+                                        $clamped = max($minScore, min($maxScore, $score));
+                                        $ratio = ($clamped - $minScore) / ($maxScore - $minScore);
+                                        return round(($svgHeight - $padY) - ($ratio * ($svgHeight - 2 * $padY)), 1);
+                                    };
+
+                                    $pointsStr = '';
+                                    $circles = [];
+                                    foreach ($trendAttempts as $idx => $att) {
+                                        $x = $attemptCount > 1
+                                            ? round($padX + ($idx / ($attemptCount - 1)) * ($svgWidth - 2 * $padX), 1)
+                                            : round($svgWidth / 2, 1);
+                                        $y = $getY($att['score']);
+                                        $pointsStr .= "{$x},{$y} ";
+                                        $circles[] = ['x' => $x, 'y' => $y, 'score' => $att['score'], 'date' => $att['date']];
+                                    }
+                                    $targetY = $targetScore ? $getY($targetScore) : null;
+                                @endphp
+
+                                <div class="home-sparkline-container">
+                                    <svg viewBox="0 0 300 80" class="home-sparkline" aria-label="Score trend sparkline" role="img">
+                                        @if($targetY !== null)
+                                            <line x1="10" y1="{{ $targetY }}" x2="290" y2="{{ $targetY }}" class="home-sparkline__target-line" stroke-dasharray="4 4" />
+                                        @endif
+
+                                        @if($attemptCount > 1)
+                                            <polyline points="{{ trim($pointsStr) }}" class="home-sparkline__line" />
+                                        @endif
+
+                                        @foreach($circles as $c)
+                                            <circle cx="{{ $c['x'] }}" cy="{{ $c['y'] }}" r="4" class="home-sparkline__point">
+                                                <title>{{ $c['score'] }} ({{ $c['date'] }})</title>
+                                            </circle>
+                                        @endforeach
+                                    </svg>
+                                </div>
+                            </div>
+                        </div>
+                    @else
+                        <div class="home-empty home-empty--portal">
+                            <x-ui.icon name="graph-up-arrow" class="home-empty__icon w-6 h-6" />
+                            <p class="home-empty__title">No score trend yet</p>
+                            <p class="home-empty__body">Take practice tests to track your score progress, view trends, and monitor your target goal.</p>
+                            <x-ui.button size="sm" variant="secondary" :href="route('home.practice')">
+                                Explore the test library
+                            </x-ui.button>
+                        </div>
+                    @endif
+                </x-ui.card>
+
                 {{-- Row 1: what to do next + where you stand --}}
                 <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
                     <div class="lg:col-span-7">

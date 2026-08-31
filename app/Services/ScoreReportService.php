@@ -8,10 +8,13 @@ use App\Support\QuestionMediaUrl;
 use App\Support\QuestionPacing;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Str;
 
 class ScoreReportService
 {
+    private ?bool $hasReviewStorage = null;
+
     private const DOMAIN_LABELS = [
         'craft_and_structure'               => 'Craft and Structure',
         'information_and_ideas'             => 'Information and Ideas',
@@ -152,6 +155,7 @@ class ScoreReportService
             $sectionType     = $question->section_type === 'math' ? 'math' : 'rw';
             $correctAnswer   = $this->correctAnswerFor($answer);
             $formattedDomain = $this->domainLabel($question->skill_domain ?? 'other');
+            $review = $this->reviewFor($answer);
 
             $rows[] = [
                 'idx'          => $questionPositions->get("{$answer->module_id}:{$answer->question_id}", $displayIdx),
@@ -166,7 +170,14 @@ class ScoreReportService
                 'timeSpent'    => $answer->time_spent,
                 'expectedTime' => $question->expected_time ?: QuestionPacing::expectedSeconds($question->section_type, $question->difficulty),
                 'isPretest'    => (bool) $question->is_pretest,
+                'reviewUrl' => route('student.scores.answers.review', [$userTest, $answer]),
                 'questionData' => [
+                    'review_url' => route('student.scores.answers.review', [$userTest, $answer]),
+                    'reviewable' => $this->hasReviewStorage() && ! $answer->is_correct,
+                    'effective_error_type' => $review?->effectiveErrorType($answer)
+                        ?? ($isOmitted ? 'omitted' : 'unclassified'),
+                    'student_error_type' => $review?->student_error_type,
+                    'teacher_error_type' => $review?->teacher_error_type,
                     'stem'          => $this->markdown($question->stem ?? ''),
                     'explanation'   => $this->markdown($question->explanation?->explanation ?? 'No explanation available.'),
                     'correct_answer' => $correctAnswer,
@@ -188,6 +199,20 @@ class ScoreReportService
         return $rows;
     }
 
+    private function reviewFor(UserTestAnswer $answer): ?\App\Models\UserTestAnswerReview
+    {
+        if (! $this->hasReviewStorage()) {
+            return null;
+        }
+
+        return $answer->relationLoaded('review') ? $answer->review : $answer->review()->first();
+    }
+
+    private function hasReviewStorage(): bool
+    {
+        return $this->hasReviewStorage ??= Schema::hasTable('user_test_answer_reviews');
+    }
+
     public function correctAnswerFor(UserTestAnswer $answer): string
     {
         return $answer->question->sprCorrectAnswers->pluck('answer')->implode(', ')
@@ -197,8 +222,7 @@ class ScoreReportService
 
     public function domainLabel(string $domain): string
     {
-        return self::DOMAIN_LABELS[$domain]
-            ?? Str::of($domain)->replace('_', ' ')->title()->toString();
+        return \App\Support\SatTaxonomy::domainLabel($domain);
     }
 
     public function domainSummaries(array $stats): array
@@ -216,13 +240,27 @@ class ScoreReportService
                 $percentCorrect  = $data['total'] > 0 ? (int) round(($data['correct'] / $data['total']) * 100) : 0;
                 $coveragePercent = $sectionTotal > 0 ? (int) round(($data['total'] / $sectionTotal) * 100) : 0;
 
-                $skillsList = [];
+                $aggregatedSkills = [];
                 foreach ($data['skills'] ?? [] as $subdomain => $sData) {
-                    $sPct = $sData['total'] > 0 ? (int) round(($sData['correct'] / $sData['total']) * 100) : 0;
+                    $skillName = \App\Support\SatTaxonomy::subdomainLabel($subdomain);
+                    if (!isset($aggregatedSkills[$skillName])) {
+                        $aggregatedSkills[$skillName] = [
+                            'name' => $skillName,
+                            'total' => 0,
+                            'correct' => 0,
+                        ];
+                    }
+                    $aggregatedSkills[$skillName]['total'] += $sData['total'];
+                    $aggregatedSkills[$skillName]['correct'] += $sData['correct'];
+                }
+
+                $skillsList = [];
+                foreach ($aggregatedSkills as $skill) {
+                    $sPct = $skill['total'] > 0 ? (int) round(($skill['correct'] / $skill['total']) * 100) : 0;
                     $skillsList[] = [
-                        'name'           => Str::of($subdomain)->replace('_', ' ')->title()->toString(),
-                        'total'          => $sData['total'],
-                        'correct'        => $sData['correct'],
+                        'name'           => $skill['name'],
+                        'total'          => $skill['total'],
+                        'correct'        => $skill['correct'],
                         'percentCorrect' => $sPct,
                     ];
                 }

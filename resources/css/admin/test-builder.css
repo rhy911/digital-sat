@@ -761,25 +761,28 @@ select.ts-hidden-accessible {
     width: 5%;
 }
 .teacher-sections-table .col-test {
-    width: 22%;
-}
-.teacher-sections-table .col-name {
-    width: 15%;
-}
-.teacher-sections-table .col-date {
-    width: 10%;
-}
-.teacher-sections-table .col-owner {
     width: 18%;
 }
+.teacher-sections-table .col-name {
+    width: 14%;
+}
+.teacher-sections-table .col-irt {
+    width: 14%;
+}
+.teacher-sections-table .col-date {
+    width: 9%;
+}
+.teacher-sections-table .col-owner {
+    width: 15%;
+}
 .teacher-sections-table .col-public {
-    width: 8%;
+    width: 7%;
 }
 .teacher-sections-table .col-order {
     width: 5%;
 }
 .teacher-sections-table .col-actions {
-    width: 12%;
+    width: 13%;
 }
 
 .teacher-questions-table {

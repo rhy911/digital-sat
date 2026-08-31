@@ -1167,34 +1167,49 @@ a.cal-item-title:hover {
 }
 
 .search-row {
+    --search-control-height: 38px;
     padding: 0 14px 10px;
     position: relative;
 }
 
 .search-row input {
     width: 100%;
+    height: var(--search-control-height);
     border: 1px solid var(--border-strong);
-    border-radius: 7px;
-    padding: 8px 10px 8px 30px;
+    border-radius: 8px;
+    padding: 0 12px 0 34px;
     font-size: 12.5px;
-    background: var(--app-bg);
+    line-height: 1;
+    background: var(--cw-surface-soft);
     color: var(--ink);
+    transition: border-color 0.15s ease, background 0.15s ease, box-shadow 0.15s ease;
+}
+
+.search-row input::placeholder {
+    color: var(--ink-soft);
+    opacity: 0.82;
+}
+
+.search-row input:hover {
+    border-color: rgba(26, 32, 44, 0.24);
+    background: var(--panel);
 }
 
 .search-row input:focus {
     outline: none;
     border-color: var(--accent);
     background: var(--panel);
+    box-shadow: 0 0 0 3px var(--accent-soft);
 }
 
 .search-row svg {
     position: absolute;
-    left: 24px;
-    top: 50%;
+    left: 25px;
+    top: calc(var(--search-control-height) / 2);
     transform: translateY(-50%);
-    width: 13px;
-    height: 13px;
-    color: var(--ink-faint);
+    width: 14px;
+    height: 14px;
+    color: var(--accent);
     pointer-events: none;
 }
 

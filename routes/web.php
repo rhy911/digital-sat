@@ -91,6 +91,8 @@ Route::middleware(['auth', 'verified'])->get('/dashboard', function () {
 // Verified Student routes
 Route::middleware(['auth', 'verified'])->prefix('student')->group(function () {
     Route::get('/progress-analytics', \App\Http\Controllers\Student\ProgressController::class)->name('student.progress');
+    Route::get('/progress-analytics/export-pdf', [\App\Http\Controllers\Student\ProgressController::class, 'exportPdf'])->name('student.progress.export-pdf');
+    Route::post('/progress-analytics/goal', [\App\Http\Controllers\Student\ProgressController::class, 'updateGoal'])->name('student.progress.goal');
 
     Route::get('/practice', [\App\Http\Controllers\Student\PracticeController::class, 'index'])->name('home.practice');
     Route::get('/practice/preview', [\App\Http\Controllers\Student\PracticeController::class, 'preview'])->name('test.preview');
@@ -100,6 +102,7 @@ Route::middleware(['auth', 'verified'])->prefix('student')->group(function () {
     Route::get('/scores', [\App\Http\Controllers\Student\ScoreController::class, 'index'])->name('student.scores.index');
     Route::get('/scores/{userTest:ulid}', [\App\Http\Controllers\Student\ScoreController::class, 'show'])->name('student.scores.show');
     Route::get('/scores/{userTest:ulid}/export-pdf', [\App\Http\Controllers\Student\ScoreController::class, 'exportPdf'])->name('student.scores.export-pdf');
+    Route::patch('/scores/{userTest:ulid}/answers/{answer}/review', [\App\Http\Controllers\Student\UserTestAnswerReviewController::class, 'update'])->name('student.scores.answers.review');
     Route::middleware('role:student')->group(function () {
         Route::get('/classes', [\App\Http\Controllers\Student\ClassroomController::class, 'index'])->name('student.classes.index');
         Route::get('/classes/{classroom}', [\App\Http\Controllers\Student\ClassroomController::class, 'show'])->name('student.classes.show');
@@ -163,6 +166,7 @@ Route::middleware(['auth', 'verified', 'role:admin,teacher'])->prefix('teacher')
         Route::put('/classes/{classroom}/events/{event}', [\App\Http\Controllers\Teacher\ClassroomEventController::class, 'update'])->name('events.update');
         Route::delete('/classes/{classroom}/events/{event}', [\App\Http\Controllers\Teacher\ClassroomEventController::class, 'destroy'])->name('events.destroy');
         Route::get('/classes/{classroom}/students/{student}/progress', \App\Http\Controllers\Teacher\StudentProgressController::class)->name('classes.students.progress');
+        Route::get('/classes/{classroom}/students/{student}/progress/export-pdf', [\App\Http\Controllers\Teacher\StudentProgressController::class, 'exportPdf'])->name('classes.students.progress.export-pdf');
         Route::post('/memberships/{membership}/approve', [\App\Http\Controllers\Teacher\MembershipController::class, 'approve'])->name('memberships.approve');
         Route::post('/memberships/{membership}/reject', [\App\Http\Controllers\Teacher\MembershipController::class, 'reject'])->name('memberships.reject');
         Route::post('/memberships/{membership}/remove', [\App\Http\Controllers\Teacher\MembershipController::class, 'remove'])->name('memberships.remove');

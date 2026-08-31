@@ -37,6 +37,7 @@ class User extends Authenticatable implements MustVerifyEmail
         'teacher_rejection_reason',
         'share_independent_practice',
         'is_guest',
+        'target_score',
     ];
 
     /**
@@ -66,6 +67,7 @@ class User extends Authenticatable implements MustVerifyEmail
             'share_independent_practice' => 'boolean',
             'two_factor_expired_at' => 'datetime',
             'teacher_reviewed_at' => 'datetime',
+            'target_score' => 'integer',
         ];
     }
 

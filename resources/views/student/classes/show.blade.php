@@ -11,7 +11,7 @@
 
     <div class="app-shell" x-data="{
         searchQuery: '',
-        statusFilter: 'active',
+        statusFilter: 'all',
         activeTab: new URLSearchParams(location.search).get('tab')
             || (new URLSearchParams(location.search).get('announce_page') ? 'announce' : null)
             || (new URLSearchParams(location.search).get('docs_page') ? 'docs' : null)
@@ -26,7 +26,11 @@
         <!-- COLUMN 2: CLASS LIST COLUMN -->
         <x-shell.sidebar-list title="{{ __('classroom.my_classes') }}"
             count-text="{{ $activeClassroomsCount }} active · {{ $archivedClassroomsCount }} archived"
-            search-placeholder="{{ __('classroom.search_placeholder') }}" :items="$classrooms
+            search-placeholder="{{ __('classroom.search_placeholder') }}" :filters="[
+                ['value' => 'all', 'label' => 'All'],
+                ['value' => 'active', 'label' => 'Active'],
+                ['value' => 'archived', 'label' => 'Archived'],
+            ]" :items="$classrooms
                 ->map(
                     fn($c) => [
                         'route' => route('student.classes.show', $c),

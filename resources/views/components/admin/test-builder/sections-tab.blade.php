@@ -63,6 +63,7 @@
                         <col class="col-id">
                         <col class="col-test">
                         <col class="col-name">
+                        <col class="col-irt">
                         <col class="col-date">
                         <col class="col-owner">
                         <col class="col-public">
@@ -74,6 +75,7 @@
                             <th class="text-center">Id</th>
                             <th>Test</th>
                             <th>Section Name</th>
+                            <th class="text-center">Adaptive IRT Δb</th>
                             <th class="text-center">Date</th>
                             <th>Owner</th>
                             <th class="text-center">Public</th>
@@ -94,9 +96,11 @@
                             return [
                                 'id' => $section->id,
                                 'test_title' => $test->title,
+                                'test_type' => $test->test_type,
                                 'name' => $section->name,
                                 'type' => ucfirst(str_replace('_', ' ', $section->type)),
                                 'order' => $section->order,
+                                'adaptive_irt' => $section->adaptiveIrtDifference(),
                                 'created_by' => $section->created_by,
                                 'created_by_name' => $section->creator
                                     ? $section->creator->name ?? $section->creator->username ?? $section->creator->email

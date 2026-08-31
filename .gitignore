@@ -26,6 +26,7 @@ Homestead.yaml
 Thumbs.db
 
 # AI & Dev Temp Files
+.claude/settings.local.json
 GEMINI.md
 prompts/
 .agents/
@@ -35,4 +36,5 @@ repomix-output.xml
 PRODUCT.md
 test_output.html
 CLAUDE.md
-
+/storage/*.pdf
+/tmp/

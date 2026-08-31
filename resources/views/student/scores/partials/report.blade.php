@@ -415,6 +415,26 @@
 
             <div class="sd-modal-section-label">Explanation</div>
             <div class="sd-modal-expl-box" id="modalExplanation"></div>
+
+            <div id="modalErrorReviewPanel" hidden style="margin-top:1.25rem;">
+                <label for="modalErrorType" class="sd-modal-section-label" style="display:block;">Why was this missed?</label>
+                <p style="font-size:.8rem;color:#64748b;margin:.25rem 0 .55rem;">Choose the primary cause. Teachers can override this classification.</p>
+                <select id="modalErrorType" style="width:100%;border:1px solid #cbd5e1;border-radius:8px;padding:.6rem .7rem;color:#0f172a;background:#fff;">
+                    <option value="">Not classified</option>
+                    <option value="conceptual_gap">Conceptual / knowledge gap</option>
+                    <option value="misread_question">Misread question</option>
+                    <option value="misread_text_or_data">Misread passage, text, or data</option>
+                    <option value="wrong_strategy">Wrong strategy</option>
+                    <option value="calculation">Calculation error</option>
+                    <option value="grammar_rule">Grammar rule error</option>
+                    <option value="elimination">Elimination error</option>
+                    <option value="careless">Careless error</option>
+                    <option value="time_pressure">Time pressure</option>
+                    <option value="guess">Guess</option>
+                    <option value="omitted">Omitted</option>
+                </select>
+                <p id="modalErrorReviewStatus" style="font-size:.75rem;color:#64748b;margin:.45rem 0 0;"></p>
+            </div>
         </div>
         <div class="sd-modal-footer">
             <button class="sd-modal-btn-close" id="reviewModalCloseBtn2">Close</button>

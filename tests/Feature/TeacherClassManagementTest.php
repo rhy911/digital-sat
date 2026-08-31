@@ -296,11 +296,12 @@ class TeacherClassManagementTest extends TestCase
         $this->actingAs($other)->get(route('teacher.assignments.show', $assignment))->assertForbidden();
     }
 
-    public function test_locked_test_rejects_structural_edits(): void
+    public function test_locked_test_allows_structural_edits(): void
     {
-        $teacher = $this->teacher(); $test = $this->testFor($teacher); $classroom = $this->classroom($teacher);
+        $teacher = $this->teacher(); $test = $this->testFor($teacher); $this->complete($test); $classroom = $this->classroom($teacher);
         $this->assignment($classroom, $test, ['status' => 'published', 'published_at' => now()]);
-        $this->actingAs($teacher)->put(route('home-dashboard.tests.update', $test), ['title' => $test->title, 'test_type' => 'short_test', 'status' => 'active'])->assertSessionHasErrors('test');
+        $this->actingAs($teacher)->put(route('home-dashboard.tests.update', $test), ['title' => 'Updated Title', 'status' => 'active'])->assertSessionHasNoErrors();
+        $this->assertSame('Updated Title', $test->fresh()->title);
     }
 
 
@@ -485,13 +486,13 @@ class TeacherClassManagementTest extends TestCase
             ->assertSee('wire:navigate', false);
     }
 
-    public function test_question_content_is_immutable_after_test_lock(): void
+    public function test_question_content_can_be_edited_after_test_lock(): void
     {
         $teacher = $this->teacher(); $test = $this->testFor($teacher); $this->complete($test);
         $this->assignment($this->classroom($teacher), $test, ['status' => 'published', 'published_at' => now()]);
         $question = $test->sections->first()->modules->first()->questions->first();
-        $this->expectException(\Illuminate\Validation\ValidationException::class);
         $question->update(['stem' => 'Changed after assignment started']);
+        $this->assertSame('Changed after assignment started', $question->fresh()->stem);
     }
 
     public function test_new_student_gets_assigned_to_both_published_and_closed_assignments(): void
@@ -851,5 +852,70 @@ class TeacherClassManagementTest extends TestCase
             ->call('gotoPage', 2, 'rosterPage')
             ->assertSee('Student 05')
             ->assertSee('Student 01');
+    }
+
+    public function test_classroom_roster_livewire_component_filters_by_search(): void
+    {
+        $teacher = $this->teacher();
+        $classroom = $this->classroom($teacher);
+
+        $alice = User::factory()->student()->create(['name' => 'Alice Smith', 'email' => 'alice@example.com']);
+        $bob = User::factory()->student()->create(['name' => 'Bob Johnson', 'email' => 'bob@example.com']);
+
+        \App\Models\ClassroomMembership::create([
+            'classroom_id' => $classroom->id,
+            'student_id' => $alice->id,
+            'status' => 'active',
+            'decided_at' => now(),
+        ]);
+        \App\Models\ClassroomMembership::create([
+            'classroom_id' => $classroom->id,
+            'student_id' => $bob->id,
+            'status' => 'active',
+            'decided_at' => now(),
+        ]);
+
+        Livewire::actingAs($teacher)
+            ->test(\App\Livewire\Teacher\ClassroomRoster::class, ['classroom' => $classroom])
+            ->assertSee('Alice Smith')
+            ->assertSee('Bob Johnson')
+            ->set('search', 'Alice')
+            ->assertSee('Alice Smith')
+            ->assertDontSee('Bob Johnson')
+            ->set('search', 'bob@example.com')
+            ->assertSee('Bob Johnson')
+            ->assertDontSee('Alice Smith');
+    }
+
+    public function test_assignment_student_results_livewire_component_filters_by_search(): void
+    {
+        $teacher = $this->teacher();
+        $classroom = $this->classroom($teacher);
+        $test = $this->testFor($teacher);
+        $this->complete($test);
+
+        $this->actingAs($teacher)->post(route('teacher.assignments.store', $classroom), [
+            'test_id' => $test->id,
+            'title' => 'Searchable Assignment',
+            'attempt_limit' => 1,
+        ]);
+        $assignment = Assignment::where('title', 'Searchable Assignment')->firstOrFail();
+
+        $alice = User::factory()->student()->create(['name' => 'Alice Walker', 'email' => 'walker@example.com']);
+        $charlie = User::factory()->student()->create(['name' => 'Charlie Brown', 'email' => 'charlie@example.com']);
+
+        \App\Models\AssignmentRecipient::create(['assignment_id' => $assignment->id, 'student_id' => $alice->id, 'assigned_at' => now()]);
+        \App\Models\AssignmentRecipient::create(['assignment_id' => $assignment->id, 'student_id' => $charlie->id, 'assigned_at' => now()]);
+
+        Livewire::actingAs($teacher)
+            ->test(\App\Livewire\Teacher\AssignmentStudentResults::class, ['assignment' => $assignment])
+            ->assertSee('Alice Walker')
+            ->assertSee('Charlie Brown')
+            ->set('search', 'Walker')
+            ->assertSee('Alice Walker')
+            ->assertDontSee('Charlie Brown')
+            ->set('search', 'charlie@example.com')
+            ->assertSee('Charlie Brown')
+            ->assertDontSee('Alice Walker');
     }
 }

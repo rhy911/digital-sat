@@ -596,24 +596,25 @@ table.sd-table td {
     position: fixed;
     inset: 0;
     z-index: 1000;
-    background: rgba(10, 20, 50, 0.6);
-    backdrop-filter: blur(4px);
+    background: rgba(15, 23, 42, 0.65);
     display: flex;
     align-items: center;
     justify-content: center;
     padding: 1rem;
-    animation: sd-fade-in 0.2s ease;
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+    transition: opacity 0.18s cubic-bezier(0.16, 1, 0.3, 1), visibility 0.18s ease;
+    will-change: opacity, visibility;
+    transform: translateZ(0);
+}
+.sd-modal-backdrop.is-open {
+    opacity: 1;
+    visibility: visible;
+    pointer-events: auto;
 }
 .sd-modal-backdrop.hidden {
-    display: none;
-}
-@keyframes sd-fade-in {
-    from {
-        opacity: 0;
-    }
-    to {
-        opacity: 1;
-    }
+    display: none !important;
 }
 .sd-modal {
     background: #fff;
@@ -625,17 +626,15 @@ table.sd-table td {
     overflow: hidden;
     display: flex;
     flex-direction: column;
-    animation: sd-slide-up 0.25s ease;
+    opacity: 0;
+    transform: translateY(12px) scale(0.98) translateZ(0);
+    transition: opacity 0.18s cubic-bezier(0.16, 1, 0.3, 1), transform 0.18s cubic-bezier(0.16, 1, 0.3, 1);
+    will-change: opacity, transform;
+    backface-visibility: hidden;
 }
-@keyframes sd-slide-up {
-    from {
-        transform: translateY(20px);
-        opacity: 0;
-    }
-    to {
-        transform: translateY(0);
-        opacity: 1;
-    }
+.sd-modal-backdrop.is-open .sd-modal {
+    opacity: 1;
+    transform: translateY(0) scale(1) translateZ(0);
 }
 .sd-modal-header {
     display: flex;

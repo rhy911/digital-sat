@@ -11,7 +11,11 @@ import { initMobileClassroomNav } from './classroom-nav.js';
 if (!window.Alpine) {
     window.Alpine = Alpine;
     Alpine.plugin(morph);
-    Alpine.start();
+    document.addEventListener('DOMContentLoaded', () => {
+        if (!window.Livewire && typeof Alpine.start === 'function') {
+            Alpine.start();
+        }
+    });
 }
 
 initTruncatedTooltips();
@@ -238,8 +242,10 @@ export function smartRenderMath(element, options = {}) {
 
     const defaultOptions = {
         delimiters: [
-            { left: '$$', right: '$$', display: false },
-            { left: '\\\\[', right: '\\\\]', display: true },
+            { left: '$$', right: '$$', display: true },
+            { left: '$', right: '$', display: false },
+            { left: '\\(', right: '\\)', display: false },
+            { left: '\\[', right: '\\]', display: true },
         ],
         ignoredTags: ["script", "noscript", "style", "textarea", "pre", "code", "option"],
         throwOnError: false,
@@ -575,72 +581,153 @@ export function initScoreDetailsPage() {
     });
 
     // ── Review modal ───────────────────────────────────────────
+    let activeReviewData = null;
+    const reviewModalEl = document.getElementById('reviewModal');
+
     const closeModal = () => {
-        document.getElementById('reviewModal').classList.add('hidden');
+        if (!reviewModalEl) return;
+        reviewModalEl.classList.remove('is-open');
         document.body.style.overflow = '';
+        setTimeout(() => {
+            if (!reviewModalEl.classList.contains('is-open')) {
+                reviewModalEl.classList.add('hidden');
+            }
+        }, 180);
     };
 
-    document.querySelectorAll('.js-review-btn').forEach(btn => {
-        btn.addEventListener('click', function () {
-            try {
-                const data = JSON.parse(this.getAttribute('data-question'));
-                document.getElementById('modalQuestionStem').innerHTML  = data.stem ?? '';
-                document.getElementById('modalCorrectAnswer').innerHTML = data.correct_answer ?? 'N/A';
-                document.getElementById('modalExplanation').innerHTML   = data.explanation ?? '';
+    const openReviewModal = (btn) => {
+        try {
+            const rawData = btn.getAttribute('data-question');
+            if (!rawData || !reviewModalEl) return;
 
-                const answerEl  = document.getElementById('modalYourAnswer');
-                const answerBox = document.getElementById('modalYourAnswerBox');
-                answerEl.innerHTML = data.your_answer ?? 'Omitted';
-                answerBox.className = 'sd-modal-answer-box your-answer';
-                if (data.status === 'correct')    answerBox.classList.add('is-correct');
-                else if (data.status === 'wrong') answerBox.classList.add('is-wrong');
-                else                              answerBox.classList.add('is-omitted');
+            const data = JSON.parse(rawData);
+            activeReviewData = data;
 
-                // Dynamic Choice Review rendering
-                const mcLabel = document.querySelector('.js-mc-label');
-                const mcList = document.querySelector('.js-mc-list');
-                if (mcLabel) mcLabel.style.display = 'none';
+            // 1. Populate text & HTML contents
+            document.getElementById('modalQuestionStem').innerHTML  = data.stem ?? '';
+            document.getElementById('modalCorrectAnswer').innerHTML = data.correct_answer ?? 'N/A';
+            document.getElementById('modalExplanation').innerHTML   = data.explanation ?? '';
+
+            const answerEl  = document.getElementById('modalYourAnswer');
+            const answerBox = document.getElementById('modalYourAnswerBox');
+            answerEl.innerHTML = data.your_answer ?? 'Omitted';
+            answerBox.className = 'sd-modal-answer-box your-answer';
+            if (data.status === 'correct')    answerBox.classList.add('is-correct');
+            else if (data.status === 'wrong') answerBox.classList.add('is-wrong');
+            else                              answerBox.classList.add('is-omitted');
+
+            // Dynamic Choice Review rendering
+            const mcLabel = document.querySelector('.js-mc-label');
+            const mcList = document.querySelector('.js-mc-list');
+            if (mcLabel) mcLabel.style.display = 'none';
+            if (mcList) {
+                mcList.style.display = 'none';
+                mcList.innerHTML = '';
+            }
+
+            if (data.question_type === 'multiple_choice' && data.choices && data.choices.length > 0) {
+                if (mcLabel) mcLabel.style.display = '';
                 if (mcList) {
-                    mcList.style.display = 'none';
-                    mcList.innerHTML = '';
+                    mcList.style.display = 'flex';
+                    const fragment = document.createDocumentFragment();
+                    data.choices.forEach(choice => {
+                        const isCorrectChoice = choice.is_correct;
+                        const isUserChoice = (data.your_answer === choice.label);
+
+                        const choiceItem = document.createElement('div');
+                        choiceItem.className = 'sd-modal-choice-item';
+                        if (isCorrectChoice) {
+                            choiceItem.classList.add('is-correct-choice');
+                        } else if (isUserChoice && !isCorrectChoice) {
+                            choiceItem.classList.add('is-wrong-choice');
+                        }
+
+                        choiceItem.innerHTML = `
+                            <span class="sd-choice-letter">${choice.label}</span>
+                            <span class="sd-choice-text">${choice.content}</span>
+                        `;
+                        fragment.appendChild(choiceItem);
+                    });
+                    mcList.appendChild(fragment);
                 }
+            }
 
-                if (data.question_type === 'multiple_choice' && data.choices && data.choices.length > 0) {
-                    if (mcLabel) mcLabel.style.display = '';
-                    if (mcList) {
-                        mcList.style.display = 'flex';
-                        data.choices.forEach(choice => {
-                            const isCorrectChoice = choice.is_correct;
-                            const isUserChoice = (data.your_answer === choice.label);
+            const errorPanel = document.getElementById('modalErrorReviewPanel');
+            const errorType = document.getElementById('modalErrorType');
+            const errorStatus = document.getElementById('modalErrorReviewStatus');
+            if (errorPanel && errorType) {
+                const reviewable = Boolean(data.reviewable && data.review_url);
+                errorPanel.hidden = !reviewable;
+                if (reviewable) {
+                    const value = data.teacher_error_type ?? data.student_error_type ?? data.effective_error_type ?? '';
+                    errorType.value = value === 'unclassified' ? '' : value;
+                    if (errorStatus) errorStatus.textContent = data.teacher_error_type ? 'Teacher override active.' : '';
+                }
+            }
 
-                            const choiceItem = document.createElement('div');
-                            choiceItem.className = 'sd-modal-choice-item';
-                            if (isCorrectChoice) {
-                                choiceItem.classList.add('is-correct-choice');
-                            } else if (isUserChoice && !isCorrectChoice) {
-                                choiceItem.classList.add('is-wrong-choice');
-                            }
+            // 2. Unhide DOM element & lock body scroll
+            reviewModalEl.classList.remove('hidden');
+            document.body.style.overflow = 'hidden';
 
-                            choiceItem.innerHTML = `
-                                <span class="sd-choice-letter">${choice.label}</span>
-                                <span class="sd-choice-text">${choice.content}</span>
-                            `;
-                            mcList.appendChild(choiceItem);
-                        });
+            // 3. Trigger 60/120fps GPU transition on next frame
+            requestAnimationFrame(() => {
+                requestAnimationFrame(() => {
+                    reviewModalEl.classList.add('is-open');
+                });
+            });
+
+            // 4. Render KaTeX expressions after opening animation settles so it never drops frames
+            if (window.smartRenderMath) {
+                setTimeout(() => {
+                    if (reviewModalEl.classList.contains('is-open')) {
+                        window.smartRenderMath(reviewModalEl);
                     }
-                }
+                }, 120);
+            }
+        } catch (e) {
+            console.error('Review modal error:', e);
+        }
+    };
 
-                document.getElementById('reviewModal').classList.remove('hidden');
-                document.body.style.overflow = 'hidden';
-
-                // Render LaTeX expressions in the modal
-                if (window.smartRenderMath) {
-                    window.smartRenderMath(document.getElementById('reviewModal'));
-                }
-            } catch (e) {
-                console.error('Review modal error:', e);
+    // Event delegation for review buttons (handles pagination & dynamic rows cleanly)
+    if (!window._scoreReviewModalBound) {
+        window._scoreReviewModalBound = true;
+        document.addEventListener('click', function (e) {
+            const btn = e.target.closest('.js-review-btn');
+            if (btn) {
+                openReviewModal(btn);
             }
         });
+    }
+
+    document.getElementById('modalErrorType')?.addEventListener('change', async function () {
+        if (!activeReviewData?.review_url) return;
+
+        const status = document.getElementById('modalErrorReviewStatus');
+        this.disabled = true;
+        if (status) status.textContent = 'Saving…';
+        try {
+            const token = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
+            const response = await fetch(activeReviewData.review_url, {
+                method: 'PATCH',
+                headers: {
+                    'Accept': 'application/json',
+                    'Content-Type': 'application/json',
+                    ...(token ? { 'X-CSRF-TOKEN': token } : {}),
+                },
+                body: JSON.stringify({ error_type: this.value || null }),
+            });
+            if (!response.ok) throw new Error('Could not save review classification.');
+            const saved = await response.json();
+            activeReviewData.effective_error_type = saved.effective_error_type;
+            activeReviewData.student_error_type = saved.student_error_type;
+            activeReviewData.teacher_error_type = saved.teacher_error_type;
+            if (status) status.textContent = saved.teacher_error_type ? 'Teacher override saved.' : 'Classification saved.';
+        } catch (error) {
+            if (status) status.textContent = error.message;
+        } finally {
+            this.disabled = false;
+        }
     });
 
     document.getElementById('reviewModalCloseBtn')?.addEventListener('click', closeModal);

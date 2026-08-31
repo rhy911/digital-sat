@@ -36,6 +36,11 @@ class UserTestAnswer extends Model
         return $this->belongsTo(Module::class)->withTrashed();
     }
 
+    public function review()
+    {
+        return $this->hasOne(UserTestAnswerReview::class);
+    }
+
     public function getQuestionAttribute()
     {
         if ($this->question_snapshot) {
@@ -49,6 +54,8 @@ class UserTestAnswer extends Model
                 'difficulty' => $snapshot['difficulty'] ?? '',
                 'skill_domain' => $snapshot['skill_domain'] ?? '',
                 'skill_subdomain' => $snapshot['skill_subdomain'] ?? '',
+                'expected_time' => $snapshot['expected_time'] ?? null,
+                'module_position' => $snapshot['module_position'] ?? null,
                 'is_pretest' => $snapshot['is_pretest'] ?? false,
                 'calculator_allowed' => $snapshot['calculator_allowed'] ?? false,
                 'irt_a' => $snapshot['irt_a'] ?? null,

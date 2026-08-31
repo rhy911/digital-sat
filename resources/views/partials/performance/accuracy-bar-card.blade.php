@@ -1,94 +1,92 @@
-{{-- Shared performance partial: accuracy school card (domains / difficulty).
-     Expects: $title, $subtitle, $rows (array of {domain/label, total, correct, percentCorrect, performance, skills[] (optional)}),
-              $emptyTitle, $emptyBody, $ariaLabelledby, $rowLabelKey ('domain' or 'label') --}}
-<article class="progress-card" aria-labelledby="{{ $ariaLabelledby }}">
-    <div class="ds-card__header">
+@props([
+    'title' => 'Domain Accuracy',
+    'subtitle' => 'Accuracy across evaluated questions, lowest first.',
+    'rows' => [],
+    'emptyTitle' => 'No domain data yet',
+    'emptyBody' => 'Complete a practice test to see your domain performance.',
+    'ariaLabelledby' => 'accuracy-card-title',
+    'rowLabelKey' => 'domain',
+])
+
+<article class="p-card" aria-labelledby="{{ $ariaLabelledby }}">
+    <div class="p-card-header">
         <div>
-            <h3 id="{{ $ariaLabelledby }}" class="ds-card-title">{{ $title }}</h3>
-            <p class="text-sm text-slate-600">{{ $subtitle }}</p>
+            <h3 id="{{ $ariaLabelledby }}" class="p-card-title">{{ $title }}</h3>
+            <p class="p-card-subtitle">{{ $subtitle }}</p>
         </div>
     </div>
 
-    @if(count($rows))
-        <div class="ds-school-list">
-            @foreach($rows as $index => $row)
+    @if(!empty($rows) && count($rows))
+        <div class="space-y-3">
+            @foreach($rows as $row)
                 @php
-                    $label = $row[$rowLabelKey];
-                    $pct = $row['percentCorrect'];
-                    
-                    // Letter Grade calculation
-                    $grade = $pct >= 90 ? 'A+' : ($pct >= 80 ? 'A' : ($pct >= 65 ? 'B' : ($pct >= 50 ? 'C' : ($pct >= 35 ? 'D' : 'F'))));
-                    $gradeClass = $pct >= 80 ? 'grade-a' : ($pct >= 50 ? 'grade-c' : 'grade-f');
-                    
-                    // Alpine collapse state index
+                    $label = $row[$rowLabelKey] ?? 'Unknown';
+                    $pct = (int) ($row['percentCorrect'] ?? 0);
                     $hasSkills = !empty($row['skills']);
+                    $section = $row['section'] ?? null;
+                    $isRw = ($section === 'Reading and Writing' || $section === 'reading_and_writing');
+                    $sectionBadge = $isRw ? 'RW' : ($section ? 'Math' : null);
+                    $sectionBadgeClass = $isRw ? 'bg-teal-50 text-teal-700 border border-teal-200' : 'bg-orange-50 text-orange-700 border border-orange-200';
+                    $status = $pct >= 80 ? 'success' : ($pct >= 60 ? 'warning' : 'danger');
+                    $barColor = $pct >= 80 ? 'bg-emerald-500' : ($pct >= 60 ? 'bg-amber-500' : 'bg-rose-500');
                 @endphp
-                <div class="ds-school-item {{ $hasSkills ? 'has-skills' : '' }}" 
-                     @if($hasSkills) x-data="{ open: false }" @endif>
-                    
-                    <div class="ds-item-main" @if($hasSkills) @click="open = !open" style="cursor: pointer;" @endif>
-                        <!-- Circular Grade Stamp in Red/Amber ink -->
-                        <span class="ds-grade-stamp {{ $gradeClass }}">{{ $grade }}</span>
 
-                        <!-- Info -->
-                        <div class="ds-item-info">
-                            <span class="ds-item-title">{{ $label }}</span>
-                            @if($rowLabelKey === 'domain')
-                                <small class="ds-item-subtitle">{{ $row['section'] }}</small>
+                <div class="p-domain-item rounded-xl border border-slate-200/80 bg-white hover:border-slate-300 transition-all p-3.5"
+                     @if($hasSkills) x-data="{ open: false }" @endif>
+
+                    <div class="flex items-center justify-between gap-4 {{ $hasSkills ? 'cursor-pointer select-none' : '' }}"
+                         @if($hasSkills) @click="open = !open" @endif>
+
+                        <div class="flex-1 min-w-0">
+                            <div class="flex items-center justify-between gap-2 mb-1.5">
+                                <span class="font-bold text-slate-800 text-sm truncate" title="{{ $label }}">{{ $label }}</span>
+                                @if($sectionBadge)
+                                    <span class="shrink-0 text-[10px] font-bold uppercase px-1.5 py-0.5 rounded {{ $sectionBadgeClass }}">
+                                        {{ $sectionBadge }}
+                                    </span>
+                                @endif
+                            </div>
+
+                            <!-- Progress Track -->
+                            <div class="flex items-center gap-3">
+                                <div class="flex-1 h-2 rounded-full bg-slate-100 overflow-hidden relative" role="progressbar" aria-valuenow="{{ $pct }}" aria-valuemin="0" aria-valuemax="100">
+                                    <div class="absolute inset-0 h-full rounded-full {{ $barColor }}" style="transform: scaleX({{ $pct / 100 }}); transform-origin: left;"></div>
+                                </div>
+                                <span class="text-xs font-semibold text-slate-500 w-16 text-right tabular-nums">
+                                    {{ $row['correct'] }}/{{ $row['total'] }}
+                                </span>
+                            </div>
+                        </div>
+
+                        <div class="flex items-center gap-2 shrink-0">
+                            <x-ui.status-badge :status="$status">
+                                {{ $pct }}%
+                            </x-ui.status-badge>
+
+                            @if($hasSkills)
+                                <button type="button" class="p-1 text-slate-400 hover:text-slate-600 transition-transform" :class="{ 'rotate-180': open }" aria-label="Toggle sub-skills">
+                                    <x-ui.icon name="chevron-down" class="w-4 h-4" aria-hidden="true" />
+                                </button>
                             @endif
                         </div>
-
-                        <!-- 10-Dot Math Graph Paper Waffle Line -->
-                        <div class="ds-waffle-row" aria-label="Accuracy {{ $pct }}%" title="Accuracy: {{ $pct }}%">
-                            @for($d = 1; $d <= 10; $d++)
-                                <span class="ds-waffle-dot {{ ($d * 10) <= $pct ? 'is-active' : '' }} {{ $gradeClass }}"></span>
-                            @endfor
-                        </div>
-
-                        <!-- Numeric details -->
-                        <span class="ds-item-stats">
-                            <strong>{{ $pct }}%</strong>
-                            <small>{{ $row['correct'] }}/{{ $row['total'] }}</small>
-                        </span>
-
-                        @if($hasSkills)
-                            <!-- Collapsible Caret indicator -->
-                            <span class="ds-expand-arrow" :class="{ 'is-expanded': open }">
-                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-                                    <polyline points="6 9 12 15 18 9" />
-                                </svg>
-                            </span>
-                        @endif
                     </div>
 
                     @if($hasSkills)
-                        <!-- Collapsible Child Skills List -->
-                        <div class="ds-skills-list" x-show="open" x-cloak x-transition>
+                        <!-- Collapsible sub-skills list -->
+                        <div class="mt-3 pt-3 border-t border-slate-100 space-y-2.5" x-show="open" x-cloak x-transition>
                             @foreach($row['skills'] as $skill)
                                 @php
-                                    $sPct = $skill['percentCorrect'];
-                                    $sGrade = $sPct >= 90 ? 'A+' : ($sPct >= 80 ? 'A' : ($sPct >= 65 ? 'B' : ($sPct >= 50 ? 'C' : ($sPct >= 35 ? 'D' : 'F'))));
-                                    $sGradeClass = $sPct >= 80 ? 'grade-a' : ($sPct >= 50 ? 'grade-c' : 'grade-f');
+                                    $sPct = (int) ($skill['percentCorrect'] ?? 0);
+                                    $sBarColor = $sPct >= 80 ? 'bg-emerald-400' : ($sPct >= 60 ? 'bg-amber-400' : 'bg-rose-400');
                                 @endphp
-                                <div class="ds-skill-row">
-                                    <!-- Indented notebook page dashed checklist line indicator -->
-                                    <span class="ds-skill-bullet"></span>
-                                    
-                                    <div class="ds-skill-info">
-                                        <span class="ds-skill-name">{{ $skill['name'] }}</span>
+                                <div class="pl-3 border-l-2 border-slate-200">
+                                    <div class="flex items-center justify-between text-xs mb-1">
+                                        <span class="text-slate-600 font-medium">{{ $skill['name'] }}</span>
+                                        <span class="text-slate-500 font-semibold tabular-nums">{{ $sPct }}% ({{ $skill['correct'] }}/{{ $skill['total'] }})</span>
                                     </div>
-
-                                    <!-- 10-Dot Math Graph Paper Waffle Line (smaller) -->
-                                    <div class="ds-waffle-row is-small" aria-label="Accuracy {{ $sPct }}%">
-                                        @for($d = 1; $d <= 10; $d++)
-                                            <span class="ds-waffle-dot {{ ($d * 10) <= $sPct ? 'is-active' : '' }} {{ $sGradeClass }}"></span>
-                                        @endfor
+                                    <div class="h-1.5 rounded-full bg-slate-100 overflow-hidden relative">
+                                        <div class="absolute inset-0 h-full rounded-full {{ $sBarColor }}" style="transform: scaleX({{ $sPct / 100 }}); transform-origin: left;"></div>
                                     </div>
-
-                                    <span class="ds-skill-stats">
-                                        <strong>{{ $sPct }}%</strong>
-                                        <small>{{ $skill['correct'] }}/{{ $skill['total'] }}</small>
-                                    </span>
                                 </div>
                             @endforeach
                         </div>
@@ -97,9 +95,10 @@
             @endforeach
         </div>
     @else
-        <div class="ds-empty ds-empty--compact">
-            <h4>{{ $emptyTitle }}</h4>
-            <p>{{ $emptyBody }}</p>
+        <div class="p-empty-state">
+            <x-ui.icon name="bar-chart-2" class="w-10 h-10 text-slate-300 mb-2" aria-hidden="true" />
+            <p class="font-semibold text-slate-700">{{ $emptyTitle }}</p>
+            <p class="text-xs text-slate-500 max-w-sm mt-1">{{ $emptyBody }}</p>
         </div>
     @endif
 </article>

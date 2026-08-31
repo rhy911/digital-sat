@@ -94,6 +94,13 @@
                         'is_shared' => auth()->user()->role === 'teacher' && $t->created_by !== auth()->id() && $t->shares->contains('user_id', auth()->id()),
                         'shares_count' => $t->shares_count ?? $t->shares->count(),
                         'user_tests_count' => (int) $t->user_tests_count,
+                        'adaptive_sections' => $t->test_type === 'adaptive_full_length'
+                            ? $t->sections->map(fn ($s) => [
+                                'name' => $s->name,
+                                'type' => $s->type,
+                                'irt' => $s->adaptiveIrtDifference(),
+                            ])->values()->all()
+                            : null,
                         'can_convert_to_normal' => $t->test_type === 'adaptive_full_length'
                             && $t->status === 'draft'
                             && $t->user_tests_count === 0

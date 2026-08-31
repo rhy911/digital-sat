@@ -63,11 +63,14 @@
         </div>
     @endif
 
-    <div class="sp-head flex items-center justify-between">
+    <div class="sp-head flex items-center justify-between gap-4 flex-wrap">
         <div>
             <p>{{ __('classroom.roster_desc') }}</p>
         </div>
-        <div class="flex items-center gap-3">
+        <div class="flex items-center gap-3 flex-wrap">
+            <div class="relative min-w-[200px]">
+                <input wire:model.live.debounce.250ms="search" type="search" placeholder="Search students..." class="search-input text-xs px-3 py-1.5 border border-slate-300 rounded-md focus:outline-none focus:ring-2 focus:ring-brand/20 w-full" aria-label="Search students">
+            </div>
             <div wire:loading.flex class="items-center gap-2 px-3 py-1 bg-blue-50 text-blue-700 text-xs font-semibold rounded-full border border-blue-200">
                 <svg class="animate-spin h-3.5 w-3.5 text-blue-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                     <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>

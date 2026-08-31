@@ -147,7 +147,7 @@
                     @endphp
 
                     <div class="section-panel" :class="{ 'active': activeTab === 'analysis' }" x-data="{
-                        searchQuery: '',
+                        questionSearchQuery: '',
                         selectedModule: 'all',
                         selectedDifficulty: 'all',
                         selectedDomain: 'all',
@@ -166,12 +166,16 @@
 
                         get filteredQuestions() {
                             return this.questions.filter(q => {
-                                const query = this.searchQuery.toLowerCase().trim();
+                                const query = this.questionSearchQuery.toLowerCase().trim();
+                                const stemStr = (q.stem || '').toLowerCase();
+                                const domainStr = (q.domain || '').toLowerCase();
+                                const answerStr = (q.correct_answer || '').toLowerCase();
+
                                 const matchesSearch = !query ||
-                                    q.stem.toLowerCase().includes(query) ||
-                                    ('q' + q.position).includes(query) ||
-                                    q.domain.toLowerCase().includes(query) ||
-                                    q.correct_answer.toLowerCase().includes(query);
+                                    stemStr.includes(query) ||
+                                    ('q' + (q.position || '')).includes(query) ||
+                                    domainStr.includes(query) ||
+                                    answerStr.includes(query);
 
                                 const matchesModule = this.selectedModule === 'all' || q.module_label === this.selectedModule;
                                 const matchesDifficulty = this.selectedDifficulty === 'all' || q.difficulty === this.selectedDifficulty;
@@ -221,7 +225,7 @@
                         <div class="analysis-toolbar">
                             <div class="flex flex-wrap items-center gap-2 flex-1 min-w-[280px]">
                                 <div class="relative flex-1 min-w-[160px]">
-                                    <input type="text" x-model="searchQuery" placeholder="Search stem, question #, domain..." aria-label="Search stem, question #, or domain" class="analysis-toolbar__input w-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/20 transition-all">
+                                    <input type="text" x-model="questionSearchQuery" placeholder="Search stem, question #, domain..." aria-label="Search stem, question #, or domain" class="analysis-toolbar__input w-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/20 transition-all">
                                     <svg class="w-3.5 h-3.5 absolute left-2.5 top-2.5 text-muted" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
                                 </div>
 

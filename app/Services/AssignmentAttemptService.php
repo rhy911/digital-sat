@@ -43,7 +43,6 @@ class AssignmentAttemptService
             if ($assignment->test->status !== 'active') {
                 throw ValidationException::withMessages(['assignment' => 'The assigned test is no longer active.']);
             }
-            $this->structures->validateForPublication($assignment->test);
 
             $attemptNumber = (int) UserTest::where('assignment_id', $assignment->id)
                 ->where('user_id', $student->id)->max('attempt_number') + 1;

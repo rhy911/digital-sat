@@ -11,7 +11,6 @@ class AssignmentService
 {
     public function __construct(
         private TestContentLockService $locks,
-        private TestStructureService $structures,
     ) {}
 
     public function publish(Assignment $assignment): Assignment
@@ -24,7 +23,6 @@ class AssignmentService
             if (! $assignment->test->isStructurallyComplete()) {
                 throw ValidationException::withMessages(['assignment' => 'Test must contain questions in every module before publishing.']);
             }
-            $this->structures->validateForPublication($assignment->test);
 
             foreach ($assignment->classroom->activeMemberships as $membership) {
                 AssignmentRecipient::updateOrCreate(
@@ -59,7 +57,6 @@ class AssignmentService
         }
 
         DB::transaction(function () use ($assignment) {
-            $this->structures->validateForPublication($assignment->test);
             $assignment->update(['status' => 'published', 'closed_at' => null]);
             $this->locks->syncLock($assignment->test);
 

@@ -58,6 +58,31 @@ function renderTestRowHtml(t) {
         ? `<input type="text" class="test-title-input w-full bg-transparent border-0 hover:bg-slate-100 focus:bg-white focus:ring-2 focus:ring-brand/20 focus:outline-none rounded-lg px-2 py-1 font-semibold text-slate-800 transition-all" value="${escapeHtml(t.title)}" data-id="${t.id}">`
         : `<span class="px-2 py-1 font-semibold text-slate-800">${escapeHtml(t.title)}${accessBadge}</span>`;
 
+    let adaptivePillsHtml = '';
+    if (t.adaptive_sections && t.adaptive_sections.length > 0) {
+        const pills = t.adaptive_sections.map(sec => {
+            const shortName = sec.type === 'reading_writing' ? 'RW' : 'Math';
+            if (sec.irt && sec.irt.has_data) {
+                const cls = sec.irt.meets_target
+                    ? 'text-emerald-700 bg-emerald-50 ring-emerald-600/20'
+                    : 'text-amber-700 bg-amber-50 ring-amber-600/20';
+                const prefix = sec.irt.diff >= 0 ? '+' : '';
+                return `<span class="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-bold ring-1 ring-inset ${cls}" title="${escapeHtml(sec.name)}: Hard (${sec.irt.hard_mean}) - Easy (${sec.irt.easy_mean})">
+                    ${shortName} Δb: ${prefix}${sec.irt.diff.toFixed(2)}b
+                </span>`;
+            } else if (sec.irt) {
+                return `<span class="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium text-slate-500 bg-slate-100" title="${escapeHtml(sec.name)}: M2 items pending">
+                    ${shortName} Δb: Pending
+                </span>`;
+            }
+            return '';
+        }).filter(Boolean).join(' ');
+
+        if (pills) {
+            adaptivePillsHtml = `<div class="flex items-center gap-1.5 mt-1">${pills}</div>`;
+        }
+    }
+
     // Public toggle checkbox
     const publicHtml = isOwner
         ? `<div class="flex items-center justify-center"><input type="checkbox" data-id="${t.id}" class="w-4 h-4 text-brand border-slate-300 bg-white rounded cursor-pointer test-public-checkbox" ${t.is_public ? 'checked' : ''} title="${t.is_public ? 'Public (Click to make Private)' : 'Private (Click to make Public)'}" aria-label="Toggle public visibility"></div>`
@@ -104,7 +129,7 @@ function renderTestRowHtml(t) {
 
     return `<tr class="${rowClass}">
         <td class="font-semibold text-slate-400 text-center">${escapeHtml(t.id)}</td>
-        <td>${titleHtml}</td>
+        <td>${titleHtml}${adaptivePillsHtml}</td>
         <td>${escapeHtml(t.type)}</td>
         <td class="text-center font-semibold text-slate-500">${escapeHtml(t.created_at || 'N/A')}</td>
         <td>${createdByHtml}</td>
@@ -907,7 +932,7 @@ export async function updateTestStatus(testId, status, refreshCallback) {
         // Advisory difficulty warnings surfaced at publish (non-blocking).
         if (result && Array.isArray(result.warnings) && result.warnings.length > 0) {
             const details = result.warnings.map(w => w.message).join(' ');
-            showAlert('warning', `Published, but ${result.warnings.length} standard module(s) have skewed difficulty — IRT scores may be distorted. ${details}`);
+            showAlert('warning', `Published with advisory notice: ${details}`);
         }
         if (refreshCallback) await refreshCallback();
     } catch (error) {

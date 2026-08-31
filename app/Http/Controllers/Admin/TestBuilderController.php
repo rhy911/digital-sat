@@ -53,7 +53,13 @@ class TestBuilderController extends Controller
     {
         return Test::visibleTo(auth()->user())
             ->where('title', '!=', 'Test Preview')
-            ->with(['creator', 'shares.teacher', 'sections.creator', 'sections.modules.creator'])
+            ->with([
+                'creator',
+                'shares.teacher',
+                'sections.creator',
+                'sections.modules.creator',
+                'sections.modules.questions' => fn ($q) => $q->select(['questions.id', 'questions.is_pretest', 'questions.irt_b']),
+            ])
             ->withCount(['userTests', 'shares'])
             ->latest()
             ->paginate(30);
