@@ -7,7 +7,7 @@ use App\Models\AssignmentRecipient;
 
 class AssignmentReportService
 {
-    public function __construct(private AssignmentModuleTimingService $assignmentTiming) {}
+    public function __construct(private AttemptEngine $engine) {}
 
     public function buildRecipient(Assignment $assignment, AssignmentRecipient $recipient): array
     {
@@ -236,7 +236,7 @@ class AssignmentReportService
             ->where('status', 'in_progress')
             ->filter(fn ($attempt) => $attempt->assignment_id && $attempt->currentModule && $attempt->current_module_started_at)
             ->each(function ($attempt) {
-                $timing = $this->assignmentTiming->timing($attempt, $attempt->currentModule);
+                $timing = $this->engine->timing($attempt, $attempt->currentModule);
                 $attempt->current_module_elapsed_seconds = $timing['elapsed_seconds'];
             });
     }

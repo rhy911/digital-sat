@@ -12,7 +12,7 @@ use Illuminate\Validation\ValidationException;
 class AssignmentAttemptService
 {
     public function __construct(
-        private AttemptProgressionService $progression,
+        private AttemptEngine $engine,
         private TestStructureService $structures,
     ) {}
 
@@ -30,8 +30,8 @@ class AssignmentAttemptService
             $inProgress = UserTest::where('assignment_id', $assignment->id)
                 ->where('user_id', $student->id)->where('status', 'in_progress')->latest()->first();
             if ($inProgress) {
-                if ($inProgress->current_module_id || $this->progression->firstModule($assignment->test)) {
-                    $this->progression->issueInitialModule($inProgress, $assignment->test);
+                if ($inProgress->current_module_id || $this->engine->firstModule($assignment->test, $inProgress)) {
+                    $this->engine->issueInitialModule($inProgress, $assignment->test);
                 }
 
                 return $inProgress;
@@ -60,7 +60,7 @@ class AssignmentAttemptService
                 'section_type' => $assignment->section_type,
             ]);
 
-            $this->progression->issueInitialModule($attempt, $assignment->test);
+            $this->engine->issueInitialModule($attempt, $assignment->test);
 
             return $attempt;
         });

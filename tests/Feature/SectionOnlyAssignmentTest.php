@@ -11,7 +11,7 @@ use App\Models\Section;
 use App\Models\Test;
 use App\Models\User;
 use App\Models\UserTest;
-use App\Services\AttemptProgressionService;
+use App\Services\AttemptEngine;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
@@ -188,8 +188,8 @@ class SectionOnlyAssignmentTest extends TestCase
         $this->assertEquals('math', $attempt->section_type);
 
         // Verify starting module is Math Module 1, NOT Reading & Writing Module 1
-        $progression = app(AttemptProgressionService::class);
-        $startModule = $progression->firstModule($test, $attempt);
+        $engine = app(AttemptEngine::class);
+        $startModule = $engine->firstModule($test, $attempt);
         $this->assertEquals($mathModule->id, $startModule->id);
     }
 

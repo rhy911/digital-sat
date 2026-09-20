@@ -92,7 +92,7 @@ class UserTest extends Model
      * exam-session attempts: a candidate walking away from a live exam must
      * not be able to stop the clock by closing the tab, same as an
      * assignment. Single source of truth for every `assignment_id`-keyed
-     * timing branch in SessionController, AttemptProgressionService,
+     * timing branch in SessionController, AttemptEngine,
      * SubmissionController, AnswerController and the timeout sweep.
      */
     public function runsOnChainedClock(): bool

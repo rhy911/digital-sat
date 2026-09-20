@@ -5,7 +5,7 @@ namespace App\Http\Controllers\Student;
 use App\Http\Controllers\Controller;
 use App\Models\UserTest;
 use App\Models\Test;
-use App\Services\AttemptProgressionService;
+use App\Services\AttemptEngine;
 use Illuminate\Support\Facades\Auth;
 
 class PracticeController extends Controller
@@ -32,7 +32,7 @@ class PracticeController extends Controller
 
         if ($userTest->status === 'in_progress') {
             // The engine only accepts the module the attempt currently holds
-            // (AttemptProgressionService::assertIssued), so an attempt without
+            // (AttemptEngine::assertIssued), so an attempt without
             // one cannot be resumed — send the student back to the library
             // instead of a half-empty score report.
             $moduleUlid = $userTest->currentModule?->ulid;
@@ -45,14 +45,14 @@ class PracticeController extends Controller
         return redirect()->route('student.scores.show', $userTest);
     }
 
-    public function resume(UserTest $userTest, AttemptProgressionService $progression)
+    public function resume(UserTest $userTest, AttemptEngine $engine)
     {
         $this->authorize('view', $userTest);
         abort_unless($userTest->status === 'in_progress', 409, 'This attempt is no longer active.');
 
         // Idempotent: returns the module already issued, or issues the first one
         // for an attempt that never got past creation.
-        $module = $progression->issueInitialModule($userTest, $userTest->test);
+        $module = $engine->issueInitialModule($userTest, $userTest->test);
 
         return redirect()->route('engine.session', ['ulid' => $module->ulid, 'attempt' => $userTest->ulid]);
     }

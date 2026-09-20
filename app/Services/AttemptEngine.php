@@ -110,34 +110,28 @@ class AttemptEngine
 
     public function firstModule(Test $test, ?UserTest $attempt = null): ?Module
     {
-        if ($attempt && $attempt->current_module_id) {
-            $current = Module::find($attempt->current_module_id);
-            if ($current) {
-                return $current;
-            }
+        if ($attempt && $attempt->attempt_type === 'section' && $attempt->section_type) {
+            $sectionType = $attempt->section_type === 'reading_writing' ? \App\Models\Section::TYPE_RW : \App\Models\Section::TYPE_MATH;
+            $section = $test->sections()->where('type', $sectionType)->first();
+        } else {
+            $section = $test->sections()->orderBy('order')->first();
         }
 
-        $section = $test->sections()->orderBy('order')->first();
-        if (! $section) {
-            return null;
-        }
-
-        return $section->modules()->orderBy('module_number')->first();
+        return $section?->modules()
+            ->reorder()
+            ->orderBy('modules.order')
+            ->orderBy('modules.id')
+            ->first();
     }
 
     public function issueInitialModule(UserTest $attempt, Test $test): Module
     {
         if ($attempt->current_module_id) {
-            $module = Module::find($attempt->current_module_id);
-            if ($module) {
-                return $module;
-            }
+            return $attempt->currentModule()->firstOrFail();
         }
 
         $module = $this->firstModule($test, $attempt);
-        if (! $module) {
-            throw new \RuntimeException("Test {$test->id} has no modules to start.");
-        }
+        abort_unless($module, 422, 'Test has no module.');
 
         $attempt->forceFill([
             'current_module_id' => $module->id,
@@ -161,7 +155,7 @@ class AttemptEngine
         }
 
         if ((int) $attempt->current_module_id !== (int) $module->id) {
-            abort(409, 'This module is not active for the test attempt.');
+            throw new ConflictHttpException('This module is not active for the test attempt.');
         }
     }
 
@@ -170,6 +164,8 @@ class AttemptEngine
         if (! empty($result['test_completed'])) {
             $attempt->forceFill([
                 'current_module_id' => null,
+                'current_module_started_at' => null,
+                'current_module_elapsed_seconds' => 0,
                 'status' => 'completed',
             ])->save();
 
@@ -178,7 +174,7 @@ class AttemptEngine
 
         $nextModuleUlid = $result['next_module_id'] ?? null;
         if (! $nextModuleUlid) {
-            return null;
+            throw new \RuntimeException('Successful scoring result did not issue a next module.');
         }
 
         $nextModule = Module::query()
@@ -622,7 +618,7 @@ class AttemptEngine
             });
 
             if ($outcome['status'] === 'completed') {
-                return ['status' => 'ready', 'result' => $outcome['result']];
+                return ['status' => 'completed', 'result' => $outcome['result']];
             }
 
             $cacheKey = "scoring_result_{$outcome['user_test_id']}";

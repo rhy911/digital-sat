@@ -12,16 +12,14 @@ use App\Models\User;
 use App\Models\UserTest;
 use App\Models\UserTestAnswer;
 use App\Services\AssignmentAttemptTimeoutService;
-use App\Services\AssignmentModuleTimingService;
-use App\Services\AttemptProgressionService;
+use App\Services\AttemptEngine;
 use Illuminate\Support\Facades\Auth;
 use Symfony\Component\HttpKernel\Exception\ConflictHttpException;
 
 class SessionController extends Controller
 {
     public function __construct(
-        private AssignmentModuleTimingService $assignmentTiming,
-        private AttemptProgressionService $progression,
+        private AttemptEngine $engine,
         private AssignmentAttemptTimeoutService $timeouts,
     ) {}
 
@@ -70,7 +68,7 @@ class SessionController extends Controller
         $module = $moduleQuery->where('ulid', $ulid)->firstOrFail();
 
         [$section, $test] = $this->resolveModuleContext($module, $user, $requestedAttempt->test_id);
-        $this->progression->assertIssued($requestedAttempt, $module);
+        $this->engine->assertIssued($requestedAttempt, $module);
         $this->loadCurrentModuleQuestions($module);
 
         if (! $module) {
@@ -129,7 +127,7 @@ class SessionController extends Controller
 
             $isAssignmentAttempt = $userTest->runsOnChainedClock();
             if ($isAssignmentAttempt && !$isPreview) {
-                $timing = $this->assignmentTiming->syncElapsed($userTest, $module);
+                $timing = $this->engine->syncElapsed($userTest, $module);
                 $serverRemainingSeconds = $timing['remaining_seconds'];
             }
 

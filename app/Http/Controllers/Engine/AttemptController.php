@@ -5,7 +5,7 @@ namespace App\Http\Controllers\Engine;
 use App\Http\Controllers\Controller;
 use App\Models\Test;
 use App\Models\UserTest;
-use App\Services\AttemptProgressionService;
+use App\Services\AttemptEngine;
 use App\Services\TestStructureService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -13,7 +13,7 @@ use Illuminate\Support\Facades\Auth;
 class AttemptController extends Controller
 {
     public function __construct(
-        private AttemptProgressionService $progression,
+        private AttemptEngine $engine,
         private TestStructureService $structures,
     ) {}
 
@@ -29,7 +29,7 @@ class AttemptController extends Controller
             ->latest('updated_at')
             ->first();
 
-        $firstModule = $this->progression->firstModule($test);
+        $firstModule = $this->engine->firstModule($test);
         $firstModuleUlid = $firstModule ? $firstModule->ulid : null;
 
         return response()->json([
@@ -58,7 +58,7 @@ class AttemptController extends Controller
                     ->where('test_id', $test->id)->whereNull('assignment_id')
                     ->where('status', 'in_progress')->latest('updated_at')->first();
                 if ($existing) {
-                    $this->progression->issueInitialModule($existing, $test);
+                    $this->engine->issueInitialModule($existing, $test);
 
                     return response()->json([
                         'user_test_id' => $existing->id,
@@ -100,7 +100,7 @@ class AttemptController extends Controller
                 }
             }
 
-            $firstModule = $this->progression->issueInitialModule($userTest, $test);
+            $firstModule = $this->engine->issueInitialModule($userTest, $test);
             $firstModuleUlid = $firstModule ? $firstModule->ulid : null;
 
             return response()->json([

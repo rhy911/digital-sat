@@ -24,7 +24,7 @@ class ModuleScoringService
 {
     public function __construct(
         private TestProgressionService $progression,
-        private AttemptProgressionService $attemptProgression,
+        private AttemptEngine $engine,
     ) {}
 
     /**
@@ -109,7 +109,7 @@ class ModuleScoringService
                 return $result;
             }
 
-            $nextModule = $this->attemptProgression->advance($userTest, $result, $startNextAt);
+            $nextModule = $this->engine->advance($userTest, $result, $startNextAt);
 
             try {
                 UserTestModuleSubmission::create([

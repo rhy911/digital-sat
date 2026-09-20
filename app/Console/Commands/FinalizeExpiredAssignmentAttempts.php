@@ -5,7 +5,7 @@ namespace App\Console\Commands;
 use App\Models\Module;
 use App\Models\UserTest;
 use App\Services\AssignmentAttemptTimeoutService;
-use App\Services\AssignmentModuleTimingService;
+use App\Services\AttemptEngine;
 use Illuminate\Console\Command;
 
 /**
@@ -26,11 +26,11 @@ class FinalizeExpiredAssignmentAttempts extends Command
 
     protected $description = 'Auto-submit and advance assignment attempts whose module time has run out';
 
-    private AssignmentModuleTimingService $timing;
+    private AttemptEngine $engine;
 
-    public function handle(AssignmentAttemptTimeoutService $timeouts, AssignmentModuleTimingService $timing): int
+    public function handle(AssignmentAttemptTimeoutService $timeouts, AttemptEngine $engine): int
     {
-        $this->timing = $timing;
+        $this->engine = $engine;
 
         $dryRun = (bool) $this->option('dry-run');
         $attemptsTouched = 0;
@@ -69,6 +69,6 @@ class FinalizeExpiredAssignmentAttempts extends Command
     {
         $module = Module::find($attempt->current_module_id);
 
-        return $module && $this->timing->timing($attempt, $module)['expired'];
+        return $module && $this->engine->timing($attempt, $module)['expired'];
     }
 }

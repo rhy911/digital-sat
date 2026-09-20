@@ -184,4 +184,30 @@ class AttemptEngineTest extends TestCase
         $this->assertSame(1500, $timing['remaining_seconds']);
         $this->assertFalse($timing['expired']);
     }
+
+    public function test_assert_issued_throws_conflict_http_exception_on_mismatch(): void
+    {
+        $this->expectException(\Symfony\Component\HttpKernel\Exception\ConflictHttpException::class);
+        $this->expectExceptionMessage('This module is not active for the test attempt.');
+
+        $attempt = new UserTest(['current_module_id' => 10]);
+        $attempt->id = 1;
+
+        $module = new Module();
+        $module->id = 20;
+
+        $this->engine->assertIssued($attempt, $module);
+    }
+
+    public function test_assert_issued_passes_when_module_matches(): void
+    {
+        $attempt = new UserTest(['current_module_id' => 10]);
+        $attempt->id = 1;
+
+        $module = new Module();
+        $module->id = 10;
+
+        $this->engine->assertIssued($attempt, $module);
+        $this->assertSame(10, (int) $attempt->current_module_id);
+    }
 }

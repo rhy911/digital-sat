@@ -3,20 +3,21 @@
 namespace App\Http\Controllers\Engine;
 
 use App\Http\Controllers\Controller;
+use App\Http\Controllers\Engine\Concerns\HandlesEngineErrors;
 use App\Http\Requests\Engine\SubmitModuleRequest;
 use App\Models\UserTest;
 use App\Services\AttemptEngine;
-use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Http\Request;
-use Symfony\Component\HttpKernel\Exception\ConflictHttpException;
 
 class SubmissionController extends Controller
 {
+    use HandlesEngineErrors;
+
     public function __construct(private AttemptEngine $engine) {}
 
     public function submit(SubmitModuleRequest $request)
     {
-        try {
+        return $this->handleEngineErrors(function () use ($request) {
             $result = $this->engine->submit($request->validated(), $request->user()?->id);
 
             if (($result['status'] ?? null) === 'in_flight') {
@@ -26,7 +27,7 @@ class SubmissionController extends Controller
                 ], 409)->header('Retry-After', 2);
             }
 
-            if (($result['status'] ?? null) === 'ready') {
+            if (in_array($result['status'] ?? null, ['ready', 'completed'], true)) {
                 $data = $result['result'];
 
                 return response()->json($data, isset($data['error']) ? 500 : 200);
@@ -36,17 +37,7 @@ class SubmissionController extends Controller
                 'status' => 'scoring',
                 'message' => 'Scoring in progress...',
             ]);
-        } catch (AuthorizationException $e) {
-            return response()->json([
-                'error' => 'Unauthorized submission.',
-                'message' => $e->getMessage(),
-            ], 403);
-        } catch (ConflictHttpException $e) {
-            return response()->json([
-                'error' => 'module_progression_conflict',
-                'message' => $e->getMessage(),
-            ], 409);
-        }
+        }, 'Unauthorized submission.');
     }
 
     public function checkStatus(Request $request, UserTest $userTest)
