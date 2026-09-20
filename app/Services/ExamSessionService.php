@@ -2,7 +2,6 @@
 
 namespace App\Services;
 
-use App\Http\Controllers\Engine\Concerns\HandlesAnswers;
 use App\Models\ExamSession;
 use App\Models\Module;
 use App\Models\Test;
@@ -24,17 +23,9 @@ use Illuminate\Support\Str;
  */
 class ExamSessionService
 {
-    use HandlesAnswers;
-
-    /**
-     * Same cascade guard as AssignmentAttemptTimeoutService: a full-length SAT is
-     * 4 modules, anything past this means the loop is not converging.
-     */
-    private const MAX_CASCADE_STEPS = 12;
-
     public function __construct(
         private AttemptProgressionService $progression,
-        private ModuleScoringService $scoring,
+        private ExamAttemptEngine $engine,
     ) {}
 
     public function create(User $teacher, array $data): ExamSession
@@ -268,61 +259,11 @@ class ExamSessionService
 
     /**
      * Teacher-triggered "end this candidate's attempt now": cascades the same
-     * submit path a real student takes (saveModuleAnswers + ModuleScoringService)
-     * through every remaining module, materializing unanswered questions as
-     * omitted. Mirrors AssignmentAttemptTimeoutService::finalizeExpired, kept
-     * separate because that service is wired to the assignment deadline sweep
-     * and is not the right place to hang a manual teacher action.
+     * submit path a real student takes through every remaining module, materializing
+     * unanswered questions as omitted. Delegates to ExamAttemptEngine.
      */
     public function forceSubmit(UserTest $attempt): void
     {
-        abort_unless((bool) $attempt->exam_session_id, 422, 'Not an exam-session attempt.');
-
-        for ($step = 0; $step < self::MAX_CASCADE_STEPS; $step++) {
-            $attempt->refresh();
-
-            if ($attempt->status !== 'in_progress' || ! $attempt->current_module_id) {
-                break;
-            }
-
-            $module = Module::find($attempt->current_module_id);
-            if (! $module || ! $this->submitCurrentModule($attempt, $module)) {
-                break;
-            }
-        }
-    }
-
-    private function submitCurrentModule(UserTest $attempt, Module $module): bool
-    {
-        $lockKey = "module_submit_lock_{$attempt->id}_{$module->id}";
-        $lock = Cache::lock($lockKey, (int) config('scoring.lock_ttl'));
-
-        if (! $lock->get()) {
-            return false;
-        }
-
-        $markerKey = ModuleScoringService::submitMarkerKey($attempt->id, $module->id);
-        Cache::put($markerKey, 1, (int) config('scoring.lock_ttl'));
-
-        try {
-            $alreadySubmitted = UserTestModuleSubmission::where('user_test_id', $attempt->id)
-                ->where('module_id', $module->id)
-                ->exists();
-
-            if ($alreadySubmitted) {
-                return false;
-            }
-
-            DB::transaction(function () use ($attempt, $module) {
-                $this->saveModuleAnswers($attempt, $module, [], [], true);
-            });
-
-            $result = $this->scoring->scoreAndAdvance($attempt->id, $module->id, true);
-
-            return ! isset($result['error']);
-        } finally {
-            $lock->release();
-            Cache::forget($markerKey);
-        }
+        $this->engine->forceSubmitCascade($attempt);
     }
 }
