@@ -8,3 +8,4 @@
   - **Paused Clock**: Pausable timer for student self-study practice.
 - **Submission**: Finalizing a module, saving question snapshots, grading answers, and advancing the attempt.
 - **Cascade**: Sweeper process that automatically advances overdue modules on chained-clock attempts when a student is away.
+- **AttemptEngine**: Deep domain service encapsulating attempt timing, progression, answer verification, submission coordination, and cascade sweep timeouts.

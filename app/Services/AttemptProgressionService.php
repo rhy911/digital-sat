@@ -8,14 +8,14 @@ use App\Models\UserTest;
 use Carbon\CarbonInterface;
 
 /**
- * Backward compatibility adapter delegating to ExamAttemptEngine.
+ * Backward compatibility adapter delegating to AttemptEngine.
  */
 class AttemptProgressionService
 {
     public function __construct(
-        private ?ExamAttemptEngine $engine = null
+        private ?AttemptEngine $engine = null
     ) {
-        $this->engine ??= app(ExamAttemptEngine::class);
+        $this->engine ??= app(AttemptEngine::class);
     }
 
     public function firstModule(Test $test, ?UserTest $attempt = null): ?Module

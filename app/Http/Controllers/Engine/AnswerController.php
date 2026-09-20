@@ -3,14 +3,14 @@
 namespace App\Http\Controllers\Engine;
 
 use App\Http\Controllers\Controller;
-use App\Services\ExamAttemptEngine;
+use App\Services\AttemptEngine;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Http\Request;
 use Symfony\Component\HttpKernel\Exception\ConflictHttpException;
 
 class AnswerController extends Controller
 {
-    public function __construct(private ExamAttemptEngine $engine) {}
+    public function __construct(private AttemptEngine $engine) {}
 
     public function autosave(Request $request)
     {
@@ -27,7 +27,8 @@ class AnswerController extends Controller
         try {
             $result = $this->engine->autosave(
                 $validated,
-                $request->has('elapsed_seconds') ? (int) $request->input('elapsed_seconds') : null
+                $request->has('elapsed_seconds') ? (int) $request->input('elapsed_seconds') : null,
+                $request->user()?->id,
             );
 
             if ($result['expired'] ?? false) {

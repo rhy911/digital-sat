@@ -2,9 +2,9 @@
 
 namespace Tests\Unit;
 
-use App\Http\Controllers\Engine\Concerns\HandlesAnswers;
 use App\Models\Question;
 use App\Models\SprCorrectAnswer;
+use App\Services\AttemptEngine;
 use PHPUnit\Framework\Attributes\DataProvider;
 use Tests\TestCase;
 
@@ -17,17 +17,10 @@ class SprAnswerEquivalenceTest extends TestCase
         $question->setRelation('sprCorrectAnswers', collect([
             new SprCorrectAnswer(['answer' => $accepted, 'answer_type' => 'exact', 'tolerance' => $tolerance]),
         ]));
-        $checker = new class
-        {
-            use HandlesAnswers;
 
-            public function check(Question $question, string $answer): bool
-            {
-                return $this->checkAnswer($question, $answer);
-            }
-        };
+        $engine = new AttemptEngine();
 
-        $this->assertTrue($checker->check($question, $submitted));
+        $this->assertTrue($engine->checkAnswer($question, $submitted));
     }
 
     public static function equivalentAnswers(): array

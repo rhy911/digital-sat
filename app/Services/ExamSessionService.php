@@ -24,7 +24,7 @@ use Illuminate\Support\Str;
 class ExamSessionService
 {
     public function __construct(
-        private ExamAttemptEngine $engine,
+        private AttemptEngine $engine,
     ) {}
 
     public function create(User $teacher, array $data): ExamSession
@@ -259,10 +259,10 @@ class ExamSessionService
     /**
      * Teacher-triggered "end this candidate's attempt now": cascades the same
      * submit path a real student takes through every remaining module, materializing
-     * unanswered questions as omitted. Delegates to ExamAttemptEngine.
+     * unanswered questions as omitted. Delegates to AttemptEngine.
      */
     public function forceSubmit(UserTest $attempt): void
     {
-        $this->engine->forceSubmitCascade($attempt);
+        $this->engine->cascadeAdvance($attempt, force: true);
     }
 }

@@ -8,18 +8,18 @@ use App\Models\Question;
 use App\Models\Section;
 use App\Models\SprCorrectAnswer;
 use App\Models\UserTest;
-use App\Services\ExamAttemptEngine;
+use App\Services\AttemptEngine;
 use Illuminate\Support\Carbon;
 use Tests\TestCase;
 
-class ExamAttemptEngineTest extends TestCase
+class AttemptEngineTest extends TestCase
 {
-    private ExamAttemptEngine $engine;
+    private AttemptEngine $engine;
 
     protected function setUp(): void
     {
         parent::setUp();
-        $this->engine = new ExamAttemptEngine();
+        $this->engine = new AttemptEngine();
     }
 
     public function test_parse_numeric_answer_handles_integers_and_decimals(): void
@@ -141,5 +141,47 @@ class ExamAttemptEngineTest extends TestCase
         $this->assertSame(1800, $pastTiming['elapsed_seconds']);
         $this->assertSame(0, $pastTiming['remaining_seconds']);
         $this->assertTrue($pastTiming['expired']);
+    }
+
+    public function test_sync_elapsed_chained_clock_calculates_and_flags_expiration(): void
+    {
+        $module = new Module(['duration_minutes' => 30]);
+        $attempt = new UserTest([
+            'assignment_id' => 123, // runsOnChainedClock() returns true
+            'current_module_started_at' => Carbon::parse('2026-09-20 10:00:00'),
+        ]);
+
+        // Freeze time at 15 minutes in
+        Carbon::setTestNow(Carbon::parse('2026-09-20 10:15:00'));
+        $timing = $this->engine->syncElapsed($attempt, $module);
+
+        $this->assertSame(900, $timing['elapsed_seconds']);
+        $this->assertSame(900, $timing['remaining_seconds']);
+        $this->assertFalse($timing['expired']);
+
+        // Fast-forward past deadline (35 minutes in)
+        Carbon::setTestNow(Carbon::parse('2026-09-20 10:35:00'));
+        $expiredTiming = $this->engine->syncElapsed($attempt, $module);
+
+        $this->assertSame(1800, $expiredTiming['elapsed_seconds']);
+        $this->assertSame(0, $expiredTiming['remaining_seconds']);
+        $this->assertTrue($expiredTiming['expired']);
+
+        Carbon::setTestNow();
+    }
+
+    public function test_sync_elapsed_paused_clock_preserves_manual_elapsed(): void
+    {
+        $module = new Module(['duration_minutes' => 30]);
+        // Practice attempt (no assignment_id or exam_session_id)
+        $attempt = new UserTest([
+            'current_module_elapsed_seconds' => 300,
+        ]);
+
+        $timing = $this->engine->syncElapsed($attempt, $module);
+
+        $this->assertSame(300, $timing['elapsed_seconds']);
+        $this->assertSame(1500, $timing['remaining_seconds']);
+        $this->assertFalse($timing['expired']);
     }
 }

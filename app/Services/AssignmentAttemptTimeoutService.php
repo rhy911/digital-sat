@@ -6,12 +6,12 @@ use App\Models\UserTest;
 
 /**
  * Sweep running assignment attempts and submit any modules whose server-side
- * time has elapsed. Delegates execution to ExamAttemptEngine.
+ * time has elapsed. Delegates execution to AttemptEngine.
  */
 class AssignmentAttemptTimeoutService
 {
     public function __construct(
-        private ExamAttemptEngine $engine,
+        private AttemptEngine $engine,
     ) {}
 
     /**
@@ -37,6 +37,6 @@ class AssignmentAttemptTimeoutService
      */
     public function finalizeExpired(UserTest $attempt): int
     {
-        return $this->engine->cascadeExpire($attempt);
+        return $this->engine->cascadeAdvance($attempt, force: false);
     }
 }

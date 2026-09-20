@@ -8,14 +8,14 @@ use Carbon\CarbonInterface;
 use Illuminate\Support\Carbon;
 
 /**
- * Backward compatibility adapter delegating to ExamAttemptEngine.
+ * Backward compatibility adapter delegating to AttemptEngine.
  */
 class AssignmentModuleTimingService
 {
     public function __construct(
-        private ?ExamAttemptEngine $engine = null
+        private ?AttemptEngine $engine = null
     ) {
-        $this->engine ??= app(ExamAttemptEngine::class);
+        $this->engine ??= app(AttemptEngine::class);
     }
 
     public function durationSeconds(Module $module): int
