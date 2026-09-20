@@ -24,7 +24,6 @@ use Illuminate\Support\Str;
 class ExamSessionService
 {
     public function __construct(
-        private AttemptProgressionService $progression,
         private ExamAttemptEngine $engine,
     ) {}
 
@@ -121,7 +120,7 @@ class ExamSessionService
                 ->first();
 
             if ($existing && (int) $existing->exam_session_id === (int) $session->id) {
-                $this->progression->issueInitialModule($existing, $session->test);
+                $this->engine->issueInitialModule($existing, $session->test);
 
                 return $existing;
             }
@@ -140,7 +139,7 @@ class ExamSessionService
                 'status' => 'in_progress',
             ]);
 
-            $this->progression->issueInitialModule($attempt, $session->test);
+            $this->engine->issueInitialModule($attempt, $session->test);
 
             return $attempt;
         });

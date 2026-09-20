@@ -2,12 +2,15 @@
 
 namespace Tests\Unit;
 
+use App\Models\AnswerChoice;
 use App\Models\Module;
 use App\Models\Question;
 use App\Models\Section;
 use App\Models\SprCorrectAnswer;
+use App\Models\UserTest;
 use App\Services\ExamAttemptEngine;
-use PHPUnit\Framework\TestCase;
+use Illuminate\Support\Carbon;
+use Tests\TestCase;
 
 class ExamAttemptEngineTest extends TestCase
 {
@@ -60,5 +63,83 @@ class ExamAttemptEngineTest extends TestCase
         $this->assertSame(35 * 60, $this->engine->durationSeconds($mathModule));
         $this->assertSame(32 * 60, $this->engine->durationSeconds($rwModule));
         $this->assertSame(40 * 60, $this->engine->durationSeconds($customModule));
+    }
+
+    public function test_check_answer_evaluates_multiple_choice(): void
+    {
+        $question = new Question(['question_type' => 'multiple_choice']);
+        $choiceA = new AnswerChoice(['label' => 'A', 'is_correct' => false]);
+        $choiceB = new AnswerChoice(['label' => 'B', 'is_correct' => true]);
+        $question->setRelation('answerChoices', collect([$choiceA, $choiceB]));
+
+        $this->assertTrue($this->engine->checkAnswer($question, 'B'));
+        $this->assertTrue($this->engine->checkAnswer($question, ' B '));
+        $this->assertFalse($this->engine->checkAnswer($question, 'A'));
+        $this->assertFalse($this->engine->checkAnswer($question, 'C'));
+    }
+
+    public function test_check_answer_evaluates_student_produced_response(): void
+    {
+        $question = new Question(['question_type' => 'student_produced_response']);
+        $spr = new SprCorrectAnswer(['answer' => '3/4', 'tolerance' => null]);
+        $question->setRelation('sprCorrectAnswers', collect([$spr]));
+
+        // Fraction & decimal equivalence
+        $this->assertTrue($this->engine->checkAnswer($question, '3/4'));
+        $this->assertTrue($this->engine->checkAnswer($question, '0.75'));
+        $this->assertTrue($this->engine->checkAnswer($question, '6/8'));
+        // Within default tolerance (0.0001)
+        $this->assertTrue($this->engine->checkAnswer($question, '0.75005'));
+        // Outside tolerance
+        $this->assertFalse($this->engine->checkAnswer($question, '0.76'));
+
+        // Custom tolerance
+        $tolQuestion = new Question(['question_type' => 'spr']);
+        $tolSpr = new SprCorrectAnswer(['answer' => '10.0', 'tolerance' => 0.5]);
+        $tolQuestion->setRelation('sprCorrectAnswers', collect([$tolSpr]));
+
+        $this->assertTrue($this->engine->checkAnswer($tolQuestion, '10.4'));
+        $this->assertFalse($this->engine->checkAnswer($tolQuestion, '10.8'));
+    }
+
+    public function test_check_answer_throws_on_unsupported_question_type(): void
+    {
+        $this->expectException(\InvalidArgumentException::class);
+        $question = new Question(['question_type' => 'unsupported_type']);
+        $this->engine->checkAnswer($question, 'any');
+    }
+
+    public function test_deadline_and_timing_calculations(): void
+    {
+        $module = new Module(['duration_minutes' => 30]);
+        $attempt = new UserTest();
+
+        // When not started
+        $this->assertNull($this->engine->deadline($attempt, $module));
+        $initialTiming = $this->engine->timing($attempt, $module);
+        $this->assertSame(1800, $initialTiming['duration_seconds']);
+        $this->assertSame(0, $initialTiming['elapsed_seconds']);
+        $this->assertSame(1800, $initialTiming['remaining_seconds']);
+        $this->assertFalse($initialTiming['expired']);
+
+        // When started
+        $startedAt = Carbon::parse('2026-09-20 10:00:00');
+        $attempt->current_module_started_at = $startedAt;
+
+        $deadline = $this->engine->deadline($attempt, $module);
+        $this->assertNotNull($deadline);
+        $this->assertSame('2026-09-20 10:30:00', $deadline->format('Y-m-d H:i:s'));
+
+        // Mid-module timing (10 mins in)
+        $midTiming = $this->engine->timing($attempt, $module, Carbon::parse('2026-09-20 10:10:00'));
+        $this->assertSame(600, $midTiming['elapsed_seconds']);
+        $this->assertSame(1200, $midTiming['remaining_seconds']);
+        $this->assertFalse($midTiming['expired']);
+
+        // Expired module timing (35 mins in)
+        $pastTiming = $this->engine->timing($attempt, $module, Carbon::parse('2026-09-20 10:35:00'));
+        $this->assertSame(1800, $pastTiming['elapsed_seconds']);
+        $this->assertSame(0, $pastTiming['remaining_seconds']);
+        $this->assertTrue($pastTiming['expired']);
     }
 }
