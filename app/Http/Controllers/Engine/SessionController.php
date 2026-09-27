@@ -11,7 +11,6 @@ use App\Models\Test;
 use App\Models\User;
 use App\Models\UserTest;
 use App\Models\UserTestAnswer;
-use App\Services\AssignmentAttemptTimeoutService;
 use App\Services\AttemptEngine;
 use Illuminate\Support\Facades\Auth;
 use Symfony\Component\HttpKernel\Exception\ConflictHttpException;
@@ -20,7 +19,6 @@ class SessionController extends Controller
 {
     public function __construct(
         private AttemptEngine $engine,
-        private AssignmentAttemptTimeoutService $timeouts,
     ) {}
 
     public function show($ulid = null)
@@ -47,7 +45,7 @@ class SessionController extends Controller
         // server-side — but it would show them a live-looking test, so close the
         // attempt out first and send them to their score instead.
         if ($requestedAttempt->runsOnChainedClock() && $requestedAttempt->status === 'in_progress') {
-            if ($this->timeouts->finalizeExpired($requestedAttempt) > 0) {
+            if ($this->engine->cascadeExpire($requestedAttempt) > 0) {
                 $requestedAttempt->refresh();
 
                 if ($requestedAttempt->status === 'completed') {
@@ -89,10 +87,8 @@ class SessionController extends Controller
         $currentQuestion = 1;
         $totalQuestions = $questions->count();
 
-        $isPreview = ($test->title === 'Test Preview');
-        $durationMinutes = $isPreview
-            ? 0
-            : ($module->duration_minutes ?? ($section->type === 'math' ? Module::MATH_DURATION : Module::RW_DURATION));
+        $isPreview = $test->isPreview();
+        $durationMinutes = $isPreview ? 0 : (int) ($this->engine->durationSeconds($module) / 60);
 
         // Determine which view to use based on section type
         $viewName = $section->type === 'math' ? 'engine.module.math' : 'engine.module.reading';
@@ -100,7 +96,7 @@ class SessionController extends Controller
         // Get user test record
         $userTest = null;
         $savedAnswers = collect();
-        $isAssignmentAttempt = false;
+        $runsOnChainedClock = false;
         $serverRemainingSeconds = null;
         if (Auth::check()) {
             $userTest = $requestedAttempt;
@@ -108,27 +104,13 @@ class SessionController extends Controller
                 abort(400, 'Attempt does not belong to this test.');
             }
 
-            if (!$userTest->current_module_started_at) {
-                $userTest->current_module_started_at = now();
-                $userTest->current_module_elapsed_seconds = 0;
-                $userTest->save();
-            } else if ($userTest->current_module_started_at && !$isPreview) {
-                if (!$userTest->runsOnChainedClock()) {
-                    // Practice resumption pauses while away and resumes from saved elapsed time.
-                    $userTest->current_module_started_at = now();
-                    $userTest->save();
+            $timing = $this->engine->startOrResumeModule($userTest, $module, $isPreview);
+            $runsOnChainedClock = $userTest->runsOnChainedClock();
 
-                    $elapsedSeconds = $userTest->current_module_elapsed_seconds;
-                    $totalSeconds = $durationMinutes * 60;
-                    $remainingSeconds = max(0, $totalSeconds - $elapsedSeconds);
-                    $durationMinutes = $remainingSeconds / 60;
-                }
-            }
-
-            $isAssignmentAttempt = $userTest->runsOnChainedClock();
-            if ($isAssignmentAttempt && !$isPreview) {
-                $timing = $this->engine->syncElapsed($userTest, $module);
-                $serverRemainingSeconds = $timing['remaining_seconds'];
+            if (! $isPreview) {
+                $runsOnChainedClock
+                    ? ($serverRemainingSeconds = $timing['remaining_seconds'])
+                    : ($durationMinutes = $timing['remaining_seconds'] / 60);
             }
 
             $savedAnswersData = UserTestAnswer::where('user_test_id', $userTest->id)
@@ -154,12 +136,9 @@ class SessionController extends Controller
             'duration_minutes' => $durationMinutes,
         ];
 
-        $isFinalModule = false;
-        try {
-            $isFinalModule = $this->progression->isTerminalSubmission($requestedAttempt, $module);
-        } catch (\Throwable $e) {
-            $isFinalModule = false;
-        }
+        $isFinalModule = $requestedAttempt
+            ? $this->engine->isTerminalSubmission($requestedAttempt, $module)
+            : false;
 
         if ($userTest?->exam_session_id) {
             $userTest->loadMissing('examSession');
@@ -182,7 +161,7 @@ class SessionController extends Controller
             'userTest' => $userTest,
             'savedAnswers' => $savedAnswers,
             'savedQuestionTimes' => $savedQuestionTimes,
-            'isAssignmentAttempt' => $isAssignmentAttempt,
+            'isAssignmentAttempt' => $runsOnChainedClock,
             'serverRemainingSeconds' => $serverRemainingSeconds,
             'isFinalModule' => $isFinalModule,
             'isSessionPaused' => $isSessionPaused,

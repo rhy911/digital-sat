@@ -2,7 +2,7 @@
 
 namespace App\Jobs;
 
-use App\Services\ModuleScoringService;
+use App\Services\AttemptEngine;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
@@ -20,7 +20,7 @@ use Illuminate\Support\Facades\Log;
  * submission runs finalize() — two IRT estimates plus conversion plus a possible
  * auto-merge — so it stays off the request thread.
  *
- * The actual work lives in ModuleScoringService, shared with the inline path so
+ * The actual work lives in AttemptEngine, shared with the inline path so
  * the two can never drift apart.
  */
 class ScoreModuleJob implements ShouldQueue
@@ -60,13 +60,13 @@ class ScoreModuleJob implements ShouldQueue
      * the IRT computation; the frontend polls /submit-status until this writes
      * the cache key.
      */
-    public function handle(ModuleScoringService $scoring): void
+    public function handle(AttemptEngine $engine): void
     {
         $startedAt = hrtime(true);
         $outcome = 'ok';
 
         try {
-            $scoring->scoreAndAdvance(
+            $engine->scoreAndAdvance(
                 $this->userTestId,
                 $this->moduleId,
                 $this->timedOut,
@@ -74,7 +74,7 @@ class ScoreModuleJob implements ShouldQueue
             );
         } catch (\Throwable $e) {
             $outcome = 'error';
-            $scoring->recordFailure($this->userTestId, $this->moduleId, $e, 'EXCEPTION in ScoreModuleJob');
+            $engine->recordFailure($this->userTestId, $this->moduleId, $e, 'EXCEPTION in ScoreModuleJob');
         } finally {
             $this->releaseSubmitLock();
 
@@ -134,7 +134,7 @@ class ScoreModuleJob implements ShouldQueue
      */
     private function releaseSubmitLock(): void
     {
-        Cache::forget(ModuleScoringService::submitMarkerKey($this->userTestId, $this->moduleId));
+        Cache::forget(AttemptEngine::submitMarkerKey($this->userTestId, $this->moduleId));
 
         if (! $this->lockKey) {
             return;

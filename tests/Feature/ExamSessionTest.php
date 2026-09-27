@@ -13,7 +13,7 @@ use App\Models\User;
 use App\Models\UserTest;
 use App\Models\UserTestAnswer;
 use App\Livewire\Teacher\ExamAttemptMonitor;
-use App\Services\AssignmentAttemptTimeoutService;
+use App\Services\AttemptEngine;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Livewire\Livewire;
 use Illuminate\Support\Carbon;
@@ -517,7 +517,7 @@ class ExamSessionTest extends TestCase
         $attempt->update(['current_module_started_at' => $startedAt]);
 
         Carbon::setTestNow('2026-06-22 12:04:00');
-        $submitted = app(AssignmentAttemptTimeoutService::class)->finalizeExpired($attempt);
+        $submitted = app(AttemptEngine::class)->cascadeExpire($attempt);
 
         $attempt->refresh();
         $this->assertSame(1, $submitted);

@@ -18,9 +18,14 @@ class SprAnswerEquivalenceTest extends TestCase
             new SprCorrectAnswer(['answer' => $accepted, 'answer_type' => 'exact', 'tolerance' => $tolerance]),
         ]));
 
-        $engine = new AttemptEngine();
+        $engine = new class(app(\App\Services\TestProgressionService::class)) extends AttemptEngine {
+            public function check(Question $question, $userAnswer): bool
+            {
+                return $this->checkAnswer($question, $userAnswer);
+            }
+        };
 
-        $this->assertTrue($engine->checkAnswer($question, $submitted));
+        $this->assertTrue($engine->check($question, $submitted));
     }
 
     public static function equivalentAnswers(): array

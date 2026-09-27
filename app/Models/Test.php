@@ -102,6 +102,11 @@ class Test extends Model
         return $this->assignments()->where('status', 'published')->exists();
     }
 
+    public function isPreview(): bool
+    {
+        return $this->title === 'Test Preview';
+    }
+
     public function isStructurallyComplete(): bool
     {
         $this->loadMissing('sections.modules.questions');

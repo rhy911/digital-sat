@@ -87,7 +87,7 @@ class UserTest extends Model
     /**
      * Whether this attempt runs on a fixed, non-pausable clock — chained
      * module deadlines, server-side auto-submit sweep (see
-     * AssignmentAttemptTimeoutService) — rather than practice-style
+     * AttemptEngine) — rather than practice-style
      * pause/resume timing. True for classroom assignments AND standalone
      * exam-session attempts: a candidate walking away from a live exam must
      * not be able to stop the clock by closing the tab, same as an

@@ -14,7 +14,7 @@ use App\Models\User;
 use App\Models\UserTest;
 use App\Models\UserTestAnswer;
 use App\Models\UserTestModuleSubmission;
-use App\Services\AssignmentAttemptTimeoutService;
+use App\Services\AttemptEngine;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Cache;
@@ -71,7 +71,7 @@ class AssignmentTimeoutCascadeTest extends TestCase
             'is_correct' => true,
         ]);
 
-        app(AssignmentAttemptTimeoutService::class)->finalizeExpired($attempt);
+        app(AttemptEngine::class)->cascadeExpire($attempt);
 
         $this->assertDatabaseHas('user_test_answers', [
             'user_test_id' => $attempt->id,
@@ -97,7 +97,7 @@ class AssignmentTimeoutCascadeTest extends TestCase
         // Sweep runs a further 4 minutes late, as a once-a-minute cron under load
         // eventually will. The boundary must not move with it.
         Carbon::setTestNow('2026-06-22 12:04:00');
-        $submitted = app(AssignmentAttemptTimeoutService::class)->finalizeExpired($attempt);
+        $submitted = app(AttemptEngine::class)->cascadeExpire($attempt);
 
         $attempt->refresh();
         $this->assertSame(1, $submitted);
@@ -119,7 +119,7 @@ class AssignmentTimeoutCascadeTest extends TestCase
         $this->assertTrue($lock->get());
 
         try {
-            $submitted = app(AssignmentAttemptTimeoutService::class)->finalizeExpired($attempt);
+            $submitted = app(AttemptEngine::class)->cascadeExpire($attempt);
         } finally {
             $lock->release();
         }

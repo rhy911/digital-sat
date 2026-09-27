@@ -3,14 +3,13 @@
 namespace App\Http\Controllers\Engine;
 
 use App\Http\Controllers\Controller;
-use App\Http\Controllers\Engine\Concerns\HandlesEngineErrors;
 use App\Services\AttemptEngine;
+use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Http\Request;
+use Symfony\Component\HttpKernel\Exception\ConflictHttpException;
 
 class AnswerController extends Controller
 {
-    use HandlesEngineErrors;
-
     public function __construct(private AttemptEngine $engine) {}
 
     public function autosave(Request $request)
@@ -25,11 +24,19 @@ class AnswerController extends Controller
             'elapsed_seconds' => 'nullable|integer|min:0',
         ]);
 
-        return $this->handleEngineErrors(function () use ($validated, $request) {
-            $result = $this->engine->autosave(
-                $validated,
-                $request->has('elapsed_seconds') ? (int) $request->input('elapsed_seconds') : null,
+        try {
+            [$attempt, $module] = $this->engine->resolveActiveModule(
+                (int) $validated['user_test_id'],
+                (int) $validated['module_id'],
                 $request->user()?->id,
+            );
+
+            $result = $this->engine->autosave(
+                $attempt,
+                $module,
+                $validated['answers'],
+                $validated['question_times'] ?? [],
+                $validated['elapsed_seconds'] ?? null,
             );
 
             if ($result['expired'] ?? false) {
@@ -51,6 +58,16 @@ class AnswerController extends Controller
                 'saved_count' => $result['saved_count'],
                 'message' => 'Answers autosaved.',
             ]);
-        }, 'Unauthorized autosave.');
+        } catch (AuthorizationException $e) {
+            return response()->json([
+                'error' => 'Unauthorized autosave.',
+                'message' => $e->getMessage(),
+            ], 403);
+        } catch (ConflictHttpException $e) {
+            return response()->json([
+                'error' => 'module_progression_conflict',
+                'message' => $e->getMessage(),
+            ], 409);
+        }
     }
 }

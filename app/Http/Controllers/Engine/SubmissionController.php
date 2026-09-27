@@ -3,22 +3,32 @@
 namespace App\Http\Controllers\Engine;
 
 use App\Http\Controllers\Controller;
-use App\Http\Controllers\Engine\Concerns\HandlesEngineErrors;
 use App\Http\Requests\Engine\SubmitModuleRequest;
 use App\Models\UserTest;
 use App\Services\AttemptEngine;
+use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Http\Request;
+use Symfony\Component\HttpKernel\Exception\ConflictHttpException;
 
 class SubmissionController extends Controller
 {
-    use HandlesEngineErrors;
-
     public function __construct(private AttemptEngine $engine) {}
 
     public function submit(SubmitModuleRequest $request)
     {
-        return $this->handleEngineErrors(function () use ($request) {
-            $result = $this->engine->submit($request->validated(), $request->user()?->id);
+        try {
+            [$attempt, $module] = $this->engine->resolveActiveModule(
+                (int) $request->input('user_test_id'),
+                (int) $request->input('module_id'),
+                $request->user()?->id,
+            );
+
+            $result = $this->engine->submitModule(
+                $attempt,
+                $module,
+                $request->input('answers', []),
+                $request->input('question_times', []),
+            );
 
             if (($result['status'] ?? null) === 'in_flight') {
                 return response()->json([
@@ -37,7 +47,17 @@ class SubmissionController extends Controller
                 'status' => 'scoring',
                 'message' => 'Scoring in progress...',
             ]);
-        }, 'Unauthorized submission.');
+        } catch (AuthorizationException $e) {
+            return response()->json([
+                'error' => 'Unauthorized submission.',
+                'message' => $e->getMessage(),
+            ], 403);
+        } catch (ConflictHttpException $e) {
+            return response()->json([
+                'error' => 'module_progression_conflict',
+                'message' => $e->getMessage(),
+            ], 409);
+        }
     }
 
     public function checkStatus(Request $request, UserTest $userTest)

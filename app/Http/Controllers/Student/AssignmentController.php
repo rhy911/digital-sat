@@ -7,7 +7,7 @@ use App\Models\Assignment;
 use App\Models\Classroom;
 use App\Models\UserTest;
 use App\Services\AssignmentAttemptService;
-use App\Services\AssignmentAttemptTimeoutService;
+use App\Services\AttemptEngine;
 use Illuminate\Http\Request;
 
 class AssignmentController extends Controller
@@ -67,7 +67,7 @@ class AssignmentController extends Controller
 
         return view('student.assignments.show', compact('user', 'assignment', 'assignments', 'classroom'));
     }
-    public function start(Assignment $assignment, AssignmentAttemptService $service, AssignmentAttemptTimeoutService $timeouts)
+    public function start(Assignment $assignment, AssignmentAttemptService $service, AttemptEngine $engine)
     {
         $this->authorize('view', $assignment);
 
@@ -79,7 +79,7 @@ class AssignmentController extends Controller
         // attempt-limit check reads it.
         $finalized = null;
         foreach ($this->runningAttempts($assignment) as $running) {
-            if ($timeouts->finalizeExpired($running) > 0) {
+            if ($engine->cascadeExpire($running) > 0) {
                 $finalized = $running->fresh();
             }
         }

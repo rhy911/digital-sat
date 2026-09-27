@@ -263,6 +263,6 @@ class ExamSessionService
      */
     public function forceSubmit(UserTest $attempt): void
     {
-        $this->engine->cascadeAdvance($attempt, force: true);
+        $this->engine->cascadeExpire($attempt, force: true);
     }
 }

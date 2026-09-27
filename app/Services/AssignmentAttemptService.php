@@ -13,7 +13,6 @@ class AssignmentAttemptService
 {
     public function __construct(
         private AttemptEngine $engine,
-        private TestStructureService $structures,
     ) {}
 
     public function startOrResume(Assignment $assignment, User $student): UserTest

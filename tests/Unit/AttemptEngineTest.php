@@ -9,17 +9,31 @@ use App\Models\Section;
 use App\Models\SprCorrectAnswer;
 use App\Models\UserTest;
 use App\Services\AttemptEngine;
+use App\Services\TestProgressionService;
 use Illuminate\Support\Carbon;
 use Tests\TestCase;
 
+class TestableAttemptEngine extends AttemptEngine
+{
+    public function checkAnswer(Question $question, $userAnswer): bool
+    {
+        return parent::checkAnswer($question, $userAnswer);
+    }
+
+    public function parseNumericAnswer(string $value): ?float
+    {
+        return parent::parseNumericAnswer($value);
+    }
+}
+
 class AttemptEngineTest extends TestCase
 {
-    private AttemptEngine $engine;
+    private TestableAttemptEngine $engine;
 
     protected function setUp(): void
     {
         parent::setUp();
-        $this->engine = new AttemptEngine();
+        $this->engine = new TestableAttemptEngine(app(TestProgressionService::class));
     }
 
     public function test_parse_numeric_answer_handles_integers_and_decimals(): void
@@ -210,4 +224,179 @@ class AttemptEngineTest extends TestCase
         $this->engine->assertIssued($attempt, $module);
         $this->assertSame(10, (int) $attempt->current_module_id);
     }
+
+    public function test_issue_initial_module_throws_unprocessable_entity_http_exception_when_test_has_no_modules(): void
+    {
+        $this->expectException(\Symfony\Component\HttpKernel\Exception\UnprocessableEntityHttpException::class);
+        $this->expectExceptionMessage('Test has no module.');
+
+        $test = new \App\Models\Test();
+        $test->id = 999;
+        $test->setRelation('sections', collect([]));
+        $attempt = new UserTest();
+
+        $this->engine->issueInitialModule($attempt, $test);
+    }
+
+    public function test_is_past_grace_deadline_evaluates_correctly(): void
+    {
+        $module = new Module(['duration_minutes' => 30]);
+        $attempt = new UserTest();
+
+        // Not started
+        $this->assertFalse($this->engine->isPastGraceDeadline($attempt, $module));
+
+        // Started 10 minutes ago (duration 30m, grace 5m -> deadline is in 20m)
+        $attempt->current_module_started_at = Carbon::now()->subMinutes(10);
+        $this->assertFalse($this->engine->isPastGraceDeadline($attempt, $module));
+
+        // Started 32 minutes ago (past 30m duration, but within 5m grace -> 35m total)
+        $attempt->current_module_started_at = Carbon::now()->subMinutes(32);
+        $this->assertFalse($this->engine->isPastGraceDeadline($attempt, $module));
+
+        // Started 36 minutes ago (past 30m duration + 5m grace)
+        $attempt->current_module_started_at = Carbon::now()->subMinutes(36);
+        $this->assertTrue($this->engine->isPastGraceDeadline($attempt, $module));
+    }
+
+    public function test_cascade_expire_returns_zero_when_not_in_progress_or_clock_future(): void
+    {
+        $attempt = new UserTest([
+            'status' => 'completed',
+            'assignment_id' => 1,
+        ]);
+
+        $this->assertSame(0, $this->engine->cascadeExpire($attempt));
+
+        $runningAttempt = new UserTest([
+            'status' => 'in_progress',
+            'assignment_id' => 1,
+        ]);
+
+        // Future deadline
+        $this->assertSame(0, $this->engine->cascadeExpire($runningAttempt, Carbon::now()->addHour()));
+    }
+
+    public function test_candidate_cascade_attempts_query_filters_chained_clock_and_in_progress_status(): void
+    {
+        $query = $this->engine->candidateCascadeAttemptsQuery();
+        $this->assertInstanceOf(\Illuminate\Database\Eloquent\Builder::class, $query);
+
+        $sql = $query->toSql();
+        $this->assertStringContainsString('status', $sql);
+        $this->assertStringContainsString('current_module_id', $sql);
+        $this->assertStringContainsString('current_module_started_at', $sql);
+        $this->assertStringContainsString('assignment_id', $sql);
+        $this->assertStringContainsString('exam_session_id', $sql);
+    }
+
+    public function test_submit_marker_key_format(): void
+    {
+        $this->assertSame('module_submit_active_12_34', AttemptEngine::submitMarkerKey(12, 34));
+    }
+
+    public function test_record_failure_stores_cache_and_clears_marker(): void
+    {
+        \Illuminate\Support\Facades\Cache::put(AttemptEngine::submitMarkerKey(101, 202), 1, 60);
+
+        $payload = $this->engine->recordFailure(101, 202, new \RuntimeException('test failure'), 'TestContext');
+
+        $this->assertSame('error', $payload['status']);
+        $this->assertSame(202, $payload['scored_module_id']);
+        $this->assertFalse(\Illuminate\Support\Facades\Cache::has(AttemptEngine::submitMarkerKey(101, 202)));
+        $this->assertSame($payload, \Illuminate\Support\Facades\Cache::get('scoring_result_101'));
+    }
+
+    public function test_test_model_is_preview_predicate(): void
+    {
+        $preview = new \App\Models\Test(['title' => 'Test Preview']);
+        $this->assertTrue($preview->isPreview());
+
+        $regular = new \App\Models\Test(['title' => 'Official SAT Practice #1']);
+        $this->assertFalse($regular->isPreview());
+    }
+
+    public function test_autosave_throws_validation_exception_on_invalid_question_id(): void
+    {
+        $this->expectException(\Illuminate\Validation\ValidationException::class);
+
+        $attempt = new UserTest(['status' => 'in_progress', 'test_id' => 1, 'current_module_id' => 1]);
+        $attempt->id = 1;
+        $module = new Module();
+        $module->id = 1;
+
+        $this->engine->autosave($attempt, $module, ['not_a_number' => 'A']);
+    }
+
+    public function test_paused_clock_resumption_accumulates_prior_elapsed_time(): void
+    {
+        $module = new Module(['duration_minutes' => 30]);
+        $attempt = new UserTest([
+            'current_module_elapsed_seconds' => 600,
+        ]);
+
+        Carbon::setTestNow(Carbon::parse('2026-09-20 10:00:00'));
+        $this->engine->startOrResumeModule($attempt, $module);
+
+        $this->assertSame('2026-09-20 10:00:00', $attempt->current_module_started_at->format('Y-m-d H:i:s'));
+
+        $timing = $this->engine->timing($attempt, $module, Carbon::parse('2026-09-20 10:05:00'));
+
+        $this->assertSame(900, $timing['elapsed_seconds']);
+        $this->assertSame(900, $timing['remaining_seconds']);
+        $this->assertFalse($timing['expired']);
+
+        Carbon::setTestNow();
+    }
+
+    public function test_autosave_returns_submitting_when_marker_set(): void
+    {
+        $attempt = new UserTest();
+        $attempt->id = 55;
+        $module = new Module();
+        $module->id = 66;
+
+        \Illuminate\Support\Facades\Cache::put(AttemptEngine::submitMarkerKey(55, 66), 1, 60);
+
+        $result = $this->engine->autosave($attempt, $module, []);
+
+        $this->assertSame('submitting', $result['status']);
+        $this->assertFalse($result['expired']);
+    }
+
+    public function test_autosave_returns_expired_when_chained_clock_past_deadline(): void
+    {
+        $attempt = new UserTest([
+            'assignment_id' => 1,
+            'current_module_started_at' => Carbon::now()->subMinutes(40),
+        ]);
+        $attempt->id = 55;
+        $module = new Module(['duration_minutes' => 30]);
+        $module->id = 66;
+
+        $result = $this->engine->autosave($attempt, $module, []);
+
+        $this->assertSame('expired', $result['status']);
+        $this->assertTrue($result['expired']);
+    }
+
+    public function test_autosave_paused_clock_records_client_elapsed_and_resets_started_at(): void
+    {
+        $past = Carbon::now()->subMinutes(10);
+        $attempt = new UserTest([
+            'assignment_id' => null, // paused clock
+            'current_module_started_at' => $past,
+            'current_module_elapsed_seconds' => 0,
+        ]);
+        $attempt->id = 77;
+        $module = new Module(['duration_minutes' => 30]);
+        $module->id = 88;
+
+        $result = $this->engine->autosave($attempt, $module, [], [], 120);
+
+        $this->assertSame('success', $result['status']);
+        $this->assertSame(120, $attempt->current_module_elapsed_seconds);
+        $this->assertTrue($attempt->current_module_started_at->greaterThan($past));
+    }
 }
+

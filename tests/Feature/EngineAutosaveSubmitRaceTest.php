@@ -11,7 +11,7 @@ use App\Models\SprCorrectAnswer;
 use App\Models\Test;
 use App\Models\User;
 use App\Models\UserTest;
-use App\Services\ModuleScoringService;
+use App\Services\AttemptEngine;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Queue;
@@ -116,7 +116,7 @@ class EngineAutosaveSubmitRaceTest extends TestCase
 
         Queue::assertPushed(ScoreModuleJob::class);
         $this->assertTrue(Cache::has(
-            ModuleScoringService::submitMarkerKey($attempt->id, $this->moduleOne->id)
+            AttemptEngine::submitMarkerKey($attempt->id, $this->moduleOne->id)
         ), 'Submit must mark the module as being processed.');
 
         // The stale autosave: same module, still active on the attempt, carrying the
@@ -141,7 +141,7 @@ class EngineAutosaveSubmitRaceTest extends TestCase
             ])->assertOk();
 
         $this->assertFalse(Cache::has(
-            ModuleScoringService::submitMarkerKey($attempt->id, $this->moduleOne->id)
+            AttemptEngine::submitMarkerKey($attempt->id, $this->moduleOne->id)
         ), 'Marker must not outlive scoring, or autosave stays blocked for its whole TTL.');
 
         // Marker gone, but the attempt has moved on, so a late autosave is still

@@ -11,12 +11,14 @@ use App\Models\UserTestAnswer;
 use App\Models\UserTestModuleSubmission;
 use Carbon\CarbonInterface;
 use Illuminate\Auth\Access\AuthorizationException;
+use Illuminate\Database\UniqueConstraintViolationException;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Validation\ValidationException;
 use Symfony\Component\HttpKernel\Exception\ConflictHttpException;
+use Symfony\Component\HttpKernel\Exception\UnprocessableEntityHttpException;
 
 /**
  * Deep domain service encapsulating attempt timing, progression, answer
@@ -27,18 +29,16 @@ class AttemptEngine
     public const MAX_CASCADE_STEPS = 12;
 
     public function __construct(
-        private ?ModuleScoringService $moduleScoring = null,
-        private ?TestProgressionService $testProgression = null,
+        private TestProgressionService $testProgression,
     ) {}
 
-    private function getModuleScoring(): ModuleScoringService
+    private function isTerminalSubmission(UserTest $attempt, Module $module): bool
     {
-        return $this->moduleScoring ??= app(ModuleScoringService::class);
-    }
-
-    private function getTestProgression(): TestProgressionService
-    {
-        return $this->testProgression ??= app(TestProgressionService::class);
+        try {
+            return $this->testProgression->isTerminalSubmission($attempt, $module);
+        } catch (\Throwable) {
+            return false;
+        }
     }
 
     // ==========================================
@@ -47,8 +47,12 @@ class AttemptEngine
 
     public function durationSeconds(Module $module): int
     {
+        if ($module->relationLoaded('section') && $module->section?->relationLoaded('test') && $module->section->test->title === 'Test Preview') {
+            return 0;
+        }
+
         $minutes = $module->duration_minutes
-            ?? ($module->section?->type === Section::TYPE_MATH ? 35 : 32);
+            ?? ($module->relationLoaded('section') && $module->section?->type === Section::TYPE_MATH ? Module::MATH_DURATION : Module::RW_DURATION);
 
         return max(0, (int) $minutes * 60);
     }
@@ -57,19 +61,16 @@ class AttemptEngine
     {
         $durationSeconds = $this->durationSeconds($module);
         $startedAt = $attempt->current_module_started_at;
+        $now ??= now();
 
         if (! $startedAt) {
-            return [
-                'duration_seconds' => $durationSeconds,
-                'elapsed_seconds' => (int) ($attempt->current_module_elapsed_seconds ?? 0),
-                'remaining_seconds' => max(0, $durationSeconds - (int) ($attempt->current_module_elapsed_seconds ?? 0)),
-                'expired' => false,
-            ];
+            $elapsedSeconds = min($durationSeconds, (int) ($attempt->current_module_elapsed_seconds ?? 0));
+        } else {
+            $sessionElapsed = max(0, $now->getTimestamp() - $startedAt->getTimestamp());
+            $elapsedSeconds = ($attempt->runsOnChainedClock() ? 0 : (int) ($attempt->current_module_elapsed_seconds ?? 0)) + $sessionElapsed;
         }
 
-        $now ??= now();
-        $elapsedSeconds = max(0, $now->getTimestamp() - $startedAt->getTimestamp());
-        $elapsedSeconds = min($durationSeconds, $elapsedSeconds);
+        $elapsedSeconds = min($durationSeconds, max(0, $elapsedSeconds));
         $remainingSeconds = max(0, $durationSeconds - $elapsedSeconds);
 
         return [
@@ -80,28 +81,66 @@ class AttemptEngine
         ];
     }
 
+    public function startOrResumeModule(UserTest $attempt, Module $module, bool $isPreview = false): array
+    {
+        if (! $attempt->current_module_started_at || (! $isPreview && ! $attempt->runsOnChainedClock())) {
+            $attempt->current_module_started_at = now();
+            $attempt->current_module_elapsed_seconds ??= 0;
+            if ($attempt->exists) {
+                $attempt->save();
+            }
+        }
+
+        return $this->timing($attempt, $module);
+    }
+
     public function deadline(UserTest $attempt, Module $module): ?CarbonInterface
     {
         if (! $attempt->current_module_started_at) {
             return null;
         }
 
-        return $attempt->current_module_started_at->copy()
-            ->addSeconds($this->durationSeconds($module));
+        $durationSeconds = $this->durationSeconds($module);
+        $seconds = $attempt->runsOnChainedClock()
+            ? $durationSeconds
+            : max(0, $durationSeconds - (int) ($attempt->current_module_elapsed_seconds ?? 0));
+
+        return $attempt->current_module_started_at->copy()->addSeconds($seconds);
     }
 
     public function syncElapsed(UserTest $attempt, Module $module): array
     {
         $timing = $this->timing($attempt, $module);
 
-        if ($attempt->runsOnChainedClock() && $attempt->current_module_started_at) {
+        if ($attempt->current_module_started_at) {
             $attempt->current_module_elapsed_seconds = $timing['elapsed_seconds'];
+            if (! $attempt->runsOnChainedClock()) {
+                $attempt->current_module_started_at = now();
+            }
             if ($attempt->exists) {
                 $attempt->save();
             }
         }
 
         return $timing;
+    }
+
+    public function isPastGraceDeadline(UserTest $attempt, Module $module, int $graceSeconds = 300): bool
+    {
+        if (! $attempt->current_module_started_at) {
+            return false;
+        }
+
+        if ($this->durationSeconds($module) <= 0) {
+            return false;
+        }
+
+        $deadline = $this->deadline($attempt, $module);
+        if (! $deadline) {
+            return false;
+        }
+
+        return now()->greaterThan($deadline->copy()->addSeconds($graceSeconds));
     }
 
     // ==========================================
@@ -111,13 +150,25 @@ class AttemptEngine
     public function firstModule(Test $test, ?UserTest $attempt = null): ?Module
     {
         if ($attempt && $attempt->attempt_type === 'section' && $attempt->section_type) {
-            $sectionType = $attempt->section_type === 'reading_writing' ? \App\Models\Section::TYPE_RW : \App\Models\Section::TYPE_MATH;
-            $section = $test->sections()->where('type', $sectionType)->first();
+            $sectionType = $attempt->section_type === 'reading_writing' ? Section::TYPE_RW : Section::TYPE_MATH;
+            $section = $test->relationLoaded('sections')
+                ? $test->sections->firstWhere('type', $sectionType)
+                : $test->sections()->where('type', $sectionType)->first();
         } else {
-            $section = $test->sections()->orderBy('order')->first();
+            $section = $test->relationLoaded('sections')
+                ? $test->sections->sortBy('order')->first()
+                : $test->sections()->orderBy('order')->first();
         }
 
-        return $section?->modules()
+        if (! $section) {
+            return null;
+        }
+
+        if ($section->relationLoaded('modules')) {
+            return $section->modules->sortBy('order')->first();
+        }
+
+        return $section->modules()
             ->reorder()
             ->orderBy('modules.order')
             ->orderBy('modules.id')
@@ -131,13 +182,11 @@ class AttemptEngine
         }
 
         $module = $this->firstModule($test, $attempt);
-        abort_unless($module, 422, 'Test has no module.');
+        if (! $module) {
+            throw new UnprocessableEntityHttpException('Test has no module.');
+        }
 
-        $attempt->forceFill([
-            'current_module_id' => $module->id,
-            'current_module_started_at' => $attempt->runsOnChainedClock() ? now() : null,
-            'current_module_elapsed_seconds' => 0,
-        ])->save();
+        $this->bindInitialModule($attempt, $module);
 
         return $module;
     }
@@ -145,11 +194,7 @@ class AttemptEngine
     public function assertIssued(UserTest $attempt, Module $module): void
     {
         if (! $attempt->current_module_id) {
-            $attempt->forceFill([
-                'current_module_id' => $module->id,
-                'current_module_started_at' => $attempt->runsOnChainedClock() ? now() : null,
-                'current_module_elapsed_seconds' => 0,
-            ])->save();
+            $this->bindInitialModule($attempt, $module);
 
             return;
         }
@@ -158,6 +203,16 @@ class AttemptEngine
             throw new ConflictHttpException('This module is not active for the test attempt.');
         }
     }
+
+    private function bindInitialModule(UserTest $attempt, Module $module): void
+    {
+        $attempt->forceFill([
+            'current_module_id' => $module->id,
+            'current_module_started_at' => $attempt->runsOnChainedClock() ? now() : null,
+            'current_module_elapsed_seconds' => 0,
+        ])->save();
+    }
+
 
     public function advance(UserTest $attempt, array $result, ?CarbonInterface $startNextAt = null): ?Module
     {
@@ -185,7 +240,7 @@ class AttemptEngine
         $attempt->forceFill([
             'current_module_id' => $nextModule->id,
             'current_module_started_at' => $attempt->runsOnChainedClock()
-                ? ($startNextAt ? $startNextAt->copy() : now())
+                ? ($startNextAt?->copy() ?? now())
                 : null,
             'current_module_elapsed_seconds' => 0,
         ])->save();
@@ -197,7 +252,7 @@ class AttemptEngine
     // Answer Grading & Persistence
     // ==========================================
 
-    public function checkAnswer(Question $question, $userAnswer): bool
+    protected function checkAnswer(Question $question, $userAnswer): bool
     {
         if ($question->question_type === 'multiple_choice') {
             $correctChoice = $question->answerChoices->where('is_correct', true)->first();
@@ -214,9 +269,7 @@ class AttemptEngine
                 $acceptedNumber = $this->parseNumericAnswer($acceptedText);
 
                 if ($submittedNumber !== null && $acceptedNumber !== null) {
-                    $tolerance = $accepted->tolerance !== null
-                        ? max(0.0, (float) $accepted->tolerance)
-                        : 0.0001;
+                    $tolerance = max(0.0, (float) ($accepted->tolerance ?? 0.0001));
 
                     if (abs($submittedNumber - $acceptedNumber) <= $tolerance) {
                         return true;
@@ -236,7 +289,7 @@ class AttemptEngine
         throw new \InvalidArgumentException("Unsupported question type '{$question->question_type}' for question ID {$question->id}");
     }
 
-    public function parseNumericAnswer(string $value): ?float
+    protected function parseNumericAnswer(string $value): ?float
     {
         $value = trim(str_replace(["\u{2212}", "\u{2013}"], '-', $value));
         if ($value === '') {
@@ -274,30 +327,47 @@ class AttemptEngine
         return is_finite($number) ? $number : null;
     }
 
-    public function resolveSubmissionContext(array $validated, ?UserTest $lockedAttempt = null, ?int $userId = null): array
+    private function validateAnswers(Module $module, array $answers): void
     {
-        if ($lockedAttempt) {
-            $attempt = $lockedAttempt;
-        } else {
-            $query = UserTest::where('id', $validated['user_test_id']);
-            if ($userId !== null) {
-                $query->where('user_id', $userId);
+        foreach (array_keys($answers) as $id) {
+            if (! ctype_digit((string) $id)) {
+                throw ValidationException::withMessages([
+                    'answers' => 'Submitted answers contain invalid question ids.',
+                ]);
             }
-            $attempt = $query->lockForUpdate()->first();
         }
+
+        $numericQuestionIds = array_values(array_unique(array_map('intval', array_keys($answers))));
+        if (! empty($numericQuestionIds)) {
+            $validCount = $module->questions()
+                ->whereIn('questions.id', $numericQuestionIds)
+                ->count();
+
+            if ($validCount !== count($numericQuestionIds)) {
+                throw ValidationException::withMessages([
+                    'answers' => 'Submitted answers include questions outside the current module.',
+                ]);
+            }
+        }
+    }
+
+    public function resolveActiveModule(int $userTestId, int $moduleId, ?int $userId = null): array
+    {
+        $query = UserTest::where('id', $userTestId);
+        if ($userId !== null) {
+            $query->where('user_id', $userId);
+        }
+        $attempt = $query->first();
 
         if (! $attempt || $attempt->status !== 'in_progress') {
             throw new AuthorizationException('This test attempt is no longer available.');
         }
 
-        if ($attempt->exam_session_id) {
-            $attempt->loadMissing('examSession');
-            if ($attempt->examSession && $attempt->examSession->status === 'paused') {
-                throw new ConflictHttpException('session_paused');
-            }
+        if ($attempt->examSession?->status === 'paused') {
+            throw new ConflictHttpException('session_paused');
         }
 
-        $module = Module::with(['section.test', 'questions'])->findOrFail($validated['module_id']);
+        $module = Module::with(['section.test', 'questions'])->findOrFail($moduleId);
         $section = $module->section;
 
         if (! $section || (int) $section->test_id !== (int) $attempt->test_id) {
@@ -315,47 +385,25 @@ class AttemptEngine
             throw new ConflictHttpException('This module is not active for the test attempt.');
         }
 
-        $questionIds = collect(array_keys($validated['answers']))
-            ->map(fn ($id) => (string) $id);
-
-        if ($questionIds->contains(fn ($id) => ! ctype_digit($id))) {
-            throw ValidationException::withMessages([
-                'answers' => 'Submitted answers contain invalid question ids.',
-            ]);
-        }
-
-        $questionIds = $questionIds->map(fn ($id) => (int) $id)->unique()->values();
-        if ($questionIds->isNotEmpty()) {
-            $validQuestionIds = $module->questions()
-                ->whereIn('questions.id', $questionIds->all())
-                ->pluck('questions.id')
-                ->map(fn ($id) => (int) $id);
-
-            if ($validQuestionIds->count() !== $questionIds->count()) {
-                throw ValidationException::withMessages([
-                    'answers' => 'Submitted answers include questions outside the current module.',
-                ]);
-            }
-        }
-
         return [$attempt, $module];
     }
 
-    public function saveModuleAnswers(
+    private function saveModuleAnswers(
         UserTest $attempt,
         Module $module,
         array $submittedAnswers,
         array $submittedTimes = [],
         bool $onlyMissing = false
     ): int {
-        $questions = $module->questions()
-            ->with(['answerChoices', 'sprCorrectAnswers', 'passage', 'explanation'])
-            ->get();
+        $questions = $module->relationLoaded('questions')
+            ? $module->questions
+            : $module->questions()
+                ->with(['answerChoices', 'sprCorrectAnswers', 'passage', 'explanation'])
+                ->get();
         $existingQuestionIds = $onlyMissing
             ? UserTestAnswer::where('user_test_id', $attempt->id)
                 ->where('module_id', $module->id)
                 ->pluck('question_id')
-                ->map(fn ($id) => (int) $id)
                 ->all()
             : [];
 
@@ -451,27 +499,54 @@ class AttemptEngine
     // Autosave & Submit Operations
     // ==========================================
 
-    public function autosave(array $validated, ?int $clientElapsedSeconds = null, ?int $userId = null): array
+    /**
+     * Cache key marking "a submission for this attempt+module is being processed".
+     */
+    public static function submitMarkerKey(int $userTestId, int $moduleId): string
     {
-        return DB::transaction(function () use ($validated, $clientElapsedSeconds, $userId) {
-            [$attempt, $module] = $this->resolveSubmissionContext($validated, null, $userId);
+        return "module_submit_active_{$userTestId}_{$moduleId}";
+    }
 
-            if (Cache::has(ModuleScoringService::submitMarkerKey((int) $attempt->id, (int) $module->id))) {
+    public function autosave(
+        UserTest $attempt,
+        Module $module,
+        array $answers = [],
+        array $questionTimes = [],
+        ?int $clientElapsedSeconds = null
+    ): array {
+        return DB::transaction(function () use ($attempt, $module, $answers, $questionTimes, $clientElapsedSeconds) {
+            $lockedAttempt = $attempt;
+            if ($attempt->exists) {
+                $lockedAttempt = UserTest::where('id', $attempt->id)->lockForUpdate()->first();
+                if (! $lockedAttempt || $lockedAttempt->status !== 'in_progress') {
+                    throw new AuthorizationException('This test attempt is no longer available.');
+                }
+            }
+
+            if (Cache::has(self::submitMarkerKey((int) $lockedAttempt->id, (int) $module->id))) {
                 return ['status' => 'submitting', 'expired' => false, 'saved_count' => 0];
             }
 
-            if ($attempt->runsOnChainedClock()) {
-                $timing = $this->syncElapsed($attempt, $module);
+            if ($lockedAttempt->runsOnChainedClock()) {
+                $timing = $this->syncElapsed($lockedAttempt, $module);
                 if ($timing['expired']) {
                     return ['status' => 'expired', 'expired' => true, 'saved_count' => 0];
                 }
             } elseif ($clientElapsedSeconds !== null) {
                 $attempt->current_module_elapsed_seconds = max(0, $clientElapsedSeconds);
-                $attempt->save();
+                $attempt->current_module_started_at = now();
+                $lockedAttempt->current_module_elapsed_seconds = $attempt->current_module_elapsed_seconds;
+                $lockedAttempt->current_module_started_at = $attempt->current_module_started_at;
+                if ($lockedAttempt->exists) {
+                    $lockedAttempt->save();
+                }
             }
 
-            $questionTimes = $validated['question_times'] ?? [];
-            $savedCount = $this->saveModuleAnswers($attempt, $module, $validated['answers'], $questionTimes);
+            $savedCount = 0;
+            if (! empty($answers) || ! empty($questionTimes)) {
+                $this->validateAnswers($module, $answers);
+                $savedCount = $this->saveModuleAnswers($lockedAttempt, $module, $answers, $questionTimes);
+            }
 
             return [
                 'status' => 'success',
@@ -485,33 +560,31 @@ class AttemptEngine
     {
         $result = Cache::get("scoring_result_{$attemptId}");
 
-        if (is_array($result)) {
-            $isForAnotherModule = $wantedModuleId > 0
-                && isset($result['scored_module_id'])
-                && (int) $result['scored_module_id'] !== $wantedModuleId;
-
-            if (! $isForAnotherModule) {
-                return $result;
-            }
+        if (is_array($result) && (! isset($result['scored_module_id']) || (int) $result['scored_module_id'] === $wantedModuleId || $wantedModuleId <= 0)) {
+            return $result;
         }
 
         if ($wantedModuleId > 0) {
-            $receipt = UserTestModuleSubmission::where('user_test_id', $attemptId)
+            $receiptResult = UserTestModuleSubmission::where('user_test_id', $attemptId)
                 ->where('module_id', $wantedModuleId)
-                ->first();
+                ->value('result');
 
-            if ($receipt && is_array($receipt->result)) {
-                return $receipt->result;
+            if (is_array($receiptResult)) {
+                return $receiptResult;
             }
         }
 
         return null;
     }
 
-    public function submit(array $validated, ?int $userId = null): array
-    {
-        $attemptId = (int) $validated['user_test_id'];
-        $moduleId = (int) $validated['module_id'];
+    public function submitModule(
+        UserTest $attempt,
+        Module $module,
+        array $answers = [],
+        array $questionTimes = []
+    ): array {
+        $attemptId = (int) $attempt->id;
+        $moduleId = (int) $module->id;
 
         $lockKey = "module_submit_lock_{$attemptId}_{$moduleId}";
         $lock = Cache::lock($lockKey, (int) config('scoring.lock_ttl'));
@@ -530,7 +603,7 @@ class AttemptEngine
             return ['status' => 'in_flight'];
         }
 
-        $markerKey = ModuleScoringService::submitMarkerKey($attemptId, $moduleId);
+        $markerKey = self::submitMarkerKey($attemptId, $moduleId);
         Cache::put($markerKey, 1, (int) config('scoring.lock_ttl'));
 
         $jobDispatched = false;
@@ -541,75 +614,67 @@ class AttemptEngine
                 'module_id' => $moduleId,
             ]);
 
-            $outcome = DB::transaction(function () use ($validated, $attemptId, $moduleId, $userId) {
-                $query = UserTest::where('id', $attemptId);
-                if ($userId !== null) {
-                    $query->where('user_id', $userId);
-                }
-                $attempt = $query->lockForUpdate()->first();
-
-                if (! $attempt) {
-                    throw new AuthorizationException('This test attempt is no longer available.');
+            $outcome = DB::transaction(function () use ($attempt, $module, $answers, $questionTimes) {
+                $lockedAttempt = $attempt;
+                if ($attempt->exists) {
+                    $lockedAttempt = UserTest::where('id', $attempt->id)->lockForUpdate()->first();
+                    if (! $lockedAttempt || $lockedAttempt->status !== 'in_progress') {
+                        throw new AuthorizationException('This test attempt is no longer available.');
+                    }
                 }
 
-                $receipt = UserTestModuleSubmission::where('user_test_id', $attempt->id)
-                    ->where('module_id', $moduleId)
+                $receipt = UserTestModuleSubmission::where('user_test_id', $lockedAttempt->id)
+                    ->where('module_id', $module->id)
                     ->first();
 
                 if ($receipt) {
-                    $isCompletedTransition = ! empty($receipt->result['test_completed'])
-                        && $attempt->status === 'completed';
-                    $isCurrentTransition = $receipt->issued_next_module_id
-                        && (int) $receipt->issued_next_module_id === (int) $attempt->current_module_id;
-
-                    if ($isCompletedTransition || $isCurrentTransition) {
+                    if (! empty($receipt->result['test_completed']) && $lockedAttempt->status === 'completed') {
                         return ['status' => 'completed', 'result' => $receipt->result];
                     }
 
+                    if ($receipt->issued_next_module_id && (int) $receipt->issued_next_module_id === (int) $lockedAttempt->current_module_id) {
+                        return ['status' => 'ready', 'result' => $receipt->result];
+                    }
+
                     Log::channel('queue')->info('conflict.stale_receipt', [
-                        'user_test_id' => $attempt->id,
-                        'requested_module_id' => $moduleId,
-                        'current_module_id' => (int) $attempt->current_module_id,
+                        'user_test_id' => $lockedAttempt->id,
+                        'requested_module_id' => $module->id,
+                        'current_module_id' => (int) $lockedAttempt->current_module_id,
                         'issued_next_module_id' => (int) $receipt->issued_next_module_id,
-                        'attempt_status' => $attempt->status,
+                        'attempt_status' => $lockedAttempt->status,
                     ]);
 
                     throw new ConflictHttpException('This submission is stale because the attempt has already progressed.');
                 }
 
-                [$attempt, $module] = $this->resolveSubmissionContext($validated, $attempt, $userId);
+                $this->validateAnswers($module, $answers);
+
                 $section = $module->section;
                 $timedOut = false;
                 $nextStartsAt = null;
 
-                if ($attempt->runsOnChainedClock()) {
-                    $timedOut = $this->syncElapsed($attempt, $module)['expired'];
+                if ($lockedAttempt->runsOnChainedClock()) {
+                    $timedOut = $this->syncElapsed($lockedAttempt, $module)['expired'];
                     if ($timedOut) {
-                        $nextStartsAt = $this->deadline($attempt, $module);
+                        $nextStartsAt = $this->deadline($lockedAttempt, $module);
                     }
-                } elseif ($attempt->current_module_started_at) {
-                    $test = $section?->test;
-                    $duration = ($test && $test->title === 'Test Preview') ? 0 : $this->durationSeconds($module);
-                    if ($duration > 0) {
-                        $maxAllowedTime = $attempt->current_module_started_at->copy()->addSeconds($duration + 300);
-
-                        if (now()->greaterThan($maxAllowedTime)) {
-                            throw new AuthorizationException('Module submission time has expired.');
-                        }
+                } elseif ($lockedAttempt->current_module_started_at) {
+                    if ($this->isPastGraceDeadline($lockedAttempt, $module)) {
+                        throw new AuthorizationException('Module submission time has expired.');
                     }
                 }
 
-                $questionTimes = $validated['question_times'] ?? [];
-
-                if (! $timedOut) {
-                    $this->saveModuleAnswers($attempt, $module, $validated['answers'], $questionTimes);
-                } else {
-                    $this->saveModuleAnswers($attempt, $module, [], [], true);
-                }
+                $this->saveModuleAnswers(
+                    $lockedAttempt,
+                    $module,
+                    $timedOut ? [] : $answers,
+                    $timedOut ? [] : $questionTimes,
+                    onlyMissing: $timedOut
+                );
 
                 return [
                     'status' => 'proceed',
-                    'user_test_id' => $attempt->id,
+                    'user_test_id' => $lockedAttempt->id,
                     'module_id' => $module->id,
                     'section_id' => $section?->id,
                     'timed_out' => $timedOut,
@@ -617,8 +682,8 @@ class AttemptEngine
                 ];
             });
 
-            if ($outcome['status'] === 'completed') {
-                return ['status' => 'completed', 'result' => $outcome['result']];
+            if (in_array($outcome['status'] ?? null, ['completed', 'ready'], true)) {
+                return ['status' => $outcome['status'], 'result' => $outcome['result']];
             }
 
             $cacheKey = "scoring_result_{$outcome['user_test_id']}";
@@ -626,11 +691,8 @@ class AttemptEngine
 
             if (config('scoring.inline_non_final')) {
                 try {
-                    if (! $this->getTestProgression()->isTerminalSubmission(
-                        UserTest::findOrFail($outcome['user_test_id']),
-                        Module::findOrFail($outcome['module_id'])
-                    )) {
-                        $result = $this->getModuleScoring()->scoreAndAdvance(
+                    if (! $this->isTerminalSubmission($attempt, $module)) {
+                        $result = $this->scoreAndAdvance(
                             $outcome['user_test_id'],
                             $outcome['module_id'],
                             $outcome['timed_out'],
@@ -659,8 +721,9 @@ class AttemptEngine
             );
             $jobDispatched = true;
 
-            if (Cache::has($cacheKey)) {
-                return ['status' => 'ready', 'result' => Cache::get($cacheKey)];
+            $cached = Cache::get($cacheKey);
+            if ($cached !== null) {
+                return ['status' => 'ready', 'result' => $cached];
             }
 
             return ['status' => 'scoring', 'message' => 'Scoring in progress...'];
@@ -672,11 +735,109 @@ class AttemptEngine
         }
     }
 
+
+
+    /**
+     * Score a submitted module, advance the attempt, and record the outcome.
+     *
+     * Shared between the inline path in submit() and ScoreModuleJob so both
+     * write identical receipts and cached outcomes.
+     */
+    public function scoreAndAdvance(int $userTestId, int $moduleId, bool $timedOut, ?CarbonInterface $startNextAt = null): array
+    {
+        $cacheKey = "scoring_result_{$userTestId}";
+        $resultTtl = (int) config('scoring.result_ttl', 900);
+
+        $userTest = UserTest::findOrFail($userTestId);
+        $module = Module::findOrFail($moduleId);
+
+        $result = $this->testProgression->submit($userTest, $module);
+        $result['timed_out'] = $timedOut;
+        $result['scored_module_id'] = $moduleId;
+
+        if (! isset($result['error'])) {
+            $result = $this->advanceAndRecord($userTestId, $moduleId, $result, $startNextAt);
+        }
+
+        Cache::put($cacheKey, $result, $resultTtl);
+        Cache::forget(self::submitMarkerKey($userTestId, $moduleId));
+
+        return $result;
+    }
+
+    /**
+     * Persist the routing decision and a submission receipt. If a duplicate
+     * request raced this one and already recorded a receipt for this module, fall
+     * back to that receipt's result instead of erroring.
+     */
+    private function advanceAndRecord(int $userTestId, int $moduleId, array $result, ?CarbonInterface $startNextAt = null): array
+    {
+        return DB::transaction(function () use ($userTestId, $moduleId, $result, $startNextAt) {
+            $existing = UserTestModuleSubmission::where('user_test_id', $userTestId)
+                ->where('module_id', $moduleId)
+                ->first();
+
+            if ($existing) {
+                return $existing->result;
+            }
+
+            $userTest = UserTest::where('id', $userTestId)->lockForUpdate()->first();
+
+            if (! $userTest) {
+                return $result;
+            }
+
+            $nextModule = $this->advance($userTest, $result, $startNextAt);
+
+            try {
+                UserTestModuleSubmission::create([
+                    'user_test_id' => $userTestId,
+                    'module_id' => $moduleId,
+                    'issued_next_module_id' => $nextModule?->id,
+                    'result' => $result,
+                    'submitted_at' => now(),
+                ]);
+            } catch (UniqueConstraintViolationException) {
+                return UserTestModuleSubmission::where('user_test_id', $userTestId)
+                    ->where('module_id', $moduleId)
+                    ->first()
+                    ->result;
+            }
+
+            return $result;
+        });
+    }
+
+    /**
+     * Cache the generic failure payload. Shared so the inline path, the job's
+     * catch block and its failed() hook all report the same shape.
+     */
+    public function recordFailure(int $userTestId, int $moduleId, \Throwable $e, string $context): array
+    {
+        Log::error($context, [
+            'user_test_id' => $userTestId,
+            'module_id' => $moduleId,
+            'exception' => $e,
+        ]);
+
+        $payload = [
+            'status' => 'error',
+            'error' => 'Server error during submission.',
+            'message' => 'An unexpected server error occurred.',
+            'scored_module_id' => $moduleId,
+        ];
+
+        Cache::put("scoring_result_{$userTestId}", $payload, (int) config('scoring.result_ttl', 900));
+        Cache::forget(self::submitMarkerKey($userTestId, $moduleId));
+
+        return $payload;
+    }
+
     // ==========================================
     // Cascade & Expired Submissions
     // ==========================================
 
-    public function submitOmittedModule(UserTest $attempt, Module $module, ?CarbonInterface $deadline = null): bool
+    private function submitOmittedModule(UserTest $attempt, Module $module, ?CarbonInterface $deadline = null): bool
     {
         $lockKey = "module_submit_lock_{$attempt->id}_{$module->id}";
         $lock = Cache::lock($lockKey, (int) config('scoring.lock_ttl'));
@@ -685,14 +846,11 @@ class AttemptEngine
             return false;
         }
 
-        $markerKey = ModuleScoringService::submitMarkerKey($attempt->id, $module->id);
+        $markerKey = self::submitMarkerKey($attempt->id, $module->id);
         Cache::put($markerKey, 1, (int) config('scoring.lock_ttl'));
 
         try {
-            $receipt = UserTestModuleSubmission::where('user_test_id', $attempt->id)
-                ->where('module_id', $module->id)
-                ->exists();
-            if ($receipt) {
+            if (UserTestModuleSubmission::where('user_test_id', $attempt->id)->where('module_id', $module->id)->exists()) {
                 Log::channel('queue')->warning('omitted_submit.stuck_receipt', [
                     'user_test_id' => $attempt->id,
                     'module_id' => $module->id,
@@ -708,7 +866,7 @@ class AttemptEngine
 
             Cache::forget("scoring_result_{$attempt->id}");
 
-            $result = $this->getModuleScoring()->scoreAndAdvance(
+            $result = $this->scoreAndAdvance(
                 $attempt->id,
                 $module->id,
                 timedOut: true,
@@ -746,12 +904,16 @@ class AttemptEngine
         }
     }
 
-    public function cascadeAdvance(UserTest $attempt, bool $force = false): int
-    {
+    public function cascadeExpire(
+        UserTest $attempt,
+        ?CarbonInterface $deadline = null,
+        bool $force = false
+    ): int {
         if (! $force && (! $attempt->runsOnChainedClock() || $attempt->status !== 'in_progress')) {
             return 0;
         }
 
+        $overallDeadlineExpired = $deadline !== null && $deadline->isPast();
         $submitted = 0;
 
         for ($step = 0; $step < self::MAX_CASCADE_STEPS; $step++) {
@@ -766,12 +928,16 @@ class AttemptEngine
                 break;
             }
 
-            $deadline = $this->deadline($attempt, $module);
-            if (! $force && (! $deadline || $deadline->isFuture())) {
+            $modDeadline = $this->deadline($attempt, $module);
+            $isExpired = $force
+                || $overallDeadlineExpired
+                || ($modDeadline && ! $modDeadline->isFuture());
+
+            if (! $isExpired) {
                 break;
             }
 
-            if (! $this->submitOmittedModule($attempt, $module, $deadline)) {
+            if (! $this->submitOmittedModule($attempt, $module, $modDeadline ?? now())) {
                 break;
             }
 
@@ -779,5 +945,20 @@ class AttemptEngine
         }
 
         return $submitted;
+    }
+
+    /**
+     * Candidate attempts for a cascade sweep: running attempts with chained clocks
+     * that have an active module with a started clock.
+     *
+     * @return \Illuminate\Database\Eloquent\Builder<UserTest>
+     */
+    public function candidateCascadeAttemptsQuery(): \Illuminate\Database\Eloquent\Builder
+    {
+        return UserTest::query()
+            ->where(fn ($q) => $q->whereNotNull('assignment_id')->orWhereNotNull('exam_session_id'))
+            ->where('status', 'in_progress')
+            ->whereNotNull('current_module_id')
+            ->whereNotNull('current_module_started_at');
     }
 }

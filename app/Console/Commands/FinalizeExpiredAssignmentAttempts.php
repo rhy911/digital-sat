@@ -4,15 +4,14 @@ namespace App\Console\Commands;
 
 use App\Models\Module;
 use App\Models\UserTest;
-use App\Services\AssignmentAttemptTimeoutService;
 use App\Services\AttemptEngine;
 use Illuminate\Console\Command;
 
 /**
- * Close out assignment attempts whose time expired with nobody watching.
+ * Close out chained-clock attempts (assignments and exam sessions) whose time expired with nobody watching.
  *
  * This is what makes the exam clock server-authoritative: without it, an
- * assignment attempt only ever advances while the student's browser is open, so
+ * attempt only ever advances while the student's browser is open, so
  * closing the tab leaves it `in_progress` forever.
  *
  * Scheduled every minute in bootstrap/app.php. Requires `php artisan schedule:run`
@@ -24,24 +23,20 @@ class FinalizeExpiredAssignmentAttempts extends Command
     protected $signature = 'assignments:finalize-expired
                             {--dry-run : List what would be submitted without touching anything}';
 
-    protected $description = 'Auto-submit and advance assignment attempts whose module time has run out';
+    protected $description = 'Auto-submit and advance chained-clock attempts (assignments and exam sessions) whose module time has run out';
 
-    private AttemptEngine $engine;
-
-    public function handle(AssignmentAttemptTimeoutService $timeouts, AttemptEngine $engine): int
+    public function handle(AttemptEngine $engine): int
     {
-        $this->engine = $engine;
-
         $dryRun = (bool) $this->option('dry-run');
         $attemptsTouched = 0;
         $modulesSubmitted = 0;
 
-        $timeouts->candidateAttemptsQuery()
+        $engine->candidateCascadeAttemptsQuery()
             ->orderBy('id')
-            ->chunkById(100, function ($attempts) use ($timeouts, $dryRun, &$attemptsTouched, &$modulesSubmitted) {
+            ->chunkById(100, function ($attempts) use ($engine, $dryRun, &$attemptsTouched, &$modulesSubmitted) {
                 foreach ($attempts as $attempt) {
                     if ($dryRun) {
-                        if ($this->isExpired($attempt)) {
+                        if ($this->isExpired($attempt, $engine)) {
                             $attemptsTouched++;
                             $this->line("attempt {$attempt->id} (module {$attempt->current_module_id}) is past its deadline");
                         }
@@ -49,7 +44,7 @@ class FinalizeExpiredAssignmentAttempts extends Command
                         continue;
                     }
 
-                    $submitted = $timeouts->finalizeExpired($attempt);
+                    $submitted = $engine->cascadeExpire($attempt);
 
                     if ($submitted > 0) {
                         $attemptsTouched++;
@@ -65,10 +60,10 @@ class FinalizeExpiredAssignmentAttempts extends Command
         return self::SUCCESS;
     }
 
-    private function isExpired(UserTest $attempt): bool
+    private function isExpired(UserTest $attempt, AttemptEngine $engine): bool
     {
         $module = Module::find($attempt->current_module_id);
 
-        return $module && $this->engine->timing($attempt, $module)['expired'];
+        return $module && (bool) $engine->deadline($attempt, $module)?->isPast();
     }
 }
