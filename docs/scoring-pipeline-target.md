@@ -165,11 +165,12 @@ calibrate để θ-max-easy map đúng ~670, phản ánh chính xác giới hạ
 - Total: `RW + Math`, clamp `[400, 1600]`; range gộp SE hai section theo quadrature.
 
 ### 4.6 Override tùy chọn (Tầng 0)
-- `ScoreConversionService` thử `approvedScoreConversionSet()` trước; **giữ cổng checksum**
+- `SatScoringPipeline` thử `ScoreConversionService::tryApprovedConversion()` trước; **giữ cổng checksum**
   `hash_equals($set->form_checksum, $audit->formChecksum($test))` — không query thẳng bảng theo
   `test_id` (tránh dính row draft/retired/bảng cũ sau khi form sửa).
 - Có set hợp lệ (bảng/params chuẩn người dùng nạp) → ưu tiên dùng. Không có → fallback IRT +
-  curve. Đúng yêu cầu "có tham số chuẩn thì dùng, không thì tự động".
+  curve qua `AdaptiveScoreConversionService`. Đúng yêu cầu "có tham số chuẩn thì dùng, không thì tự động".
+- `ScoreConversionService::convert()` giữ vai trò tra cứu raw-table dự phòng cho các quy trình yêu cầu raw score trực tiếp.
 
 ### 4.7 Auto-calibrate (Tầng 3 — tương lai gần, tự động)
 - Khi tích đủ response thật → background job ước lượng lại `a/b/c` từng câu (2PL/3PL calibration).
@@ -228,9 +229,10 @@ data.
 
 ## 9. File ảnh hưởng chính
 - `config/sat_scoring.php` — đường cong phi tuyến riêng RW/Math, cap-aware.
+- `app/Services/SatScoringPipeline.php` — module hợp nhất luồng chấm điểm (progression finalization, theta conversion, uncertainty range, legacy rescoring).
 - `app/Services/AdaptiveScoreConversionService.php` — `mapTheta` phi tuyến + cap theo nhánh.
-- `app/Services/TestProgressionService.php` — `finalizeAdaptive` dùng curve; guard branch; band trùng tâm.
-- `app/Services/SatScoringService.php` — bỏ EAP trùng; (tùy chọn) routing raw-cutoff.
-- `app/Services/ScoreConversionService.php` — giữ override checksum-gated.
+- `app/Services/TestProgressionService.php` — điều phối tiến trình làm bài, ủy quyền chấm điểm cho `SatScoringPipeline`.
+- `app/Services/SatScoringService.php` — IRT engine (EAP grid 3PL, routing).
+- `app/Services/ScoreConversionService.php` — tra cứu override checksum-gated và raw table fallback.
 - `CLAUDE.md` — sửa mô tả engine.
 - `database/jobs|console` — (tương lai) auto-calibrate job.

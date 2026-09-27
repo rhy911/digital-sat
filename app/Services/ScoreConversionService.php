@@ -4,12 +4,12 @@ namespace App\Services;
 
 use App\Models\ScoreConversionSet;
 use App\Models\Test;
+use RuntimeException;
 
 class ScoreConversionService
 {
     public function __construct(
         private FormScoringAuditService $audit,
-        private DefaultScoreConversionService $defaults,
     ) {}
 
     /**
@@ -22,14 +22,34 @@ class ScoreConversionService
             return $approved;
         }
 
-        $fallback = $this->defaults->convert($sectionType, $rawScore, $presentedQuestions);
+        return $this->convertDefault($sectionType, $rawScore, $presentedQuestions);
+    }
+
+    /**
+     * Look up scaled score from the default uncurved practice score table.
+     * Absorbed from DefaultScoreConversionService. Used as fallback when no
+     * approved set exists, and for legacy consensus rescoring.
+     *
+     * @return array{scaled_score:int,raw_score:int,conversion_set_id:null,conversion_version:string,estimate_kind:string,estimate_status:string}
+     */
+    public function convertDefault(string $sectionType, int $rawScore, int $presentedQuestions): array
+    {
+        $table = config("sat_scoring.normal_conversion.tables.{$sectionType}");
+        $version = config('sat_scoring.normal_conversion.version');
+        if (! is_array($table) || ! is_string($version) || $version === '') {
+            throw new RuntimeException('Normal score conversion is not configured for this section.');
+        }
+        $expectedTotal = max(array_keys($table));
+        if ($presentedQuestions !== $expectedTotal || ! array_key_exists($rawScore, $table)) {
+            throw new RuntimeException("Normal conversion requires {$expectedTotal} presented questions and complete raw-score coverage.");
+        }
 
         return [
-            'scaled_score' => $fallback['scaled_score'],
+            'scaled_score' => (int) $table[$rawScore],
             'raw_score' => $rawScore,
             'conversion_set_id' => null,
-            'conversion_version' => $fallback['conversion_version'],
-            'estimate_kind' => $fallback['estimate_kind'],
+            'conversion_version' => $version,
+            'estimate_kind' => 'normal_generic',
             'estimate_status' => 'estimated_practice_score',
         ];
     }
