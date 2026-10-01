@@ -14,6 +14,10 @@ class Test extends Model
 
     public const TYPE_ADAPTIVE_FULL = 'adaptive_full_length';
 
+    public const TYPE_SECTION_ONLY = 'section_only';
+
+    public const TYPE_MODULE_ONLY = 'module_only';
+
     protected $fillable = [
         'title',
         'description',
@@ -99,7 +103,22 @@ class Test extends Model
 
     public function isContentLocked(): bool
     {
-        return $this->assignments()->where('status', 'published')->exists();
+        return $this->assignments()->where('status', 'published')->exists()
+            || ($this->test_type === self::TYPE_FULL
+                && $this->scoreConversionSets()->where('status', ScoreConversionSet::STATUS_APPROVED)->exists());
+    }
+
+    public function syncContentLock(): void
+    {
+        $test = self::lockForUpdate()->findOrFail($this->id);
+        $locked = $test->isContentLocked();
+
+        if ($locked === ($test->content_locked_at !== null)) {
+            return;
+        }
+
+        $test->forceFill(['content_locked_at' => $locked ? now() : null])->save();
+        $this->content_locked_at = $test->content_locked_at;
     }
 
     public function isPreview(): bool

@@ -17,8 +17,8 @@ use Illuminate\Support\Facades\Storage;
  * drop the compatibility shim in LatexNormalizer.
  *
  * Writes go through the query builder rather than Eloquent on purpose: this
- * changes how content is spelled, not what it says, so TestContentLockService's
- * "published tests are immutable" hooks must not block it.
+ * changes how content is spelled, not what it says, so content lock
+ * immutability checks must not block it.
  */
 class NormalizeStoredLatex extends Command
 {

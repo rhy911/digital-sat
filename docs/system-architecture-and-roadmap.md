@@ -156,7 +156,7 @@ Mô tả phân rã chi tiết từng Phân hệ:
 #### **B. Phân hệ Giáo viên & Trung tâm (Teacher / Center Admin)**
 
 - **Quản lý Lớp học (Classroom LMS):** Tạo lớp học, quản lý danh sách học sinh, sinh mã Join Code, đăng thông báo (Announcements), giao bài thi theo hạn nộp và giới hạn số lần làm bài (`attempt_limit`).
-- **Soạn thảo Đề thi (Test Builder):** Tạo đề thi mới, cấu hình ma trận Section/Module, liên kết ngân hàng câu hỏi, kích hoạt khóa dữ liệu (`TestContentLockService`) ngăn chỉnh sửa đề đã giao.
+- **Soạn thảo Đề thi (Test Builder):** Tạo đề thi mới, cấu hình ma trận Section/Module, liên kết ngân hàng câu hỏi, đồng bộ khóa nội dung (`Test::syncContentLock()`) khi đề đã giao.
 - **Ngân hàng Câu hỏi (Question Bank):**
   - Quản lý câu hỏi cá nhân (`Mine`) và ngân hàng chia sẻ (`Shared`).
   - Hỗ trợ bài đọc ngắn, bài đọc dài, bài đọc đôi (`passages`, `paired_passages`).
@@ -201,7 +201,7 @@ flowchart TB
 
         subgraph Services["Service Layer"]
             SatScoring["SatScoringService\n(3PL IRT EAP Grid)"]
-            ContentLock["TestContentLockService"]
+            TestManagement["TestManagementService\n(Test Authoring & Replication)"]
             ScoreConversion["ScoreConversionService\n(Adaptive + Default)"]
         end
     end
@@ -619,8 +619,8 @@ Hệ thống sử dụng **Blade Views over HTTPS** cho trang web và **RESTful 
        ->firstOrFail();
    ```
 
-2. **Khóa nội dung thương mại (Content Lock Service):**
-   Khi bài thi `Test` đã có `Assignment` được xuất bản hoặc có `ScoreConversionSet` được phê duyệt, hệ thống kích hoạt `TestContentLockService` ngăn chặn toàn bộ thao tác `UPDATE`/`DELETE` trên cây dữ liệu `Test > Section > Module > Question > AnswerChoice > QuestionExplanation`. Đăng ký qua Eloquent model events (`updating`/`deleting`) trong `AppServiceProvider::boot()`.
+2. **Khóa nội dung thương mại (Content Lock on Test Model):**
+   Khi bài thi `Test` đã có `Assignment` được xuất bản hoặc có `ScoreConversionSet` được phê duyệt, phương thức `$test->syncContentLock()` cập nhật `content_locked_at` và `$test->isContentLocked()` đóng vai trò kiểm tra trạng thái khóa nội dung trực tiếp trên model `Test`.
 3. **An toàn thông tin (OWASP Compliance):**
    - **XSS:** LaTeX render qua KaTeX (client-side). Markdown render qua `league/commonmark` (server-side). Blade `{{ }}` auto-escaping cho tất cả output.
    - **CSRF:** Bảo vệ toàn bộ POST/PUT/DELETE routes bằng Laravel CSRF tokens.

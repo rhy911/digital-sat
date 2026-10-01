@@ -28,7 +28,6 @@ class SectionController extends Controller
 
         $test = Test::findOrFail($validated['test_id']);
         $this->authorize('update', $test);
-        app(\App\Services\TestContentLockService::class)->ensureUnlocked($test);
 
         if (Section::where('test_id', $validated['test_id'])->where('type', $validated['type'])->exists()) {
             return response()->json([
@@ -56,7 +55,6 @@ class SectionController extends Controller
     {
         $section = Section::findOrFail($id);
         $this->authorize('update', $section);
-        app(\App\Services\TestContentLockService::class)->ensureUnlocked($section->test);
 
         $validated = $request->validated();
         if (isset($validated['is_public'])) {
@@ -76,7 +74,6 @@ class SectionController extends Controller
     {
         $section = Section::findOrFail($id);
         $this->authorize('delete', $section);
-        app(\App\Services\TestContentLockService::class)->ensureUnlocked($section->test);
 
         try {
             $this->testManagement->deleteSection((int) $id, $request->boolean('delete_children'));

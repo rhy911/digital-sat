@@ -12,8 +12,6 @@ use Illuminate\Validation\ValidationException;
 
 class ClassroomService
 {
-    public function __construct(private TestContentLockService $locks) {}
-
     public function requestMembership(User $student, string $joinCode): ClassroomMembership
     {
         if ($student->role !== 'student') {
@@ -91,7 +89,7 @@ class ClassroomService
             $classroom->update(['status' => 'archived']);
             $testIds = $classroom->assignments()->where('status', 'published')->pluck('test_id')->unique();
             $classroom->assignments()->where('status', 'published')->update(['status' => 'closed', 'closed_at' => now()]);
-            Test::whereKey($testIds)->each(fn (Test $test) => $this->locks->syncLock($test));
+            Test::whereKey($testIds)->each(fn (Test $test) => $test->syncContentLock());
         });
     }
 }

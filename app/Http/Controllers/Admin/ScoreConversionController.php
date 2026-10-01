@@ -6,7 +6,6 @@ use App\Http\Controllers\Controller;
 use App\Models\ScoreConversionSet;
 use App\Models\Test;
 use App\Services\FormScoringAuditService;
-use App\Services\TestContentLockService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
@@ -16,7 +15,6 @@ class ScoreConversionController extends Controller
     public function store(Request $request, Test $test)
     {
         $this->authorize('update', $test);
-        app(TestContentLockService::class)->ensureUnlocked($test);
         if ($test->test_type !== Test::TYPE_FULL) {
             throw ValidationException::withMessages(['test' => 'Raw score conversion tables are available only for Normal Full tests. Adaptive Full uses the system IRT mapping.']);
         }
@@ -57,7 +55,7 @@ class ScoreConversionController extends Controller
         return response()->json(['status' => 'success', 'data' => $set], 201);
     }
 
-    public function approve(ScoreConversionSet $scoreConversionSet, FormScoringAuditService $audit, TestContentLockService $locks)
+    public function approve(ScoreConversionSet $scoreConversionSet, FormScoringAuditService $audit)
     {
         $test = $scoreConversionSet->test;
         $this->authorize('update', $test);
@@ -81,7 +79,7 @@ class ScoreConversionController extends Controller
                 'approved_at' => now(),
             ]);
         });
-        $locks->syncLock($test);
+        $test->syncContentLock();
 
         return response()->json(['status' => 'success', 'data' => $scoreConversionSet->fresh('rows')]);
     }

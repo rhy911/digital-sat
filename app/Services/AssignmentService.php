@@ -9,10 +9,6 @@ use Illuminate\Validation\ValidationException;
 
 class AssignmentService
 {
-    public function __construct(
-        private TestContentLockService $locks,
-    ) {}
-
     public function publish(Assignment $assignment): Assignment
     {
         return DB::transaction(function () use ($assignment) {
@@ -32,7 +28,7 @@ class AssignmentService
             }
 
             $assignment->update(['status' => 'published', 'published_at' => now(), 'closed_at' => null]);
-            $this->locks->syncLock($assignment->test);
+            $assignment->test->syncContentLock();
 
             return $assignment->fresh(['recipients.student', 'classroom', 'test']);
         });
@@ -46,7 +42,7 @@ class AssignmentService
         DB::transaction(function () use ($assignment) {
             $assignment = Assignment::lockForUpdate()->findOrFail($assignment->id);
             $assignment->update(['status' => 'closed', 'closed_at' => now()]);
-            $this->locks->syncLock($assignment->test);
+            $assignment->test->syncContentLock();
         });
     }
 
@@ -58,7 +54,7 @@ class AssignmentService
 
         DB::transaction(function () use ($assignment) {
             $assignment->update(['status' => 'published', 'closed_at' => null]);
-            $this->locks->syncLock($assignment->test);
+            $assignment->test->syncContentLock();
 
             $assignment->classroom->load('activeMemberships');
             foreach ($assignment->classroom->activeMemberships as $membership) {
@@ -76,7 +72,7 @@ class AssignmentService
             $assignment = Assignment::lockForUpdate()->findOrFail($assignment->id);
             $test = $assignment->test;
             $assignment->delete();
-            $this->locks->syncLock($test);
+            $test->syncContentLock();
         });
     }
 }

@@ -6,15 +6,13 @@ use App\Http\Controllers\Controller;
 use App\Models\Module;
 use App\Models\Section;
 use App\Models\Test;
-use App\Services\TestContentCopyService;
-use App\Services\TestContentLockService;
+use App\Services\TestManagementService;
 use Illuminate\Http\Request;
 
 class ReusableContentController extends Controller
 {
     public function __construct(
-        private TestContentCopyService $copies,
-        private TestContentLockService $locks,
+        private TestManagementService $testManagement,
     ) {}
 
     public function catalog(Request $request)
@@ -31,7 +29,7 @@ class ReusableContentController extends Controller
     {
         $this->authorizeSourceSection($request, $section);
         $validated = $request->validate(['title' => 'required|string|max:255']);
-        $test = $this->copies->deriveFromSection($section, $validated['title'], $request->user()->id);
+        $test = $this->testManagement->deriveFromSection($section, $validated['title'], $request->user()->id);
 
         return response()->json($this->result($test), 201);
     }
@@ -45,7 +43,7 @@ class ReusableContentController extends Controller
         $section = Section::findOrFail($validated['source_section_id']);
         abort_unless($section->modules()->whereKey($module->id)->exists(), 422, 'Module is not attached to the selected section.');
         $this->authorizeSourceSection($request, $section);
-        $test = $this->copies->deriveFromModule($module, $section, $validated['title'], $request->user()->id);
+        $test = $this->testManagement->deriveFromModule($module, $section, $validated['title'], $request->user()->id);
 
         return response()->json($this->result($test), 201);
     }
@@ -54,7 +52,7 @@ class ReusableContentController extends Controller
     {
         $this->authorizeSourceSection($request, $section);
         $destination = $this->destination($request);
-        $copy = $this->copies->copySection($section, $destination, $request->user()->id);
+        $copy = $this->testManagement->copySection($section, $destination, $request->user()->id);
 
         return response()->json($this->result($destination, $copy->id), 201);
     }
@@ -80,7 +78,7 @@ class ReusableContentController extends Controller
                 'is_public' => false,
             ]);
         }
-        $copy = $this->copies->copyModule($module, $targetSection, $request->user()->id);
+        $copy = $this->testManagement->cloneModule($module, $targetSection, $request->user()->id);
         $destination->refreshTotalDuration();
 
         return response()->json($this->result($destination, $copy->id), 201);
@@ -92,7 +90,6 @@ class ReusableContentController extends Controller
         $test = Test::findOrFail($validated['destination_test_id']);
         $this->authorize('update', $test);
         abort_unless($test->status === 'draft', 409, 'Destination test must be a draft.');
-        $this->locks->ensureUnlocked($test);
 
         return $test;
     }

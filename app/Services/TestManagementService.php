@@ -14,8 +14,6 @@ class TestManagementService
 {
     public function __construct(
         private TestStructureService $structures,
-        private TestContentCopyService $copies,
-        private TestContentLockService $contentLock,
     ) {}
 
 
@@ -205,21 +203,120 @@ class TestManagementService
     /**
      * Clone a Test (Hierarchy only).
      */
-    public function cloneTest(int $id, ?int $userId = null): Test
+    public function cloneTest(Test|int $source, ?int $userId = null): Test
     {
-        return $this->copies->copyTest(Test::findOrFail($id), $userId);
+        $test = $source instanceof Test ? $source : Test::findOrFail($source);
+
+        return DB::transaction(function () use ($test, $userId) {
+            $test->load('sections.modules.questions');
+            $clone = $this->newDraft($test->title.' (Clone)', $test->test_type, $userId);
+            $clone->description = $test->description;
+            $clone->break_duration_minutes = $test->break_duration_minutes;
+            $clone->save();
+            foreach ($test->sections as $section) {
+                $this->copySection($section, $clone, $userId);
+            }
+
+            return $clone->load('sections.modules.questions');
+        });
     }
 
     /**
      * Clone a Module (Hierarchy only).
      */
-    public function cloneModule(int $id, ?int $sectionId = null, ?int $userId = null): Module
+    public function cloneModule(Module|int $source, Section|int|null $destination = null, ?int $userId = null): Module
     {
-        if ($sectionId) {
-            $this->contentLock->ensureUnlocked(Section::findOrFail($sectionId)->test);
+        $module = $source instanceof Module ? $source : Module::findOrFail($source);
+        $destination = $destination instanceof Section ? $destination : ($destination ? Section::findOrFail($destination) : null);
+
+        if ($destination && $destination->modules()->where('module_number', $module->module_number)
+            ->where('difficulty_level', $module->difficulty_level)->exists()) {
+            throw ValidationException::withMessages(['destination_test_id' => 'Destination section already contains this module number and difficulty.']);
         }
 
-        return $this->copies->copyModule(Module::findOrFail($id), $sectionId ? Section::findOrFail($sectionId) : null, $userId);
+        return DB::transaction(function () use ($module, $destination, $userId) {
+            $module->load('questions');
+            $clone = $module->replicate();
+            $clone->ulid = (string) Str::ulid();
+            $clone->key = ($module->key ?: 'MODULE').'_CLONE_'.strtoupper(Str::random(6));
+            $clone->section_id = $destination?->id;
+            $clone->created_by = $userId;
+            $clone->is_public = false;
+            $clone->save();
+            if ($destination) {
+                $clone->sections()->syncWithoutDetaching([$destination->id]);
+            }
+
+            foreach ($module->questions as $question) {
+                $clone->questions()->attach($question->id, ['position' => $question->pivot->position]);
+            }
+
+            return $clone;
+        });
+    }
+
+    public function copySection(Section $source, Test $destination, ?int $userId = null): Section
+    {
+        if ($destination->sections()->where('type', $source->type)->exists()) {
+            throw ValidationException::withMessages(['destination_test_id' => 'Destination already contains this section type.']);
+        }
+
+        return DB::transaction(function () use ($source, $destination, $userId) {
+            $source->load('modules.questions');
+            $section = $this->createSection($source, $destination, $userId);
+            foreach ($source->modules as $module) {
+                $this->cloneModule($module, $section, $userId);
+            }
+            $destination->refreshTotalDuration();
+
+            return $section->load('modules.questions');
+        });
+    }
+
+    public function deriveFromSection(Section $source, string $title, int $userId): Test
+    {
+        return DB::transaction(function () use ($source, $title, $userId) {
+            $test = $this->newDraft($title, Test::TYPE_SECTION_ONLY, $userId);
+            $this->copySection($source, $test, $userId);
+
+            return $test->load('sections.modules.questions');
+        });
+    }
+
+    public function deriveFromModule(Module $source, Section $sourceSection, string $title, int $userId): Test
+    {
+        return DB::transaction(function () use ($source, $sourceSection, $title, $userId) {
+            $test = $this->newDraft($title, Test::TYPE_MODULE_ONLY, $userId);
+            $section = $this->createSection($sourceSection, $test, $userId);
+            $this->cloneModule($source, $section, $userId);
+            $test->refreshTotalDuration();
+
+            return $test->load('sections.modules.questions');
+        });
+    }
+
+    private function newDraft(string $title, string $type, ?int $userId): Test
+    {
+        return Test::create([
+            'title' => $title,
+            'test_type' => $type,
+            'status' => 'draft',
+            'created_by' => $userId,
+            'is_public' => false,
+            'break_duration_minutes' => 0,
+        ]);
+    }
+
+    private function createSection(Section $source, Test $test, ?int $userId): Section
+    {
+        return Section::create([
+            'test_id' => $test->id,
+            'name' => $source->name,
+            'type' => $source->type,
+            'order' => $source->order,
+            'created_by' => $userId,
+            'is_public' => false,
+        ]);
     }
 
     /**
@@ -232,7 +329,6 @@ class TestManagementService
         if ($forceDeleteAttempts) {
             $this->authorizeForceDelete();
         } else {
-            $this->contentLock->ensureUnlocked($test);
             if (DB::table('user_tests')->where('test_id', $test->id)->exists()) {
                 throw ValidationException::withMessages(['test' => 'Cannot delete test with existing student attempts.']);
             }
@@ -370,7 +466,6 @@ class TestManagementService
     {
         $section = Section::with(['test', 'modules.questions'])->findOrFail($id);
         $test = $section->test;
-        $this->contentLock->ensureUnlocked($test);
 
         if ($test && DB::table('user_tests')->where('test_id', $test->id)->exists()) {
             throw ValidationException::withMessages(['section' => 'Cannot delete section of a test with existing student attempts.']);
@@ -398,7 +493,6 @@ class TestManagementService
     {
         $module = Module::with(['section.test', 'questions'])->findOrFail($id);
         $test = $module->section->test ?? null;
-        $this->contentLock->ensureModuleUnlocked($module);
 
         if ($test && DB::table('user_tests')->where('test_id', $test->id)->exists()) {
             throw ValidationException::withMessages(['module' => 'Cannot delete module of a test with existing student attempts.']);
