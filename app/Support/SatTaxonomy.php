@@ -270,4 +270,58 @@ class SatTaxonomy
             $formatted
         );
     }
+
+    /**
+     * Official domains grouped by section with display labels.
+     *
+     * @return array<string, array<string, string>>
+     */
+    public static function domainMatrix(): array
+    {
+        $map = [
+            'Reading & Writing' => 'reading_writing',
+            'Math' => 'math',
+        ];
+
+        $matrix = [];
+        foreach ($map as $label => $key) {
+            foreach (self::domains($key) as $domain) {
+                $matrix[$label][$domain] = self::domainLabel($domain);
+            }
+        }
+
+        return $matrix;
+    }
+
+    /**
+     * Resolve canonical domain key from any casing or alias.
+     */
+    public static function canonicalDomainKey(string $domain): string
+    {
+        $normalized = strtolower(trim($domain));
+        $snake = Str::snake($normalized);
+
+        if (self::isValidDomain($snake)) {
+            return $snake;
+        }
+
+        $aliases = [
+            'problem_solving_and_data_analysis' => 'problem_solving_data_analysis',
+            'problem_solving' => 'problem_solving_data_analysis',
+            'geometry_and_trigonometry' => 'geometry_trigonometry',
+            'geometry' => 'geometry_trigonometry',
+        ];
+
+        if (isset($aliases[$snake])) {
+            return $aliases[$snake];
+        }
+
+        foreach (self::domains() as $canonical) {
+            if ($canonical === $snake || str_contains($snake, $canonical)) {
+                return $canonical;
+            }
+        }
+
+        return $snake;
+    }
 }

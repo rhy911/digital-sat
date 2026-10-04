@@ -35,6 +35,39 @@ class ProgressDossierServiceTest extends TestCase
         $this->assertSame('Moderate', $skill['evidenceLevel']);
         $this->assertNotNull($skill['opportunityIndex']);
         $this->assertNotEmpty($dossier['stamina']);
+
+        // Absorbed analytical metrics
+        $this->assertArrayHasKey('timeMatrix', $dossier);
+        $this->assertArrayHasKey('reading_and_writing', $dossier['timeMatrix']);
+        $this->assertArrayHasKey('math', $dossier['timeMatrix']);
+        $this->assertArrayHasKey('skippedCount', $dossier);
+        $this->assertArrayHasKey('stuckCount', $dossier);
+        $this->assertArrayHasKey('rushedCount', $dossier);
+        $this->assertSame(0, $dossier['skippedCount']);
+        $this->assertNotEmpty($dossier['weakAreaSummaries']);
+        $this->assertNotEmpty($dossier['difficultyPerformanceSummaries']);
+        $this->assertNotEmpty($dossier['recommendations']);
+        $this->assertArrayHasKey('sectionAccuracy', $dossier);
+        $this->assertArrayHasKey('sectionSplit', $dossier);
+        $this->assertArrayHasKey('timeBuckets', $dossier);
+        $this->assertArrayHasKey('timeHistogram', $dossier);
+        $this->assertArrayHasKey('domainDifficultyStats', $dossier);
+        $this->assertArrayHasKey('Reading & Writing', $dossier['domainDifficultyStats']);
+        $this->assertArrayNotHasKey('ulid', $dossier['history'][0]);
+    }
+
+    public function test_it_returns_targeted_study_tip(): void
+    {
+        $service = app(ProgressDossierService::class);
+
+        $emptyTip = $service->studyTip(collect());
+        $this->assertSame('Take your first practice test to unlock a personalized study tip here.', $emptyTip);
+
+        $attempts = collect([
+            $this->attempt(1100, 500, 600, 1, [false, false, false, false]),
+        ]);
+        $tip = $service->studyTip($attempts);
+        $this->assertStringContainsString('Inferences', $tip);
     }
 
     private function attempt(int $total, int $rw, int $math, int $daysAgo, array $correctness): UserTest

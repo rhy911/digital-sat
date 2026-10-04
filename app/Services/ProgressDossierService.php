@@ -58,6 +58,10 @@ class ProgressDossierService
 
         $admissions = $this->admissionsMetrics($score);
         $pointLoss = $this->pointLossMetrics($events, $score, $admissions);
+        $weakAreaSummaries = $this->weakAreaSummaries($events);
+        $difficultyPerformanceSummaries = $this->difficultyPerformanceSummaries($events);
+        $pacingSummaries = $this->pacingSummaries($events);
+        $habits = $this->habitsMetrics($events);
 
         return [
             'activityAttemptCount' => $activityAttempts->count(),
@@ -76,7 +80,41 @@ class ProgressDossierService
             'quadrant' => $this->quadrantMetrics($skills),
             'prescriptions' => $this->prescriptions($prioritySkills),
             'narrative' => $this->narrative($score, $domains, $prioritySkills),
+            'weakAreaSummaries' => $weakAreaSummaries,
+            'difficultyPerformanceSummaries' => $difficultyPerformanceSummaries,
+            'pacingSummaries' => $pacingSummaries,
+            'recommendations' => $this->recommendations($weakAreaSummaries),
+            'skippedCount' => $habits['skippedCount'],
+            'stuckCount' => $habits['stuckCount'],
+            'rushedCount' => $habits['rushedCount'],
+            'timeMatrix' => $this->timeMatrixMetrics($events),
+            'sectionAccuracy' => $this->sectionAccuracyMetrics($events),
+            'sectionSplit' => $this->sectionAccuracyMetrics($events),
+            'domainDifficultyStats' => $this->domainDifficultyMetrics($events),
+            'timeBuckets' => $this->timeBucketsMetrics($events),
+            'timeHistogram' => $this->timeBucketsMetrics($events),
         ];
+    }
+
+    /**
+     * Compute a single targeted recommendation tip without full dossier psychometrics.
+     */
+    public function studyTip(Collection $completedAttempts): string
+    {
+        $fallback = 'Take your first practice test to unlock a personalized study tip here.';
+        if ($completedAttempts->isEmpty()) {
+            return $fallback;
+        }
+
+        $events = $this->questionEvents($completedAttempts);
+        if (empty($events)) {
+            return $fallback;
+        }
+
+        $weakAreas = $this->weakAreaSummaries($events);
+        $recommendations = $this->recommendations($weakAreas);
+
+        return $recommendations[0] ?? $fallback;
     }
 
     private function isComparable(UserTest $attempt): bool
@@ -176,7 +214,7 @@ class ProgressDossierService
 
     private function hasReviewStorage(): bool
     {
-        return $this->hasReviewStorage ??= Schema::hasTable('user_test_answer_reviews');
+        return $this->hasReviewStorage ??= (bool) rescue(fn () => Schema::hasTable('user_test_answer_reviews'), false, false);
     }
 
     /** @param list<array<string, mixed>> $history */
@@ -744,6 +782,342 @@ class ProgressDossierService
         }
 
         return 1;
+    }
+
+    private function habitsMetrics(array $events): array
+    {
+        $skipped = 0;
+        $stuck = 0;
+        $rushed = 0;
+
+        foreach ($events as $event) {
+            if ($event['omitted']) {
+                $skipped++;
+            } else {
+                $expected = $event['expected'];
+                if (! $event['correct'] && $expected > 0 && $event['time'] > $expected * 1.5) {
+                    $stuck++;
+                }
+                if ($event['correct'] && $expected > 0 && $event['time'] < $expected * 0.4) {
+                    $rushed++;
+                }
+            }
+        }
+
+        return [
+            'skippedCount' => $skipped,
+            'stuckCount' => $stuck,
+            'rushedCount' => $rushed,
+        ];
+    }
+
+    private function timeMatrixMetrics(array $events): array
+    {
+        $matrix = [
+            'math' => [
+                'correct' => ['total' => 0, 'count' => 0],
+                'incorrect' => ['total' => 0, 'count' => 0],
+            ],
+            'reading_and_writing' => [
+                'correct' => ['total' => 0, 'count' => 0],
+                'incorrect' => ['total' => 0, 'count' => 0],
+            ],
+        ];
+
+        foreach ($events as $event) {
+            $sec = $event['section'] === 'math' ? 'math' : 'reading_and_writing';
+            $status = $event['correct'] ? 'correct' : 'incorrect';
+            $matrix[$sec][$status]['total'] += $event['time'];
+            $matrix[$sec][$status]['count']++;
+        }
+
+        return [
+            'math' => [
+                'correctAvg' => $matrix['math']['correct']['count'] > 0
+                    ? (int) round($matrix['math']['correct']['total'] / $matrix['math']['correct']['count'])
+                    : 0,
+                'incorrectAvg' => $matrix['math']['incorrect']['count'] > 0
+                    ? (int) round($matrix['math']['incorrect']['total'] / $matrix['math']['incorrect']['count'])
+                    : 0,
+            ],
+            'reading_and_writing' => [
+                'correctAvg' => $matrix['reading_and_writing']['correct']['count'] > 0
+                    ? (int) round($matrix['reading_and_writing']['correct']['total'] / $matrix['reading_and_writing']['correct']['count'])
+                    : 0,
+                'incorrectAvg' => $matrix['reading_and_writing']['incorrect']['count'] > 0
+                    ? (int) round($matrix['reading_and_writing']['incorrect']['total'] / $matrix['reading_and_writing']['incorrect']['count'])
+                    : 0,
+            ],
+        ];
+    }
+
+    private function weakAreaSummaries(array $events): array
+    {
+        $domainStats = [];
+        foreach ($events as $event) {
+            $section = $event['section'];
+            $domain = $event['domain'];
+            $skill = $event['skill'];
+            $domainKey = "{$section}:{$domain}";
+
+            if (! isset($domainStats[$domainKey])) {
+                $domainStats[$domainKey] = [
+                    'section' => $section,
+                    'domain' => $domain,
+                    'domainLabel' => $event['domainLabel'],
+                    'total' => 0,
+                    'correct' => 0,
+                    'skills' => [],
+                ];
+            }
+            $domainStats[$domainKey]['total']++;
+            if ($event['correct']) {
+                $domainStats[$domainKey]['correct']++;
+            }
+
+            if (! isset($domainStats[$domainKey]['skills'][$skill])) {
+                $domainStats[$domainKey]['skills'][$skill] = [
+                    'name' => $event['skillLabel'],
+                    'total' => 0,
+                    'correct' => 0,
+                ];
+            }
+            $domainStats[$domainKey]['skills'][$skill]['total']++;
+            if ($event['correct']) {
+                $domainStats[$domainKey]['skills'][$skill]['correct']++;
+            }
+        }
+
+        $rows = [];
+        foreach ($domainStats as $data) {
+            $percentCorrect = $data['total'] > 0 ? (int) round(($data['correct'] / $data['total']) * 100) : 0;
+
+            $skillsList = [];
+            foreach ($data['skills'] as $skillData) {
+                $skillPercent = $skillData['total'] > 0 ? (int) round(($skillData['correct'] / $skillData['total']) * 100) : 0;
+                $skillsList[] = [
+                    'name' => $skillData['name'],
+                    'total' => $skillData['total'],
+                    'correct' => $skillData['correct'],
+                    'percentCorrect' => $skillPercent,
+                    'performance' => $skillPercent >= 80 ? 'High' : ($skillPercent >= 50 ? 'Medium' : 'Low'),
+                ];
+            }
+            usort($skillsList, fn ($a, $b) => $a['percentCorrect'] <=> $b['percentCorrect']);
+
+            $rows[] = [
+                'section' => $data['section'] === 'math' ? 'Math' : 'Reading and Writing',
+                'domain' => $data['domainLabel'],
+                'total' => $data['total'],
+                'correct' => $data['correct'],
+                'percentCorrect' => $percentCorrect,
+                'performance' => $percentCorrect >= 80 ? 'High' : ($percentCorrect >= 50 ? 'Medium' : 'Low'),
+                'skills' => $skillsList,
+            ];
+        }
+
+        usort($rows, fn ($a, $b) => $a['percentCorrect'] <=> $b['percentCorrect']);
+
+        return $rows;
+    }
+
+    private function difficultyPerformanceSummaries(array $events): array
+    {
+        $order = ['easy' => 0, 'medium' => 1, 'hard' => 2, 'unknown' => 3];
+        $stats = [];
+
+        foreach ($events as $event) {
+            $diff = $event['difficulty'];
+            if (! isset($stats[$diff])) {
+                $stats[$diff] = ['total' => 0, 'correct' => 0];
+            }
+            $stats[$diff]['total']++;
+            if ($event['correct']) {
+                $stats[$diff]['correct']++;
+            }
+        }
+
+        $rows = [];
+        foreach ($stats as $difficulty => $data) {
+            $percent = $data['total'] > 0 ? (int) round(($data['correct'] / $data['total']) * 100) : 0;
+            $rows[] = [
+                'difficulty' => $difficulty,
+                'label' => ucfirst($difficulty),
+                'total' => $data['total'],
+                'correct' => $data['correct'],
+                'percentCorrect' => $percent,
+                'performance' => $percent >= 80 ? 'High' : ($percent >= 50 ? 'Medium' : 'Low'),
+            ];
+        }
+
+        usort($rows, fn ($a, $b) => ($order[$a['difficulty']] ?? 99) <=> ($order[$b['difficulty']] ?? 99));
+
+        return $rows;
+    }
+
+    private function pacingSummaries(array $events): array
+    {
+        $order = ['easy' => 0, 'medium' => 1, 'hard' => 2, 'unknown' => 3];
+        $stats = [];
+
+        foreach ($events as $event) {
+            if ($event['expected'] <= 0) {
+                continue;
+            }
+            $diff = $event['difficulty'];
+            if (! isset($stats[$diff])) {
+                $stats[$diff] = ['count' => 0, 'timeSpent' => 0, 'expectedTime' => 0];
+            }
+            $stats[$diff]['count']++;
+            $stats[$diff]['timeSpent'] += $event['time'];
+            $stats[$diff]['expectedTime'] += $event['expected'];
+        }
+
+        $rows = [];
+        foreach ($stats as $difficulty => $data) {
+            $avgTimeSpent = $data['count'] > 0 ? (int) round($data['timeSpent'] / $data['count']) : 0;
+            $avgExpectedTime = $data['count'] > 0 ? (int) round($data['expectedTime'] / $data['count']) : 0;
+            $pacePercent = $avgExpectedTime > 0 ? (int) round(($avgTimeSpent / $avgExpectedTime) * 100) : 0;
+
+            $rows[] = [
+                'difficulty' => $difficulty,
+                'label' => ucfirst($difficulty),
+                'avgTimeSpent' => $avgTimeSpent,
+                'avgExpectedTime' => $avgExpectedTime,
+                'pacePercent' => $pacePercent,
+                'pace' => $pacePercent > 120 ? 'Slow' : ($pacePercent < 80 ? 'Fast' : 'On pace'),
+            ];
+        }
+
+        usort($rows, fn ($a, $b) => ($order[$a['difficulty']] ?? 99) <=> ($order[$b['difficulty']] ?? 99));
+
+        return $rows;
+    }
+
+    private function recommendations(array $weakAreaSummaries): array
+    {
+        $flatSkills = [];
+        foreach ($weakAreaSummaries as $domainRow) {
+            foreach ($domainRow['skills'] as $skill) {
+                $flatSkills[] = [
+                    'name' => $skill['name'],
+                    'pct' => $skill['percentCorrect'],
+                    'section' => $domainRow['section'],
+                ];
+            }
+        }
+        usort($flatSkills, fn ($a, $b) => $a['pct'] <=> $b['pct']);
+
+        $recommendations = [];
+        foreach (array_slice($flatSkills, 0, 3) as $skill) {
+            if ($skill['pct'] < 75) {
+                if (str_contains(strtolower($skill['section']), 'math')) {
+                    $recommendations[] = "Focus study on **{$skill['name']}** (accuracy: {$skill['pct']}%). Focus on formulas and practice with the Desmos calculator to lock in speed.";
+                } else {
+                    $recommendations[] = "Practice **{$skill['name']}** (accuracy: {$skill['pct']}%). Re-read passages carefully and mark structural transition keywords to spot correct choices.";
+                }
+            }
+        }
+
+        if (empty($recommendations)) {
+            $recommendations[] = 'Great work! You have strong accuracy across all content domains. Keep taking practice tests to maintain consistency!';
+        }
+
+        return $recommendations;
+    }
+
+    private function sectionAccuracyMetrics(array $events): array
+    {
+        $rwCorrect = 0;
+        $rwTotal = 0;
+        $mathCorrect = 0;
+        $mathTotal = 0;
+
+        foreach ($events as $event) {
+            if ($event['section'] === 'math') {
+                $mathTotal++;
+                if ($event['correct']) {
+                    $mathCorrect++;
+                }
+            } else {
+                $rwTotal++;
+                if ($event['correct']) {
+                    $rwCorrect++;
+                }
+            }
+        }
+
+        $rwPct = $rwTotal > 0 ? (int) round(($rwCorrect / $rwTotal) * 100) : 0;
+        $mathPct = $mathTotal > 0 ? (int) round(($mathCorrect / $mathTotal) * 100) : 0;
+        $overallTotal = $rwTotal + $mathTotal;
+        $overallCorrect = $rwCorrect + $mathCorrect;
+        $overallPct = $overallTotal > 0 ? (int) round(($overallCorrect / $overallTotal) * 100) : 0;
+
+        return [
+            'labels' => ['Reading & Writing', 'Math'],
+            'data' => [$rwPct, $mathPct],
+            'counts' => [
+                'rw' => ['correct' => $rwCorrect, 'total' => $rwTotal, 'pct' => $rwPct],
+                'math' => ['correct' => $mathCorrect, 'total' => $mathTotal, 'pct' => $mathPct],
+                'overall' => ['correct' => $overallCorrect, 'total' => $overallTotal, 'pct' => $overallPct],
+            ],
+            'rw' => ['correct' => $rwCorrect, 'total' => $rwTotal, 'pct' => $rwPct],
+            'math' => ['correct' => $mathCorrect, 'total' => $mathTotal, 'pct' => $mathPct],
+            'overall' => ['correct' => $overallCorrect, 'total' => $overallTotal, 'pct' => $overallPct],
+        ];
+    }
+
+    private function domainDifficultyMetrics(array $events): array
+    {
+        $stats = [];
+        foreach ($events as $event) {
+            $section = $event['section'] === 'math' ? 'Math' : 'Reading & Writing';
+            $domainKey = SatTaxonomy::canonicalDomainKey($event['domain']);
+            $diff = in_array($event['difficulty'], ['easy', 'medium', 'hard'], true) ? $event['difficulty'] : 'medium';
+
+            if (! isset($stats[$section][$domainKey][$diff])) {
+                $stats[$section][$domainKey][$diff] = ['correct' => 0, 'total' => 0];
+            }
+            $stats[$section][$domainKey][$diff]['total']++;
+            if ($event['correct']) {
+                $stats[$section][$domainKey][$diff]['correct']++;
+            }
+        }
+
+        return $stats;
+    }
+
+    private function timeBucketsMetrics(array $events): array
+    {
+        $buckets = [
+            '0-15s' => ['correct' => 0, 'incorrect' => 0],
+            '15-30s' => ['correct' => 0, 'incorrect' => 0],
+            '30-60s' => ['correct' => 0, 'incorrect' => 0],
+            '60-90s' => ['correct' => 0, 'incorrect' => 0],
+            '90-120s' => ['correct' => 0, 'incorrect' => 0],
+            '120s+' => ['correct' => 0, 'incorrect' => 0],
+        ];
+
+        foreach ($events as $event) {
+            $time = $event['time'];
+            $status = $event['correct'] ? 'correct' : 'incorrect';
+
+            if ($time < 15) {
+                $buckets['0-15s'][$status]++;
+            } elseif ($time < 30) {
+                $buckets['15-30s'][$status]++;
+            } elseif ($time < 60) {
+                $buckets['30-60s'][$status]++;
+            } elseif ($time < 90) {
+                $buckets['60-90s'][$status]++;
+            } elseif ($time < 120) {
+                $buckets['90-120s'][$status]++;
+            } else {
+                $buckets['120s+'][$status]++;
+            }
+        }
+
+        return $buckets;
     }
 
     private function ordinalSuffix(int $number): string

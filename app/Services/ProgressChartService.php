@@ -2,58 +2,51 @@
 
 namespace App\Services;
 
-use Illuminate\Support\Collection;
-use Illuminate\Support\Str;
+use App\Support\SatTaxonomy;
 
 class ProgressChartService
 {
-    public const RW_DOMAINS = [
-        'craft_and_structure' => 'Craft and Structure',
-        'information_and_ideas' => 'Information and Ideas',
-        'standard_english_conventions' => 'Standard English Conventions',
-        'expression_of_ideas' => 'Expression of Ideas',
-    ];
+    /**
+     * Build all Chart.js view payloads from the canonical dossier contract.
+     */
+    public function buildWebCharts(array $dossier): array
+    {
+        $targetScore = $dossier['score']['target'] ?? null;
 
-    public const MATH_DOMAINS = [
-        'algebra' => 'Algebra',
-        'advanced_math' => 'Advanced Math',
-        'problem_solving_data_analysis' => 'Problem-Solving and Data Analysis',
-        'geometry_trigonometry' => 'Geometry and Trigonometry',
-    ];
+        return [
+            'chartTrend' => $this->trendData($dossier['history'] ?? [], $targetScore),
+            'chartRadar' => $this->radarData($dossier['weakAreaSummaries'] ?? []),
+            'chartDoughnut' => $this->doughnutData($dossier['sectionAccuracy'] ?? $dossier['sectionSplit'] ?? []),
+            'chartHeatmap' => $this->heatmapData($dossier['domainDifficultyStats'] ?? $dossier['difficultyHeatmap'] ?? []),
+            'chartHistogram' => $this->histogramData($dossier['timeBuckets'] ?? $dossier['timeHistogram'] ?? []),
+        ];
+    }
 
     /**
-     * Build Chart.js line dataset for score trend (Total, RW, Math).
-     * Attempts should already be filtered to comparable scores.
+     * Build Chart.js line dataset for score trend (Total, RW, Math) from dossier history.
+     *
+     * @param list<array<string, mixed>> $history
      */
-    public function trendData(Collection $attempts, ?int $targetScore = null): array
+    public function trendData(array $history, ?int $targetScore = null): array
     {
-        $chronological = $attempts->reverse()->values();
-
         $labels = [];
         $totalScores = [];
         $rwScores = [];
         $mathScores = [];
         $points = [];
 
-        foreach ($chronological as $index => $attempt) {
-            $date = $attempt->completed_at ? $attempt->completed_at->format('M j') : '#' . ($index + 1);
-            $labels[] = $date;
-            $total = $attempt->total_score !== null ? (int) $attempt->total_score : null;
-            $rw = $attempt->score_reading_writing !== null ? (int) $attempt->score_reading_writing : null;
-            $math = $attempt->score_math !== null ? (int) $attempt->score_math : null;
-
-            $totalScores[] = $total;
-            $rwScores[] = $rw;
-            $mathScores[] = $math;
-
+        foreach ($history as $item) {
+            $labels[] = $item['shortDate'] ?? $item['date'] ?? ('#' . ($item['index'] ?? 1));
+            $totalScores[] = $item['total'] ?? null;
+            $rwScores[] = $item['rw'] ?? null;
+            $mathScores[] = $item['math'] ?? null;
             $points[] = [
-                'id' => $attempt->id,
-                'ulid' => $attempt->ulid,
-                'title' => $attempt->test?->title ?? 'Practice Test',
-                'date' => $attempt->completed_at ? $attempt->completed_at->format('M j, Y') : null,
-                'total' => $total,
-                'rw' => $rw,
-                'math' => $math,
+                'id' => $item['id'] ?? null,
+                'title' => $item['title'] ?? 'Practice Test',
+                'date' => $item['date'] ?? null,
+                'total' => $item['total'] ?? null,
+                'rw' => $item['rw'] ?? null,
+                'math' => $item['math'] ?? null,
             ];
         }
 
@@ -69,11 +62,12 @@ class ProgressChartService
     }
 
     /**
-     * Build radar chart datasets for RW and Math domains.
+     * Build radar chart datasets for RW and Math domains from weakAreaSummaries.
+     *
+     * @param list<array<string, mixed>> $weakAreaSummaries
      */
     public function radarData(array $weakAreaSummaries): array
     {
-        // Map domain name or normalized key to percent
         $domainPercentMap = [];
         foreach ($weakAreaSummaries as $row) {
             $domainName = $row['domain'] ?? '';
@@ -81,16 +75,19 @@ class ProgressChartService
             $domainPercentMap[$domainName] = $pct;
         }
 
-        $rwLabels = array_values(self::RW_DOMAINS);
+        $rwDomains = SatTaxonomy::domains('reading_writing');
+        $rwLabels = array_map(fn ($k) => SatTaxonomy::domainLabel($k), $rwDomains);
         $rwData = [];
-        foreach (self::RW_DOMAINS as $key => $label) {
+        foreach ($rwLabels as $label) {
             $rwData[] = $domainPercentMap[$label] ?? 0;
         }
 
+        $mathDomains = SatTaxonomy::domains('math');
         $mathLabels = [];
         $mathData = [];
-        foreach (self::MATH_DOMAINS as $key => $label) {
-            if ($key === 'geometry_trigonometry' || $key === 'geometry_and_trigonometry') {
+        foreach ($mathDomains as $key) {
+            $label = SatTaxonomy::domainLabel($key);
+            if ($key === 'geometry_trigonometry') {
                 $hasGeo = isset($domainPercentMap['Geometry and Trigonometry'])
                     || isset($domainPercentMap['Geometry'])
                     || isset($domainPercentMap['Geometry & Trig']);
@@ -125,212 +122,93 @@ class ProgressChartService
     }
 
     /**
-     * Build section split doughnut dataset: overall correct percentage for RW vs Math.
+     * Build section split doughnut dataset from dossier sectionAccuracy.
      */
-    public function doughnutData(Collection $attempts): array
+    public function doughnutData(array $sectionAccuracy): array
     {
-        $rwTotal = 0;
-        $rwCorrect = 0;
-        $mathTotal = 0;
-        $mathCorrect = 0;
-
-        foreach ($attempts as $test) {
-            foreach ($test->userAnswers as $answer) {
-                $q = $answer->question;
-                if (!$q || $q->is_pretest) {
-                    continue;
-                }
-
-                $isMath = $q->section_type === 'math';
-                $isCorrect = (bool) $answer->is_correct;
-
-                if ($isMath) {
-                    $mathTotal++;
-                    if ($isCorrect) {
-                        $mathCorrect++;
-                    }
-                } else {
-                    $rwTotal++;
-                    if ($isCorrect) {
-                        $rwCorrect++;
-                    }
-                }
-            }
+        if (isset($sectionAccuracy['labels'], $sectionAccuracy['data'], $sectionAccuracy['counts'])) {
+            return $sectionAccuracy;
         }
 
-        $rwPct = $rwTotal > 0 ? (int) round(($rwCorrect / $rwTotal) * 100) : 0;
-        $mathPct = $mathTotal > 0 ? (int) round(($mathCorrect / $mathTotal) * 100) : 0;
-        $overallTotal = $rwTotal + $mathTotal;
-        $overallCorrect = $rwCorrect + $mathCorrect;
-        $overallPct = $overallTotal > 0 ? (int) round(($overallCorrect / $overallTotal) * 100) : 0;
+        $counts = $sectionAccuracy['counts'] ?? $sectionAccuracy;
+        $rwPct = $counts['rw']['pct'] ?? 0;
+        $mathPct = $counts['math']['pct'] ?? 0;
 
         return [
             'labels' => ['Reading & Writing', 'Math'],
             'data' => [$rwPct, $mathPct],
             'counts' => [
-                'rw' => ['correct' => $rwCorrect, 'total' => $rwTotal, 'pct' => $rwPct],
-                'math' => ['correct' => $mathCorrect, 'total' => $mathTotal, 'pct' => $mathPct],
-                'overall' => ['correct' => $overallCorrect, 'total' => $overallTotal, 'pct' => $overallPct],
+                'rw' => $counts['rw'] ?? ['correct' => 0, 'total' => 0, 'pct' => 0],
+                'math' => $counts['math'] ?? ['correct' => 0, 'total' => 0, 'pct' => 0],
+                'overall' => $counts['overall'] ?? ['correct' => 0, 'total' => 0, 'pct' => 0],
             ],
         ];
     }
 
     /**
-     * Cross-tabulate 8 domains by 3 difficulty tiers (Easy, Medium, Hard).
+     * Adapt domain difficulty statistics into a presentation matrix for views.
      */
-    public function heatmapData(Collection $attempts): array
+    public function heatmapData(array $domainDifficultyStats): array
     {
-        $allDomains = [
-            'Reading & Writing' => self::RW_DOMAINS,
-            'Math' => self::MATH_DOMAINS,
-        ];
-
+        $allDomains = SatTaxonomy::domainMatrix();
         $matrix = [];
+
         foreach ($allDomains as $section => $domains) {
             foreach ($domains as $key => $label) {
-                $matrix[$section][$key] = [
+                $stats = $domainDifficultyStats[$section][$key] ?? [];
+                $row = [
                     'label' => $label,
-                    'easy' => ['correct' => 0, 'total' => 0, 'pct' => null],
-                    'medium' => ['correct' => 0, 'total' => 0, 'pct' => null],
-                    'hard' => ['correct' => 0, 'total' => 0, 'pct' => null],
+                    'easy' => ['correct' => $stats['easy']['correct'] ?? 0, 'total' => $stats['easy']['total'] ?? 0, 'pct' => null],
+                    'medium' => ['correct' => $stats['medium']['correct'] ?? 0, 'total' => $stats['medium']['total'] ?? 0, 'pct' => null],
+                    'hard' => ['correct' => $stats['hard']['correct'] ?? 0, 'total' => $stats['hard']['total'] ?? 0, 'pct' => null],
                     'total' => ['correct' => 0, 'total' => 0, 'pct' => null],
                 ];
-            }
-        }
 
-        foreach ($attempts as $test) {
-            foreach ($test->userAnswers as $answer) {
-                $q = $answer->question;
-                if (!$q || $q->is_pretest) {
-                    continue;
-                }
-
-                $section = $q->section_type === 'math' ? 'Math' : 'Reading & Writing';
-                $domainKey = $this->normalizeDomainKey($q->skill_domain ?? 'other');
-                $difficulty = strtolower($q->difficulty ?? 'medium');
-                if (!in_array($difficulty, ['easy', 'medium', 'hard'], true)) {
-                    $difficulty = 'medium';
-                }
-
-                if (!isset($matrix[$section][$domainKey])) {
-                    continue;
-                }
-
-                $isCorrect = (bool) $answer->is_correct;
-
-                $matrix[$section][$domainKey][$difficulty]['total']++;
-                if ($isCorrect) {
-                    $matrix[$section][$domainKey][$difficulty]['correct']++;
-                }
-
-                $matrix[$section][$domainKey]['total']['total']++;
-                if ($isCorrect) {
-                    $matrix[$section][$domainKey]['total']['correct']++;
-                }
-            }
-        }
-
-        // Compute percentages and filter to domains with at least 1 attempted question
-        $filtered = [];
-        foreach ($matrix as $section => $domains) {
-            foreach ($domains as $key => $row) {
-                if ($row['total']['total'] === 0) {
-                    continue;
-                }
-                foreach (['easy', 'medium', 'hard', 'total'] as $tier) {
+                $totalCorrect = 0;
+                $totalQuestions = 0;
+                foreach (['easy', 'medium', 'hard'] as $tier) {
                     $tot = $row[$tier]['total'];
                     $cor = $row[$tier]['correct'];
                     $row[$tier]['pct'] = $tot > 0 ? (int) round(($cor / $tot) * 100) : null;
+                    $totalCorrect += $cor;
+                    $totalQuestions += $tot;
                 }
-                $filtered[$section][$key] = $row;
-            }
-        }
 
-        return $filtered;
-    }
-
-    /**
-     * Compute distribution of question time spent across 6 buckets,
-     * separated by correct and incorrect answers.
-     */
-    public function histogramData(Collection $attempts): array
-    {
-        $buckets = [
-            '0-15s' => ['correct' => 0, 'incorrect' => 0],
-            '15-30s' => ['correct' => 0, 'incorrect' => 0],
-            '30-60s' => ['correct' => 0, 'incorrect' => 0],
-            '60-90s' => ['correct' => 0, 'incorrect' => 0],
-            '90-120s' => ['correct' => 0, 'incorrect' => 0],
-            '120s+' => ['correct' => 0, 'incorrect' => 0],
-        ];
-
-        foreach ($attempts as $test) {
-            foreach ($test->userAnswers as $answer) {
-                $q = $answer->question;
-                if (!$q || $q->is_pretest) {
+                if ($totalQuestions === 0) {
                     continue;
                 }
 
-                $time = (int) $answer->time_spent;
-                $isCorrect = (bool) $answer->is_correct;
-                $status = $isCorrect ? 'correct' : 'incorrect';
+                $row['total'] = [
+                    'correct' => $totalCorrect,
+                    'total' => $totalQuestions,
+                    'pct' => (int) round(($totalCorrect / $totalQuestions) * 100),
+                ];
 
-                if ($time < 15) {
-                    $buckets['0-15s'][$status]++;
-                } elseif ($time < 30) {
-                    $buckets['15-30s'][$status]++;
-                } elseif ($time < 60) {
-                    $buckets['30-60s'][$status]++;
-                } elseif ($time < 90) {
-                    $buckets['60-90s'][$status]++;
-                } elseif ($time < 120) {
-                    $buckets['90-120s'][$status]++;
-                } else {
-                    $buckets['120s+'][$status]++;
-                }
+                $matrix[$section][$key] = $row;
             }
         }
 
-        $labels = array_keys($buckets);
-        $correctData = array_map(fn ($b) => $b['correct'], array_values($buckets));
-        $incorrectData = array_map(fn ($b) => $b['incorrect'], array_values($buckets));
-
-        return [
-            'labels' => $labels,
-            'correct' => $correctData,
-            'incorrect' => $incorrectData,
-            'totalQuestions' => array_sum($correctData) + array_sum($incorrectData),
-        ];
+        return $matrix;
     }
 
-    private function normalizeDomainKey(string $domain): string
+    /**
+     * Adapt dossier time distribution buckets for Chart.js.
+     */
+    public function histogramData(array $timeBuckets): array
     {
-        $d = strtolower(trim($domain));
-        if (str_contains($d, 'problem')) {
-            return 'problem_solving_data_analysis';
-        }
-        if (str_contains($d, 'geometry') || str_contains($d, 'trig')) {
-            return 'geometry_trigonometry';
-        }
-        if (str_contains($d, 'algebra') && !str_contains($d, 'advanced')) {
-            return 'algebra';
-        }
-        if (str_contains($d, 'advanced')) {
-            return 'advanced_math';
-        }
-        if (str_contains($d, 'craft')) {
-            return 'craft_and_structure';
-        }
-        if (str_contains($d, 'information')) {
-            return 'information_and_ideas';
-        }
-        if (str_contains($d, 'standard') || str_contains($d, 'convention')) {
-            return 'standard_english_conventions';
-        }
-        if (str_contains($d, 'expression')) {
-            return 'expression_of_ideas';
+        if (isset($timeBuckets['labels'], $timeBuckets['correct'], $timeBuckets['incorrect'])) {
+            return $timeBuckets;
         }
 
-        return Str::snake($domain);
+        $labels = array_keys($timeBuckets);
+        $correctData = array_map(fn ($b) => is_array($b) ? ($b['correct'] ?? 0) : 0, array_values($timeBuckets));
+        $incorrectData = array_map(fn ($b) => is_array($b) ? ($b['incorrect'] ?? 0) : 0, array_values($timeBuckets));
+
+        return [
+            'labels' => !empty($labels) ? $labels : ['0-15s', '15-30s', '30-60s', '60-90s', '90-120s', '120s+'],
+            'correct' => !empty($correctData) ? $correctData : [0, 0, 0, 0, 0, 0],
+            'incorrect' => !empty($incorrectData) ? $incorrectData : [0, 0, 0, 0, 0, 0],
+            'totalQuestions' => array_sum($correctData) + array_sum($incorrectData),
+        ];
     }
 }

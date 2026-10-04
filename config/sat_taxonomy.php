@@ -6,7 +6,7 @@
  * This is the single source of truth for `questions.skill_domain` and
  * `questions.skill_subdomain`. Both columns are plain strings in the database
  * and are used directly as grouping keys by ScoreReportService and
- * PerformanceAnalytics, so an invented value does not fail loudly — it silently
+ * ProgressDossierService, so an invented value does not fail loudly — it silently
  * becomes its own one-question "skill" and makes weak-area reports useless.
  * The bulk importer validates against this list for exactly that reason.
  *

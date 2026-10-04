@@ -7,7 +7,8 @@ use App\Models\Classroom;
 use App\Models\User;
 use App\Models\UserTest;
 use App\Services\ProgressChartService;
-use App\Support\PerformanceAnalytics;
+use App\Services\ProgressDossierService;
+use App\Services\ProgressPdfChartService;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
@@ -16,7 +17,7 @@ use Illuminate\Support\Facades\Schema;
 
 class StudentProgressController extends Controller
 {
-    public function __invoke(Request $request, Classroom $classroom, User $student, PerformanceAnalytics $analytics, ProgressChartService $chartService)
+    public function __invoke(Request $request, Classroom $classroom, User $student, ProgressDossierService $dossierService, ProgressChartService $chartService)
     {
         $this->authorize('viewStudent', [$classroom, $student]);
         $teacher = $request->user();
@@ -34,16 +35,11 @@ class StudentProgressController extends Controller
 
         $rosterItems = $classroom->activeMemberships()->with('student')->orderByDesc('decided_at')->get();
 
-        $analyticsSummary = $analytics->summarize($completedTests);
+        $dossier = $dossierService->build($completedTests, $student->target_score);
+        $charts = $chartService->buildWebCharts($dossier);
 
         $scoredAttempts = $completedTests->whereNotNull('total_score')->values();
         $comparableScores = $scoredAttempts;
-
-        $trendData = $chartService->trendData($comparableScores, $student->target_score);
-        $radarData = $chartService->radarData($analyticsSummary['weakAreaSummaries']);
-        $doughnutData = $chartService->doughnutData($completedTests);
-        $heatmapData = $chartService->heatmapData($completedTests);
-        $histogramData = $chartService->histogramData($completedTests);
 
         return view('teacher.students.progress', array_merge(
             [
@@ -52,13 +48,9 @@ class StudentProgressController extends Controller
                 'completedTests' => $completedTests,
                 'rosterItems' => $rosterItems,
                 'comparableScores' => $comparableScores,
-                'chartTrend' => $trendData,
-                'chartRadar' => $radarData,
-                'chartDoughnut' => $doughnutData,
-                'chartHeatmap' => $heatmapData,
-                'chartHistogram' => $histogramData,
             ],
-            $analyticsSummary
+            $charts,
+            $dossier
         ));
     }
 
@@ -66,8 +58,8 @@ class StudentProgressController extends Controller
         Request $request,
         Classroom $classroom,
         User $student,
-        \App\Services\ProgressDossierService $dossierService,
-        \App\Services\ProgressPdfChartService $pdfChartService
+        ProgressDossierService $dossierService,
+        ProgressPdfChartService $pdfChartService
     ): Response
     {
         $this->authorize('viewStudent', [$classroom, $student]);
@@ -87,15 +79,7 @@ class StudentProgressController extends Controller
         $completedTests = $attemptQuery->get();
 
         $dossier = $dossierService->build($completedTests, $student->target_score);
-        $history = $dossier['history'];
-        $svgTotalTrend = $pdfChartService->renderDossierLineChartSvg($history, [
-            'total' => ['label' => 'Total SAT', 'color' => '#2563eb', 'values' => array_column($history, 'total')],
-            'rolling' => ['label' => '3-Test Avg', 'color' => '#0891b2', 'values' => array_column($history, 'rollingAverage')],
-        ], 400, 1600, 546, 140);
-        $svgSectionTrend = $pdfChartService->renderDossierLineChartSvg($history, [
-            'rw' => ['label' => 'RW Section', 'color' => '#0284c7', 'values' => array_column($history, 'rw')],
-            'math' => ['label' => 'Math Section', 'color' => '#c2410c', 'values' => array_column($history, 'math')],
-        ], 200, 800, 268, 125);
+        $pdfCharts = $pdfChartService->forDossier($dossier);
 
         $lang = strtolower($request->query('lang', 'vi'));
         $viewName = $lang === 'en' ? 'pdf.progress-report' : 'pdf.progress-report-vi';
@@ -113,8 +97,8 @@ class StudentProgressController extends Controller
             'teacher' => $teacher,
             'classroom' => $classroom,
             'dossier' => $dossier,
-            'svgTotalTrend' => $svgTotalTrend,
-            'svgSectionTrend' => $svgSectionTrend,
+            'svgTotalTrend' => $pdfCharts['svgTotalTrend'],
+            'svgSectionTrend' => $pdfCharts['svgSectionTrend'],
         ])
             ->setPaper('letter')
             ->download($filename);

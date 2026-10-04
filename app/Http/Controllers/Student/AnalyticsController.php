@@ -7,17 +7,17 @@ use App\Http\Controllers\ForumController;
 use App\Models\BlogPost;
 use App\Models\ForumThread;
 use App\Models\Test;
-use App\Support\PerformanceAnalytics;
+use App\Services\ProgressDossierService;
 use Illuminate\Http\Request;
 
 class AnalyticsController extends Controller
 {
-    public function __invoke(Request $request)
+    public function __invoke(Request $request, ProgressDossierService $dossierService)
     {
-        return view('student.analytics.index', $this->homeData($request));
+        return view('student.analytics.index', $this->homeData($request, $dossierService));
     }
 
-    private function homeData(Request $request): array
+    private function homeData(Request $request, ProgressDossierService $dossierService): array
     {
         $user = $request->user();
         $attemptedTestIds = $user->userTests()->pluck('test_id');
@@ -38,7 +38,7 @@ class AnalyticsController extends Controller
 
         $recentCompleted = $user->userTests()
             ->whereHas('test', fn ($q) => $q->where('title', '!=', 'Test Preview'))
-            ->with('userAnswers.question')
+            ->with('userAnswers')
             ->where('status', 'completed')
             ->excludingAbsorbedSections()
             ->orderBy('completed_at', 'desc')
@@ -59,9 +59,7 @@ class AnalyticsController extends Controller
             'target_score' => $user->target_score ? (int) $user->target_score : null,
         ];
 
-        $tip = $recentCompleted->isNotEmpty()
-            ? (new PerformanceAnalytics)->summarize($recentCompleted)['recommendations'][0]
-            : 'Take your first practice test to unlock a personalized study tip here.';
+        $tip = $dossierService->studyTip($recentCompleted);
 
         // Ledger stats in one aggregate query (was two separate queries run inside the Blade view).
         $completedStats = $user->userTests()
