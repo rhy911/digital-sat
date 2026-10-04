@@ -280,7 +280,7 @@ sequenceDiagram
         end
     and Worker Processing (timeout: 60s, tries: 1)
         Worker->>Queue: Pop ScoreModuleJob
-        Worker->>Scoring: TestProgressionService::submit(userTest, module)
+        Worker->>Scoring: AttemptEngine::scoreAndAdvance(userTest, module)
         Scoring-->>Worker: theta, scaledScore, scoreBand, path
         Worker->>DB: Update user_tests (scores, theta, rw_m2_path/math_m2_path, status)
         Worker->>DB: Create UserTestModuleSubmission receipt

@@ -8,7 +8,7 @@
 
     // Snapshot first: it is what the student was actually graded against, and it
     // can legitimately differ from the live question row (see the warning on
-    // TestProgressionService::responsesForModule).
+    // SatScoringPipeline::responsesForModule).
     $domain = $snapshot['skill_domain'] ?? $question?->skill_domain;
     $subdomain = $snapshot['skill_subdomain'] ?? $question?->skill_subdomain;
     $difficulty = $snapshot['difficulty'] ?? $question?->difficulty;

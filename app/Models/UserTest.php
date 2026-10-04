@@ -127,7 +127,7 @@ class UserTest extends Model
 
     /**
      * Scope out section attempts that have already been absorbed into a merged
-     * full attempt (see TestProgressionService::autoMergeIfEligible). The merge
+     * full attempt (see AttemptEngine::autoMergeIfEligible). The merge
      * only deletes the leftover attempt when it is not assignment-linked, so an
      * assignment-linked section attempt survives and would otherwise show up
      * next to the merged score in student-facing lists.

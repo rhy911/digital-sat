@@ -271,7 +271,7 @@ class TeacherClassManagementTest extends TestCase
 
         $this->actingAs($student)->post(route('student.assignments.start', $assignment))->assertSessionHasErrors('assignment');
         $attempt = UserTest::create(['user_id' => $student->id, 'test_id' => $test->id, 'assignment_id' => $assignment->id, 'attempt_number' => 1, 'status' => 'in_progress']);
-        $resolved = app(\App\Services\AssignmentAttemptService::class)->startOrResume($assignment, $student);
+        $resolved = app(\App\Services\AssignmentService::class)->startOrResume($assignment, $student);
         $this->assertTrue($attempt->is($resolved));
     }
 
@@ -440,9 +440,9 @@ class TeacherClassManagementTest extends TestCase
         $this->assertSame('archived', $classroom->fresh()->status);
         $this->assertSame('closed', $assignment->fresh()->status);
         $this->assertNull($test->fresh()->content_locked_at);
-        $this->assertTrue($attempt->is(app(\App\Services\AssignmentAttemptService::class)->startOrResume($assignment->fresh(), $started)));
+        $this->assertTrue($attempt->is(app(\App\Services\AssignmentService::class)->startOrResume($assignment->fresh(), $started)));
         try {
-            app(\App\Services\AssignmentAttemptService::class)->startOrResume($assignment->fresh(), $newStudent);
+            app(\App\Services\AssignmentService::class)->startOrResume($assignment->fresh(), $newStudent);
             $this->fail('Archived class allowed a new attempt.');
         } catch (\Illuminate\Validation\ValidationException $e) {
             $this->assertArrayHasKey('assignment', $e->errors());

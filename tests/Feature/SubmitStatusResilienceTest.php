@@ -351,15 +351,15 @@ class SubmitStatusResilienceTest extends TestCase
     public function test_is_terminal_submission_distinguishes_routing_from_finalize(): void
     {
         $attempt = $this->attempt();
-        $progression = app(\App\Services\TestProgressionService::class);
+        $engine = app(\App\Services\AttemptEngine::class);
 
         $this->assertFalse(
-            $progression->isTerminalSubmission($attempt, $this->moduleOne),
+            $engine->isTerminalSubmission($attempt, $this->moduleOne),
             'Adaptive module 1 always routes onward, so it is never terminal.'
         );
 
         $this->assertTrue(
-            $progression->isTerminalSubmission($attempt, $this->easyModule),
+            $engine->isTerminalSubmission($attempt, $this->easyModule),
             'Module 2 of the only section ends the attempt.'
         );
     }

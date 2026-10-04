@@ -231,7 +231,7 @@ data.
 - `config/sat_scoring.php` — đường cong phi tuyến riêng RW/Math, cap-aware.
 - `app/Services/SatScoringPipeline.php` — module hợp nhất luồng chấm điểm (progression finalization, theta conversion, uncertainty range, legacy rescoring).
 - `app/Services/AdaptiveScoreConversionService.php` — `mapTheta` phi tuyến + cap theo nhánh.
-- `app/Services/TestProgressionService.php` — điều phối tiến trình làm bài, ủy quyền chấm điểm cho `SatScoringPipeline`.
+- `app/Services/AttemptEngine.php` — điều phối tiến trình làm bài, ủy quyền chấm điểm cho `SatScoringPipeline`.
 - `app/Services/SatScoringService.php` — IRT engine (EAP grid 3PL, routing).
 - `app/Services/ScoreConversionService.php` — tra cứu override checksum-gated và raw table fallback.
 - `CLAUDE.md` — sửa mô tả engine.

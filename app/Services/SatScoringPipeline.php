@@ -8,6 +8,7 @@ use App\Models\Test;
 use App\Models\UserTest;
 use App\Models\UserTestAnswer;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 
 class SatScoringPipeline
@@ -157,6 +158,21 @@ class SatScoringPipeline
             'score_conversion_version' => $rwScore['conversion_version'],
             'score_estimate_kind' => $rwScore['estimate_kind'],
         ];
+    }
+
+    public function applyScoreRevision(UserTest $attempt, array $revised, string $runId): void
+    {
+        $previous = $attempt->only(array_keys($revised));
+        DB::transaction(function () use ($attempt, $previous, $revised, $runId) {
+            $attempt->scoreRevisions()->create([
+                'run_id' => $runId,
+                'reason' => 'Replace route-weighted generic_ds_v1 after full-test type split.',
+                'previous_score' => $previous,
+                'revised_score' => $revised,
+                'created_at' => now(),
+            ]);
+            $attempt->update($revised);
+        });
     }
 
     /**

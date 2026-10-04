@@ -3,7 +3,7 @@
 namespace App\Console\Commands;
 
 use App\Models\UserTest;
-use App\Services\ScoreRevisionService;
+use App\Services\SatScoringPipeline;
 use Illuminate\Console\Command;
 use Illuminate\Support\Str;
 
@@ -13,13 +13,13 @@ class RescoreGenericV1 extends Command
 
     protected $description = 'Preview or apply audited replacement scores for generic_ds_v1 attempts';
 
-    public function handle(ScoreRevisionService $revisions): int
+    public function handle(SatScoringPipeline $pipeline): int
     {
         $runId = (string) Str::uuid();
         $rows = [];
-        UserTest::where('score_conversion_version', 'generic_ds_v1')->orderBy('id')->each(function ($attempt) use ($revisions, $runId, &$rows) {
+        UserTest::where('score_conversion_version', 'generic_ds_v1')->orderBy('id')->each(function ($attempt) use ($pipeline, $runId, &$rows) {
             try {
-                $revised = $revisions->preview($attempt);
+                $revised = $pipeline->rescoreLegacy($attempt);
             } catch (\RuntimeException $exception) {
                 $rows[] = [$attempt->id, $attempt->total_score, 'Skipped', $exception->getMessage()];
 
@@ -30,7 +30,7 @@ class RescoreGenericV1 extends Command
             }
             $rows[] = [$attempt->id, $attempt->total_score, $revised['total_score'], $revised['score_conversion_version']];
             if ($this->option('apply')) {
-                $revisions->apply($attempt, $revised, $runId);
+                $pipeline->applyScoreRevision($attempt, $revised, $runId);
             }
         });
 

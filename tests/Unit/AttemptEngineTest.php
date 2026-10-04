@@ -9,7 +9,8 @@ use App\Models\Section;
 use App\Models\SprCorrectAnswer;
 use App\Models\UserTest;
 use App\Services\AttemptEngine;
-use App\Services\TestProgressionService;
+use App\Services\SatScoringPipeline;
+use App\Services\TestStructureService;
 use Illuminate\Support\Carbon;
 use Tests\TestCase;
 
@@ -33,7 +34,7 @@ class AttemptEngineTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
-        $this->engine = new TestableAttemptEngine(app(TestProgressionService::class));
+        $this->engine = new TestableAttemptEngine(app(TestStructureService::class), app(SatScoringPipeline::class));
     }
 
     public function test_parse_numeric_answer_handles_integers_and_decimals(): void

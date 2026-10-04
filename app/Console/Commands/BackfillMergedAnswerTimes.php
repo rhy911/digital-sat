@@ -8,7 +8,7 @@ use Illuminate\Console\Command;
 use Illuminate\Support\Facades\DB;
 
 /**
- * One-off repair for attempts merged by TestProgressionService::autoMergeIfEligible()
+ * One-off repair for attempts merged by AttemptEngine::autoMergeIfEligible()
  * before the answer copy carried `time_spent` (and the original timestamps) over.
  * Those merged attempts show "0s" per question for the section that finished last,
  * while the surviving assignment-linked section attempt still holds the real times.

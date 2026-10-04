@@ -6,7 +6,6 @@ use App\Http\Controllers\Controller;
 use App\Models\Question;
 use App\Models\Module;
 use App\Models\Section;
-use App\Services\BulkQuestionCsvImportService;
 use App\Services\BulkQuestionImportService;
 use App\Http\Requests\Admin\UpdateQuestionRequest;
 use App\Http\Requests\Admin\AttachQuestionRequest;
@@ -308,12 +307,12 @@ class QuestionController extends Controller
         return response()->json(['status' => 'success', 'message' => count($result['question_ids']).' question(s) created.', 'data' => $result], 201);
     }
 
-    public function bulkPreviewCsv(Request $request, BulkQuestionCsvImportService $csvImport, BulkQuestionImportService $bulkQuestionImport)
+    public function bulkPreviewCsv(Request $request, BulkQuestionImportService $bulkQuestionImport)
     {
         $request->validate(['csv_file' => 'required|file|max:5120', 'module_id' => 'nullable|exists:modules,id']);
         $file = $request->file('csv_file');
         $raw = (string) file_get_contents($file->getRealPath());
-        $items = $csvImport->parseCsvToItems($raw, true);
+        $items = $bulkQuestionImport->parseCsvToItems($raw, true);
         $moduleId = $request->input('module_id');
         if ($moduleId) {
             $module = Module::findOrFail($moduleId);
@@ -342,25 +341,51 @@ class QuestionController extends Controller
         return response()->json(['status' => 'success', 'data' => ['items' => QuestionPreviewPresenter::decorate($items)]]);
     }
 
-    public function bulkStoreCsv(Request $request, BulkQuestionCsvImportService $csvImport, BulkQuestionImportService $bulkQuestionImport)
+    public function bulkStoreCsv(Request $request, BulkQuestionImportService $bulkQuestionImport)
     {
-        $payload = $csvImport->getPayloadFromRequest($request);
-        if (!empty($payload['module_id'])) {
-            $module = Module::findOrFail($payload['module_id']);
-            $this->authorize('update', $module);
-        }
+        $validated = $request->validate([
+            'csv_file' => ['required', 'file', 'max:5120', function (string $attribute, mixed $value, \Closure $fail): void {
+                if (! $value instanceof \Illuminate\Http\UploadedFile) {
+                    return;
+                }
+                $ext = strtolower($value->getClientOriginalExtension());
+                if (! in_array($ext, ['csv', 'txt'], true)) {
+                    $fail('The csv file must be a .csv or .txt file.');
+                }
+            }],
+            'module_id' => 'required|exists:modules,id',
+            'start_position' => 'required|integer|min:1',
+        ]);
+
+        $module = Module::findOrFail($validated['module_id']);
+        $this->authorize('update', $module);
+
+        $payload = $bulkQuestionImport->parseCsvFileToPayload(
+            $request->file('csv_file'),
+            (int) $validated['module_id'],
+            (int) $validated['start_position']
+        );
         $result = $bulkQuestionImport->import($payload);
         return response()->json(['status' => 'success', 'message' => count($result['question_ids']).' question(s) created.', 'data' => $result], 201);
     }
 
     public function bulkStoreZip(Request $request, BulkQuestionImportService $bulkQuestionImport)
     {
-        if ($request->filled('module_id')) {
-            $module = Module::findOrFail($request->input('module_id'));
-            $this->authorize('update', $module);
-        }
+        $validated = $request->validate([
+            'zip_file' => 'required|file|mimes:zip|max:20480',
+            'module_id' => 'required|exists:modules,id',
+            'start_position' => 'nullable|integer|min:1',
+        ]);
+
+        $module = Module::findOrFail($validated['module_id']);
+        $this->authorize('update', $module);
+
         try {
-            $result = $bulkQuestionImport->importFromZip($request);
+            $result = $bulkQuestionImport->importZipFile(
+                $request->file('zip_file'),
+                (int) $validated['module_id'],
+                (int) ($validated['start_position'] ?? 1)
+            );
             return response()->json([
                 'status' => 'success',
                 'message' => count($result['question_ids']).' question(s) created.',

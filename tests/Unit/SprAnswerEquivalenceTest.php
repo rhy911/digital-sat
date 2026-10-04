@@ -18,7 +18,7 @@ class SprAnswerEquivalenceTest extends TestCase
             new SprCorrectAnswer(['answer' => $accepted, 'answer_type' => 'exact', 'tolerance' => $tolerance]),
         ]));
 
-        $engine = new class(app(\App\Services\TestProgressionService::class)) extends AttemptEngine {
+        $engine = new class(app(\App\Services\TestStructureService::class), app(\App\Services\SatScoringPipeline::class)) extends AttemptEngine {
             public function check(Question $question, $userAnswer): bool
             {
                 return $this->checkAnswer($question, $userAnswer);

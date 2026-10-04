@@ -223,8 +223,8 @@ class SectionOnlyAssignmentTest extends TestCase
             'attempt_number' => 1,
         ]);
 
-        // Complete Math section using TestProgressionService
-        $progression = app(\App\Services\TestProgressionService::class);
+        // Complete Math section using AttemptEngine
+        $engine = app(\App\Services\AttemptEngine::class);
         $mathModule = Module::create([
             'section_id' => Section::create(['test_id' => $test->id, 'name' => 'Math', 'type' => 'math', 'order' => 2])->id,
             'title' => 'Module 1',
@@ -262,10 +262,10 @@ class SectionOnlyAssignmentTest extends TestCase
         ]);
 
         // Call autoMergeIfEligible via reflection or completion trigger
-        $reflection = new \ReflectionClass($progression);
+        $reflection = new \ReflectionClass($engine);
         $method = $reflection->getMethod('autoMergeIfEligible');
         $method->setAccessible(true);
-        $result = $method->invoke($progression, $attemptMath, $test);
+        $result = $method->invoke($engine, $attemptMath, $test);
 
         // Verify Attempt RW (the first attempt) has been upgraded to a merged full test result
         $this->assertEquals($attemptRw->id, $result->id);
@@ -334,11 +334,11 @@ class SectionOnlyAssignmentTest extends TestCase
             'completed_at' => now(),
         ]);
 
-        $progression = app(\App\Services\TestProgressionService::class);
-        $reflection = new \ReflectionClass($progression);
+        $engine = app(\App\Services\AttemptEngine::class);
+        $reflection = new \ReflectionClass($engine);
         $method = $reflection->getMethod('autoMergeIfEligible');
         $method->setAccessible(true);
-        $result = $method->invoke($progression, $attemptMath, $test);
+        $result = $method->invoke($engine, $attemptMath, $test);
 
         // Merged result is Attempt RW
         $this->assertEquals($attemptRw->id, $result->id);

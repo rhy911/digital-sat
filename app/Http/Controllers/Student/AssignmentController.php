@@ -6,7 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Assignment;
 use App\Models\Classroom;
 use App\Models\UserTest;
-use App\Services\AssignmentAttemptService;
+use App\Services\AssignmentService;
 use App\Services\AttemptEngine;
 use Illuminate\Http\Request;
 
@@ -67,7 +67,7 @@ class AssignmentController extends Controller
 
         return view('student.assignments.show', compact('user', 'assignment', 'assignments', 'classroom'));
     }
-    public function start(Assignment $assignment, AssignmentAttemptService $service, AttemptEngine $engine)
+    public function start(Assignment $assignment, AssignmentService $service, AttemptEngine $engine)
     {
         $this->authorize('view', $assignment);
 

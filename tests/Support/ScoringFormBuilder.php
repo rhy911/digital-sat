@@ -11,7 +11,7 @@ use App\Models\Test;
 use App\Models\User;
 use App\Models\UserTest;
 use App\Models\UserTestAnswer;
-use App\Services\TestProgressionService;
+use App\Services\AttemptEngine;
 
 /**
  * Deterministic fixture builder for the scoring pipeline.
@@ -19,7 +19,7 @@ use App\Services\TestProgressionService;
  * Builds a complete SAT form (adaptive_full_length or full_length) with official
  * module sizes, explicit per-question IRT parameters, 2 pretest items per module,
  * and a mix of difficulties + MCQ/SPR types — then plays a full student attempt
- * through the real TestProgressionService (module-by-module submit), so the
+ * through the real AttemptEngine (module-by-module submit), so the
  * finalized UserTest carries production-computed theta / scaled scores / bands.
  *
  * The output is fully deterministic: given the same form + the same per-module
@@ -110,7 +110,7 @@ class ScoringFormBuilder
             'status' => 'in_progress',
         ]);
 
-        $service = app(TestProgressionService::class);
+        $service = app(AttemptEngine::class);
         $firstSection = $test->load('sections.modules.questions')->sections
             ->sortBy('order')->values()->first();
         $module = $firstSection->modules->firstWhere('module_number', 1);
@@ -118,7 +118,7 @@ class ScoringFormBuilder
 
         while ($module) {
             self::answerModule($attempt, $module, (int) $correctFor($module));
-            $result = $service->submit($attempt, $module);
+            $result = $service->submitProgression($attempt, $module);
             if (! empty($result['test_completed'])) {
                 break;
             }

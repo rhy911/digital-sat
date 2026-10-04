@@ -84,7 +84,7 @@ class GuestExamController extends Controller
 
     /**
      * Minimal, nav-free result page a guest lands on after finishing an exam
-     * (see TestProgressionService::completionDestination). Ownership-gated
+     * (see AttemptEngine::completionDestination). Ownership-gated
      * rather than middleware-gated: this controller sits outside
      * ['auth','verified'] on purpose, so the check happens here instead.
      */
