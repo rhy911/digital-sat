@@ -19,6 +19,7 @@ class ClassroomDocumentController extends Controller
         $validated = $request->validate([
             'source_type' => 'required|in:file,link',
             'title' => 'required|string|max:180',
+            'unit_name' => 'nullable|string|max:100',
             'description' => 'nullable|string|max:2000',
             // Streaming-ZIP OOXML exports (e.g. Google Slides) are detected as
             // application/octet-stream, so `mimes:` alone rejects valid .pptx files.
@@ -36,6 +37,7 @@ class ClassroomDocumentController extends Controller
             'classroom_id' => $classroom->id,
             'created_by' => $request->user()->id,
             'title' => $validated['title'],
+            'unit_name' => $validated['unit_name'] ? trim($validated['unit_name']) : null,
             'description' => $validated['description'] ?? null,
             'source_type' => $validated['source_type'],
         ];

@@ -18,6 +18,10 @@ class StoreAssignmentRequest extends FormRequest
             'attempt_limit' => 'required|integer|min:1|max:10',
             'assign_type' => 'nullable|string|in:full,section',
             'section_type' => 'required_if:assign_type,section|nullable|string|in:reading_writing,math',
+            'target_audience' => 'nullable|string|in:all,specific',
+            'student_ids' => 'required_if:target_audience,specific|nullable|array',
+            'student_ids.*' => 'integer|exists:users,id',
+            'clock_mode' => 'nullable|string|in:chained,paused',
         ];
     }
 

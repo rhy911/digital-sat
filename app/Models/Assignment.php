@@ -10,7 +10,23 @@ class Assignment extends Model
 {
     use SoftDeletes;
 
-    protected $fillable = ['classroom_id', 'teacher_id', 'test_id', 'assign_type', 'section_type', 'title', 'instructions', 'available_at', 'due_at', 'attempt_limit', 'status', 'published_at', 'closed_at'];
+    protected $fillable = [
+        'classroom_id',
+        'teacher_id',
+        'test_id',
+        'assign_type',
+        'section_type',
+        'target_audience',
+        'clock_mode',
+        'title',
+        'instructions',
+        'available_at',
+        'due_at',
+        'attempt_limit',
+        'status',
+        'published_at',
+        'closed_at',
+    ];
 
     protected function casts(): array
     {
@@ -28,6 +44,16 @@ class Assignment extends Model
     public function test() { return $this->belongsTo(Test::class); }
     public function recipients() { return $this->hasMany(AssignmentRecipient::class); }
     public function attempts() { return $this->hasMany(UserTest::class); }
+
+    public function isTimedExam(): bool
+    {
+        return ($this->clock_mode ?? 'chained') === 'chained';
+    }
+
+    public function isTargeted(): bool
+    {
+        return ($this->target_audience ?? 'all') === 'specific';
+    }
 
     public function acceptsNewStarts(): bool
     {

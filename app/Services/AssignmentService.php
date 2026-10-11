@@ -45,7 +45,8 @@ class AssignmentService
 
             $attemptNumber = (int) UserTest::where('assignment_id', $assignment->id)
                 ->where('user_id', $student->id)->max('attempt_number') + 1;
-            if ($attemptNumber > $assignment->attempt_limit) {
+            $maxAllowed = (int) ($assignment->attempt_limit + ($recipient->extra_attempts ?? 0));
+            if ($attemptNumber > $maxAllowed) {
                 throw ValidationException::withMessages(['assignment' => 'You have used every allowed attempt.']);
             }
 
@@ -65,9 +66,9 @@ class AssignmentService
         });
     }
 
-    public function publish(Assignment $assignment): Assignment
+    public function publish(Assignment $assignment, ?array $targetStudentIds = null): Assignment
     {
-        return DB::transaction(function () use ($assignment) {
+        return DB::transaction(function () use ($assignment, $targetStudentIds) {
             $assignment = Assignment::with(['classroom.activeMemberships', 'test'])->lockForUpdate()->findOrFail($assignment->id);
             if ($assignment->classroom->status !== 'active' || $assignment->test->status !== 'active') {
                 throw ValidationException::withMessages(['assignment' => 'Class and test must both be active.']);
@@ -76,7 +77,12 @@ class AssignmentService
                 throw ValidationException::withMessages(['assignment' => 'Test must contain questions in every module before publishing.']);
             }
 
-            foreach ($assignment->classroom->activeMemberships as $membership) {
+            $eligibleMemberships = $assignment->classroom->activeMemberships;
+            if (!empty($targetStudentIds)) {
+                $eligibleMemberships = $eligibleMemberships->whereIn('student_id', $targetStudentIds);
+            }
+
+            foreach ($eligibleMemberships as $membership) {
                 AssignmentRecipient::updateOrCreate(
                     ['assignment_id' => $assignment->id, 'student_id' => $membership->student_id],
                     ['status' => 'active', 'assigned_at' => now(), 'withdrawn_at' => null]

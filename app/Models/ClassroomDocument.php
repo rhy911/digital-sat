@@ -15,6 +15,8 @@ class ClassroomDocument extends Model
         'created_by',
         'title',
         'description',
+        'unit_name',
+        'order',
         'source_type',
         'disk',
         'path',

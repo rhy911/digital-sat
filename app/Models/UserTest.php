@@ -40,10 +40,14 @@ class UserTest extends Model
         'current_module_id',
         'current_module_started_at',
         'current_module_elapsed_seconds',
+        'teacher_feedback',
+        'feedback_at',
+        'feedback_by',
     ];
 
     protected $casts = [
         'completed_at' => 'datetime',
+        'feedback_at' => 'datetime',
         'current_module_started_at' => 'datetime',
         'current_module_id' => 'integer',
         'current_module_elapsed_seconds' => 'integer',
@@ -97,7 +101,16 @@ class UserTest extends Model
      */
     public function runsOnChainedClock(): bool
     {
+        if ($this->assignment && ($this->assignment->clock_mode ?? 'chained') === 'paused') {
+            return false;
+        }
+
         return (bool) ($this->assignment_id || $this->exam_session_id);
+    }
+
+    public function feedbackAuthor()
+    {
+        return $this->belongsTo(User::class, 'feedback_by');
     }
 
     public function userAnswers()

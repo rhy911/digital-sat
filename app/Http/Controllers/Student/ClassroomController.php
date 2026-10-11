@@ -14,17 +14,27 @@ class ClassroomController extends Controller
 {
     public function index(Request $request)
     {
-        $membership = $request->user()->classroomMemberships()
-            ->where('status', 'active')
-            ->with('classroom')
+        $memberships = $request->user()->classroomMemberships()
+            ->with(['classroom' => fn ($q) => $q->with(['owner'])->withCount(['activeMemberships', 'assignments'])])
             ->latest()
-            ->first();
+            ->get();
 
-        if (!$membership) {
+        if ($memberships->isEmpty()) {
             return view('student.classes.empty', ['user' => $request->user()]);
         }
 
-        return redirect()->route('student.classes.show', $membership->classroom);
+        $activeMemberships = $memberships->where('status', 'active')->values();
+        $pendingMemberships = $memberships->where('status', 'pending')->values();
+
+        if ($activeMemberships->isNotEmpty() && ! $request->has('all')) {
+            return redirect()->route('student.classes.show', $activeMemberships->first()->classroom);
+        }
+
+        return view('student.classes.index', [
+            'user' => $request->user(),
+            'activeMemberships' => $activeMemberships,
+            'pendingMemberships' => $pendingMemberships,
+        ]);
     }
 
     public function show(Request $request, Classroom $classroom)
@@ -39,10 +49,12 @@ class ClassroomController extends Controller
         $classroom->load([
             'owner',
             'coTeachers',
+            'exclusiveTests' => fn ($query) => $query->where('status', 'active'),
             'documents' => fn ($query) => $query->with('creator')->latest(),
             'assignments' => fn ($query) => $query->with([
                 'test',
-                'attempts' => fn ($attemptsQuery) => $attemptsQuery->where('user_id', $request->user()->id),
+                'recipients' => fn ($r) => $r->where('student_id', $request->user()->id),
+                'attempts' => fn ($attemptsQuery) => $attemptsQuery->where('user_id', $request->user()->id)->with('feedbackAuthor'),
             ])->whereIn('status', ['published', 'closed']),
             'memberships.student',
             'note',
@@ -133,6 +145,7 @@ class ClassroomController extends Controller
             'classmatesPage' => $classmatesPage,
             'announcementsPage' => $announcementsPage,
             'calendarItems' => $calendarItems,
+            'units' => $classroom->studyUnits(),
         ]);
     }
 

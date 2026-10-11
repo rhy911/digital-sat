@@ -59,16 +59,69 @@
 
         {{-- Dropdown --}}
         <section class="space-y-3">
-            <h2 class="text-lg font-bold">Dropdown</h2>
-            <x-ui.dropdown align="left">
-                <x-slot:trigger>
-                    <x-ui.button variant="secondary">Open dropdown</x-ui.button>
-                </x-slot:trigger>
-                <x-slot:content>
-                    <a href="#" class="block px-4 py-2 text-sm text-slate-700 hover:bg-slate-100">Item one</a>
-                    <a href="#" class="block px-4 py-2 text-sm text-slate-700 hover:bg-slate-100">Item two</a>
-                </x-slot:content>
-            </x-ui.dropdown>
+            <h2 class="text-lg font-bold">Action Dropdown (<code class="text-xs">&lt;x-ui.dropdown&gt;</code>)</h2>
+            <div class="flex items-center gap-4">
+                <x-ui.dropdown align="left" width="56">
+                    <x-slot:trigger>
+                        <x-ui.button variant="secondary">Actions menu</x-ui.button>
+                    </x-slot:trigger>
+                    <x-slot:content>
+                        <a href="#" class="flex items-center gap-2 px-3.5 py-2 text-xs font-medium text-slate-700 hover:bg-slate-50 transition-colors">
+                            <x-ui.icon name="pencil" class="w-3.5 h-3.5 text-slate-400" />
+                            <span>Edit Assignment</span>
+                        </a>
+                        <a href="#" class="flex items-center gap-2 px-3.5 py-2 text-xs font-medium text-slate-700 hover:bg-slate-50 transition-colors">
+                            <x-ui.icon name="copy" class="w-3.5 h-3.5 text-slate-400" />
+                            <span>Duplicate</span>
+                        </a>
+                        <div class="border-t border-slate-100">
+                            <button type="button" class="w-full flex items-center gap-2 px-3.5 py-2 text-xs font-medium text-rose-600 hover:bg-rose-50/70 transition-colors text-left cursor-pointer">
+                                <x-ui.icon name="trash" class="w-3.5 h-3.5 text-rose-500" />
+                                <span>Delete Item</span>
+                            </button>
+                        </div>
+                    </x-slot:content>
+                </x-ui.dropdown>
+            </div>
+        </section>
+
+        {{-- Select Component --}}
+        <section class="space-y-4">
+            <h2 class="text-lg font-bold">Select Combobox (<code class="text-xs">&lt;x-ui.select&gt;</code>) &amp; Native Select</h2>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4 max-w-4xl">
+                <div>
+                    <label class="block text-xs font-semibold text-slate-700 mb-1">Searchable with Groups</label>
+                    <x-ui.select name="demo_grouped"
+                        placeholder="Choose a practice exam..."
+                        :options="[
+                            ['value' => '1', 'label' => 'Diagnostic SAT Practice 1', 'group' => 'Official Tests'],
+                            ['value' => '2', 'label' => 'Full Mock SAT 2026', 'group' => 'Official Tests'],
+                            ['value' => '3', 'label' => 'Algebra & Functions Drill', 'group' => 'Classroom Shared', 'subtext' => '(shared)'],
+                            ['value' => '4', 'label' => 'Reading & Writing Speed Pass', 'group' => 'Classroom Shared', 'subtext' => '(shared)'],
+                        ]" />
+                </div>
+
+                <div>
+                    <label class="block text-xs font-semibold text-slate-700 mb-1">Compact (No Search)</label>
+                    <x-ui.select name="demo_simple"
+                        :searchable="false"
+                        value="active"
+                        :options="[
+                            'active' => 'Active Status',
+                            'pending' => 'Pending Review',
+                            'archived' => 'Archived',
+                        ]" />
+                </div>
+
+                <div>
+                    <label class="block text-xs font-semibold text-slate-700 mb-1">Polished Native Select</label>
+                    <select class="w-full text-xs font-medium bg-white border border-slate-300 rounded-lg px-2.5 py-1.5 focus:border-brand focus:ring-1 focus:ring-brand">
+                        <option value="all">All Sections</option>
+                        <option value="rw">Reading &amp; Writing Only</option>
+                        <option value="math">Math Only</option>
+                    </select>
+                </div>
+            </div>
         </section>
 
         {{-- Alert --}}

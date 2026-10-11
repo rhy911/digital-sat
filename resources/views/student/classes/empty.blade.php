@@ -1,4 +1,4 @@
-<x-layouts.student :user="$user" title="My classes" header-type="none">
+<x-layouts.student :user="$user" :title="__('classroom.my_classes')" header-type="none">
     @push('styles')
         @vite(['resources/css/classroom-workspace.css'])
     @endpush
@@ -7,29 +7,28 @@
         <x-shell.icon-rail :logo-href="route('home')" :avatar-label="$user->initials"
             :items="\App\Support\NavRail::student('classes')" />
 
-        <div class="ledger-pane">
+        <main class="ledger-pane">
             <x-ui.flash />
 
             <div class="binder-panel">
                 <div class="ledger-header">
                     <div class="dh-left">
-                        <h2>My classes</h2>
-                        <div class="dh-desc">Join a teacher's class with the eight-character code they shared.</div>
+                        <h2>{{ __('classroom.my_classes') }}</h2>
+                        <div class="dh-desc">{{ __('classroom.join_desc') }}</div>
                     </div>
                 </div>
 
                 <div class="form-note" style="max-width: 420px; margin: 0 0 28px;">
-                    <form method="POST" action="{{ route('student.classes.join') }}"
-                        onsubmit="const btn = this.querySelector('button[type=submit]'); btn.disabled = true; btn.innerText = 'Requesting...';">
+                    <form method="POST" action="{{ route('student.classes.join') }}">
                         @csrf
                         <div class="field">
-                            <label for="join_code">Class code</label>
+                            <label for="join_code">{{ __('classroom.join_code') }}</label>
                             <input id="join_code" name="join_code" value="{{ request('code') }}" minlength="8"
                                 maxlength="8" required autocomplete="off" autocapitalize="characters"
                                 spellcheck="false" placeholder="AB12CD34"
                                 @if ($errors->any()) aria-invalid="true" @endif>
                         </div>
-                        <button type="submit" class="btn-sm-primary btn-full">Request to join</button>
+                        <button type="submit" class="btn-sm-primary btn-full">{{ __('classroom.request_to_join') }}</button>
                     </form>
                 </div>
 
@@ -45,6 +44,6 @@
                     <p style="margin:0; max-width:46ch; color: var(--ink-soft);">{{ __('classroom.no_classes_body') }}</p>
                 </div>
             </div>
-        </div>
+        </main>
     </div>
 </x-layouts.student>

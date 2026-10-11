@@ -38,9 +38,50 @@ class Classroom extends Model
     public function activeMemberships() { return $this->memberships()->where('status', 'active'); }
     public function assignments() { return $this->hasMany(Assignment::class); }
     public function documents() { return $this->hasMany(ClassroomDocument::class); }
+    public function exclusiveTests()
+    {
+        return $this->belongsToMany(Test::class, 'classroom_tests')
+            ->withPivot('unit_name', 'order')
+            ->withTimestamps();
+    }
     public function note() { return $this->hasOne(ClassroomNote::class); }
     public function announcements() { return $this->hasMany(ClassroomAnnouncement::class); }
     public function events() { return $this->hasMany(ClassroomEvent::class); }
+
+    /**
+     * Group documents and exclusive tests into structured study units.
+     *
+     * @return array<string, array{title: string, documents: \Illuminate\Support\Collection, tests: \Illuminate\Support\Collection}>
+     */
+    public function studyUnits(): array
+    {
+        $docs = $this->documents->sortBy('order');
+        $tests = $this->exclusiveTests->sortBy('pivot.order');
+
+        $unitNames = $docs->pluck('unit_name')->merge($tests->pluck('pivot.unit_name'))->filter()->unique()->values();
+        $units = [];
+
+        foreach ($unitNames as $name) {
+            $units[$name] = [
+                'title' => $name,
+                'documents' => $docs->where('unit_name', $name)->values(),
+                'tests' => $tests->where('pivot.unit_name', $name)->values(),
+            ];
+        }
+
+        $generalDocs = $docs->whereNull('unit_name')->values();
+        $generalTests = $tests->whereNull('pivot.unit_name')->values();
+
+        if ($generalDocs->isNotEmpty() || $generalTests->isNotEmpty() || empty($units)) {
+            $units['_general'] = [
+                'title' => __('classroom.general_resources') ?: 'General Materials',
+                'documents' => $generalDocs,
+                'tests' => $generalTests,
+            ];
+        }
+
+        return $units;
+    }
 
     public function hasTeacher(User $user): bool
     {

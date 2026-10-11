@@ -58,12 +58,18 @@ class AssignmentController extends Controller
             if ($data['assign_type'] === 'full') {
                 $data['section_type'] = null;
             }
+            $targetAudience = $data['target_audience'] ?? 'all';
+            $targetStudentIds = $targetAudience === 'specific' ? ($data['student_ids'] ?? []) : null;
+            unset($data['student_ids']);
+
             $assignment = Assignment::create($data + [
                 'classroom_id' => $classroom->id,
                 'teacher_id' => $teacherId,
+                'target_audience' => $targetAudience,
+                'clock_mode' => $data['clock_mode'] ?? 'chained',
             ]);
 
-            return $service->publish($assignment);
+            return $service->publish($assignment, $targetStudentIds);
         });
         $assignment->load('recipients.student');
         $assignment->recipients->each(fn ($recipient) => $recipient->student->notify(new AssignmentPublishedNotification($assignment)));

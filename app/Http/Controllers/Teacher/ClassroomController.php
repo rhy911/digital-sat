@@ -10,6 +10,7 @@ use App\Models\Classroom;
 use App\Models\Test;
 use App\Models\User;
 use App\Services\ClassroomService;
+use App\Support\ClassroomCohortAnalytics;
 use App\Support\ClassroomLeaderboard;
 use App\Support\ClassroomRosterStats;
 use Illuminate\Http\Request;
@@ -20,25 +21,24 @@ class ClassroomController extends Controller
     {
         $user = auth()->user();
 
-        // Admins oversee every class; teachers only their own or co-taught ones.
         $visible = fn () => Classroom::query()
             ->when($user->role !== 'admin', fn ($query) => $this->scopeToTeacher($query, $user));
 
-        $classroom = $visible()->where('status', 'active')->latest('updated_at')->first()
-            ?? $visible()->latest('updated_at')->first();
+        $classrooms = $visible()
+            ->withCount([
+                'activeMemberships',
+                'assignments',
+                'coTeachers',
+                'documents',
+                'memberships as pending_memberships_count' => fn ($query) => $query->where('status', 'pending'),
+            ])
+            ->latest('updated_at')
+            ->get();
 
-        if ($classroom) {
-            // `new` is forwarded so a "Create a class" link lands with the form
-            // already open, instead of on a page where the user hunts for it.
-            return redirect()->route('teacher.classes.show', array_filter([
-                'classroom' => $classroom,
-                'new' => $request->boolean('new') ? 1 : null,
-            ]));
-        }
+        $activeClassrooms = $classrooms->where('status', 'active')->values();
+        $archivedClassrooms = $classrooms->where('status', 'archived')->values();
 
-        // Nothing to show yet. This is the first screen a newly approved teacher
-        // reaches from their approval email, so it has to carry the create form.
-        return view('teacher.classes.index', ['user' => $user]);
+        return view('teacher.classes.index', compact('user', 'classrooms', 'activeClassrooms', 'archivedClassrooms'));
     }
 
     private function scopeToTeacher($query, User $user)
@@ -142,6 +142,8 @@ class ClassroomController extends Controller
             ->get(['id', 'title', 'content_locked_at', 'created_by']);
 
         $leaderboard = ClassroomLeaderboard::topScores($classroom);
+        $cohortStats = ClassroomCohortAnalytics::forClassroom($classroom);
+        $units = $classroom->studyUnits();
 
         return view('teacher.classes.show', compact(
             'classroom',
@@ -151,11 +153,71 @@ class ClassroomController extends Controller
             'topScore',
             'tests',
             'leaderboard',
+            'cohortStats',
+            'rosterStats',
+            'units',
             'documentsPage',
             'assignmentsPage',
             'announcementsPage',
             'calendarItems'
         ));
+    }
+
+    public function linkTest(Request $request, Classroom $classroom)
+    {
+        $this->authorize('manage', $classroom);
+        abort_if($classroom->status === 'archived', 409, 'Archived classes are read-only.');
+
+        $validated = $request->validate([
+            'test_id' => 'required|exists:tests,id',
+            'unit_name' => 'nullable|string|max:100',
+        ]);
+
+        $classroom->exclusiveTests()->syncWithoutDetaching([
+            $validated['test_id'] => [
+                'unit_name' => $validated['unit_name'] ? trim($validated['unit_name']) : null,
+                'order' => $classroom->exclusiveTests()->count() + 1,
+            ],
+        ]);
+
+        return back()->with('success', 'Practice test linked to class materials.');
+    }
+
+    public function unlinkTest(Classroom $classroom, Test $test)
+    {
+        $this->authorize('manage', $classroom);
+        abort_if($classroom->status === 'archived', 409, 'Archived classes are read-only.');
+
+        $classroom->exclusiveTests()->detach($test->id);
+
+        return back()->with('success', 'Practice test removed from class materials.');
+    }
+
+    public function submitFeedback(Request $request, Classroom $classroom, \App\Models\UserTest $attempt)
+    {
+        $this->authorize('manage', $classroom);
+
+        $validated = $request->validate([
+            'teacher_feedback' => 'required|string|max:2000',
+        ]);
+
+        $attempt->update([
+            'teacher_feedback' => trim($validated['teacher_feedback']),
+            'feedback_at' => now(),
+            'feedback_by' => $request->user()->id,
+        ]);
+
+        return back()->with('success', 'Feedback note saved for student attempt.');
+    }
+
+    public function grantRetry(Classroom $classroom, \App\Models\AssignmentRecipient $recipient)
+    {
+        $this->authorize('manage', $classroom);
+        abort_if($classroom->status === 'archived', 409, 'Archived classes are read-only.');
+
+        $recipient->increment('extra_attempts');
+
+        return back()->with('success', '+1 attempt retry granted for ' . ($recipient->student?->name ?? 'student') . '.');
     }
 
     public function noteUpdate(NoteUpdateRequest $request, Classroom $classroom): \Illuminate\Http\RedirectResponse

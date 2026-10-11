@@ -396,11 +396,38 @@ export function showCustomConfirm(message, type = 'warning', title = 'Confirm Ac
     });
 }
 
+export function copyToClipboard(text) {
+    if (navigator.clipboard && window.isSecureContext) {
+        return navigator.clipboard.writeText(text).catch(() => fallbackCopy(text));
+    }
+    return Promise.resolve(fallbackCopy(text));
+
+    function fallbackCopy(val) {
+        const scratch = document.createElement('textarea');
+        scratch.value = val;
+        scratch.setAttribute('readonly', '');
+        scratch.style.position = 'fixed';
+        scratch.style.top = '-9999px';
+        scratch.style.left = '-9999px';
+        document.body.appendChild(scratch);
+        scratch.select();
+        let ok = false;
+        try {
+            ok = document.execCommand('copy');
+        } catch (e) {
+            ok = false;
+        }
+        scratch.remove();
+        return ok;
+    }
+}
+
 window.initRadioToggleSection = initRadioToggleSection;
 window.initAjaxLogout = initAjaxLogout;
 window.initHomeDashboardPage = initHomeDashboardPage;
 window.smartRenderMath = smartRenderMath;
 window.showCustomConfirm = showCustomConfirm;
+window.copyToClipboard = copyToClipboard;
 
 export function initScoreDetailsPage() {
     // ── Sticky tabs bar ─────────────────────────────────────────

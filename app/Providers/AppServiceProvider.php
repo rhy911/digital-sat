@@ -21,6 +21,8 @@ class AppServiceProvider extends ServiceProvider
     {
         \Illuminate\Support\Facades\Schema::defaultStringLength(191);
 
+        \Illuminate\Pagination\Paginator::defaultView('pagination::tailwind');
+
         \Illuminate\Support\Facades\Blade::directive('markdown', function ($expression) {
             return "<?php echo \App\Support\QuestionContentRenderer::markdown($expression); ?>";
         });

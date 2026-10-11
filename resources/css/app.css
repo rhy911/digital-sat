@@ -67,6 +67,24 @@ textarea:focus-visible,
     box-shadow: 0 0 0 2px #ffffff, 0 0 0 4px var(--ds-focus, #2a4d8f) !important;
 }
 
+/* --- Global Form Select Facelift --- */
+select:not([multiple]):not([size]) {
+    appearance: none;
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%2364748b' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e");
+    background-position: right 0.65rem center;
+    background-repeat: no-repeat;
+    background-size: 1.15em 1.15em;
+    padding-right: 2.25rem !important;
+}
+
+select:disabled {
+    opacity: 0.6;
+    background-color: #f8fafc !important;
+    cursor: not-allowed;
+}
+
 /* --- Density Utility Classes --- */
 .density-compact {
     padding: var(--density-compact-padding);
@@ -401,6 +419,10 @@ header .dropdown-item.logout-btn:hover {
     display: none !important;
 }
 
+[style*="display: none"] {
+    display: none !important;
+}
+
 /* ==================== LANDING PAGE ==================== */
 .landing-hero {
     padding-top: clamp(1.75rem, 3vw, 2.75rem);
@@ -444,6 +466,7 @@ header .dropdown-item.logout-btn:hover {
     padding: 0.3rem 0.6rem;
     text-align: center;
     font-weight: 800;
+    font-variant-numeric: tabular-nums;
     color: #0f172a;
 }
 
@@ -459,7 +482,7 @@ header .dropdown-item.logout-btn:hover {
 }
 
 .landing-passage {
-    border-right: 1px solid #e2e8f0;
+    border-inline-end: 1px solid #e2e8f0;
     background: #ffffff;
 }
 
@@ -512,9 +535,9 @@ header .dropdown-item.logout-btn:hover {
     align-items: center;
     justify-content: space-between;
     gap: 1rem;
-    color: #475569;
+    color: #334155;
     font-size: 0.86rem;
-    font-weight: 800;
+    font-weight: 700;
 }
 
 .landing-question__meta span:first-child {
@@ -532,7 +555,7 @@ header .dropdown-item.logout-btn:hover {
     margin: 0.75rem 0;
     color: #0f172a;
     font-size: 0.88rem;
-    font-weight: 750;
+    font-weight: 700;
     line-height: 1.45;
 }
 
@@ -543,7 +566,7 @@ header .dropdown-item.logout-btn:hover {
     padding: 0.52rem 0.68rem;
     color: #334155;
     font-size: 0.82rem;
-    font-weight: 650;
+    font-weight: 600;
 }
 
 .landing-choice + .landing-choice {
@@ -551,27 +574,27 @@ header .dropdown-item.logout-btn:hover {
 }
 
 .landing-choice.is-selected {
-    border-color: #324dc7;
+    border-color: var(--color-brand);
     background: #eef2ff;
     color: #1e1b4b;
-    box-shadow: inset 0 0 0 1px #324dc7;
+    box-shadow: inset 0 0 0 1px var(--color-brand);
 }
 
 .landing-device__footer {
     padding: 0.48rem 0.8rem;
     border-top: 1px solid #e2e8f0;
-    color: #475569;
+    color: #334155;
     font-size: 0.78rem;
-    font-weight: 800;
+    font-weight: 700;
 }
 
 .landing-device__footer button {
     min-height: 2.45rem;
     border-radius: 999px;
-    background: #324dc7;
+    background: var(--color-brand);
     padding: 0 1.1rem;
     color: #ffffff;
-    font-weight: 800;
+    font-weight: 700;
 }
 
 .landing-stat {
@@ -592,7 +615,7 @@ header .dropdown-item.logout-btn:hover {
 
 .landing-stat span {
     margin-top: 0.45rem;
-    color: #475569;
+    color: #334155;
     font-size: 0.92rem;
     line-height: 1.55;
 }
@@ -605,10 +628,11 @@ header .dropdown-item.logout-btn:hover {
     padding: clamp(1.5rem, 3vw, 2.5rem);
 }
 
+#features,
 #fidelity,
 #teachers,
 #scoring {
-    scroll-margin-top: 6rem;
+    scroll-margin-top: 5.5rem;
 }
 
 .landing-feature--primary {
@@ -629,9 +653,9 @@ header .dropdown-item.logout-btn:hover {
 .landing-feature__label {
     display: inline-flex;
     margin-bottom: 1rem;
-    color: #324dc7;
+    color: var(--color-brand);
     font-size: 0.82rem;
-    font-weight: 900;
+    font-weight: 700;
 }
 
 .landing-feature h3 {
@@ -639,7 +663,7 @@ header .dropdown-item.logout-btn:hover {
     color: #0f172a;
     font-size: clamp(1.7rem, 3vw, 2.5rem);
     line-height: 1.1;
-    font-weight: 850;
+    font-weight: 800;
     letter-spacing: -0.02em;
 }
 
@@ -686,13 +710,13 @@ header .dropdown-item.logout-btn:hover {
     width: 0.55rem;
     height: 0.55rem;
     border-radius: 999px;
-    background: #324dc7;
+    background: var(--color-brand);
     flex: 0 0 auto;
 }
 
 .landing-mini-browser,
 .landing-score-card {
-    border: 1px solid rgba(50, 77, 199, 0.22);
+    border: 1px solid color-mix(in oklab, var(--color-brand) 22%, transparent);
     border-radius: 16px;
     background: rgba(255, 255, 255, 0.72);
     padding: 1rem;
@@ -715,7 +739,8 @@ header .dropdown-item.logout-btn:hover {
     margin-top: 1.75rem;
     color: #334155;
     font-size: 0.9rem;
-    font-weight: 750;
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
 }
 
 .landing-score-bar {
@@ -730,7 +755,7 @@ header .dropdown-item.logout-btn:hover {
     display: block;
     height: 100%;
     border-radius: inherit;
-    background: #324dc7;
+    background: var(--color-brand);
 }
 
 .landing-reveal {
@@ -760,7 +785,7 @@ header .dropdown-item.logout-btn:hover {
     }
 
     .landing-passage {
-        border-right: 0;
+        border-inline-end: 0;
         border-bottom: 1px solid #e2e8f0;
     }
 }
@@ -768,11 +793,6 @@ header .dropdown-item.logout-btn:hover {
 @media (max-width: 640px) {
     .landing-hero > div {
         gap: 1.5rem;
-    }
-
-    .landing-hero .landing-device {
-        max-height: 12.25rem;
-        overflow: hidden;
     }
 
     .landing-device {

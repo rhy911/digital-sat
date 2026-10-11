@@ -17,7 +17,10 @@
                 <div class="announce-card__time">{{ $announcement->created_at->diffForHumans() }}</div>
             </div>
             @if ($announcement->pinned)
-                <span class="announce-pin-badge">📌 Pinned</span>
+                <span class="announce-pin-badge">
+                    <x-ui.icon name="pin" class="w-3 h-3 text-amber-800" />
+                    Pinned
+                </span>
             @endif
         </div>
         @if ($canManage)
@@ -61,7 +64,8 @@
                                 message: '{{ $canManage ? 'Are you sure you want to delete this comment?' : 'Are you sure you want to delete your comment?' }}',
                                 actionUrl: '{{ route('announcements.comments.destroy', [$classroom, $announcement, $comment]) }}'
                             })" class="announce-comment-del-btn"
-                                title="{{ $canManage ? 'Delete comment' : 'Delete your comment' }}">&times;</button>
+                                title="{{ $canManage ? 'Delete comment' : 'Delete your comment' }}"
+                                aria-label="{{ $canManage ? 'Delete comment' : 'Delete your comment' }}">&times;</button>
                         </div>
                     @endif
                 </div>
@@ -73,8 +77,9 @@
                 action="{{ route('announcements.comments.store', [$classroom, $announcement]) }}"
                 class="announce-comment-form" x-data="{ commentText: '' }" autocomplete="off">
                 @csrf
-                <input type="text" name="body" maxlength="2000" required x-model="commentText" autocomplete="off"
-                    placeholder="Write a comment…" class="announce-comment-input">
+                <label for="comment-body-{{ $announcement->id }}" class="sr-only">Write a comment</label>
+                <input id="comment-body-{{ $announcement->id }}" type="text" name="body" maxlength="2000" required x-model="commentText" autocomplete="off"
+                    placeholder="Write a comment…" class="announce-comment-input" aria-label="Write a comment">
                 <button type="submit" class="btn-sm-primary btn-compact announce-send-btn" :disabled="!commentText.trim()" :class="{ 'is-active': commentText.trim().length > 0 }">Send</button>
             </form>
         @endif

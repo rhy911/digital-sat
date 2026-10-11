@@ -158,6 +158,10 @@ Route::middleware(['auth', 'verified', 'role:admin,teacher'])->prefix('teacher')
         Route::delete('/classes/{classroom}/co-teachers/{teacher}', [\App\Http\Controllers\Teacher\CoTeacherController::class, 'destroy'])->name('classes.co-teachers.destroy');
         Route::post('/classes/{classroom}/documents', [\App\Http\Controllers\Teacher\ClassroomDocumentController::class, 'store'])->name('classes.documents.store');
         Route::delete('/classes/{classroom}/documents/{document}', [\App\Http\Controllers\Teacher\ClassroomDocumentController::class, 'destroy'])->name('classes.documents.destroy');
+        Route::post('/classes/{classroom}/exclusive-tests', [\App\Http\Controllers\Teacher\ClassroomController::class, 'linkTest'])->name('classes.exclusive-tests.store');
+        Route::delete('/classes/{classroom}/exclusive-tests/{test}', [\App\Http\Controllers\Teacher\ClassroomController::class, 'unlinkTest'])->name('classes.exclusive-tests.destroy');
+        Route::post('/classes/{classroom}/attempts/{attempt}/feedback', [\App\Http\Controllers\Teacher\ClassroomController::class, 'submitFeedback'])->name('classes.attempts.feedback');
+        Route::post('/classes/{classroom}/recipients/{recipient}/grant-retry', [\App\Http\Controllers\Teacher\ClassroomController::class, 'grantRetry'])->name('classes.recipients.grant-retry');
         Route::put('/classes/{classroom}/note', [\App\Http\Controllers\Teacher\ClassroomController::class, 'noteUpdate'])->name('classes.note.update');
         Route::post('/classes/{classroom}/announcements', [\App\Http\Controllers\Teacher\AnnouncementController::class, 'store'])->middleware('throttle:20,1')->name('announcements.store');
         Route::post('/classes/{classroom}/announcements/{announcement}/pin', [\App\Http\Controllers\Teacher\AnnouncementController::class, 'togglePin'])->name('announcements.pin');
@@ -169,7 +173,7 @@ Route::middleware(['auth', 'verified', 'role:admin,teacher'])->prefix('teacher')
         Route::get('/classes/{classroom}/students/{student}/progress/export-pdf', [\App\Http\Controllers\Teacher\StudentProgressController::class, 'exportPdf'])->name('classes.students.progress.export-pdf');
         Route::post('/memberships/{membership}/approve', [\App\Http\Controllers\Teacher\MembershipController::class, 'approve'])->name('memberships.approve');
         Route::post('/memberships/{membership}/reject', [\App\Http\Controllers\Teacher\MembershipController::class, 'reject'])->name('memberships.reject');
-        Route::post('/memberships/{membership}/remove', [\App\Http\Controllers\Teacher\MembershipController::class, 'remove'])->name('memberships.remove');
+        Route::match(['post', 'delete'], '/memberships/{membership}/remove', [\App\Http\Controllers\Teacher\MembershipController::class, 'remove'])->name('memberships.remove');
         Route::post('/classes/{classroom}/memberships/bulk-approve', [\App\Http\Controllers\Teacher\MembershipController::class, 'bulkApprove'])->name('memberships.bulk-approve');
         Route::post('/classes/{classroom}/assignments', [\App\Http\Controllers\Teacher\AssignmentController::class, 'store'])->name('assignments.store');
         Route::get('/assignments/{assignment}/students/{student}/attempts', [\App\Http\Controllers\Teacher\AssignmentController::class, 'attemptMonitor'])->name('assignments.attempt-monitor');

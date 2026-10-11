@@ -3,6 +3,7 @@
 namespace App\Livewire\Teacher;
 
 use App\Models\Classroom;
+use App\Models\User;
 use Livewire\Component;
 use Livewire\WithoutUrlPagination;
 use Livewire\WithPagination;
@@ -13,9 +14,29 @@ class ClassroomRoster extends Component
 
     public Classroom $classroom;
     public string $search = '';
+    public string $sortField = 'joined';
+    public string $sortDirection = 'desc';
 
     public function updatedSearch(): void
     {
+        $this->resetPage('rosterPage');
+    }
+
+    public function clearSearch(): void
+    {
+        $this->search = '';
+        $this->resetPage('rosterPage');
+    }
+
+    public function sortBy(string $field): void
+    {
+        if ($this->sortField === $field) {
+            $this->sortDirection = $this->sortDirection === 'asc' ? 'desc' : 'asc';
+        } else {
+            $this->sortField = $field;
+            $this->sortDirection = $field === 'name' ? 'asc' : 'desc';
+        }
+
         $this->resetPage('rosterPage');
     }
 
@@ -33,6 +54,7 @@ class ClassroomRoster extends Component
             ->get();
 
         $search = trim($this->search);
+        $direction = in_array(strtolower($this->sortDirection), ['asc', 'desc'], true) ? $this->sortDirection : 'desc';
 
         $rosterPage = $this->classroom->memberships()
             ->where('status', 'active')
@@ -44,13 +66,23 @@ class ClassroomRoster extends Component
                       ->orWhere('email', 'like', $like);
                 });
             })
-            ->orderByDesc('decided_at')
+            ->when($this->sortField === 'name', function ($query) use ($direction) {
+                $query->orderBy(
+                    User::select('name')->whereColumn('users.id', 'classroom_memberships.student_id'),
+                    $direction
+                );
+            }, function ($query) use ($direction) {
+                $query->orderByRaw("COALESCE(decided_at, created_at) {$direction}");
+            })
             ->paginate(15, ['*'], 'rosterPage', $this->getPage('rosterPage'));
 
         return view('livewire.teacher.classroom-roster', [
             'classroom' => $this->classroom,
             'pending' => $pending,
             'rosterPage' => $rosterPage,
+            'search' => $this->search,
+            'sortField' => $this->sortField,
+            'sortDirection' => $this->sortDirection,
         ]);
     }
 }
