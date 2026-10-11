@@ -27,7 +27,10 @@ export class AuthForm {
         // Setup validation listeners for all inputs
         const inputs = this.form.querySelectorAll('input:not([type="hidden"]), select, textarea');
         inputs.forEach(input => {
-            input.addEventListener('input', () => this.checkFormValidity());
+            input.addEventListener('input', () => {
+                input.classList.remove('is-invalid');
+                this.checkFormValidity();
+            });
         });
 
         // Initial check
@@ -39,28 +42,22 @@ export class AuthForm {
         }
     }
 
-    checkFormValidity() {
-        if (!this.submitBtn) return;
-
-        // Custom validation first
-        const customValid = this.config.validate();
-        
-        // General "all required fields filled" check
-        const inputs = Array.from(this.form.querySelectorAll('input[required], input:not([type="hidden"])'));
-        const allFilled = inputs.every(input => {
-            if (input.type === 'checkbox') return input.required ? input.checked : true;
+    getInvalidRequiredInput() {
+        const inputs = Array.from(this.form.querySelectorAll('input[required], select[required], textarea[required]'));
+        return inputs.find(input => {
+            if (input.type === 'checkbox') return !input.checked;
             if (input.type === 'radio') {
-                const name = input.name;
-                return this.form.querySelector(`input[type="radio"][name="${name}"]:checked`) !== null;
+                return !this.form.querySelector(`input[type="radio"][name="${input.name}"]:checked`);
             }
-            // Only check non-hidden inputs that aren't buttons
-            if (input.type === 'submit' || input.type === 'button') return true;
-            return input.value.trim() !== "";
+            if (input.type === 'submit' || input.type === 'button') return false;
+            return input.value.trim() === '';
         });
+    }
 
-        const isValid = allFilled && customValid;
+    checkFormValidity() {
+        if (!this.submitBtn) return true;
 
-        this.submitBtn.disabled = !isValid;
+        const isValid = !this.getInvalidRequiredInput() && this.config.validate();
         this.submitBtn.classList.toggle("active", isValid);
         
         return isValid;
@@ -69,11 +66,24 @@ export class AuthForm {
     async handleSubmit(e) {
         e.preventDefault();
 
-        if (!this.checkFormValidity()) return;
+        if (!this.checkFormValidity()) {
+            const invalidInput = this.getInvalidRequiredInput();
+            if (invalidInput) {
+                invalidInput.focus();
+                invalidInput.classList.add('is-invalid');
+                this.showError('Please fill in all required fields.');
+            } else {
+                const firstInvalid = this.form.querySelector('.is-invalid, :invalid');
+                if (firstInvalid) firstInvalid.focus();
+                this.showError('Please check the form for errors.');
+            }
+            return;
+        }
 
         const originalBtnText = this.submitBtn.textContent;
         this.submitBtn.textContent = this.submitBtn.dataset.processingText || 'Processing...';
         this.submitBtn.disabled = true;
+        this.submitBtn.classList.add('is-busy');
         
         if (this.errorMsg) this.errorMsg.style.display = 'none';
         if (this.successMsg) this.successMsg.style.display = 'none';
@@ -125,6 +135,7 @@ export class AuthForm {
         } finally {
             this.submitBtn.textContent = originalBtnText;
             this.submitBtn.disabled = false;
+            this.submitBtn.classList.remove('is-busy');
             this.checkFormValidity();
         }
     }
@@ -147,7 +158,7 @@ export class AuthForm {
     showError(message) {
         if (this.errorMsg) {
             this.errorMsg.innerHTML = message;
-            this.errorMsg.style.display = 'block';
+            this.errorMsg.style.display = '';
         } else {
             alert(message);
         }
@@ -156,7 +167,7 @@ export class AuthForm {
     showSuccess(message) {
         if (this.successMsg) {
             this.successMsg.textContent = message;
-            this.successMsg.style.display = 'block';
+            this.successMsg.style.display = '';
         } else {
             alert(message);
         }
@@ -179,7 +190,9 @@ window.initPasswordToggles = function () {
 
         toggleEl.dataset.bound = '1';
         toggleEl.innerHTML = eyeOffIcon;
-        toggleEl.setAttribute('aria-label', 'Show password');
+        if (!toggleEl.hasAttribute('aria-label')) {
+            toggleEl.setAttribute('aria-label', 'Show password');
+        }
         toggleEl.setAttribute('aria-pressed', 'false');
 
         function syncToggleVisibility() {
@@ -189,7 +202,6 @@ window.initPasswordToggles = function () {
             if (!hasValue) {
                 inputEl.type = 'password';
                 toggleEl.innerHTML = eyeOffIcon;
-                toggleEl.setAttribute('aria-label', 'Show password');
                 toggleEl.setAttribute('aria-pressed', 'false');
             }
         }
@@ -198,7 +210,6 @@ window.initPasswordToggles = function () {
             const isHidden = inputEl.type === 'password';
             inputEl.type = isHidden ? 'text' : 'password';
             toggleEl.innerHTML = isHidden ? eyeIcon : eyeOffIcon;
-            toggleEl.setAttribute('aria-label', isHidden ? 'Hide password' : 'Show password');
             toggleEl.setAttribute('aria-pressed', isHidden ? 'true' : 'false');
             inputEl.focus();
         });

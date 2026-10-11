@@ -10,7 +10,7 @@
 
         <!-- Title & Subtitle -->
         <div class="flex flex-col justify-center items-center gap-1.5">
-            <h1 class="text-2xl sm:text-3xl font-bold text-center m-0 text-black">Email Verified!</h1>
+            <h1 class="text-2xl sm:text-3xl font-bold text-center m-0 text-slate-900">Email Verified!</h1>
             <p class="text-sm sm:text-base text-gray-600 text-center">Your account has been successfully verified.
                 Welcome to
                 DigiSAT.</p>
@@ -27,21 +27,20 @@
                     d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z">
                 </path>
             </svg>
-            <span>Redirecting to home in <strong id="countdown" class="text-brand text-lg">99</strong>
+            <span>Redirecting to home in <strong id="countdown" class="text-brand text-lg tabular-nums">5</strong>
                 seconds...</span>
         </div>
 
         <!-- Direct button just in case -->
-        <a href="{{ route('dashboard') }}" class="primary-btn no-underline text-center w-full active mt-2"
-            role="button">
-            Continue Now
+        <a href="{{ route('dashboard') }}" class="primary-btn no-underline text-center w-full active mt-2">
+            Continue now
         </a>
     </div>
 
     @push('scripts')
         <script>
             document.addEventListener('DOMContentLoaded', () => {
-                let seconds = 99;
+                let seconds = 5;
                 const countdownEl = document.getElementById('countdown');
                 const interval = setInterval(() => {
                     seconds--;

@@ -1,13 +1,13 @@
 @php
     $role = request()->query('role');
     if ($role === 'teacher') {
-        $titleText = 'Sign In as Teacher';
+        $titleText = 'Sign in as teacher';
         $subtitleText = 'Continue tracking student progress.';
     } elseif ($role === 'admin') {
-        $titleText = 'Administrator Sign In';
+        $titleText = 'Administrator sign in';
         $subtitleText = 'System management and configuration.';
     } else {
-        $titleText = 'Sign In as Student';
+        $titleText = 'Sign in as student';
         $subtitleText = "Ready for today's practice?";
     }
 @endphp
@@ -32,24 +32,24 @@
 
     <!-- Title -->
     <div class="flex flex-col justify-center items-center gap-1">
-        <h1 class="text-2xl sm:text-3xl font-bold text-center m-0 text-black">{{ $titleText }}</h1>
+        <h1 class="text-2xl sm:text-3xl font-bold text-center m-0 text-slate-900">{{ $titleText }}</h1>
         <p class="text-sm sm:text-base text-gray-600 text-center">{{ $subtitleText }}</p>
     </div>
 
     <!-- Form -->
-    <form class="w-11/12" id="signinForm" action="{{ route('signin') }}" method="POST" novalidate>
+    <form class="w-full" id="signinForm" action="{{ route('signin') }}" method="POST" novalidate>
         @csrf
         <input type="hidden" name="role"
             value="{{ in_array($role, ['student', 'teacher', 'admin']) ? $role : 'student' }}">
 
         <div class="auth-form-group">
             <label for="email" class="form-label">Email Address</label>
-            <input type="email" class="form-control" id="email" name="email" autocomplete="email">
+            <input type="email" class="form-control" id="email" name="email" autocomplete="email" required>
         </div>
 
         <div class="auth-form-group">
             <x-auth.password-field label="Password" input-id="password" name="password" autocomplete="current-password"
-                toggle-id="passwordToggle" target-id="password" />
+                toggle-id="passwordToggle" target-id="password" required />
         </div>
 
         <div class="auth-form-links flex justify-between items-center w-full">
@@ -63,24 +63,16 @@
 
         <x-auth.alerts />
 
-        <button type="submit" class="submit-btn" id="submitBtn" data-processing-text="Processing..." disabled>Sign
-            In</button>
+        <button type="submit" class="submit-btn" id="submitBtn" data-processing-text="Processing...">Sign
+            in</button>
     </form>
 
     <!-- Help -->
     @if ($role !== 'admin')
         <div class="links text-center">
-            <a href="/signup?role={{ $role ?? 'student' }}">Don't have an account?</a>
+            <a href="{{ route('signup', ['role' => $role ?? 'student']) }}">Don't have an account? Sign up</a>
         </div>
     @endif
 
-    <div class="flex items-center justify-center gap-2 text-sm text-slate-600">
-        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none"
-            stroke="#10b981" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"
-            class="feather feather-check-circle">
-            <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
-            <polyline points="22 4 12 14.01 9 11.01"></polyline>
-        </svg>
-        <span>Your answers auto-save during practice tests.</span>
-    </div>
+    <x-auth.encouraging-notice class="mt-2" />
 </x-layouts.auth>

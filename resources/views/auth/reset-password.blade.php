@@ -31,12 +31,12 @@
 
     <!-- Title -->
     <div class="flex flex-col justify-center items-center gap-1">
-        <h1 class="text-2xl sm:text-3xl font-bold text-center m-0 text-black">Reset Your Password</h1>
+        <h1 class="text-2xl sm:text-3xl font-bold text-center m-0 text-slate-900">Reset Your Password</h1>
         <p class="text-sm sm:text-base text-gray-600 text-center">Create a secure new password for your account.</p>
     </div>
 
     <!-- Form -->
-    <form id="resetForm" action="{{ route('password.update') }}" method="POST" novalidate class="w-11/12">
+    <form id="resetForm" action="{{ route('password.update') }}" method="POST" novalidate class="w-full">
         @csrf
         <!-- Hidden fields for token and email from the URL -->
         <input type="hidden" name="token" value="{{ $token }}">
@@ -45,24 +45,24 @@
         <div class="auth-form-group">
             <x-auth.password-field input-id="password" name="password" label="New Password"
                 placeholder="Enter new password" autocomplete="new-password" toggle-id="passwordToggle"
-                target-id="password" />
+                target-id="password" required />
         </div>
 
         <div class="auth-form-group">
             <x-auth.password-field input-id="password_confirmation" name="password_confirmation"
                 label="Re-enter Password" placeholder="Confirm new password" autocomplete="new-password"
-                toggle-id="rePasswordToggle" target-id="password_confirmation" />
-            <div class="invalid-feedback" id="passwordMismatch">Passwords do not match.</div>
+                toggle-id="rePasswordToggle" target-id="password_confirmation" required />
+            <div class="invalid-feedback" id="passwordMismatch" role="alert" aria-live="polite">Passwords do not match.</div>
         </div>
 
         <x-auth.alerts />
 
-        <button type="submit" id="submitBtn" class="submit-btn" data-processing-text="Processing..." disabled>Reset
+        <button type="submit" id="submitBtn" class="submit-btn" data-processing-text="Processing...">Reset
             password</button>
     </form>
 
     <!-- Help -->
     <div class="links text-center">
-        <a href="/signin" class="text-sm font-semibold">Back to sign in</a>
+        <a href="{{ route('signin') }}" class="text-sm font-semibold">Back to sign in</a>
     </div>
 </x-layouts.auth>

@@ -2,11 +2,9 @@
     'showSuccess' => false,
     'errorId' => 'errorMessage',
     'successId' => 'successMessage',
-    'errorStyle' => 'display: none; margin-bottom: 1rem;',
-    'successStyle' => 'display: none;',
 ])
 
-<div id="{{ $errorId }}" style="{{ $errorStyle }}"></div>
+<div id="{{ $errorId }}" role="alert" aria-live="assertive"></div>
 @if ($showSuccess)
-    <div id="{{ $successId }}" style="{{ $successStyle }}"></div>
+    <div id="{{ $successId }}" role="status" aria-live="polite"></div>
 @endif

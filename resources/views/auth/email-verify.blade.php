@@ -1,13 +1,13 @@
 <x-layouts.auth title="Verify Email">
     <!-- Title -->
     <div class="flex flex-col justify-center items-center gap-1">
-        <h1 class="text-2xl sm:text-3xl font-bold text-center m-0 text-black">Verify Your Email</h1>
+        <h1 class="text-2xl sm:text-3xl font-bold text-center m-0 text-slate-900">Verify Your Email</h1>
         <p class="text-sm sm:text-base text-gray-600 text-center">We sent a verification link to your email address.
             Please check your inbox.</p>
     </div>
 
     @auth
-        <p class="text-center font-bold text-base text-[#1e293b]">
+        <p class="text-center font-bold text-base text-slate-800">
             {{ auth()->user()->email }}
         </p>
     @endauth
@@ -17,13 +17,13 @@
     <form id="resendForm" action="{{ route('verification.send') }}" method="POST" novalidate class="w-full">
         @csrf
         <button type="submit" id="resendBtn" class="submit-btn w-full mt-2" data-processing-text="Sending...">Resend
-            Verification Email</button>
+            verification email</button>
     </form>
 
     <form id="logoutForm" method="POST" action="{{ route('logout') }}" class="links text-center w-full">
         @csrf
         <button type="submit"
-            class="text-sm font-semibold text-brand bg-transparent border-none p-0 cursor-pointer hover:underline">Logout</button>
+            class="text-sm font-semibold text-brand bg-transparent border-none p-0 cursor-pointer hover:underline">Sign out</button>
     </form>
 
     @push('scripts')
@@ -37,7 +37,7 @@
                     resendBtn.classList.remove('active');
                     clearInterval(countdownInterval);
 
-                    resendBtn.textContent = `Vui lòng đợi ${seconds}s`;
+                    resendBtn.textContent = `Please wait ${seconds}s`;
 
                     countdownInterval = setInterval(() => {
                         seconds--;
@@ -45,21 +45,16 @@
                             clearInterval(countdownInterval);
                             resendBtn.disabled = false;
                             resendBtn.classList.add('active');
-                            resendBtn.textContent = 'Resend Verification Email';
+                            resendBtn.textContent = 'Resend verification email';
                         } else {
-                            resendBtn.textContent = `Vui lòng đợi ${seconds}s`;
+                            resendBtn.textContent = `Please wait ${seconds}s`;
                         }
                     }, 1000);
                 }
 
-                new AuthForm('resendForm', {
+                const authForm = new AuthForm('resendForm', {
                     onSuccess: (data) => {
-                        const successMsg = document.getElementById('successMessage');
-                        if (successMsg) {
-                            successMsg.textContent = data.message ||
-                                'Verification email sent! Check your inbox.';
-                            successMsg.style.display = 'block';
-                        }
+                        authForm.showSuccess(data.message || 'Verification email sent! Check your inbox.');
                         if (data.cooldown) {
                             setTimeout(() => startCountdown(data.cooldown), 10);
                         }
