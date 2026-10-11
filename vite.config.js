@@ -16,6 +16,7 @@ export default defineConfig({
                 'resources/css/admin/test-builder.css',
                 'resources/css/teacher/exam-sessions.css',
                 'resources/css/classroom-workspace.css',
+                'resources/css/shell.css',
                 'resources/css/engine/main.css',
                 'resources/js/app.js',
                 'resources/js/auth.js',

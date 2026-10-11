@@ -61,6 +61,17 @@
     --ds-selection: oklch(92% 0.04 258);
     --ds-overlay: oklch(15% 0.05 255 / 0.65);
 
+    /* --- Navigation Rail (Dark Navy & Brand Accent System) --- */
+    --ds-rail-bg: oklch(18% 0.045 255);
+    --ds-rail-border: oklch(100% 0 0 / 0.08);
+    --ds-rail-item-fg: oklch(100% 0 0 / 0.68);
+    --ds-rail-item-hover-bg: oklch(100% 0 0 / 0.08);
+    --ds-rail-item-hover-fg: oklch(100% 0 0);
+    --ds-rail-item-active-bg: oklch(50% 0.15 258 / 0.18);
+    --ds-rail-item-active-border: oklch(72% 0.14 258 / 0.32);
+    --ds-rail-item-active-fg: oklch(100% 0 0);
+    --ds-rail-item-active-icon: oklch(75% 0.14 258);
+
     /* --- Typography Scale & Families --- */
     --font-sans: "Roboto", ui-sans-serif, system-ui, sans-serif;
     --font-body: "Plus Jakarta Sans", "Roboto", ui-sans-serif, system-ui, sans-serif;
