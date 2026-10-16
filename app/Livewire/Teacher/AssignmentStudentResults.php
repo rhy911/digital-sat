@@ -14,9 +14,23 @@ class AssignmentStudentResults extends Component
 
     public Assignment $assignment;
     public string $search = '';
+    public string $sortField = 'name';
+    public string $sortDirection = 'asc';
 
     public function updatedSearch(): void
     {
+        $this->resetPage();
+    }
+
+    public function sortBy(string $field): void
+    {
+        if ($this->sortField === $field) {
+            $this->sortDirection = $this->sortDirection === 'asc' ? 'desc' : 'asc';
+        } else {
+            $this->sortField = $field;
+            $this->sortDirection = 'asc';
+        }
+
         $this->resetPage();
     }
 
@@ -32,7 +46,9 @@ class AssignmentStudentResults extends Component
             perPage: 15,
             page: $this->getPage(),
             includeAnalysis: false,
-            search: $this->search
+            search: $this->search,
+            sortField: $this->sortField,
+            sortDirection: $this->sortDirection
         );
 
         return view('livewire.teacher.assignment-student-results', [

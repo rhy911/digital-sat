@@ -57,6 +57,11 @@ class Module extends Model
               ->orWhereHas('sections', function ($s) use ($user) {
                   $s->visibleTo($user);
               });
+            if ($user->role === 'student') {
+                $q->orWhereHas('sections.test.classrooms', fn ($classrooms) => $classrooms->whereHas(
+                    'activeMemberships', fn ($memberships) => $memberships->where('student_id', $user->id)
+                ));
+            }
         });
     }
 

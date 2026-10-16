@@ -18,6 +18,7 @@ class TestManagementServiceTest extends TestCase
     {
         parent::setUp();
         $this->service = app(TestManagementService::class);
+        \App\Models\User::factory()->create(['id' => 1]);
     }
 
     public function test_generate_full_sat_structure()
@@ -190,13 +191,18 @@ class TestManagementServiceTest extends TestCase
         $this->assertNull($test->content_locked_at);
         $this->assertFalse($test->isContentLocked());
 
-        $classroom = \App\Models\Classroom::factory()->create(['status' => 'active']);
+        $classroom = \App\Models\Classroom::create([
+            'owner_id' => 1,
+            'name' => 'Lock Test Class',
+            'code' => 'LOCK'.rand(100, 999),
+            'status' => 'active',
+        ]);
         $assignment = \App\Models\Assignment::create([
             'classroom_id' => $classroom->id,
             'test_id' => $test->id,
             'status' => 'published',
-            'assigned_by' => 1,
-            'start_at' => now(),
+            'teacher_id' => 1,
+            'title' => 'Lock Test',
         ]);
 
         $test->syncContentLock();

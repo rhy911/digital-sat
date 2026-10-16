@@ -196,6 +196,7 @@ class ClassroomController extends Controller
     public function submitFeedback(Request $request, Classroom $classroom, \App\Models\UserTest $attempt)
     {
         $this->authorize('manage', $classroom);
+        abort_unless($attempt->assignment()->where('classroom_id', $classroom->id)->exists(), 404);
 
         $validated = $request->validate([
             'teacher_feedback' => 'required|string|max:2000',
@@ -214,6 +215,7 @@ class ClassroomController extends Controller
     {
         $this->authorize('manage', $classroom);
         abort_if($classroom->status === 'archived', 409, 'Archived classes are read-only.');
+        abort_unless($recipient->assignment()->where('classroom_id', $classroom->id)->exists(), 404);
 
         $recipient->increment('extra_attempts');
 

@@ -1,3 +1,5 @@
+import { ensureMathRuntime } from '../../../question-renderer.js';
+
 const loadedStyles = new Set();
 const loadingScripts = new Map();
 
@@ -33,7 +35,6 @@ export async function loadHeavyDependencies() {
     loadStyle('https://cdn.jsdelivr.net/npm/tom-select@2.3.1/dist/css/tom-select.bootstrap5.min.css');
     loadStyle('https://cdn.jsdelivr.net/npm/easymde/dist/easymde.min.css');
     loadStyle('https://cdn.jsdelivr.net/npm/tabulator-tables@5.5.2/dist/css/tabulator_bootstrap5.min.css');
-    loadStyle('https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css');
 
     // Load independent JS
     const tomSelectP = loadScript('https://cdn.jsdelivr.net/npm/tom-select@2.3.1/dist/js/tom-select.complete.min.js');
@@ -46,9 +47,8 @@ export async function loadHeavyDependencies() {
     // loaded ahead of it.
     const easymdeP = loadScript('https://cdn.jsdelivr.net/npm/easymde/dist/easymde.min.js');
 
-    // Load dependent JS
-    const katexP = loadScript('https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js')
-        .then(() => loadScript('https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/auto-render.min.js'));
+    // Load shared math runtime
+    const katexP = ensureMathRuntime();
 
     await Promise.all([tomSelectP, tabulatorP, katexP, easymdeP]);
 }

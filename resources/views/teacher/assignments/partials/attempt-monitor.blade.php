@@ -20,9 +20,9 @@ $difficultyBadgeClasses = fn (?string $difficulty) => match ($difficulty) {
     default => 'bg-amber-50 text-amber-700 border border-amber-100',
 };
 ?>
-<div class="attempt-monitor" 
-     @if(empty($hideHeader)) style="max-height: 70vh; overflow-y: auto;" @endif 
-     x-data="{ activeAttempt: {{ $initialAttempt->id }} }" 
+<div class="attempt-monitor"
+     @if(empty($hideHeader)) style="max-height: 70vh; overflow-y: auto;" @endif
+     x-data="{ activeAttempt: {{ $initialAttempt->id }} }"
      data-attempt-monitor
     data-poll-url="{{ route('teacher.assignments.attempt-monitor', [$assignment, $row['recipient']->student]) }}"
     data-active-attempt="{{ $initialAttempt->id }}">
@@ -59,34 +59,49 @@ $difficultyBadgeClasses = fn (?string $difficulty) => match ($difficulty) {
 
     <div class="attempt-monitor__panels">
         @foreach ($row['attempts'] as $attempt)
-            @php($isInProgress = $attempt->status === 'in_progress')
-            @php($currentModule = $attempt->currentModule)
-            @php($savedResponses = $attempt->userAnswers->count())
-            @php($answeredResponses = $attempt->userAnswers->filter(fn($answer) => filled($answer->selected_answer))->count())
-            @php($moduleResponses = $currentModule ? $attempt->userAnswers->where('module_id', $currentModule->id)->filter(fn($answer) => filled($answer->selected_answer))->count() : $answeredResponses)
-            @php($questionTotal = $currentModule?->total_questions ?: max($savedResponses, 1))
-            @php($progress = min(100, (int) round(($moduleResponses / max($questionTotal, 1)) * 100)))
-            @php($elapsedSeconds = (int) $attempt->current_module_elapsed_seconds)
-            @php($isActive = $attempt->id === $initialAttempt->id)
+            <?php
+                $isInProgress = $attempt->status === 'in_progress';
+                $currentModule = $attempt->currentModule;
+                $savedResponses = $attempt->userAnswers->count();
+                $answeredResponses = $attempt->userAnswers->filter(fn($answer) => filled($answer->selected_answer))->count();
+                $moduleResponses = $currentModule ? $attempt->userAnswers->where('module_id', $currentModule->id)->filter(fn($answer) => filled($answer->selected_answer))->count() : $answeredResponses;
+                $questionTotal = $currentModule?->total_questions ?: max($savedResponses, 1);
+                $progress = min(100, (int) round(($moduleResponses / max($questionTotal, 1)) * 100));
+                $elapsedSeconds = (int) $attempt->current_module_elapsed_seconds;
+                $isActive = $attempt->id === $initialAttempt->id;
+
+                $orderedAnswers = $attempt->userAnswers->sortBy(function ($ans) {
+                    $m = $ans->module;
+                    return ($m?->section?->order ?? 0) * 1000 + ($m?->module_number ?? 0) * 100 + ($ans->question_snapshot['question_number'] ?? $ans->id);
+                })->values();
+                $groupedAnswers = $orderedAnswers->groupBy('module_id');
+            ?>
             <section class="attempt-monitor__panel" id="{{ $attemptModalId }}-panel-{{ $attempt->id }}"
                 role="tabpanel" aria-labelledby="{{ $attemptModalId }}-tab-{{ $attempt->id }}"
-                x-data="{ 
-                    selectedAnswerId: null, 
-                    previewHtml: '', 
+                x-data="{
+                    selectedAnswerId: null,
+                    previewHtml: '',
                     loading: false,
+                    filterStatus: 'all',
+                    allAnswerIds: {{ Js::from($orderedAnswers->pluck('id')->values()) }},
                     collapsedModules: {
-                        @foreach ($attempt->userAnswers->pluck('module_id')->unique() as $moduleId)
-                            '{{ $moduleId }}': true,
+                        @foreach ($orderedAnswers->pluck('module_id')->unique() as $moduleId)
+                            '{{ $moduleId }}': false,
                         @endforeach
                     },
+                    get currentIndex() { return this.allAnswerIds.indexOf(this.selectedAnswerId); },
+                    get hasPrev() { return this.currentIndex > 0; },
+                    get hasNext() { return this.currentIndex >= 0 && this.currentIndex < this.allAnswerIds.length - 1; },
+                    prevQuestion() { if (this.hasPrev) this.fetchPreview(this.allAnswerIds[this.currentIndex - 1]); },
+                    nextQuestion() { if (this.hasNext) this.fetchPreview(this.allAnswerIds[this.currentIndex + 1]); },
                     fetchPreview(answerId) {
-                        if (this.selectedAnswerId === answerId) return;
+                        if (this.selectedAnswerId === answerId && this.previewHtml) return;
                         this.selectedAnswerId = answerId;
                         this.loading = true;
                         this.previewHtml = '';
-                        
+
                         let url = '{{ route('teacher.assignments.attempt-question-preview', [$assignment, ':answerId']) }}'.replace(':answerId', answerId);
-                        
+
                         fetch(url, {
                             headers: {
                                 'X-Requested-With': 'XMLHttpRequest',
@@ -100,6 +115,11 @@ $difficultyBadgeClasses = fn (?string $difficulty) => match ($difficulty) {
                         .then(html => {
                             this.previewHtml = html;
                             this.loading = false;
+                            this.$nextTick(() => {
+                                if (window.smartRenderMath) {
+                                    window.smartRenderMath();
+                                }
+                            });
                         })
                         .catch(err => {
                             console.error(err);
@@ -109,211 +129,357 @@ $difficultyBadgeClasses = fn (?string $difficulty) => match ($difficulty) {
                     }
                 }"
                 x-on:restore-state="
-                    selectedAnswerId = $event.detail.selectedAnswerId; 
-                    collapsedModules = $event.detail.collapsedModules; 
-                    previewHtml = $event.detail.previewHtml; 
+                    selectedAnswerId = $event.detail.selectedAnswerId;
+                    collapsedModules = $event.detail.collapsedModules;
+                    previewHtml = $event.detail.previewHtml;
                 "
+                @keydown.left.window="if (selectedAnswerId) prevQuestion()"
+                @keydown.right.window="if (selectedAnswerId) nextQuestion()"
+                @keydown.escape.window="selectedAnswerId = null; previewHtml = ''"
                 x-show="activeAttempt === {{ $attempt->id }}" {!! !$isActive ? 'x-cloak' : '' !!}>
-                <div class="attempt-monitor__summary">
-                    <div class="attempt-monitor__status-line">
-                        <div>
-                            <span
-                                class="attempt-monitor__status attempt-monitor__status--{{ $isInProgress ? 'active' : 'complete' }}">{{ $isInProgress ? 'In progress' : ucfirst(str_replace('_', ' ', $attempt->status)) }}</span>
-                            <h4>
+
+                <!-- ATTEMPT OVERVIEW CARD -->
+                <div class="bg-slate-50/70 border border-slate-200 rounded-xl p-4 sm:p-5 mb-6">
+                    <div class="flex flex-wrap items-center justify-between gap-3 mb-4">
+                        <div class="flex items-center gap-2.5">
+                            <span class="status-pill {{ $isInProgress ? 'in-progress' : 'ok' }}">
+                                <span class="d"></span>
+                                {{ $isInProgress ? 'In progress' : ucfirst(str_replace('_', ' ', $attempt->status)) }}
+                            </span>
+                            <h4 class="text-sm sm:text-base font-bold text-slate-900 m-0">
                                 @if ($currentModule)
-                                    {{ $currentModule->section?->name ?? 'Current section' }} &middot; Module
-                                    {{ $currentModule->module_number }}
+                                    {{ $currentModule->section?->name ?? 'Current section' }} &middot; Module {{ $currentModule->module_number }}
                                 @else
-                                    Attempt {{ $attempt->attempt_number }} overview
+                                    Attempt {{ $attempt->attempt_number }} Overview
                                 @endif
                             </h4>
                         </div>
-                        <div class="flex items-center gap-3">
-                            <span class="attempt-monitor__activity">Last activity
-                                {{ $attempt->updated_at->diffForHumans() }}</span>
+                        <div class="flex items-center gap-3 flex-wrap">
+                            <span class="text-xs text-slate-500 font-medium">
+                                Last activity {{ $attempt->updated_at->diffForHumans() }}
+                            </span>
                             @if ($attempt->status === 'completed' || $attempt->total_score !== null)
-                                <a href="{{ route('student.scores.show', $attempt) }}" target="_blank" rel="noopener noreferrer" class="btn-sm-primary btn-compact flex items-center gap-1.5 no-underline text-xs shrink-0" style="padding: 4px 10px; font-weight: 600;">
+                                <a href="{{ route('student.scores.show', $attempt) }}" target="_blank" rel="noopener noreferrer" class="btn-sm-primary flex items-center gap-1.5 no-underline text-xs shrink-0 font-semibold px-3 py-1.5 rounded-lg shadow-2xs">
                                     <span>Score Report</span>
                                     <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/></svg>
                                 </a>
-                            @else
-                                <button type="button" disabled class="btn-sm-ghost is-disabled flex items-center gap-1.5 text-xs shrink-0 cursor-not-allowed opacity-50 select-none" style="padding: 4px 10px; font-weight: 600; background: #e2e8f0; color: #94a3b8; border: 1px solid #cbd5e1;" title="Score report is available once attempt is completed">
-                                    <span>Score Report</span>
-                                    <svg class="w-3.5 h-3.5 opacity-50" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/></svg>
-                                </button>
                             @endif
                         </div>
                     </div>
 
-                    <dl class="attempt-monitor__metrics">
-                        <div>
-                            <dt>Answered</dt>
-                            <dd>{{ $answeredResponses }}</dd>
+                    @php
+                        $totalTimeSeconds = (int) $attempt->userAnswers->sum('time_spent');
+                        if ($totalTimeSeconds >= 3600) {
+                            $formattedTotalTime = floor($totalTimeSeconds / 3600) . 'h ' . floor(($totalTimeSeconds % 3600) / 60) . 'm';
+                        } elseif ($totalTimeSeconds >= 60) {
+                            $formattedTotalTime = floor($totalTimeSeconds / 60) . 'm ' . ($totalTimeSeconds % 60) . 's';
+                        } else {
+                            $formattedTotalTime = $totalTimeSeconds . 's';
+                        }
+                        $totalCorrect = $attempt->userAnswers->where('is_correct', true)->count();
+                        $accuracyPct = $savedResponses > 0 ? (int) round(($totalCorrect / $savedResponses) * 100) : 0;
+                    @endphp
+
+                    <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 text-xs">
+                        <!-- Tile 1: Total Score -->
+                        <div class="bg-white border border-slate-200 rounded-xl p-3 shadow-2xs">
+                            <div class="text-3xs uppercase font-bold text-slate-500 tracking-wider mb-1">Score</div>
+                            <div class="text-lg font-mono font-bold text-slate-900 leading-tight">
+                                {{ $attempt->total_score ?? '—' }}
+                                <span class="text-2xs font-sans font-medium text-slate-500">{{ $assignment->isSectionAssignment() ? '/ 800' : '/ 1600' }}</span>
+                            </div>
+                            <div class="text-3xs text-slate-500 mt-1 truncate">{{ $assignment->isSectionAssignment() ? $assignment->sectionLabel() : 'Full Exam' }}</div>
                         </div>
-                        <div>
-                            <dt>{{ $isInProgress ? 'Module progress' : 'Responses saved' }}</dt>
-                            <dd>{{ $isInProgress && $currentModule ? $moduleResponses . ' / ' . $questionTotal : $savedResponses }}
-                            </dd>
+
+                        <!-- Tile 2: Accuracy -->
+                        <div class="bg-white border border-slate-200 rounded-xl p-3 shadow-2xs">
+                            <div class="text-3xs uppercase font-bold text-slate-500 tracking-wider mb-1">Accuracy</div>
+                            <div class="text-lg font-mono font-bold text-slate-900 leading-tight">
+                                {{ $accuracyPct }}%
+                            </div>
+                            <div class="text-3xs text-slate-500 mt-1">{{ $totalCorrect }} / {{ $savedResponses }} correct</div>
                         </div>
-                        <div>
-                            <dt>Module time</dt>
-                            <dd>{{ intdiv($elapsedSeconds, 60) }}:{{ str_pad((string) ($elapsedSeconds % 60), 2, '0', STR_PAD_LEFT) }}
-                            </dd>
+
+                        <!-- Tile 3: Reading & Writing Score -->
+                        <div class="bg-white border border-slate-200 rounded-xl p-3 shadow-2xs">
+                            <div class="text-3xs uppercase font-bold text-slate-500 tracking-wider mb-1">R&amp;W Score</div>
+                            <div class="text-lg font-mono font-bold text-blue-700 leading-tight">
+                                {{ $attempt->score_reading_writing ?? '—' }}
+                                <span class="text-2xs font-sans font-medium text-slate-500">/ 800</span>
+                            </div>
+                            <div class="text-3xs text-slate-500 mt-1">Reading &amp; Writing</div>
                         </div>
-                        <div>
-                            <dt>{{ $isInProgress ? 'Started' : 'Score' }}</dt>
-                            <dd>
-                                @if ($isInProgress)
-                                    {{ $attempt->created_at->format('M j, g:i A') }}
-                                @elseif($attempt->total_score !== null)
-                                    {{ $attempt->total_score }}
-                                @else
-                                    &mdash;
+
+                        <!-- Tile 4: Math Score -->
+                        <div class="bg-white border border-slate-200 rounded-xl p-3 shadow-2xs">
+                            <div class="text-3xs uppercase font-bold text-slate-500 tracking-wider mb-1">Math Score</div>
+                            <div class="text-lg font-mono font-bold text-indigo-700 leading-tight">
+                                {{ $attempt->score_math ?? '—' }}
+                                <span class="text-2xs font-sans font-medium text-slate-500">/ 800</span>
+                            </div>
+                            <div class="text-3xs text-slate-500 mt-1">Math Section</div>
+                        </div>
+
+                        <!-- Tile 5: Time Spent -->
+                        <div class="bg-white border border-slate-200 rounded-xl p-3 shadow-2xs">
+                            <div class="text-3xs uppercase font-bold text-slate-500 tracking-wider mb-1">Total Time</div>
+                            <div class="text-lg font-mono font-bold text-slate-900 leading-tight">
+                                {{ $formattedTotalTime }}
+                            </div>
+                            <div class="text-3xs text-slate-500 mt-1">Across all modules</div>
+                        </div>
+
+                        <!-- Tile 6: Adaptive Path -->
+                        <div class="bg-white border border-slate-200 rounded-xl p-3 shadow-2xs">
+                            <div class="text-3xs uppercase font-bold text-slate-500 tracking-wider mb-1">Stage 2 Paths</div>
+                            <div class="flex items-center gap-1.5 flex-wrap mt-0.5">
+                                @if($attempt->rw_m2_path)
+                                    <span class="text-3xs font-bold px-1.5 py-0.5 rounded bg-blue-50 text-blue-800 border border-blue-200" title="Reading & Writing Module 2 Path">
+                                        RW: {{ ucfirst($attempt->rw_m2_path) }}
+                                    </span>
                                 @endif
-                            </dd>
+                                @if($attempt->math_m2_path)
+                                    <span class="text-3xs font-bold px-1.5 py-0.5 rounded bg-indigo-50 text-indigo-800 border border-indigo-200" title="Math Module 2 Path">
+                                        M: {{ ucfirst($attempt->math_m2_path) }}
+                                    </span>
+                                @endif
+                                @if(!$attempt->rw_m2_path && !$attempt->math_m2_path)
+                                    <span class="text-xs text-slate-500 font-semibold">—</span>
+                                @endif
+                            </div>
+                            <div class="text-3xs text-slate-500 mt-1">Adaptive routing</div>
                         </div>
-                        @if ($attempt->rw_m2_path)
-                        <div>
-                            <dt>R&W Module 2 Path</dt>
-                            <dd><span class="font-semibold text-brand">{{ ucfirst($attempt->rw_m2_path) }}</span></dd>
-                        </div>
-                        @endif
-                        @if ($attempt->math_m2_path)
-                        <div>
-                            <dt>Math Module 2 Path</dt>
-                            <dd><span class="font-semibold text-brand">{{ ucfirst($attempt->math_m2_path) }}</span></dd>
-                        </div>
-                        @endif
-                    </dl>
+                    </div>
 
                     @if ($isInProgress && $currentModule)
-                        <div class="attempt-monitor__progress">
-                            <div><span>Current module completion</span><strong>{{ $progress }}%</strong></div>
+                        <div class="attempt-monitor__progress mt-4">
+                            <div><span>Current module completion ({{ $moduleResponses }} / {{ $questionTotal }} &middot; {{ intdiv($elapsedSeconds, 60) }}:{{ str_pad((string) ($elapsedSeconds % 60), 2, '0', STR_PAD_LEFT) }})</span><strong>{{ $progress }}%</strong></div>
                             <span role="progressbar" aria-label="Current module completion" aria-valuemin="0"
                                 aria-valuemax="100" aria-valuenow="{{ $progress }}"><i
                                     style="width: {{ $progress }}%"></i></span>
                         </div>
                     @elseif($assignment->due_at && $attempt->completed_at?->gt($assignment->due_at))
-                        <p class="attempt-monitor__notice">Submitted after the assignment deadline.</p>
+                        <p class="attempt-monitor__notice mt-3 mb-0">Submitted after the assignment deadline.</p>
                     @endif
                 </div>
 
-                <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 mt-6 border-t border-slate-100 pt-6">
-                    <!-- Left column: Grouped list of questions (Takes full width) -->
-                    <div class="lg:col-span-12 flex flex-col gap-4">
-                        <div class="attempt-monitor__responses-heading flex justify-between items-center mb-2">
-                            <h5 class="text-base font-semibold text-slate-800 m-0">{{ $isInProgress ? 'Saved responses' : 'Response review' }}</h5>
-                            <span class="text-xs text-slate-500">{{ $savedResponses }} {{ \Illuminate\Support\Str::plural('question', $savedResponses) }}</span>
+                <!-- RESPONSE REVIEW SECTION -->
+                <div class="mt-6">
+                    <div class="flex flex-wrap items-center justify-between gap-3 mb-4">
+                        <div class="flex items-center gap-2">
+                            <h4 class="text-sm sm:text-base font-bold text-slate-900 m-0">{{ $isInProgress ? 'Saved Responses' : 'Response Review' }}</h4>
+                            <span class="text-xs font-semibold px-2 py-0.5 rounded-full bg-slate-100 text-slate-600 border border-slate-200">
+                                {{ $savedResponses }} {{ \Illuminate\Support\Str::plural('question', $savedResponses) }}
+                            </span>
                         </div>
 
-                        @if ($attempt->userAnswers->isNotEmpty())
-                            <?php
-                                $groupedAnswers = $attempt->userAnswers->groupBy('module_id')->sortBy(function ($answers) {
-                                    $module = $answers->first()->module;
-                                    return ($module?->section?->order ?? 0) * 100 + ($module?->module_number ?? 0);
-                                });
-                            ?>
-                            <div class="attempt-monitor__questions-list pr-1 space-y-4 max-h-[500px] overflow-y-auto">
-                                @foreach ($groupedAnswers as $moduleId => $answers)
-                                    <?php 
-                                        $module = $answers->first()->module; 
-                                        $isSubmitted = $attempt->status === 'completed' || $attempt->moduleSubmissions->contains('module_id', $moduleId);
-                                    ?>
-                                    <div class="rounded-lg border border-slate-200 bg-white overflow-hidden shadow-sm transition-all"
-                                         data-module-card
-                                         data-module-id="{{ $moduleId }}"
-                                         :data-collapsed="collapsedModules['{{ $moduleId }}'] ? 'true' : 'false'">
-                                        <!-- Header (click to collapse) -->
-                                        <button type="button" 
-                                            class="w-full bg-slate-50 px-4 py-3 border-b border-slate-200 flex justify-between items-center hover:bg-slate-100/70 transition-colors focus:outline-none"
-                                            @click="collapsedModules['{{ $moduleId }}'] = !collapsedModules['{{ $moduleId }}']">
-                                            <div class="flex items-center gap-2">
-                                                <svg class="w-4 h-4 text-slate-400 transform transition-transform" 
-                                                    :class="collapsedModules['{{ $moduleId }}'] ? '-rotate-90' : ''" 
-                                                    fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
-                                                </svg>
-                                                <h6 class="text-sm font-semibold text-slate-800 m-0 text-left">
-                                                    {{ $module?->section?->name ?? 'Unknown Section' }} &middot; Module {{ $module?->module_number ?? '?' }}
-                                                </h6>
-                                            </div>
-                                            <div class="flex items-center gap-2">
-                                                @if($isSubmitted)
-                                                    <span class="text-[10px] font-semibold px-2 py-0.5 rounded bg-emerald-50 text-emerald-700 border border-emerald-200 flex items-center gap-1 shadow-sm">
-                                                        <svg class="w-3 h-3 text-emerald-600" fill="currentColor" viewBox="0 0 20 20">
-                                                            <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
-                                                        </svg>
-                                                        Submitted
-                                                    </span>
-                                                @else
-                                                    <span class="text-[10px] font-semibold px-2 py-0.5 rounded bg-amber-50 text-amber-700 border border-amber-200 flex items-center gap-1 shadow-sm">
-                                                        <svg class="w-3 h-3 text-amber-600 animate-pulse" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                                                        </svg>
-                                                        Active
-                                                    </span>
-                                                @endif
-                                                @if($module?->difficulty)
-                                                    <span class="text-[10px] font-medium px-2 py-0.5 rounded {{ $difficultyBadgeClasses($module->difficulty) }}">
-                                                        {{ ucfirst($module->difficulty) }}
-                                                    </span>
-                                                @endif
-                                            </div>
-                                        </button>
-                                        
-                                        <!-- Question items list -->
-                                        <div x-show="!collapsedModules['{{ $moduleId }}']">
-                                            <ol class="divide-y divide-slate-100 list-none p-0 m-0">
-                                                @foreach ($answers as $answer)
-                                                    @include('teacher.assignments.partials.attempt-monitor-answer')
-                                                @endforeach
-                                            </ol>
-                                        </div>
-                                    </div>
-                                @endforeach
-                            </div>
-                        @else
-                            <div class="attempt-monitor__empty">
-                                <strong>No responses saved yet</strong>
-                                <span>Activity will appear after student saves an answer.</span>
+                        <!-- Quick Filter Pills -->
+                        @if(!$isInProgress && $attempt->userAnswers->isNotEmpty())
+                            @php
+                                $totalWrong = $attempt->userAnswers->filter(fn($a) => $a->is_correct === false && filled($a->selected_answer))->count();
+                                $totalOmitted = $attempt->userAnswers->filter(fn($a) => !filled($a->selected_answer))->count();
+                            @endphp
+                            <div class="flex items-center gap-1.5 text-xs font-semibold">
+                                <span class="text-slate-400 mr-1 text-2xs uppercase tracking-wider font-bold">Filter:</span>
+                                <button type="button" @click="filterStatus = 'all'"
+                                    :class="filterStatus === 'all' ? 'bg-slate-900 text-white shadow-2xs' : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-50'"
+                                    class="px-2.5 py-1 rounded-lg transition-colors cursor-pointer">
+                                    All ({{ $savedResponses }})
+                                </button>
+                                <button type="button" @click="filterStatus = 'wrong'"
+                                    :class="filterStatus === 'wrong' ? 'bg-rose-600 text-white shadow-2xs' : 'bg-white text-rose-700 border border-rose-200 hover:bg-rose-50'"
+                                    class="px-2.5 py-1 rounded-lg transition-colors cursor-pointer flex items-center gap-1">
+                                    <span>Incorrect ({{ $totalWrong }})</span>
+                                </button>
+                                <button type="button" @click="filterStatus = 'correct'"
+                                    :class="filterStatus === 'correct' ? 'bg-emerald-600 text-white shadow-2xs' : 'bg-white text-emerald-700 border border-emerald-200 hover:bg-emerald-50'"
+                                    class="px-2.5 py-1 rounded-lg transition-colors cursor-pointer flex items-center gap-1">
+                                    <span>Correct ({{ $totalCorrect }})</span>
+                                </button>
+                                @if($totalOmitted > 0)
+                                    <button type="button" @click="filterStatus = 'omitted'"
+                                        :class="filterStatus === 'omitted' ? 'bg-slate-700 text-white shadow-2xs' : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-50'"
+                                        class="px-2.5 py-1 rounded-lg transition-colors cursor-pointer">
+                                        Omitted ({{ $totalOmitted }})
+                                    </button>
+                                @endif
                             </div>
                         @endif
                     </div>
 
-                    <!-- Question Detail Modal Overlay -->
-                    <div x-show="selectedAnswerId" 
-                         x-cloak 
-                         style="display: none;"
-                         class="fixed inset-0 z-50 items-center justify-center p-4"
-                         :class="selectedAnswerId ? 'flex' : 'hidden'"
-                         role="dialog"
-                         aria-modal="true">
-                        <!-- Backdrop -->
-                        <div class="fixed inset-0 bg-slate-900/50 transition-opacity" 
-                             x-show="selectedAnswerId"
-                             x-transition:enter="ease-out duration-150"
-                             x-transition:enter-start="opacity-0"
-                             x-transition:enter-end="opacity-100"
-                             x-transition:leave="ease-in duration-100"
-                             x-transition:leave-start="opacity-100"
-                             x-transition:leave-end="opacity-0"
-                             @click="selectedAnswerId = null; previewHtml = ''"></div>
+                    @if ($attempt->userAnswers->isNotEmpty())
+                        <div class="space-y-4">
+                            @foreach ($groupedAnswers as $moduleId => $answers)
+                                @php
+                                    $module = $answers->first()->module;
+                                    $isSubmitted = $attempt->status === 'completed' || $attempt->moduleSubmissions->contains('module_id', $moduleId);
+                                    $isMath = str_contains(strtolower($module?->section?->name ?? ''), 'math');
+                                    $mTotal = $answers->count();
+                                    $mCorrect = $answers->where('is_correct', true)->count();
+                                    $mIncorrect = $answers->filter(fn($a) => $a->is_correct === false && filled($a->selected_answer))->count();
+                                    $mOmitted = $answers->filter(fn($a) => !filled($a->selected_answer))->count();
+                                    $mAccuracy = $mTotal > 0 ? (int) round(($mCorrect / $mTotal) * 100) : 0;
+                                    $mTimeSeconds = (int) $answers->sum('time_spent');
+                                    $mTimeString = $mTimeSeconds >= 60 ? floor($mTimeSeconds / 60) . 'm ' . ($mTimeSeconds % 60) . 's' : $mTimeSeconds . 's';
+                                @endphp
+                                <div class="rounded-xl border border-slate-200 bg-white overflow-hidden shadow-2xs transition-all"
+                                     data-module-card
+                                     data-module-id="{{ $moduleId }}">
+                                    <!-- Module Header (Click to collapse/expand) -->
+                                    <button type="button"
+                                        class="w-full bg-slate-50/90 px-4 sm:px-5 py-3.5 border-b border-slate-200 flex flex-wrap justify-between items-center gap-2 hover:bg-slate-100/70 transition-colors focus:outline-none cursor-pointer"
+                                        @click="collapsedModules['{{ $moduleId }}'] = !collapsedModules['{{ $moduleId }}']">
+                                        <div class="flex items-center gap-2.5">
+                                            <svg class="w-4 h-4 text-slate-400 transform transition-transform"
+                                                :class="collapsedModules['{{ $moduleId }}'] ? '-rotate-90' : ''"
+                                                fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                                            </svg>
+                                            <span class="w-2.5 h-2.5 rounded-full shrink-0 {{ $isMath ? 'bg-indigo-600' : 'bg-blue-600' }}"></span>
+                                            <h5 class="text-xs sm:text-sm font-bold text-slate-800 m-0 text-left tracking-tight">
+                                                {{ $module?->section?->name ?? 'Section' }} &middot; Module {{ $module?->module_number ?? '?' }}
+                                            </h5>
+                                            @if($module?->difficulty)
+                                                <span class="text-3xs uppercase tracking-wider font-bold px-2 py-0.5 rounded {{ $difficultyBadgeClasses($module->difficulty) }}">
+                                                    {{ ucfirst($module->difficulty) }} Stage
+                                                </span>
+                                            @endif
+                                            @if($isSubmitted)
+                                                <span class="text-3xs font-semibold px-2 py-0.5 rounded bg-emerald-50 text-emerald-700 border border-emerald-200 flex items-center gap-1 shadow-2xs">
+                                                    <svg class="w-2.5 h-2.5 text-emerald-600" fill="currentColor" viewBox="0 0 20 20">
+                                                        <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
+                                                    </svg>
+                                                    Submitted
+                                                </span>
+                                            @endif
+                                        </div>
 
-                        <!-- Modal Content Container -->
-                        <div class="relative bg-white rounded-xl shadow-2xl border border-slate-200 w-full max-w-4xl max-h-[90vh] flex flex-col overflow-hidden transform-gpu"
-                             x-show="selectedAnswerId"
-                             x-transition:enter="ease-out duration-200"
-                             x-transition:enter-start="opacity-0 translate-y-3"
-                             x-transition:enter-end="opacity-100 translate-y-0"
-                             x-transition:leave="ease-in duration-150"
-                             x-transition:leave-start="opacity-100 translate-y-0"
-                             x-transition:leave-end="opacity-0 translate-y-3">
-                             
-                            <!-- Modal Header -->
-                            <div class="px-6 py-4 border-b border-slate-100 flex items-center justify-between bg-slate-50">
-                                <h3 class="text-base font-semibold text-slate-900 m-0">Question Detail</h3>
-                                <button type="button" 
-                                    class="text-slate-400 hover:text-slate-600 transition-colors focus:outline-none p-1.5 rounded-full hover:bg-slate-200/50"
+                                        <div class="flex items-center gap-3 text-xs font-semibold">
+                                            @if(!$isInProgress)
+                                                <span class="{{ $mAccuracy >= 80 ? 'text-emerald-700' : ($mAccuracy >= 60 ? 'text-amber-700' : 'text-rose-700') }}">
+                                                    {{ $mCorrect }}/{{ $mTotal }} correct ({{ $mAccuracy }}%)
+                                                </span>
+                                            @else
+                                                <span class="text-slate-600">
+                                                    {{ $answers->filter(fn($a) => filled($a->selected_answer))->count() }}/{{ $mTotal }} answered
+                                                </span>
+                                            @endif
+                                            <span class="text-slate-300 font-normal">&middot;</span>
+                                            <span class="text-slate-500 font-medium">⏱️ {{ $mTimeString }}</span>
+                                        </div>
+                                    </button>
+
+                                    <!-- Question Chips Palette Grid -->
+                                    <div x-show="!collapsedModules['{{ $moduleId }}']" class="p-4 sm:p-5 bg-white">
+                                        <div class="flex flex-wrap gap-2 sm:gap-2.5">
+                                            @foreach ($answers as $answer)
+                                                @php
+                                                    $correct = $answer->question?->sprCorrectAnswers->pluck('answer')->implode(', ') ?: $answer->question?->answerChoices->firstWhere('is_correct', true)?->label;
+                                                    $timeSpent = (int) ($answer->time_spent ?? 0);
+                                                    $timeString = $timeSpent >= 60 ? floor($timeSpent / 60) . 'm ' . ($timeSpent % 60) . 's' : $timeSpent . 's';
+                                                    $domainLabel = $domainLabels[$answer->question?->skill_domain] ?? ucwords(str_replace('_', ' ', $answer->question?->skill_domain ?? 'General'));
+
+                                                    $statusKey = $isInProgress
+                                                        ? (filled($answer->selected_answer) ? 'answered' : 'omitted')
+                                                        : (!filled($answer->selected_answer) ? 'omitted' : ($answer->is_correct ? 'correct' : 'wrong'));
+
+                                                    $statusClasses = match($statusKey) {
+                                                        'correct' => 'bg-emerald-50 text-emerald-800 border-emerald-300 hover:bg-emerald-100 hover:border-emerald-400',
+                                                        'wrong' => 'bg-rose-50 text-rose-800 border-rose-300 hover:bg-rose-100 hover:border-rose-400',
+                                                        'answered' => 'bg-indigo-50 text-indigo-800 border-indigo-300 hover:bg-indigo-100 hover:border-indigo-400',
+                                                        default => 'bg-slate-100 text-slate-700 border-slate-300 hover:bg-slate-200 hover:border-slate-400',
+                                                    };
+                                                @endphp
+                                                <button type="button"
+                                                    @click="fetchPreview({{ $answer->id }})"
+                                                    :class="{
+                                                        'ring-2 ring-blue-600 ring-offset-2 scale-105 z-10': selectedAnswerId === {{ $answer->id }},
+                                                        'opacity-20 grayscale pointer-events-none': filterStatus !== 'all' && filterStatus !== '{{ $statusKey }}'
+                                                    }"
+                                                    class="w-10 h-10 sm:w-11 sm:h-11 rounded-lg flex flex-col items-center justify-center font-mono font-bold border transition-all cursor-pointer relative shadow-2xs {{ $statusClasses }}"
+                                                    title="Q{{ $loop->iteration }} &middot; {{ ucfirst($statusKey) }}&#10;Student answer: {{ $answer->selected_answer ?: 'Omitted' }} | Correct: {{ $correct ?: '—' }}&#10;Time: {{ $timeString }}&#10;Domain: {{ $domainLabel }}&#10;Click to inspect question">
+                                                    <span class="leading-none text-xs">{{ $loop->iteration }}</span>
+                                                    <span class="sr-only">{{ filled($answer->selected_answer) ? 'Answered: ' . $answer->selected_answer : 'Omitted' }}</span>
+                                                    @if($isInProgress)
+                                                        <span class="text-[9px] leading-none opacity-80 mt-0.5">{{ filled($answer->selected_answer) ? '●' : '○' }}</span>
+                                                    @elseif($answer->is_correct)
+                                                        <span class="text-[9px] leading-none opacity-80 mt-0.5">✓</span>
+                                                    @elseif(filled($answer->selected_answer))
+                                                        <span class="text-[9px] leading-none opacity-80 mt-0.5">✗</span>
+                                                    @else
+                                                        <span class="text-[9px] leading-none opacity-60 mt-0.5">—</span>
+                                                    @endif
+                                                </button>
+                                            @endforeach
+                                        </div>
+                                    </div>
+                                </div>
+                            @endforeach
+                        </div>
+                    @else
+                        <div class="attempt-monitor__empty p-8 text-center bg-slate-50 border border-slate-200 rounded-xl">
+                            <strong class="block text-sm font-bold text-slate-700 mb-1">No responses saved yet</strong>
+                            <span class="text-xs text-slate-500">Activity will appear after student saves an answer.</span>
+                        </div>
+                    @endif
+                </div>
+
+                <!-- Question Detail Modal Overlay -->
+                <div x-show="selectedAnswerId"
+                     x-cloak
+                     style="display: none;"
+                     class="fixed inset-0 z-50 items-center justify-center p-4"
+                     :class="selectedAnswerId ? 'flex' : 'hidden'"
+                     role="dialog"
+                     aria-modal="true">
+                    <!-- Backdrop -->
+                    <div class="fixed inset-0 bg-slate-900/50 transition-opacity"
+                         x-show="selectedAnswerId"
+                         x-transition:enter="ease-out duration-150"
+                         x-transition:enter-start="opacity-0"
+                         x-transition:enter-end="opacity-100"
+                         x-transition:leave="ease-in duration-100"
+                         x-transition:leave-start="opacity-100"
+                         x-transition:leave-end="opacity-0"
+                         @click="selectedAnswerId = null; previewHtml = ''"></div>
+
+                    <!-- Modal Content Container -->
+                    <div class="relative bg-white rounded-xl shadow-2xl border border-slate-200 w-full max-w-4xl max-h-[90vh] flex flex-col overflow-hidden transform-gpu"
+                         x-show="selectedAnswerId"
+                         x-transition:enter="ease-out duration-200"
+                         x-transition:enter-start="opacity-0 translate-y-3"
+                         x-transition:enter-end="opacity-100 translate-y-0"
+                         x-transition:leave="ease-in duration-150"
+                         x-transition:leave-start="opacity-100 translate-y-0"
+                         x-transition:leave-end="opacity-0 translate-y-3">
+
+                        <!-- Modal Header -->
+                        <div class="px-6 py-3.5 border-b border-slate-200 flex items-center justify-between bg-slate-50/90">
+                            <div class="flex items-center gap-3">
+                                <h3 class="text-base font-bold text-slate-900 m-0">Question Detail</h3>
+                                <span class="text-xs font-semibold px-2 py-0.5 rounded bg-white text-slate-600 border border-slate-200 shadow-2xs"
+                                      x-show="currentIndex >= 0"
+                                      x-text="'Item ' + (currentIndex + 1) + ' of ' + allAnswerIds.length"></span>
+                            </div>
+                            <div class="flex items-center gap-2">
+                                <button type="button"
+                                    class="px-2.5 py-1 text-xs font-semibold rounded-lg border border-slate-200 bg-white text-slate-700 hover:bg-slate-50 disabled:opacity-35 disabled:cursor-not-allowed transition-colors flex items-center gap-1 shadow-2xs cursor-pointer"
+                                    :disabled="!hasPrev"
+                                    @click="prevQuestion()"
+                                    title="Previous question (Left Arrow)">
+                                    <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" /></svg>
+                                    <span class="hidden sm:inline">Prev</span>
+                                </button>
+                                <button type="button"
+                                    class="px-2.5 py-1 text-xs font-semibold rounded-lg border border-slate-200 bg-white text-slate-700 hover:bg-slate-50 disabled:opacity-35 disabled:cursor-not-allowed transition-colors flex items-center gap-1 shadow-2xs cursor-pointer"
+                                    :disabled="!hasNext"
+                                    @click="nextQuestion()"
+                                    title="Next question (Right Arrow)">
+                                    <span class="hidden sm:inline">Next</span>
+                                    <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" /></svg>
+                                </button>
+                                <button type="button"
+                                    class="text-slate-400 hover:text-slate-600 transition-colors focus:outline-none p-1.5 rounded-full hover:bg-slate-200/50 ml-1 cursor-pointer"
                                     @click="selectedAnswerId = null; previewHtml = ''"
                                     aria-label="Close question preview">
                                     <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -321,39 +487,44 @@ $difficultyBadgeClasses = fn (?string $difficulty) => match ($difficulty) {
                                     </svg>
                                 </button>
                             </div>
+                        </div>
 
-                            <!-- Modal Body (Scrollable) -->
-                            <div class="p-6 overflow-y-auto flex-1 bg-[#FCFBF7]">
-                                <!-- Loading State -->
-                                <div x-show="loading" 
-                                     :class="loading ? 'flex flex-col gap-4' : 'hidden'"
-                                     class="animate-pulse h-full">
-                                    <div class="flex justify-between items-center pb-3 border-b border-slate-100">
-                                        <div class="h-4 bg-slate-200 rounded w-1/4"></div>
-                                        <div class="h-4 bg-slate-200 rounded w-12"></div>
-                                    </div>
-                                    <div class="space-y-2 mt-2">
-                                        <div class="h-3 bg-slate-200 rounded w-full"></div>
-                                        <div class="h-3 bg-slate-200 rounded w-5/6"></div>
-                                    </div>
-                                    <div class="space-y-2 mt-4">
-                                        <div class="h-10 bg-slate-100 rounded w-full"></div>
-                                        <div class="h-10 bg-slate-100 rounded w-full"></div>
-                                    </div>
+                        <!-- Modal Body (Scrollable) -->
+                        <div class="p-6 overflow-y-auto flex-1 bg-slate-50/60">
+                            <!-- Loading State -->
+                            <div x-show="loading"
+                                 :class="loading ? 'flex flex-col gap-4' : 'hidden'"
+                                 class="animate-pulse h-full">
+                                <div class="flex justify-between items-center pb-3 border-b border-slate-100">
+                                    <div class="h-4 bg-slate-200 rounded w-1/4"></div>
+                                    <div class="h-4 bg-slate-200 rounded w-12"></div>
                                 </div>
-
-                                <!-- Rendered Preview Content -->
-                                <div x-show="!loading" 
-                                     :class="!loading ? 'block' : 'hidden'"
-                                     x-html="previewHtml" 
-                                     class="min-h-0" 
-                                     data-morph-skip></div>
+                                <div class="space-y-2 mt-2">
+                                    <div class="h-3 bg-slate-200 rounded w-full"></div>
+                                    <div class="h-3 bg-slate-200 rounded w-5/6"></div>
+                                </div>
+                                <div class="space-y-2 mt-4">
+                                    <div class="h-10 bg-slate-100 rounded w-full"></div>
+                                    <div class="h-10 bg-slate-100 rounded w-full"></div>
+                                </div>
                             </div>
-                            
-                            <!-- Modal Footer -->
-                            <div class="px-6 py-3 border-t border-slate-100 bg-slate-50 flex justify-end">
-                                <button type="button" 
-                                    class="px-4 py-2 text-xs font-semibold text-slate-700 bg-white border border-slate-200 rounded-lg hover:bg-slate-50 transition-colors"
+
+                            <!-- Rendered Preview Content -->
+                            <div x-show="!loading"
+                                 :class="!loading ? 'block' : 'hidden'"
+                                 x-html="previewHtml"
+                                 class="min-h-0"
+                                 data-morph-skip></div>
+                        </div>
+
+                        <!-- Modal Footer -->
+                        <div class="px-6 py-3 border-t border-slate-200 bg-slate-50/80 flex items-center justify-between">
+                            <div class="text-2xs text-slate-500 font-medium hidden sm:block">
+                                Use <kbd class="px-1.5 py-0.5 rounded border border-slate-300 bg-white font-mono text-3xs font-semibold text-slate-700">←</kbd> and <kbd class="px-1.5 py-0.5 rounded border border-slate-300 bg-white font-mono text-3xs font-semibold text-slate-700">→</kbd> to navigate, <kbd class="px-1.5 py-0.5 rounded border border-slate-300 bg-white font-mono text-3xs font-semibold text-slate-700">ESC</kbd> to close
+                            </div>
+                            <div class="flex items-center gap-2 ml-auto">
+                                <button type="button"
+                                    class="px-4 py-1.5 text-xs font-semibold text-slate-700 bg-white border border-slate-200 rounded-lg hover:bg-slate-50 transition-colors shadow-2xs cursor-pointer"
                                     @click="selectedAnswerId = null; previewHtml = ''">
                                     Close
                                 </button>

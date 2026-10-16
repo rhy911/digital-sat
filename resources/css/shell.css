@@ -16,12 +16,13 @@
     --app-bg: var(--ds-bg, #f1f2f5);
     --manila: #f1e5c9;
     --manila-ink: #1a202c;
+    --shell-sidebar-width: 304px;
 }
 
 /* ============ APP SHELL LAYOUT GRID ============ */
 .app-shell {
     display: grid;
-    grid-template-columns: 74px 280px 1fr;
+    grid-template-columns: 74px var(--shell-sidebar-width, 304px) 1fr;
     height: 100vh;
     height: 100dvh;
     overflow: hidden;

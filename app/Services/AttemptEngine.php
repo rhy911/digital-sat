@@ -384,7 +384,7 @@ class AttemptEngine
         }
     }
 
-    public function resolveActiveModule(int $userTestId, int $moduleId, ?int $userId = null): array
+    public function resolveActiveModule(int $userTestId, int $moduleId, ?int $userId = null, bool $allowReceipt = false): array
     {
         $query = UserTest::where('id', $userTestId);
         if ($userId !== null) {
@@ -392,7 +392,7 @@ class AttemptEngine
         }
         $attempt = $query->first();
 
-        if (! $attempt || $attempt->status !== 'in_progress') {
+        if (! $attempt || ($attempt->status !== 'in_progress' && ! $allowReceipt)) {
             throw new AuthorizationException('This test attempt is no longer available.');
         }
 
@@ -408,6 +408,19 @@ class AttemptEngine
         }
 
         if ((int) $attempt->current_module_id !== (int) $module->id) {
+            if ($allowReceipt) {
+                $receipt = UserTestModuleSubmission::where('user_test_id', $attempt->id)
+                    ->where('module_id', $module->id)
+                    ->first();
+
+                if ($receipt && (
+                    ($attempt->status === 'in_progress' && (int) $receipt->issued_next_module_id === (int) $attempt->current_module_id)
+                    || ($attempt->status === 'completed' && ! empty($receipt->result['test_completed']))
+                )) {
+                    return [$attempt, $module];
+                }
+            }
+
             Log::channel('queue')->info('conflict.module_mismatch', [
                 'user_test_id' => $attempt->id,
                 'requested_module_id' => (int) $module->id,
@@ -554,6 +567,10 @@ class AttemptEngine
                 if (! $lockedAttempt || $lockedAttempt->status !== 'in_progress') {
                     throw new AuthorizationException('This test attempt is no longer available.');
                 }
+
+                if ((int) $lockedAttempt->current_module_id !== (int) $module->id) {
+                    throw new ConflictHttpException('This module is not active for the test attempt.');
+                }
             }
 
             if (Cache::has(self::submitMarkerKey((int) $lockedAttempt->id, (int) $module->id))) {
@@ -566,10 +583,8 @@ class AttemptEngine
                     return ['status' => 'expired', 'expired' => true, 'saved_count' => 0];
                 }
             } elseif ($clientElapsedSeconds !== null) {
-                $attempt->current_module_elapsed_seconds = max(0, $clientElapsedSeconds);
-                $attempt->current_module_started_at = now();
-                $lockedAttempt->current_module_elapsed_seconds = $attempt->current_module_elapsed_seconds;
-                $lockedAttempt->current_module_started_at = $attempt->current_module_started_at;
+                $lockedAttempt->current_module_elapsed_seconds = max(0, $clientElapsedSeconds);
+                $lockedAttempt->current_module_started_at = now();
                 if ($lockedAttempt->exists) {
                     $lockedAttempt->save();
                 }
@@ -651,7 +666,7 @@ class AttemptEngine
                 $lockedAttempt = $attempt;
                 if ($attempt->exists) {
                     $lockedAttempt = UserTest::where('id', $attempt->id)->lockForUpdate()->first();
-                    if (! $lockedAttempt || $lockedAttempt->status !== 'in_progress') {
+                    if (! $lockedAttempt) {
                         throw new AuthorizationException('This test attempt is no longer available.');
                     }
                 }
@@ -678,6 +693,10 @@ class AttemptEngine
                     ]);
 
                     throw new ConflictHttpException('This submission is stale because the attempt has already progressed.');
+                }
+
+                if ($lockedAttempt->status !== 'in_progress') {
+                    throw new AuthorizationException('This test attempt is no longer available.');
                 }
 
                 $this->validateAnswers($module, $answers);

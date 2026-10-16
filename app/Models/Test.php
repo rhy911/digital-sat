@@ -62,6 +62,11 @@ class Test extends Model
             $q->where('created_by', $user->id)
                 ->orWhere('is_public', true)
                 ->orWhereHas('shares', fn ($shares) => $shares->where('user_id', $user->id));
+            if ($user->role === 'student') {
+                $q->orWhereHas('classrooms', fn ($classrooms) => $classrooms->whereHas(
+                    'activeMemberships', fn ($memberships) => $memberships->where('student_id', $user->id)
+                ));
+            }
         });
     }
 
@@ -87,6 +92,26 @@ class Test extends Model
     public function assignments()
     {
         return $this->hasMany(Assignment::class);
+    }
+
+    public function classrooms()
+    {
+        return $this->belongsToMany(Classroom::class, 'classroom_tests');
+    }
+
+    public function totalQuestions(): int
+    {
+        return (int) \Illuminate\Support\Facades\DB::table('module_questions')
+            ->join('section_modules', 'section_modules.module_id', '=', 'module_questions.module_id')
+            ->join('sections', 'sections.id', '=', 'section_modules.section_id')
+            ->join('modules', 'modules.id', '=', 'module_questions.module_id')
+            ->join('questions', 'questions.id', '=', 'module_questions.question_id')
+            ->where('sections.test_id', $this->id)
+            ->whereNull('sections.deleted_at')
+            ->whereNull('modules.deleted_at')
+            ->whereNull('questions.deleted_at')
+            ->distinct()
+            ->count('module_questions.question_id');
     }
 
     public function shares()

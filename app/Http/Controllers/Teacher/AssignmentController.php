@@ -125,11 +125,12 @@ class AssignmentController extends Controller
                         : $best->total_score)
                     : null;
 
+                $maxAllowed = $row['recipient']->maxAllowedAttempts();
                 $line = [
                     $row['recipient']->student->name,
                     $row['recipient']->student->email,
                     $status,
-                    $row['completed_count'].' / '.$assignment->attempt_limit,
+                    $row['completed_count'].' / '.$maxAllowed . ($row['recipient']->extra_attempts > 0 ? ' (+'.$row['recipient']->extra_attempts.' bonus)' : ''),
                     $bestScore ?? '—',
                 ];
                 if ($assignment->assign_type !== 'section') {
@@ -215,6 +216,7 @@ class AssignmentController extends Controller
 
         $userAnswer->loadMissing([
             'userTest',
+            'module.section',
             'question.passage',
             'question.answerChoices',
             'question.sprCorrectAnswers',
@@ -225,7 +227,13 @@ class AssignmentController extends Controller
         $correct = $userAnswer->question?->sprCorrectAnswers->pluck('answer')->implode(', ') 
             ?: $userAnswer->question?->answerChoices->firstWhere('is_correct', true)?->label;
 
-        return view('teacher.assignments.partials.question-preview', compact('userAnswer', 'isInProgress', 'correct'));
+        $context = [
+            'sectionName' => $userAnswer->module?->section?->name ?? 'Question',
+            'moduleNumber' => $userAnswer->module?->module_number,
+            'questionNumber' => $userAnswer->question_snapshot['question_number'] ?? null,
+        ];
+
+        return view('teacher.assignments.partials.question-preview', compact('userAnswer', 'isInProgress', 'correct', 'context'));
     }
 
     public function update(StoreAssignmentRequest $request, Assignment $assignment)

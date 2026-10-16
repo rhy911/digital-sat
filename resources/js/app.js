@@ -1,4 +1,3 @@
-import './bootstrap';
 import Alpine from 'alpinejs';
 import morph from '@alpinejs/morph';
 import { initTruncatedTooltips } from './ui/truncated-tooltip.js';
@@ -46,13 +45,18 @@ export function initDatePickers() {
             sibling = next;
         }
 
+        const allowPast = input.dataset.allowPast === 'true';
+        const minDate = input.dataset.minDate !== undefined
+            ? (input.dataset.minDate === '' ? null : input.dataset.minDate)
+            : (allowPast ? null : "today");
+
         flatpickr(input, {
             enableTime: true,
             dateFormat: "Y-m-d\\TH:i",
             altInput: true,
             altFormat: "d/m/Y h:i K",
             time_24hr: false,
-            minDate: "today",
+            minDate: minDate,
             minuteIncrement: 5,
             allowInput: true,
             // Appending to body (flatpickr default) makes the calendar a sibling of
@@ -68,6 +72,19 @@ export function initDatePickers() {
     syncAssignmentWindows();
 }
 window.initDatePickers = initDatePickers;
+
+export function clearDatePicker(id) {
+    const input = typeof id === 'string' ? document.getElementById(id) : id;
+    if (!input) return;
+    if (input._flatpickr) {
+        input._flatpickr.clear();
+        syncAssignmentWindow(input);
+    } else {
+        input.value = '';
+        input.dispatchEvent(new Event('change'));
+    }
+}
+window.clearDatePicker = clearDatePicker;
 
 function syncAssignmentWindows() {
     document.querySelectorAll('.datetime-picker[data-window-role]').forEach((input) => {
@@ -91,7 +108,8 @@ function syncAssignmentWindow(input) {
     const startDate = startInput._flatpickr.selectedDates[0] ?? null;
     const endDate = endInput._flatpickr.selectedDates[0] ?? null;
 
-    endInput._flatpickr.set('minDate', startDate || 'today');
+    const defaultMinDate = endInput.dataset.allowPast === 'true' ? null : 'today';
+    endInput._flatpickr.set('minDate', startDate || defaultMinDate);
 
     const hasInvalidWindow = Boolean(startDate && endDate && endDate <= startDate);
 
@@ -108,8 +126,10 @@ function setWindowError(input, hasError) {
     [input, input._flatpickr?.altInput].filter(Boolean).forEach((field) => {
         if (hasError) {
             field.setAttribute('aria-invalid', 'true');
+            field.classList.add('!border-rose-500', 'focus:!border-rose-500', 'focus:!ring-rose-500');
         } else {
             field.removeAttribute('aria-invalid');
+            field.classList.remove('!border-rose-500', 'focus:!border-rose-500', 'focus:!ring-rose-500');
         }
     });
 }
@@ -141,38 +161,6 @@ export function initAutoDismissAlerts() {
             window.setTimeout(() => alert.remove(), 260);
         }, delay);
     });
-}
-
-export function initRadioToggleSection({
-    activeRadioId,
-    pastRadioId,
-    activeContainerId,
-    pastContainerId,
-    activeLabelText = 'Active',
-    pastLabelText = 'Past',
-    checkedPrefix = '✓ ',
-    hiddenClass = 'hidden',
-} = {}) {
-    const activeRadioEl = document.getElementById(activeRadioId);
-    const pastRadioEl = document.getElementById(pastRadioId);
-    const activeContainerEl = document.getElementById(activeContainerId);
-    const pastContainerEl = document.getElementById(pastContainerId);
-    const activeLabelEl = document.querySelector(`label[for="${activeRadioId}"]`);
-    const pastLabelEl = document.querySelector(`label[for="${pastRadioId}"]`);
-
-    if (!activeRadioEl || !pastRadioEl || !activeContainerEl || !pastContainerEl || !activeLabelEl || !pastLabelEl) {
-        return;
-    }
-
-    const setActiveState = (isActive) => {
-        activeContainerEl.classList.toggle(hiddenClass, !isActive);
-        pastContainerEl.classList.toggle(hiddenClass, isActive);
-        activeLabelEl.textContent = isActive ? `${checkedPrefix}${activeLabelText}` : activeLabelText;
-        pastLabelEl.textContent = isActive ? pastLabelText : `${checkedPrefix}${pastLabelText}`;
-    };
-
-    activeRadioEl.addEventListener('change', () => setActiveState(true));
-    pastRadioEl.addEventListener('change', () => setActiveState(false));
 }
 
 export function initAjaxLogout({
@@ -219,43 +207,11 @@ export function initAjaxLogout({
     });
 }
 
-export function initHomeDashboardPage() {
-    // Teacher-assigned tests toggle
-    initRadioToggleSection({
-        activeRadioId: 'btnradio1',
-        pastRadioId: 'btnradio2',
-        activeContainerId: 'active-tests',
-        pastContainerId: 'past-tests',
-    });
-
-    // Practice tests toggle
-    initRadioToggleSection({
-        activeRadioId: 'btnradio3',
-        pastRadioId: 'btnradio4',
-        activeContainerId: 'practice-active',
-        pastContainerId: 'practice-past',
-    });
-}
-
 export function smartRenderMath(element, options = {}) {
-    if (!window.renderMathInElement) return;
-
-    const defaultOptions = {
-        delimiters: [
-            { left: '$$', right: '$$', display: false },
-            { left: '$', right: '$', display: false },
-            { left: '\\(', right: '\\)', display: false },
-            { left: '\\[', right: '\\]', display: true },
-        ],
-        ignoredTags: ["script", "noscript", "style", "textarea", "pre", "code", "option"],
-        throwOnError: false,
-        trust: true,
-        preProcess: (math) => math.trim()
-    };
-
-    const finalOptions = { ...defaultOptions, ...options };
-
-    window.renderMathInElement(element || document.body, finalOptions);
+    if (typeof window.smartRenderMath === 'function' && window.smartRenderMath !== smartRenderMath) {
+        return window.smartRenderMath(element, options);
+    }
+    return Promise.resolve();
 }
 
 export function getOrCreateAlertModal() {
@@ -422,10 +378,10 @@ export function copyToClipboard(text) {
     }
 }
 
-window.initRadioToggleSection = initRadioToggleSection;
 window.initAjaxLogout = initAjaxLogout;
-window.initHomeDashboardPage = initHomeDashboardPage;
-window.smartRenderMath = smartRenderMath;
+if (!window.smartRenderMath) {
+    window.smartRenderMath = smartRenderMath;
+}
 window.showCustomConfirm = showCustomConfirm;
 window.copyToClipboard = copyToClipboard;
 

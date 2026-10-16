@@ -544,6 +544,63 @@ class TeacherClassManagementTest extends TestCase
         $this->assertNull($assignment->fresh()->due_at);
     }
 
+    public function test_teacher_can_update_assignment_schedule_window(): void
+    {
+        $teacher = $this->teacher();
+        $classroom = $this->classroom($teacher);
+        $test = $this->testFor($teacher);
+        $assignment = $this->assignment($classroom, $test, [
+            'status' => 'published',
+            'available_at' => now()->subDay()->startOfMinute(),
+            'due_at' => now()->addDays(2)->startOfMinute(),
+        ]);
+
+        // Verify show page renders Schedule & Availability fields
+        $this->actingAs($teacher)
+            ->get(route('teacher.assignments.show', ['assignment' => $assignment, 'tab' => 'settings']))
+            ->assertOk()
+            ->assertSee('Schedule &amp; Availability', false)
+            ->assertSee('Asia/Ho_Chi_Minh')
+            ->assertSee('id="settings_available_at"', false)
+            ->assertSee('id="settings_due_at"', false)
+            ->assertSee('data-allow-past="true"', false);
+
+        // Update schedule window
+        $newAvailable = now()->subHours(2)->format('Y-m-d\TH:i');
+        $newDue = now()->addDays(5)->format('Y-m-d\TH:i');
+
+        $this->actingAs($teacher)
+            ->put(route('teacher.assignments.update', $assignment), [
+                'test_id' => $test->id,
+                'title' => 'Updated Title',
+                'attempt_limit' => 2,
+                'available_at' => $newAvailable,
+                'due_at' => $newDue,
+            ])
+            ->assertRedirect();
+
+        $fresh = $assignment->fresh();
+        $this->assertSame('Updated Title', $fresh->title);
+        $this->assertSame(2, $fresh->attempt_limit);
+        $this->assertSame($newAvailable, $fresh->available_at?->format('Y-m-d\TH:i'));
+        $this->assertSame($newDue, $fresh->due_at?->format('Y-m-d\TH:i'));
+
+        // Clear schedule window (open immediately, no deadline)
+        $this->actingAs($teacher)
+            ->put(route('teacher.assignments.update', $assignment), [
+                'test_id' => $test->id,
+                'title' => 'Updated Title',
+                'attempt_limit' => 2,
+                'available_at' => '',
+                'due_at' => '',
+            ])
+            ->assertRedirect();
+
+        $fresh = $assignment->fresh();
+        $this->assertNull($fresh->available_at);
+        $this->assertNull($fresh->due_at);
+    }
+
     public function test_teacher_can_delete_owned_assignment_soft_delete(): void
     {
         $teacher = $this->teacher();

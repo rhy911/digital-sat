@@ -119,7 +119,12 @@ class AssignmentService
             $assignment->test->syncContentLock();
 
             $assignment->classroom->load('activeMemberships');
-            foreach ($assignment->classroom->activeMemberships as $membership) {
+            $memberships = $assignment->classroom->activeMemberships;
+            if ($assignment->isTargeted()) {
+                $selectedStudentIds = $assignment->recipients()->pluck('student_id');
+                $memberships = $memberships->whereIn('student_id', $selectedStudentIds);
+            }
+            foreach ($memberships as $membership) {
                 AssignmentRecipient::updateOrCreate(
                     ['assignment_id' => $assignment->id, 'student_id' => $membership->student_id],
                     ['status' => 'active', 'assigned_at' => now(), 'withdrawn_at' => null]

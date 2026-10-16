@@ -31,9 +31,8 @@ Token quyết định cho redesign (xem `docs/redesign-roadmap.md` Phase 1). Dù
 
 ## Font
 
-- Family: **Roboto** (`--font-sans`, `@fontsource/roboto`), áp dụng cho product surfaces (student/teacher/admin/auth).
-- Đã bỏ hardcode `"Roboto"` lặp lại (`app.css:79,95`) → dùng `var(--font-sans)`.
-- **Ngoại lệ (không đụng)**: landing page dùng **Geist** riêng (`--font-geist`, marketing register). Test Engine dùng **Inter** (UI chrome) + **Noto Serif** (reading passages) riêng — giữ nguyên tuyệt đối, không phải nợ kỹ thuật, là quyết định đọc-hiểu cho bài thi. Classroom workspace (teacher + student) dùng **Plus Jakarta Sans** (body), **IBM Plex Mono** (mã lớp/số liệu), **Architects Daughter** (điểm nhấn viết tay) — quyết định có chủ đích cho identity manila/corkboard, xem mục Accent color ở trên.
+- Family: **Roboto** (`--font-sans`, `@fontsource/roboto`), áp dụng cho product surfaces (student/teacher/admin/auth) và sidebar danh sách (`sidebar-col`). Tối giản, đồng bộ và hỗ trợ trọn vẹn dấu tiếng Việt.
+- **Ngoại lệ (không đụng)**: landing page dùng **Geist** riêng (`--font-geist`, marketing register). Test Engine dùng **Inter** (UI chrome) + **Noto Serif** (reading passages) riêng — giữ nguyên tuyệt đối, không phải nợ kỹ thuật, là quyết định đọc-hiểu cho bài thi. Classroom workspace binder giữ **Plus Jakarta Sans** (body), mã lớp/số liệu chi tiết dùng **IBM Plex Mono** (`--font-mono`), điểm nhấn viết tay dùng **Lora** (`--font-hand`).
 - `public/css/auth.css` (font Inter, `--primary-hover: #4f46e5`) xác nhận là **file mồ côi** — không nằm trong `vite.config.js`, không blade nào load. Không sửa vì không ảnh hưởng runtime; cân nhắc xóa ở lần dọn dẹp sau (ngoài scope Phase 1 — xóa file cần quyết định riêng).
 
 ## Icon set
@@ -46,8 +45,7 @@ Token quyết định cho redesign (xem `docs/redesign-roadmap.md` Phase 1). Dù
 ## Math renderer
 
 - Chọn: **KaTeX** (đang chạy thật ở `components/layouts/test.blade.php`, `student/scores/index.blade.php`, admin builder `helpers.js`).
-- Đã xóa guard chết `window.MathJax` ở `teacher/assignments/partials/attempt-monitor.blade.php` — MathJax chưa từng được load trong repo, block đó là dead code, không có hành vi nào thay đổi.
-- **Phase 7 review**: KaTeX vẫn tải qua CDN (`jsdelivr`) ở cả `scores/index.blade.php` lẫn `components/layouts/test.blade.php`. Quyết định: **giữ nguyên**, không bundle qua Vite — `layouts/test.blade.php` là layout dùng chung với Test Engine (`resources/views/engine/**`), không được đụng vào; tách `scores/index.blade.php` sang bundle riêng sẽ tạo 2 nguồn KaTeX khác nhau (rủi ro version-drift) mà lợi ích không rõ ràng. Ghi nhận là ngoại lệ có chủ đích, không phải nợ kỹ thuật.
+- **Consolidation**: Ngoại lệ tải KaTeX qua CDN (`jsdelivr`) đã được thu hồi. Tất cả question surfaces (Test Engine `components/layouts/test.blade.php`, student score review, teacher assignment monitor/report, và admin test builder) nay dùng chung runtime module `resources/js/question-renderer.js`, bundle KaTeX 0.16.47 chính xác qua Vite (kèm CSS và font nội bộ). Module quản lý một cấu hình delimiter duy nhất, cache loading promise qua `ensureMathRuntime()`, và cung cấp alias `window.smartRenderMath` cho tương thích ngược.
 - Geist font (`components/layouts/landing.blade.php:8`, CDN riêng) — landing là marketing register, ngoài phạm vi "product" — giữ nguyên, không đổi.
 
 ## Nợ kỹ thuật đã biết (không xử lý ở Phase 1)

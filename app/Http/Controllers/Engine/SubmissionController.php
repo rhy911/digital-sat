@@ -21,6 +21,7 @@ class SubmissionController extends Controller
                 (int) $request->input('user_test_id'),
                 (int) $request->input('module_id'),
                 $request->user()?->id,
+                allowReceipt: true,
             );
 
             $result = $this->engine->submitModule(

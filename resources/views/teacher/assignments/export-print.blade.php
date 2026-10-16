@@ -260,7 +260,10 @@
                     <td>
                         <span class="badge {{ $badgeClass }}">{{ $statusText }}</span>
                     </td>
-                    <td><strong>{{ $row['completed_count'] }}</strong> / {{ $assignment->attempt_limit }}</td>
+                    @php $maxAllowed = $row['recipient']->maxAllowedAttempts(); @endphp
+                    <td>
+                        <strong>{{ $row['completed_count'] }}</strong> / {{ $maxAllowed }}@if($row['recipient']->extra_attempts > 0) <span style="font-size: 8px; color: #047857; font-weight: bold;">(+{{ $row['recipient']->extra_attempts }} bonus)</span>@endif
+                    </td>
                     <td>
                         @if($bestScore)
                             <strong style="color: #0f172a; font-size: 11px;">{{ $bestScore }}</strong>

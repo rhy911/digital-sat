@@ -4,7 +4,7 @@ namespace App\Services;
 
 use App\Models\UserTest;
 use App\Models\UserTestAnswer;
-use App\Support\QuestionMediaUrl;
+use App\Support\QuestionContentRenderer;
 use App\Support\QuestionPacing;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
@@ -178,8 +178,8 @@ class ScoreReportService
                         ?? ($isOmitted ? 'omitted' : 'unclassified'),
                     'student_error_type' => $review?->student_error_type,
                     'teacher_error_type' => $review?->teacher_error_type,
-                    'stem'          => $this->markdown($question->stem ?? ''),
-                    'explanation'   => $this->markdown($question->explanation?->explanation ?? 'No explanation available.'),
+                    'stem'          => QuestionContentRenderer::markdown($question->stem ?? ''),
+                    'explanation'   => QuestionContentRenderer::markdown($question->explanation?->explanation ?? 'No explanation available.'),
                     'correct_answer' => $correctAnswer,
                     'your_answer'   => $answer->selected_answer ?? 'Omitted',
                     'status'        => $statusKey,
@@ -188,7 +188,7 @@ class ScoreReportService
                     'choices'       => $question->answerChoices
                         ->map(fn ($c) => [
                             'label'      => $c->label,
-                            'content'    => $this->markdown($c->content ?? ''),
+                            'content'    => QuestionContentRenderer::markdown($c->content ?? ''),
                             'is_correct' => (bool) $c->is_correct,
                         ])
                         ->toArray(),
@@ -303,13 +303,5 @@ class ScoreReportService
         usort($rows, fn ($a, $b) => ($order[$a['difficulty']] ?? 99) <=> ($order[$b['difficulty']] ?? 99));
 
         return $rows;
-    }
-
-    private function markdown(string $content): string
-    {
-        return Str::markdown(
-            QuestionMediaUrl::normalizeMarkdown($content),
-            ['html_input' => 'strip', 'allow_unsafe_links' => false]
-        );
     }
 }

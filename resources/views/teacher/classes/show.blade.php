@@ -898,21 +898,35 @@
                                 </div>
 
                                 <div class="space-y-2.5 pt-2 border-t border-slate-200/70">
-                                    <div class="flex items-center gap-1.5 font-bold text-2xs uppercase tracking-wider text-slate-500">
-                                        <x-ui.icon name="calendar" class="w-3.5 h-3.5 text-slate-400" />
-                                        <span>Schedule &amp; Attempts</span>
+                                    <div class="flex items-center justify-between font-bold text-2xs uppercase tracking-wider text-slate-500">
+                                        <div class="flex items-center gap-1.5">
+                                            <x-ui.icon name="calendar" class="w-3.5 h-3.5 text-slate-400" />
+                                            <span>Schedule &amp; Attempts</span>
+                                        </div>
+                                        <span class="inline-flex items-center gap-1 text-3xs font-medium text-slate-500 bg-slate-100 border border-slate-200/80 rounded-md px-1.5 py-0.5 normal-case tracking-normal" title="All schedule dates and deadlines use this timezone">
+                                            <x-ui.icon name="clock" class="w-3 h-3 text-slate-400" />
+                                            <span>Asia/Ho_Chi_Minh</span>
+                                        </span>
                                     </div>
 
                                     <div class="grid grid-cols-2 gap-2">
                                         <div>
-                                            <label for="assign_available_at" class="font-semibold text-3xs uppercase tracking-wider text-slate-500 block mb-1">{{ __('classroom.available_from') }}</label>
+                                            <div class="flex items-center justify-between mb-1">
+                                                <label for="assign_available_at" class="font-semibold text-3xs uppercase tracking-wider text-slate-500">{{ __('classroom.available_from') }}</label>
+                                                <button type="button" onclick="window.clearDatePicker?.('assign_available_at')" class="text-3xs text-slate-400 hover:text-slate-600 transition cursor-pointer">Clear</button>
+                                            </div>
                                             <input id="assign_available_at" type="text" class="datetime-picker w-full text-xs bg-white border border-slate-300 rounded-lg px-2.5 py-1.5" name="available_at"
-                                                placeholder="{{ __('classroom.open_immediately') }}" autocomplete="off">
+                                                placeholder="{{ __('classroom.open_immediately') }}" autocomplete="off"
+                                                data-window-role="start" data-window-pair="assign_due_at">
                                         </div>
                                         <div>
-                                            <label for="assign_due_at" class="font-semibold text-3xs uppercase tracking-wider text-slate-500 block mb-1">{{ __('classroom.due_at') }}</label>
+                                            <div class="flex items-center justify-between mb-1">
+                                                <label for="assign_due_at" class="font-semibold text-3xs uppercase tracking-wider text-slate-500">{{ __('classroom.due_at') }}</label>
+                                                <button type="button" onclick="window.clearDatePicker?.('assign_due_at')" class="text-3xs text-slate-400 hover:text-slate-600 transition cursor-pointer">Clear</button>
+                                            </div>
                                             <input id="assign_due_at" type="text" class="datetime-picker w-full text-xs bg-white border border-slate-300 rounded-lg px-2.5 py-1.5" name="due_at"
-                                                placeholder="{{ __('classroom.no_deadline') }}" autocomplete="off">
+                                                placeholder="{{ __('classroom.no_deadline') }}" autocomplete="off"
+                                                data-window-role="end" data-window-pair="assign_available_at">
                                         </div>
                                     </div>
 

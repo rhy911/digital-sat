@@ -530,14 +530,6 @@ export function renderPreview(items) {
 
     if (window.smartRenderMath) {
         window.smartRenderMath(container);
-    } else if (window.renderMathInElement) {
-        window.renderMathInElement(container, {
-            delimiters: [
-                { left: '$$', right: '$$', display: false },
-                { left: '\\\\[', right: '\\\\]', display: true },
-            ],
-            throwOnError: false
-        });
     }
 }
 

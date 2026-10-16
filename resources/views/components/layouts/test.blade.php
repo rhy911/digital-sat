@@ -35,20 +35,10 @@
     <script>
         window.homeUrl = "{{ route('home') }}";
     </script>
-    @vite(['resources/css/app.css', 'resources/css/engine/main.css', 'resources/js/app.js', 'resources/js/test.js'])
+    @vite(['resources/css/app.css', 'resources/css/engine/main.css', 'resources/js/app.js', 'resources/js/test.js', 'resources/js/question-renderer.js'])
     @livewireStyles
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css">
-    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js"></script>
     <script src="https://www.desmos.com/api/v1.12/calculator.js?apiKey=db07a8e640bc4faca92a5c89e0745235"></script>
     <script src="https://www.desmos.com/api/v1.12/scientific.js?apiKey=db07a8e640bc4faca92a5c89e0745235"></script>
-    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/auto-render.min.js" onload="if(window.smartRenderMath) { window.smartRenderMath(document.body); } else { renderMathInElement(document.body, {
-                                                                        delimiters: [
-                                                                            { left: '$$', right: '$$', display: false },
-                                                                            { left: '\\\\[', right: '\\\\]', display: true },
-                                                                        ],
-                                                                        throwOnError : false,
-                                                                        trust: true
-                                                                    }); }"></script>
     @stack('styles')
 </head>
 

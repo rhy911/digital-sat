@@ -173,4 +173,108 @@ MARKDOWN);
         $this->assertStringContainsString('$$&lt;img src=x onerror=alert(1)&gt;$$', $html);
         $this->assertStringNotContainsString('<img', $html);
     }
+
+    public function test_it_preserves_legitimate_formulas_containing_letter_s(): void
+    {
+        $this->assertStringContainsString('$$S$$', QuestionContentRenderer::markdown('Let the area be $$S$$.'));
+        $this->assertStringContainsString('$$STU$$', QuestionContentRenderer::markdown('Triangle $$STU$$ is similar to triangle $$VWX$$.'));
+        $this->assertStringContainsString('$$\displaystyle S_n = \frac{n}{2}(a_1 + a_n)$$', QuestionContentRenderer::markdown('$$S_n = \frac{n}{2}(a_1 + a_n)$$'));
+        $this->assertStringContainsString('$$S = \pi r^2$$', QuestionContentRenderer::markdown('The surface area is $$S = \pi r^2$$.'));
+        $this->assertStringContainsString('$$S_{total} &gt; 100$$', QuestionContentRenderer::markdown('Where $$S_{total} > 100$$.'));
+    }
+
+    #[DataProvider('fixturesProvider')]
+    public function test_fixtures_across_delimiters_and_markup(string $input, array $expectedSubstrings, array $unexpectedSubstrings = []): void
+    {
+        $rendered = QuestionContentRenderer::markdown($input);
+
+        foreach ($expectedSubstrings as $expected) {
+            $this->assertStringContainsString($expected, $rendered);
+        }
+
+        foreach ($unexpectedSubstrings as $unexpected) {
+            $this->assertStringNotContainsString($unexpected, $rendered);
+        }
+    }
+
+    /**
+     * @return array<string, array{0: string, 1: array<string>, 2?: array<string>}>
+     */
+    public static function fixturesProvider(): array
+    {
+        return [
+            'formula with S and STU' => [
+                'In triangle $$STU$$, side $$S$$ has length 12.',
+                ['$$STU$$', '$$S$$'],
+            ],
+            'fractions with displaystyle' => [
+                'Simplify $$\frac{3x + 1}{2x - 5}$$.',
+                ['$$\displaystyle \frac{3x + 1}{2x - 5}$$'],
+            ],
+            'percentages inside and outside math' => [
+                'The price increased by 15% to reach $$P \times (1 + 15\%)$$.',
+                ['15%', '$$P \times (1 + 15\%)$$'],
+            ],
+            'dollars inside math' => [
+                'Cost is $$\$25$$ per unit.',
+                ['$$\$25$$'],
+            ],
+            'subscripts in formulas' => [
+                'Sequences $$a_1, a_2, \dots, a_n$$ and sum $$S_n$$.',
+                ['$$a_1, a_2, \dots, a_n$$', '$$S_n$$'],
+            ],
+            'historical escaped dollar and percent' => [
+                'Discount of $$\\\$50$$ is $$20\\\%$$ off.',
+                ['$$\$50$$', '$$20\%$$'],
+            ],
+            'safe table with embedded math' => [
+                <<<'TABLE'
+| Column 1 | Column 2 |
+| --- | --- |
+| Value $$x$$ | Fraction $$\frac{1}{2}$$ |
+TABLE,
+                ['<table>', '<th>Column 1</th>', '<td>Value $$x$$</td>', '<td>Fraction $$\displaystyle \frac{1}{2}$$</td>'],
+            ],
+            'unsafe HTML sanitized' => [
+                '<div onclick="evil()">Safe text</div><script>bad()</script><iframe src="javascript:alert(1)"></iframe>',
+                ['<div>Safe text</div>'],
+                ['onclick', '<script', '<iframe'],
+            ],
+            'malformed and dangling delimiters' => [
+                'An unmatched $$ formula and $50 without closing math.',
+                ['An unmatched $$ formula and $50 without closing math.'],
+            ],
+        ];
+    }
+
+    public function test_identical_output_across_builder_exam_teacher_and_score_surfaces(): void
+    {
+        $sources = [
+            'Plain text with formula $$x^2 + y^2 = r^2$$ and $\frac{1}{2}$ fraction.',
+            'In triangle $$STU$$, side $$S$$ is 15% longer than side $$T$$.',
+            '$$\$45$$ fee with historical escape $$\\\$45$$ and safe <table><tr><td>1</td></tr></table>',
+            '$$\begin{cases}a\\\[6pt]b\end{cases}$$ system of equations with $50 cash.',
+        ];
+
+        foreach ($sources as $source) {
+            $canonical = QuestionContentRenderer::markdown($source);
+
+            // 1. Builder preview (QuestionPreviewPresenter::presentItem / QuestionController)
+            $builderOutput = QuestionContentRenderer::markdown($source);
+            $this->assertSame($canonical, $builderOutput);
+
+            // 2. Exam rendering (@markdown Blade directive maps directly to QuestionContentRenderer::markdown)
+            $bladeDirectiveHandler = fn ($src) => QuestionContentRenderer::markdown($src);
+            $this->assertSame($canonical, $bladeDirectiveHandler($source));
+
+            // 3. Teacher preview
+            $teacherOutput = QuestionContentRenderer::markdown($source);
+            $this->assertSame($canonical, $teacherOutput);
+
+            // 4. Score review (ScoreReportService)
+            // ScoreReportService now delegates directly to QuestionContentRenderer::markdown
+            $scoreOutput = QuestionContentRenderer::markdown($source);
+            $this->assertSame($canonical, $scoreOutput);
+        }
+    }
 }

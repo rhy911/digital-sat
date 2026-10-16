@@ -3,32 +3,54 @@
 namespace App\Support;
 
 use App\Models\Assignment;
+use App\Models\AssignmentRecipient;
 use Illuminate\Support\Collection;
 
 class AssignmentStatusResolver
 {
-    public static function resolve(Assignment $assignment, Collection $attempts): array
+    public static function resolve(Assignment $assignment, Collection $attempts, ?AssignmentRecipient $recipient = null): array
     {
         $completed = $attempts->where('status', 'completed');
         $inProgress = $attempts->firstWhere('status', 'in_progress');
+        $used = $attempts->count();
 
-        $state = $completed->isNotEmpty() ? 'Completed'
-            : ($inProgress ? 'In progress'
-            : ($assignment->status === 'closed' ? 'Closed'
-            : ($assignment->available_at && now()->lt($assignment->available_at) ? 'Upcoming'
-            : ($assignment->due_at && now()->gte($assignment->due_at) ? 'Overdue' : 'Open'))));
+        if ($recipient && ! $recipient->relationLoaded('assignment')) {
+            $recipient->setRelation('assignment', $assignment);
+        }
+
+        $maxAllowed = $recipient ? $recipient->maxAllowedAttempts() : (int) ($assignment->attempt_limit ?? 1);
+        $bonusAttempts = (int) ($recipient?->extra_attempts ?? 0);
+        $hasBonus = $bonusAttempts > 0;
+
+        if ($recipient?->status === 'withdrawn') {
+            $state = 'Withdrawn';
+        } elseif ($inProgress !== null) {
+            $state = 'In progress';
+        } elseif ($used >= $maxAllowed) {
+            $state = 'Completed';
+        } elseif ($completed->isNotEmpty()) {
+            $state = $assignment->acceptsNewStarts() ? 'Retry available' : 'Completed';
+        } elseif ($assignment->status === 'closed') {
+            $state = 'Closed';
+        } elseif ($assignment->due_at && now()->gte($assignment->due_at)) {
+            $state = 'Overdue';
+        } elseif ($assignment->available_at && now()->lt($assignment->available_at)) {
+            $state = 'Upcoming';
+        } else {
+            $state = 'Open';
+        }
 
         $variant = match ($state) {
             'Completed' => 'success',
             'In progress' => 'brand',
-            'Overdue', 'Closed' => 'danger',
+            'Overdue', 'Closed', 'Withdrawn' => 'danger',
             'Upcoming' => 'neutral',
             default => 'warning',
         };
 
-        $used = $attempts->count();
-        $canStart = $inProgress !== null
-            || ($assignment->acceptsNewStarts() && $used < $assignment->attempt_limit);
+        $canStart = $recipient?->status !== 'withdrawn' && (
+            $inProgress !== null || ($assignment->acceptsNewStarts() && $used < $maxAllowed)
+        );
 
         return [
             'state' => $state,
@@ -37,6 +59,9 @@ class AssignmentStatusResolver
             'inProgress' => $inProgress,
             'used' => $used,
             'canStart' => $canStart,
+            'maxAllowed' => $maxAllowed,
+            'hasBonus' => $hasBonus,
+            'bonusAttempts' => $bonusAttempts,
         ];
     }
 }

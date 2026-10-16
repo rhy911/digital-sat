@@ -55,10 +55,17 @@ class ClassroomService
             if ($approve) {
                 $membership->classroom->assignments()
                     ->whereIn('status', ['published', 'closed'])
-                    ->each(fn ($assignment) => AssignmentRecipient::updateOrCreate(
-                        ['assignment_id' => $assignment->id, 'student_id' => $membership->student_id],
-                        ['status' => 'active', 'assigned_at' => now(), 'withdrawn_at' => null]
-                    ));
+                    ->each(function ($assignment) use ($membership) {
+                        if ($assignment->isTargeted() && ! $assignment->recipients()
+                            ->where('student_id', $membership->student_id)->exists()) {
+                            return;
+                        }
+
+                        AssignmentRecipient::updateOrCreate(
+                            ['assignment_id' => $assignment->id, 'student_id' => $membership->student_id],
+                            ['status' => 'active', 'assigned_at' => now(), 'withdrawn_at' => null]
+                        );
+                    });
             }
 
             return $membership->fresh(['classroom', 'student']);

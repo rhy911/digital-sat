@@ -513,6 +513,11 @@
                         }
                     });
                 });
+
+                const selectedTestId = new URLSearchParams(window.location.search).get('test_id');
+                if (selectedTestId) {
+                    [...testActions].find(action => action.dataset.testId === selectedTestId)?.click();
+                }
             });
         </script>
     @endpush

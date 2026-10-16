@@ -26,19 +26,27 @@ class AssignmentController extends Controller
                 ->firstOrFail();
         }
 
+        $classrooms = Classroom::whereHas('memberships', fn ($query) => $query
+            ->where('student_id', $user->id)
+            ->where('status', 'active'))
+            ->orderBy('name')
+            ->get(['id', 'name']);
+
         $assignments = Assignment::whereHas('recipients', fn ($query) => $query->where('student_id', $user->id)->where('status', 'active'))
             ->when($classroom, fn ($query) => $query->where('classroom_id', $classroom->id))
             ->whereIn('status', ['published', 'closed'])
-            ->with(['classroom', 'test', 'attempts' => fn ($query) => $query->where('user_id', $user->id)])
+            ->with($this->assignmentRelations($user->id))
             ->latest('published_at')
             ->get();
 
-        $assignment = $assignments->first();
+        $assignment = ($classroom ? $assignments->firstWhere('classroom_id', $classroom->id) : null) ?? $assignments->first();
         if ($assignment) {
-            $assignment->load(['classroom', 'test.sections.modules', 'attempts' => fn ($query) => $query->where('user_id', $user->id)->latest()]);
+            $assignment->load($this->assignmentRelations($user->id, deepTest: true));
         }
 
-        return view('student.assignments.show', compact('user', 'assignment', 'assignments', 'classroom'));
+        $recipient = $assignment?->recipients?->first();
+
+        return view('student.assignments.show', compact('user', 'assignment', 'assignments', 'classroom', 'classrooms', 'recipient'));
     }
     public function show(Request $request, Assignment $assignment)
     {
@@ -56,16 +64,24 @@ class AssignmentController extends Controller
                 ->firstOrFail();
         }
 
+        $classrooms = Classroom::whereHas('memberships', fn ($query) => $query
+            ->where('student_id', $user->id)
+            ->where('status', 'active'))
+            ->orderBy('name')
+            ->get(['id', 'name']);
+
         $assignments = Assignment::whereHas('recipients', fn ($query) => $query->where('student_id', $user->id)->where('status', 'active'))
             ->when($classroom, fn ($query) => $query->where('classroom_id', $classroom->id))
             ->whereIn('status', ['published', 'closed'])
-            ->with(['classroom', 'test', 'attempts' => fn ($query) => $query->where('user_id', $user->id)])
+            ->with($this->assignmentRelations($user->id))
             ->latest('published_at')
             ->get();
 
-        $assignment->load(['classroom', 'test.sections.modules', 'attempts' => fn ($query) => $query->where('user_id', $user->id)->latest()]);
+        $assignment->load($this->assignmentRelations($user->id, deepTest: true));
 
-        return view('student.assignments.show', compact('user', 'assignment', 'assignments', 'classroom'));
+        $recipient = $assignment?->recipients?->first();
+
+        return view('student.assignments.show', compact('user', 'assignment', 'assignments', 'classroom', 'classrooms', 'recipient'));
     }
     public function start(Assignment $assignment, AssignmentService $service, AttemptEngine $engine)
     {
@@ -104,5 +120,15 @@ class AssignmentController extends Controller
             ->where('user_id', auth()->id())
             ->where('status', 'in_progress')
             ->get();
+    }
+
+    private function assignmentRelations(int $userId, bool $deepTest = false): array
+    {
+        return [
+            'classroom',
+            $deepTest ? 'test.sections.modules' : 'test',
+            'recipients' => fn ($q) => $q->where('student_id', $userId),
+            'attempts' => fn ($q) => $q->where('user_id', $userId)->with('feedbackAuthor')->latest(),
+        ];
     }
 }

@@ -73,7 +73,7 @@ class ClassroomController extends Controller
         $archivedClassroomsCount = $classrooms->where('status', 'archived')->count();
 
         $assignmentStatuses = $classroom->assignments->mapWithKeys(
-            fn ($assignment) => [$assignment->id => AssignmentStatusResolver::resolve($assignment, $assignment->attempts)]
+            fn ($assignment) => [$assignment->id => AssignmentStatusResolver::resolve($assignment, $assignment->attempts, $assignment->recipients->first())]
         );
 
         $completedCount = $assignmentStatuses->filter(fn ($s) => $s['state'] === 'Completed')->count();

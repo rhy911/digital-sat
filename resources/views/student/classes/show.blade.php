@@ -276,7 +276,7 @@
                                                         </div>
                                                         <span class="exclusive-badge">Class Exclusive</span>
                                                     </div>
-                                                    <a href="{{ route('home.practice') }}" class="btn-sm-primary btn-px-16 text-xs">
+                                                    <a href="{{ route('home.practice', ['test_id' => $test->id]) }}" class="btn-sm-primary btn-px-16 text-xs">
                                                         Practice Test →
                                                     </a>
                                                 </div>

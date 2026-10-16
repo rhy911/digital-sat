@@ -6,7 +6,7 @@
 
 <x-layouts.student :user="$viewer" title="Score Details - {{ $user->name }} — {{ $userTest->test->title }}" header-type="none">
     @push('styles')
-        @vite(['resources/css/classroom-workspace.css', 'resources/css/student/scores.css', 'resources/js/student/scores-katex.js'])
+        @vite(['resources/css/classroom-workspace.css', 'resources/css/student/scores.css', 'resources/js/question-renderer.js'])
     @endpush
 
     <div class="app-shell" x-data="{ searchQuery: '', statusFilter: 'all' }">
