@@ -5,7 +5,6 @@ namespace App\Services;
 use App\Models\Assignment;
 use App\Models\ClassroomAnnouncement;
 use App\Models\ClassroomDocument;
-use App\Models\ClassroomEvent;
 use App\Models\ExamSession;
 use App\Models\Module;
 use App\Models\Question;
@@ -31,7 +30,6 @@ class RecycleBinService
         Section::class,
         Question::class,
         ClassroomAnnouncement::class,
-        ClassroomEvent::class,
         ClassroomDocument::class,
         Test::class,
     ];

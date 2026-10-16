@@ -14,6 +14,10 @@
         $hasLatestScore = $latestScore !== null;
         $bestScore = $comparableScores->max('total_score');
         $averageScore = $comparableScores->isNotEmpty() ? round($comparableScores->avg('total_score')) : null;
+        $progressStudent = $user;
+        $teacherView = false;
+        $showBadges = false;
+        $reviewRoute = fn ($attempt) => route('student.scores.show', $attempt);
     @endphp
 
     <div class="app-shell app-shell--no-list">
@@ -80,121 +84,7 @@
                 </div>
             </nav>
 
-            <div class="progress-container space-y-10">
-                <!-- ================= 1. SCORES & TRAJECTORY ================= -->
-                <section id="section-scores" class="progress-section">
-                    <div class="progress-section-header">
-                        <h2 class="progress-section-title">
-                            <span class="w-2.5 h-2.5 rounded-full bg-brand"></span>
-                            Scores & Trajectory
-                        </h2>
-                    </div>
-
-                    <div class="space-y-6">
-                        @include('partials.performance.score-hero', compact('latestScore', 'scoreDelta', 'scorePercent', 'hasLatestScore', 'latestCompleted', 'user'))
-
-                        <div class="p-stat-grid">
-                            <div class="p-stat-card">
-                                <div class="p-stat-card__val">{{ $completedTests->count() }}</div>
-                                <div class="p-stat-card__label">Completed Tests</div>
-                            </div>
-                            <div class="p-stat-card">
-                                <div class="p-stat-card__val">{{ $bestScore ?? '—' }}</div>
-                                <div class="p-stat-card__label">Best Total Score</div>
-                            </div>
-                            <div class="p-stat-card">
-                                <div class="p-stat-card__val">{{ $averageScore ?? '—' }}</div>
-                                <div class="p-stat-card__label">Average Score</div>
-                            </div>
-                            <div class="p-stat-card">
-                                <div class="p-stat-card__val">{{ $user->target_score ?? '—' }}</div>
-                                <div class="p-stat-card__label">Target Score Goal</div>
-                            </div>
-                        </div>
-
-                        @include('partials.performance.score-trend', [
-                            'chartTrend' => $chartTrend,
-                            'comparableScores' => $comparableScores,
-                        ])
-                    </div>
-                </section>
-
-                <!-- ================= 2. DOMAIN MASTERY & RADAR ================= -->
-                <section id="section-domains" class="progress-section">
-                    <div class="progress-section-header">
-                        <h2 class="progress-section-title">
-                            <span class="w-2.5 h-2.5 rounded-full bg-teal-600"></span>
-                            Domain Mastery & Skills
-                        </h2>
-                    </div>
-
-                    <div class="space-y-6">
-                        @include('partials.performance.radar-cards')
-
-                        <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
-                            <div class="lg:col-span-5">
-                                @include('partials.performance.doughnut-card', ['chartDoughnut' => $chartDoughnut])
-                            </div>
-                            <div class="lg:col-span-7">
-                                @include('partials.performance.accuracy-bar-card', [
-                                    'title' => 'Weak areas by domain',
-                                    'subtitle' => 'Detailed accuracy ranking across content domains and sub-skills.',
-                                    'rows' => $weakAreaSummaries,
-                                    'emptyTitle' => 'No domain data yet',
-                                    'emptyBody' => 'Complete a test to view granular domain accuracy.',
-                                    'ariaLabelledby' => 'weak-areas-title',
-                                    'rowLabelKey' => 'domain',
-                                ])
-                            </div>
-                        </div>
-                    </div>
-                </section>
-
-                <!-- ================= 3. DIFFICULTY MATRIX ================= -->
-                <section id="section-difficulty" class="progress-section">
-                    <div class="progress-section-header">
-                        <h2 class="progress-section-title">
-                            <span class="w-2.5 h-2.5 rounded-full bg-orange-600"></span>
-                            Difficulty Cross-Matrix
-                        </h2>
-                    </div>
-
-                    <div class="space-y-6">
-                        @include('partials.performance.heatmap-card', ['chartHeatmap' => $chartHeatmap])
-
-                        @include('partials.performance.accuracy-bar-card', [
-                            'title' => 'Difficulty breakdown',
-                            'subtitle' => 'Overall accuracy percentage broken down by question difficulty tier.',
-                            'rows' => $difficultyPerformanceSummaries,
-                            'emptyTitle' => 'No difficulty data yet',
-                            'emptyBody' => 'Complete a test to view difficulty tier accuracy.',
-                            'ariaLabelledby' => 'difficulty-title',
-                            'rowLabelKey' => 'label',
-                        ])
-                    </div>
-                </section>
-
-                <!-- ================= 4. PACING & HABITS ================= -->
-                <section id="section-timing" class="progress-section">
-                    <div class="progress-section-header">
-                        <h2 class="progress-section-title">
-                            <span class="w-2.5 h-2.5 rounded-full bg-emerald-600"></span>
-                            Pacing, Timing & Habits
-                        </h2>
-                    </div>
-
-                    <div class="space-y-6">
-                        @include('partials.performance.time-histogram', ['chartHistogram' => $chartHistogram])
-
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                            @include('partials.performance.pacing-bar-card', ['rows' => $pacingSummaries])
-                            @include('partials.performance.efficiency-card', ['timeMatrix' => $timeMatrix])
-                        </div>
-
-                        @include('partials.performance.habits-card', compact('skippedCount', 'stuckCount', 'rushedCount'))
-                    </div>
-                </section>
-            </div>
+            @include('partials.performance.progress-sections')
         </div>
     </div>
 

@@ -3,6 +3,7 @@
 namespace Tests\Unit;
 
 use App\Services\ProgressChartService;
+use App\Services\ProgressDossierService;
 use Tests\TestCase;
 
 class ProgressChartServiceTest extends TestCase
@@ -117,6 +118,16 @@ class ProgressChartServiceTest extends TestCase
         $this->assertEquals(2, $hist['totalQuestions']);
     }
 
+    public function test_histogram_data_keeps_empty_bucket_defaults(): void
+    {
+        $hist = $this->service->histogramData([]);
+
+        $this->assertSame(['0-15s', '15-30s', '30-60s', '60-90s', '90-120s', '120s+'], $hist['labels']);
+        $this->assertSame([0, 0, 0, 0, 0, 0], $hist['correct']);
+        $this->assertSame([0, 0, 0, 0, 0, 0], $hist['incorrect']);
+        $this->assertSame(0, $hist['totalQuestions']);
+    }
+
     public function test_build_web_charts_transforms_dossier(): void
     {
         $dossier = [
@@ -137,9 +148,13 @@ class ProgressChartServiceTest extends TestCase
                 ['domain' => 'Algebra', 'percentCorrect' => 90],
             ],
             'sectionAccuracy' => [
-                'rw' => ['correct' => 15, 'total' => 20, 'pct' => 75],
-                'math' => ['correct' => 16, 'total' => 20, 'pct' => 80],
-                'overall' => ['correct' => 31, 'total' => 40, 'pct' => 78],
+                'labels' => ['Reading & Writing', 'Math'],
+                'data' => [75, 80],
+                'counts' => [
+                    'rw' => ['correct' => 15, 'total' => 20, 'pct' => 75],
+                    'math' => ['correct' => 16, 'total' => 20, 'pct' => 80],
+                    'overall' => ['correct' => 31, 'total' => 40, 'pct' => 78],
+                ],
             ],
             'domainDifficultyStats' => [
                 'Math' => [
@@ -165,8 +180,21 @@ class ProgressChartServiceTest extends TestCase
         $this->assertEquals([1200], $charts['chartTrend']['total']);
         $this->assertEquals(1400, $charts['chartTrend']['targetScore']);
         $this->assertEquals(90, $charts['chartRadar']['math']['data'][0]);
-        $this->assertEquals([75, 80], $charts['chartDoughnut']['data']);
+        $this->assertSame($dossier['sectionAccuracy'], $charts['chartDoughnut']);
         $this->assertArrayHasKey('Math', $charts['chartHeatmap']);
         $this->assertEquals(4, $charts['chartHistogram']['totalQuestions']);
+    }
+
+    public function test_empty_dossier_builds_canonical_doughnut_and_histogram_payloads(): void
+    {
+        $dossier = app(ProgressDossierService::class)->build(collect());
+        $charts = $this->service->buildWebCharts($dossier);
+
+        $this->assertSame(['labels', 'data', 'counts'], array_keys($dossier['sectionAccuracy']));
+        $this->assertSame($dossier['sectionAccuracy'], $charts['chartDoughnut']);
+        $this->assertSame([0, 0], $charts['chartDoughnut']['data']);
+        $this->assertSame(0, $charts['chartDoughnut']['counts']['overall']['pct']);
+        $this->assertSame([0, 0, 0, 0, 0, 0], $charts['chartHistogram']['correct']);
+        $this->assertSame(0, $charts['chartHistogram']['totalQuestions']);
     }
 }

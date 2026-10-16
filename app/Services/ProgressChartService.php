@@ -16,9 +16,9 @@ class ProgressChartService
         return [
             'chartTrend' => $this->trendData($dossier['history'] ?? [], $targetScore),
             'chartRadar' => $this->radarData($dossier['weakAreaSummaries'] ?? []),
-            'chartDoughnut' => $this->doughnutData($dossier['sectionAccuracy'] ?? $dossier['sectionSplit'] ?? []),
-            'chartHeatmap' => $this->heatmapData($dossier['domainDifficultyStats'] ?? $dossier['difficultyHeatmap'] ?? []),
-            'chartHistogram' => $this->histogramData($dossier['timeBuckets'] ?? $dossier['timeHistogram'] ?? []),
+            'chartDoughnut' => $dossier['sectionAccuracy'],
+            'chartHeatmap' => $this->heatmapData($dossier['domainDifficultyStats'] ?? []),
+            'chartHistogram' => $this->histogramData($dossier['timeBuckets'] ?? []),
         ];
     }
 
@@ -122,30 +122,6 @@ class ProgressChartService
     }
 
     /**
-     * Build section split doughnut dataset from dossier sectionAccuracy.
-     */
-    public function doughnutData(array $sectionAccuracy): array
-    {
-        if (isset($sectionAccuracy['labels'], $sectionAccuracy['data'], $sectionAccuracy['counts'])) {
-            return $sectionAccuracy;
-        }
-
-        $counts = $sectionAccuracy['counts'] ?? $sectionAccuracy;
-        $rwPct = $counts['rw']['pct'] ?? 0;
-        $mathPct = $counts['math']['pct'] ?? 0;
-
-        return [
-            'labels' => ['Reading & Writing', 'Math'],
-            'data' => [$rwPct, $mathPct],
-            'counts' => [
-                'rw' => $counts['rw'] ?? ['correct' => 0, 'total' => 0, 'pct' => 0],
-                'math' => $counts['math'] ?? ['correct' => 0, 'total' => 0, 'pct' => 0],
-                'overall' => $counts['overall'] ?? ['correct' => 0, 'total' => 0, 'pct' => 0],
-            ],
-        ];
-    }
-
-    /**
      * Adapt domain difficulty statistics into a presentation matrix for views.
      */
     public function heatmapData(array $domainDifficultyStats): array
@@ -196,10 +172,6 @@ class ProgressChartService
      */
     public function histogramData(array $timeBuckets): array
     {
-        if (isset($timeBuckets['labels'], $timeBuckets['correct'], $timeBuckets['incorrect'])) {
-            return $timeBuckets;
-        }
-
         $labels = array_keys($timeBuckets);
         $correctData = array_map(fn ($b) => is_array($b) ? ($b['correct'] ?? 0) : 0, array_values($timeBuckets));
         $incorrectData = array_map(fn ($b) => is_array($b) ? ($b['incorrect'] ?? 0) : 0, array_values($timeBuckets));

@@ -34,7 +34,6 @@ class ProgressDossierServiceTest extends TestCase
         $this->assertSame(12, $skill['total']);
         $this->assertSame('Moderate', $skill['evidenceLevel']);
         $this->assertNotNull($skill['opportunityIndex']);
-        $this->assertNotEmpty($dossier['stamina']);
 
         // Absorbed analytical metrics
         $this->assertArrayHasKey('timeMatrix', $dossier);
@@ -48,9 +47,7 @@ class ProgressDossierServiceTest extends TestCase
         $this->assertNotEmpty($dossier['difficultyPerformanceSummaries']);
         $this->assertNotEmpty($dossier['recommendations']);
         $this->assertArrayHasKey('sectionAccuracy', $dossier);
-        $this->assertArrayHasKey('sectionSplit', $dossier);
         $this->assertArrayHasKey('timeBuckets', $dossier);
-        $this->assertArrayHasKey('timeHistogram', $dossier);
         $this->assertArrayHasKey('domainDifficultyStats', $dossier);
         $this->assertArrayHasKey('Reading & Writing', $dossier['domainDifficultyStats']);
         $this->assertArrayNotHasKey('ulid', $dossier['history'][0]);

@@ -72,12 +72,7 @@ class ProgressDossierService
             'pointLoss' => $pointLoss,
             'domains' => $domains,
             'skills' => $skills,
-            'prioritySkills' => $prioritySkills,
             'difficulty' => $this->difficultyMetrics($events),
-            'pacing' => $this->pacingMetrics($events),
-            'stamina' => $this->staminaMetrics($events),
-            'errors' => $this->errorMetrics($events),
-            'quadrant' => $this->quadrantMetrics($skills),
             'prescriptions' => $this->prescriptions($prioritySkills),
             'narrative' => $this->narrative($score, $domains, $prioritySkills),
             'weakAreaSummaries' => $weakAreaSummaries,
@@ -89,10 +84,8 @@ class ProgressDossierService
             'rushedCount' => $habits['rushedCount'],
             'timeMatrix' => $this->timeMatrixMetrics($events),
             'sectionAccuracy' => $this->sectionAccuracyMetrics($events),
-            'sectionSplit' => $this->sectionAccuracyMetrics($events),
             'domainDifficultyStats' => $this->domainDifficultyMetrics($events),
             'timeBuckets' => $this->timeBucketsMetrics($events),
-            'timeHistogram' => $this->timeBucketsMetrics($events),
         ];
     }
 
@@ -393,89 +386,6 @@ class ProgressDossierService
 
             return ['section' => $first['section'], 'domain' => $first['domainLabel'], 'tiers' => $tiers];
         })->values()->all();
-    }
-
-    /** @param list<array<string, mixed>> $events */
-    private function pacingMetrics(array $events): array
-    {
-        $bands = [
-            'Very fast (<0.5x)' => ['min' => 0, 'max' => 0.5],
-            'On pace (0.5-1.0x)' => ['min' => 0.5, 'max' => 1.0],
-            'Slow (1.0-1.5x)' => ['min' => 1.0, 'max' => 1.5],
-            'Time trap (>1.5x)' => ['min' => 1.5, 'max' => INF],
-        ];
-        $matrix = [];
-        foreach ($bands as $label => $range) {
-            $items = collect($events)->filter(function (array $event) use ($range) {
-                $ratio = $event['expected'] > 0 ? $event['time'] / $event['expected'] : 0;
-                return $ratio >= $range['min'] && $ratio < $range['max'];
-            });
-            $matrix[] = [
-                'label' => $label,
-                'correct' => $items->where('correct', true)->count(),
-                'incorrect' => $items->where('correct', false)->count(),
-                'total' => $items->count(),
-                'accuracy' => $this->percent($items->where('correct', true)->count(), $items->count()),
-            ];
-        }
-
-        $skillTime = collect($events)->groupBy('skillLabel')->map(function (Collection $items) {
-            return [
-                'skill' => $items->first()['skillLabel'],
-                'accuracy' => $this->percent($items->where('correct', true)->count(), $items->count()),
-                'avgTime' => (int) round($items->avg('time')),
-                'total' => $items->count(),
-            ];
-        })->sortBy('accuracy')->values()->take(10)->all();
-
-        return ['matrix' => $matrix, 'skillTime' => $skillTime];
-    }
-
-    /** @param list<array<string, mixed>> $events */
-    private function staminaMetrics(array $events): array
-    {
-        $bins = [
-            'Q1-5' => [1, 5], 'Q6-10' => [6, 10], 'Q11-15' => [11, 15],
-            'Q16-20' => [16, 20], 'Q21+' => [21, PHP_INT_MAX],
-        ];
-        $rows = [];
-        foreach ($bins as $label => [$min, $max]) {
-            $items = collect($events)->filter(fn (array $event) => $event['position'] !== null && $event['position'] >= $min && $event['position'] <= $max);
-            if ($items->isEmpty()) continue;
-            $rows[] = [
-                'label' => $label,
-                'total' => $items->count(),
-                'accuracy' => $this->percent($items->where('correct', true)->count(), $items->count()),
-                'avgTime' => (int) round($items->avg('time')),
-            ];
-        }
-
-        return $rows;
-    }
-
-    /** @param list<array<string, mixed>> $events */
-    private function errorMetrics(array $events): array
-    {
-        $labels = [
-            'conceptual_gap' => 'Conceptual gap', 'misread_question' => 'Misread question',
-            'misread_text_or_data' => 'Misread text/data', 'wrong_strategy' => 'Wrong strategy',
-            'calculation' => 'Calculation', 'grammar_rule' => 'Grammar rule', 'elimination' => 'Elimination',
-            'careless' => 'Careless', 'time_pressure' => 'Time pressure', 'guess' => 'Guess',
-            'omitted' => 'Omitted', 'unclassified' => 'Unclassified',
-        ];
-        $missed = collect($events)->where('correct', false);
-
-        return $missed->groupBy('errorType')->map(function (Collection $items, string $key) use ($labels) {
-            return ['key' => $key, 'label' => $labels[$key] ?? 'Unclassified', 'count' => $items->count()];
-        })->sortByDesc('count')->values()->all();
-    }
-
-    private function quadrantMetrics(array $skills): array
-    {
-        return collect($skills)->map(fn (array $skill) => [
-            'skill' => $skill['skill'], 'accuracy' => $skill['accuracy'], 'volume' => $skill['total'],
-            'evidenceLevel' => $skill['evidenceLevel'], 'masteryBand' => $skill['masteryBand'],
-        ])->values()->all();
     }
 
     private function prescriptions(array $skills): array
@@ -1061,9 +971,6 @@ class ProgressDossierService
                 'math' => ['correct' => $mathCorrect, 'total' => $mathTotal, 'pct' => $mathPct],
                 'overall' => ['correct' => $overallCorrect, 'total' => $overallTotal, 'pct' => $overallPct],
             ],
-            'rw' => ['correct' => $rwCorrect, 'total' => $rwTotal, 'pct' => $rwPct],
-            'math' => ['correct' => $mathCorrect, 'total' => $mathTotal, 'pct' => $mathPct],
-            'overall' => ['correct' => $overallCorrect, 'total' => $overallTotal, 'pct' => $overallPct],
         ];
     }
 
