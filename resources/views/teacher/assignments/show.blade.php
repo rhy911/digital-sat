@@ -10,9 +10,13 @@
     <div class="app-shell" x-data="{
         searchQuery: '',
         statusFilter: 'all',
-        activeTab: new URLSearchParams(location.search).get('tab') || 'results',
+        activeTab: (['results', 'analysis', 'settings'].includes(new URLSearchParams(location.search).get('tab')) ? new URLSearchParams(location.search).get('tab') : 'results'),
+        analysisMounted: new URLSearchParams(location.search).get('tab') === 'analysis',
         init() {
             this.$watch('activeTab', (tab) => {
+                if (tab === 'analysis') {
+                    this.analysisMounted = true;
+                }
                 if (tab === 'settings') {
                     this.$nextTick(() => window.initDatePickers?.());
                 }
@@ -56,8 +60,8 @@
                 @if ($assignment)
                     @php
                         $pillClass = match ($assignment->status) {
-                            'published' => 'ok',
-                            'closed' => 'danger',
+                            'published', 'active' => 'ok',
+                            'closed', 'danger', 'overdue' => 'danger',
                             default => 'draft',
                         };
                     @endphp
@@ -161,110 +165,95 @@
                     <!-- PINNED TAB BAR -->
                     <x-shell.tab-bar :tabs="[
                         ['key' => 'results', 'label' => 'Student results', 'count' => $report['metrics']['assigned']],
-                        ['key' => 'analysis', 'label' => 'Question Analysis', 'count' => count($report['questionAnalysis'])],
+                        ['key' => 'analysis', 'label' => 'Question Analysis', 'count' => $report['question_count'] ?? count($report['questionAnalysis'] ?? [])],
                         ['key' => 'settings', 'label' => 'Settings'],
                     ]" />
 
                     <!-- RESULTS PANEL -->
-                    <div class="section-panel" :class="{ 'active': activeTab === 'results' }">
+                    <div id="panel-results" role="tabpanel" aria-labelledby="tab-results" class="section-panel" :class="{ 'active': activeTab === 'results' }">
                         <livewire:teacher.assignment-student-results :assignment="$assignment" />
                     </div>
 
                     <!-- ANALYSIS PANEL -->
-                    @php
-                        $analysisList = $report['questionAnalysis'] ?? [];
-                        $analysisJsonData = collect($analysisList)->map(function($item) {
-                            $q = $item['question'];
-                            return [
-                                'id' => $q->id,
-                                'position' => $item['position'],
-                                'module_label' => $item['module_label'],
-                                'module_number' => $item['module_number'],
-                                'difficulty_level' => $item['difficulty_level'],
-                                'difficulty' => strtolower($q->difficulty ?? 'standard'),
-                                'domain' => Str::headline(str_replace('_', ' ', filled($q->skill_domain) ? $q->skill_domain : 'General Domain')),
-                                'section_label' => $item['section_label'],
-                                'question_type' => $q->question_type,
-                                'stem' => \App\Support\QuestionContentRenderer::markdown($q->stem),
-                                'passage_title' => $q->passage?->title,
-                                'passage_body' => ($q->passage?->content ?? $q->passage?->body) ? \App\Support\QuestionContentRenderer::markdown($q->passage?->content ?? $q->passage?->body) : null,
-                                'correct_answer' => $item['correct_answer'],
-                                'spr_answers' => $q->question_type === 'student_produced_response' ? $q->sprCorrectAnswers->pluck('answer')->all() : [],
-                                'incorrect_rate' => $item['incorrect_rate'],
-                                'total_presented' => $item['total_presented'],
-                                'correct_count' => $item['correct_count'],
-                                'incorrect_count' => count($item['incorrect_students']),
-                                'choices' => $q->answerChoices->map(fn($c) => [
-                                    'label' => $c->label,
-                                    'content' => \App\Support\QuestionContentRenderer::markdown($c->content),
-                                    'is_correct' => (bool)$c->is_correct,
-                                ])->values()->all(),
-                                'explanation' => [
-                                    'text' => $q->explanation?->explanation ? \App\Support\QuestionContentRenderer::markdown($q->explanation->explanation) : null,
-                                    'strategy_tip' => $q->explanation?->strategy_tip ? \App\Support\QuestionContentRenderer::markdown($q->explanation->strategy_tip) : null,
-                                ],
-                                'students' => collect($item['students'] ?? $item['incorrect_students'])->map(fn($st) => [
-                                    'id' => $st['student']->id,
-                                    'name' => $st['student']->name,
-                                    'email' => $st['student']->email,
-                                    'initials' => $st['student']->initials ?? strtoupper(substr($st['student']->name, 0, 1)),
-                                    'status' => $st['status'],
-                                    'selected' => $st['selected'],
-                                ])->values()->all(),
-                            ];
-                        })->values();
+                    <div id="panel-analysis" role="tabpanel" aria-labelledby="tab-analysis" class="section-panel" :class="{ 'active': activeTab === 'analysis' }">
+                        <template x-if="analysisMounted">
+                            <div class="analysis-root"
+                                 x-on:close-modal.window="if ($event.detail === 'modal-inspect-question') { isInspectModalOpen = false; }"
+                                 @keydown.left.window="if (isInspectModalOpen && !['INPUT', 'TEXTAREA', 'SELECT'].includes($event.target.tagName)) prevQuestion()"
+                                 @keydown.right.window="if (isInspectModalOpen && !['INPUT', 'TEXTAREA', 'SELECT'].includes($event.target.tagName)) nextQuestion()"
+                                 @keydown.escape.window="if (isInspectModalOpen) closeInspection()"
+                                 x-data="{
+                                loadingAnalysis: false,
+                                analysisLoaded: false,
+                                analysisError: null,
+                                questions: [],
+                                stats: {
+                                    total: 0,
+                                    unique_modules: [],
+                                    unique_domains: [],
+                                    avg_error_rate: 0,
+                                    most_challenging: null
+                                },
+                                questionSearchQuery: '',
+                                selectedModule: 'all',
+                                selectedDifficulty: 'all',
+                                selectedDomain: 'all',
+                                activeQuestion: null,
+                                isInspectModalOpen: false,
+                                inspectStudentFilter: 'all',
+                                inspectStudentSearch: '',
+                                passageCollapsed: false,
 
-                        $uniqueModules = collect($analysisJsonData)->map(fn($q) => $q['section_label'] . ' — ' . $q['module_label'])->unique()->values();
-                        $uniqueDomains = collect($analysisJsonData)->pluck('domain')->filter()->unique()->values();
-                        $avgErrorRate = count($analysisJsonData) > 0 ? (int) round(collect($analysisJsonData)->avg('incorrect_rate')) : 0;
-                        $mostChallenging = collect($analysisJsonData)->sortByDesc('incorrect_rate')->first();
-                    @endphp
+                                sortCol: 'position',
+                                sortAsc: true,
+                                sortBy(col) {
+                                    if (this.sortCol === col) {
+                                        this.sortAsc = !this.sortAsc;
+                                    } else {
+                                        this.sortCol = col;
+                                        this.sortAsc = col === 'position';
+                                    }
+                                },
 
-                    <div class="section-panel" :class="{ 'active': activeTab === 'analysis' }"
-                         x-on:close-modal.window="if ($event.detail === 'modal-inspect-question') { isInspectModalOpen = false; }"
-                         @keydown.left.window="if (isInspectModalOpen && !['INPUT', 'TEXTAREA', 'SELECT'].includes($event.target.tagName)) prevQuestion()"
-                         @keydown.right.window="if (isInspectModalOpen && !['INPUT', 'TEXTAREA', 'SELECT'].includes($event.target.tagName)) nextQuestion()"
-                         @keydown.escape.window="if (isInspectModalOpen) closeInspection()"
-                         x-data="{
-                        questionSearchQuery: '',
-                        selectedModule: 'all',
-                        selectedDifficulty: 'all',
-                        selectedDomain: 'all',
-                        questions: {{ Js::from($analysisJsonData) }},
-                        activeQuestion: null,
-                        isInspectModalOpen: false,
-                        inspectStudentFilter: 'all',
-                        inspectStudentSearch: '',
-                        passageCollapsed: false,
-
-                        sortCol: 'position',
-                        sortAsc: true,
-                        sortBy(col) {
-                            if (this.sortCol === col) {
-                                this.sortAsc = !this.sortAsc;
-                            } else {
-                                this.sortCol = col;
-                                this.sortAsc = col === 'position';
-                            }
-                        },
-
-                        init() {
-                            this.$watch('activeTab', (tab) => {
-                                if (tab === 'analysis') {
-                                    this.$nextTick(() => {
-                                        if (window.smartRenderMath) window.smartRenderMath(this.$el);
+                                init() {
+                                    this.loadAnalysis();
+                                    this.$watch('filteredQuestions', () => {
+                                        this.$nextTick(() => {
+                                            if (window.smartRenderMath) window.smartRenderMath(this.$el);
+                                        });
                                     });
-                                }
-                            });
-                            this.$watch('filteredQuestions', () => {
-                                this.$nextTick(() => {
-                                    if (window.smartRenderMath) window.smartRenderMath(this.$el);
-                                });
-                            });
-                            this.$nextTick(() => {
-                                if (window.smartRenderMath) window.smartRenderMath(this.$el);
-                            });
-                        },
+                                },
+
+                                async loadAnalysis() {
+                                    if (this.analysisLoaded || this.loadingAnalysis) return;
+                                    this.loadingAnalysis = true;
+                                    this.analysisError = null;
+                                    try {
+                                        const res = await fetch('{{ route('teacher.assignments.analysis', $assignment) }}', {
+                                            headers: { 'Accept': 'application/json' }
+                                        });
+                                        if (!res.ok) {
+                                            throw new Error('HTTP ' + res.status);
+                                        }
+                                        const data = await res.json();
+                                        if (!data || !Array.isArray(data.questions)) {
+                                            throw new Error('Invalid analysis payload');
+                                        }
+                                        this.questions = data.questions;
+                                        this.stats = data.stats || this.stats;
+                                        this.analysisLoaded = true;
+                                        this.analysisError = null;
+                                        this.$nextTick(() => {
+                                            if (window.smartRenderMath) window.smartRenderMath(this.$el);
+                                        });
+                                    } catch (err) {
+                                        console.error('Failed to load analysis:', err);
+                                        this.analysisError = 'Failed to load question analysis. Please try again.';
+                                        this.analysisLoaded = false;
+                                    } finally {
+                                        this.loadingAnalysis = false;
+                                    }
+                                },
 
                         get currentQuestionIndex() {
                             if (!this.activeQuestion) return -1;
@@ -298,12 +287,38 @@
                             }
                         },
 
-                        openInspection(q) {
+                        async openInspection(q) {
+                            if (!q.students) q.students = [];
+                            if (!q.choices) q.choices = [];
                             this.activeQuestion = q;
                             this.inspectStudentFilter = 'all';
                             this.inspectStudentSearch = '';
                             this.isInspectModalOpen = true;
                             $dispatch('open-modal', 'modal-inspect-question');
+                            if (!q.details_loaded && !q.loading_details) {
+                                q.loading_details = true;
+                                q.load_error = null;
+                                try {
+                                    const url = '{{ route('teacher.assignments.question-inspection', ['assignment' => $assignment, 'question' => '__QID__']) }}'.replace('__QID__', q.id);
+                                    const res = await fetch(url, { headers: { 'Accept': 'application/json' } });
+                                    if (!res.ok) {
+                                        throw new Error('HTTP ' + res.status);
+                                    }
+                                    const details = await res.json();
+                                    if (!details || typeof details !== 'object' || !Array.isArray(details.choices)) {
+                                        throw new Error('Invalid inspection payload');
+                                    }
+                                    Object.assign(q, details);
+                                    q.details_loaded = true;
+                                    q.load_error = null;
+                                } catch (err) {
+                                    console.error('Failed to load inspection details:', err);
+                                    q.load_error = 'Unable to load question details. Please try again.';
+                                    q.details_loaded = false;
+                                } finally {
+                                    q.loading_details = false;
+                                }
+                            }
                             this.renderModalMath();
                         },
 
@@ -448,22 +463,33 @@
                         }
                     }">
 
+                        <!-- Loading Indicator -->
+                        <div x-show="loadingAnalysis" class="py-8 text-center text-xs text-slate-500 font-medium">
+                            <svg class="animate-spin h-5 w-5 mx-auto mb-2 text-blue-600" viewBox="0 0 24 24" fill="none"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path></svg>
+                            <span>Loading question analysis...</span>
+                        </div>
+
+                        <!-- Analysis Error State -->
+                        <div x-show="analysisError && !loadingAnalysis" x-cloak class="p-6 mb-6 text-center rounded-xl border border-rose-200 bg-rose-50/80">
+                            <p class="text-xs font-semibold text-rose-800 mb-3" x-text="analysisError"></p>
+                            <button type="button" @click="loadAnalysis()" class="px-3.5 py-1.5 text-xs font-semibold rounded-lg bg-rose-700 hover:bg-rose-800 text-white transition shadow-2xs cursor-pointer">
+                                Retry
+                            </button>
+                        </div>
+
+                        <div x-show="analysisLoaded && !analysisError">
                         <!-- Summary Stat Cards -->
                         <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
                             <div class="analysis-stat-card">
-                                <div class="analysis-stat-card__badge accent">
-                                    {{ count($analysisJsonData) }}
-                                </div>
+                                <div class="analysis-stat-card__badge accent" x-text="stats.total"></div>
                                 <div>
                                     <div class="text-2xs font-bold uppercase tracking-wider text-muted">Questions Analyzed</div>
-                                    <div class="text-xs font-semibold text-main">Across {{ count($uniqueModules) }} {{ Str::plural('module', count($uniqueModules)) }}</div>
+                                    <div class="text-xs font-semibold text-main" x-text="'Across ' + stats.unique_modules.length + ' ' + (stats.unique_modules.length === 1 ? 'module' : 'modules')"></div>
                                 </div>
                             </div>
 
                             <div class="analysis-stat-card">
-                                <div class="analysis-stat-card__badge amber">
-                                    {{ $avgErrorRate }}%
-                                </div>
+                                <div class="analysis-stat-card__badge amber" x-text="stats.avg_error_rate + '%'"></div>
                                 <div>
                                     <div class="text-2xs font-bold uppercase tracking-wider text-muted">Average Error Rate</div>
                                     <div class="text-xs font-semibold text-main">Overall class difficulty</div>
@@ -471,14 +497,10 @@
                             </div>
 
                             <div class="analysis-stat-card">
-                                <div class="analysis-stat-card__badge red">
-                                    {{ $mostChallenging ? $mostChallenging['incorrect_rate'] . '%' : '—' }}
-                                </div>
+                                <div class="analysis-stat-card__badge red" x-text="stats.most_challenging ? stats.most_challenging.incorrect_rate + '%' : '—'"></div>
                                 <div>
                                     <div class="text-2xs font-bold uppercase tracking-wider text-muted">Most Challenging Item</div>
-                                    <div class="text-xs font-semibold text-main truncate max-w-[180px]">
-                                        {{ $mostChallenging ? $mostChallenging['module_label'] . ' · Q' . $mostChallenging['position'] : 'None' }}
-                                    </div>
+                                    <div class="text-xs font-semibold text-main truncate max-w-[180px]" x-text="stats.most_challenging ? stats.most_challenging.module_label + ' · Q' + stats.most_challenging.position : 'None'"></div>
                                 </div>
                             </div>
                         </div>
@@ -493,9 +515,9 @@
 
                                 <select x-model="selectedModule" aria-label="Filter by module" class="analysis-toolbar__select focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/20 transition-all">
                                     <option value="all">All Modules</option>
-                                    @foreach($uniqueModules as $mod)
-                                        <option value="{{ $mod }}">{{ $mod }}</option>
-                                    @endforeach
+                                    <template x-for="mod in stats.unique_modules" :key="mod">
+                                        <option :value="mod" x-text="mod"></option>
+                                    </template>
                                 </select>
 
                                 <select x-model="selectedDifficulty" aria-label="Filter by difficulty" class="analysis-toolbar__select focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/20 transition-all">
@@ -507,14 +529,14 @@
 
                                 <select x-model="selectedDomain" aria-label="Filter by domain" class="analysis-toolbar__select focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/20 transition-all">
                                     <option value="all">All Domains</option>
-                                    @foreach($uniqueDomains as $dom)
-                                        <option value="{{ $dom }}">{{ $dom }}</option>
-                                    @endforeach
+                                    <template x-for="dom in stats.unique_domains" :key="dom">
+                                        <option :value="dom" x-text="dom"></option>
+                                    </template>
                                 </select>
                             </div>
 
                             <div class="text-xs text-muted font-medium" aria-live="polite" aria-atomic="true">
-                                Showing <strong class="text-main" x-text="filteredQuestions.length"></strong> of {{ count($analysisJsonData) }} questions
+                                Showing <strong class="text-main" x-text="filteredQuestions.length"></strong> of <span x-text="questions.length"></span> questions
                             </div>
                         </div>
 
@@ -530,7 +552,7 @@
                                             <span class="text-3xs font-semibold px-2 py-0.5 rounded-full bg-white text-slate-600 border border-slate-200" x-text="group.questions.length + (group.questions.length === 1 ? ' question' : ' questions')"></span>
                                         </div>
                                         <div class="text-xs text-slate-500 font-medium flex items-center gap-3">
-                                            <span>Avg error rate: <strong :class="group.avgIncorrectRate >= 50 ? 'text-rose-600' : (group.avgIncorrectRate >= 25 ? 'text-amber-600' : 'text-emerald-600')" x-text="group.avgIncorrectRate + '%'"></strong></span>
+                                            <span>Avg error rate: <strong :class="group.avgIncorrectRate >= 50 ? 'text-rose-700' : (group.avgIncorrectRate >= 25 ? 'text-amber-800' : 'text-emerald-800')" x-text="group.avgIncorrectRate + '%'"></strong></span>
                                         </div>
                                     </div>
 
@@ -579,15 +601,15 @@
                                                             <div class="text-xs text-main font-medium leading-relaxed" style="display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;" x-html="q.stem"></div>
                                                         </td>
                                                         <td style="vertical-align: top; padding: 12px 10px;">
-                                                            <span class="font-mono font-bold text-xs px-2.5 py-1 rounded bg-emerald-50 text-emerald-700 border border-emerald-300" x-text="q.correct_answer"></span>
+                                                            <span class="font-mono font-bold text-xs px-2.5 py-1 rounded bg-emerald-50 text-emerald-800 border border-emerald-300" x-text="q.correct_answer"></span>
                                                         </td>
                                                         <td style="vertical-align: top; padding: 12px 10px;">
                                                             <div class="space-y-1.5">
                                                                 <div class="flex items-center justify-between text-xs gap-1">
                                                                     <strong class="font-bold whitespace-nowrap text-xs" :class="{
-                                                                        'text-rose-600': q.incorrect_rate >= 50,
-                                                                        'text-amber-600': q.incorrect_rate >= 25 && q.incorrect_rate < 50,
-                                                                        'text-emerald-600': q.incorrect_rate < 25
+                                                                        'text-rose-700': q.incorrect_rate >= 50,
+                                                                        'text-amber-800': q.incorrect_rate >= 25 && q.incorrect_rate < 50,
+                                                                        'text-emerald-800': q.incorrect_rate < 25
                                                                     }" x-text="q.incorrect_rate + '% incorrect'"></strong>
                                                                     <span class="text-2xs text-muted font-medium whitespace-nowrap" x-text="q.incorrect_count + '/' + q.total_presented + ' students'"></span>
                                                                 </div>
@@ -620,6 +642,7 @@
                                     No questions match the selected filters.
                                 </div>
                             </template>
+                        </div>
                         </div>
 
                         <!-- Modal for Question Inspection -->
@@ -697,8 +720,29 @@
                                         </div>
                                     </div>
 
+                                    <!-- Modal Loading Indicator -->
+                                    <template x-if="activeQuestion && activeQuestion.loading_details">
+                                        <div class="py-20 text-center text-xs text-slate-500 font-medium">
+                                            <svg class="animate-spin h-6 w-6 mx-auto mb-2 text-blue-600" viewBox="0 0 24 24" fill="none"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path></svg>
+                                            <span>Loading question content and student responses...</span>
+                                        </div>
+                                    </template>
+
+                                    <!-- Modal Error Indicator -->
+                                    <template x-if="activeQuestion && activeQuestion.load_error && !activeQuestion.loading_details">
+                                        <div class="py-16 text-center p-6">
+                                            <div class="p-4 max-w-md mx-auto rounded-xl border border-rose-200 bg-rose-50/80 text-rose-800">
+                                                <p class="text-xs font-semibold mb-3" x-text="activeQuestion.load_error"></p>
+                                                <button type="button" @click="activeQuestion.details_loaded = false; openInspection(activeQuestion)"
+                                                        class="px-3.5 py-1.5 text-xs font-semibold rounded-lg bg-rose-700 hover:bg-rose-800 text-white transition shadow-2xs cursor-pointer">
+                                                    Retry loading details
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </template>
+
                                     <!-- Modal Body: 2-Column Split -->
-                                    <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+                                    <div x-show="activeQuestion && !activeQuestion.loading_details && !activeQuestion.load_error" class="grid grid-cols-1 lg:grid-cols-12 gap-6">
                                         <!-- Left Column: Passage, Question & Choices & Explanation -->
                                         <div class="lg:col-span-7 space-y-4">
                                             <!-- Passage if available -->
@@ -733,12 +777,16 @@
                                                 <div class="space-y-2">
                                                     <div class="flex items-center justify-between">
                                                         <span class="text-2xs font-bold text-slate-500 uppercase tracking-wider">Answer Options</span>
-                                                        <span class="text-3xs text-slate-400">Click option to filter responses</span>
+                                                        <span class="text-3xs text-slate-600">Click option to filter responses</span>
                                                     </div>
                                                     <div class="space-y-2">
                                                         <template x-for="c in activeChoiceBreakdown.choices" :key="c.label">
-                                                            <div @click="inspectStudentFilter = (inspectStudentFilter === c.label ? 'all' : c.label)"
-                                                                 class="p-3 rounded-xl border transition-all cursor-pointer select-none relative overflow-hidden"
+                                                            <div role="button" tabindex="0"
+                                                                 @click="inspectStudentFilter = (inspectStudentFilter === c.label ? 'all' : c.label)"
+                                                                 @keydown.enter.prevent="inspectStudentFilter = (inspectStudentFilter === c.label ? 'all' : c.label)"
+                                                                 @keydown.space.prevent="inspectStudentFilter = (inspectStudentFilter === c.label ? 'all' : c.label)"
+                                                                 :aria-pressed="inspectStudentFilter === c.label ? 'true' : 'false'"
+                                                                 class="p-3 rounded-xl border transition-all cursor-pointer select-none relative overflow-hidden focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
                                                                  :class="{
                                                                      'bg-emerald-50/70 border-emerald-300 ring-2 ring-emerald-500/20': c.is_correct && inspectStudentFilter !== c.label,
                                                                      'bg-white border-slate-200 hover:border-slate-300 hover:bg-slate-50/60': !c.is_correct && inspectStudentFilter !== c.label,
@@ -751,7 +799,7 @@
 
                                                                 <div class="relative flex items-start gap-3">
                                                                     <span class="w-6 h-6 rounded-full flex items-center justify-center font-mono font-bold text-xs shrink-0 shadow-2xs"
-                                                                          :class="c.is_correct ? 'bg-emerald-600 text-white' : 'bg-slate-100 text-slate-700 border border-slate-300'"
+                                                                          :class="c.is_correct ? 'bg-emerald-800 text-white' : 'bg-slate-100 text-slate-700 border border-slate-300'"
                                                                           x-text="c.label"></span>
                                                                     <div class="text-xs pt-0.5 leading-relaxed flex-1 math-content"
                                                                          :class="c.is_correct ? 'text-emerald-950 font-medium' : 'text-slate-800'"
@@ -761,7 +809,7 @@
                                                                               :class="c.is_correct ? 'bg-emerald-100 text-emerald-800 border-emerald-200' : 'bg-slate-100 text-slate-600 border-slate-200'"
                                                                               x-text="c.count + ' (' + c.pct + '%)'"></span>
                                                                         <template x-if="c.is_correct">
-                                                                            <span class="text-2xs font-bold px-2 py-0.5 rounded bg-emerald-600 text-white shadow-2xs">Correct</span>
+                                                                            <span class="text-2xs font-bold px-2 py-0.5 rounded bg-emerald-800 text-white shadow-2xs">Correct</span>
                                                                         </template>
                                                                     </div>
                                                                 </div>
@@ -821,11 +869,11 @@
                                                 <div class="flex items-center justify-between pb-3 border-b border-slate-100">
                                                     <div>
                                                         <h4 class="text-xs font-bold uppercase tracking-wider text-slate-800 m-0">Student Responses</h4>
-                                                        <div class="text-3xs text-slate-500 mt-0.5" x-text="activeQuestion.students.length + ' total student responses'"></div>
+                                                        <div class="text-3xs text-slate-500 mt-0.5" x-text="((activeQuestion.students || []).length) + ' total student responses'"></div>
                                                     </div>
                                                     <div class="flex items-center gap-1.5">
                                                         <span class="text-3xs font-bold px-2 py-0.5 rounded-full"
-                                                              :class="activeQuestion.incorrect_rate >= 50 ? 'bg-rose-50 text-rose-700 border border-rose-200' : 'bg-emerald-50 text-emerald-700 border border-emerald-200'"
+                                                              :class="activeQuestion.incorrect_rate >= 50 ? 'bg-rose-50 text-rose-800 border border-rose-300' : 'bg-emerald-50 text-emerald-800 border border-emerald-300'"
                                                               x-text="activeQuestion.incorrect_rate + '% Missed'"></span>
                                                     </div>
                                                 </div>
@@ -835,22 +883,32 @@
                                                     <div class="space-y-1.5">
                                                         <div class="text-2xs font-semibold text-slate-600 flex justify-between">
                                                             <span>Choice Distribution</span>
-                                                            <span class="text-3xs text-slate-400" x-text="activeQuestion.correct_count + ' correct · ' + activeQuestion.incorrect_count + ' missed'"></span>
+                                                            <span class="text-3xs text-slate-600" x-text="activeQuestion.correct_count + ' correct · ' + activeQuestion.incorrect_count + ' missed'"></span>
                                                         </div>
                                                         <div class="h-3 w-full bg-slate-100 rounded-full overflow-hidden flex shadow-inner">
                                                             <template x-for="c in activeChoiceBreakdown.choices" :key="c.label">
                                                                 <div x-show="c.pct > 0"
+                                                                     role="button" tabindex="0"
                                                                      :style="'width: ' + c.pct + '%'"
                                                                      :title="'Choice ' + c.label + ': ' + c.count + ' students (' + c.pct + '%)'"
-                                                                     class="h-full transition-all duration-300 relative group cursor-pointer"
+                                                                     :aria-label="'Filter by Choice ' + c.label + ': ' + c.count + ' students'"
+                                                                     :aria-pressed="inspectStudentFilter === c.label ? 'true' : 'false'"
+                                                                     class="h-full transition-all duration-300 relative group cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
                                                                      :class="c.is_correct ? 'bg-emerald-500' : 'bg-rose-400/80'"
+                                                                     @keydown.enter.prevent="inspectStudentFilter = (inspectStudentFilter === c.label ? 'all' : c.label)"
+                                                                     @keydown.space.prevent="inspectStudentFilter = (inspectStudentFilter === c.label ? 'all' : c.label)"
                                                                      @click="inspectStudentFilter = (inspectStudentFilter === c.label ? 'all' : c.label)">
                                                                 </div>
                                                             </template>
                                                             <div x-show="activeChoiceBreakdown.omitted && activeChoiceBreakdown.omitted.pct > 0"
+                                                                 role="button" tabindex="0"
                                                                  :style="'width: ' + activeChoiceBreakdown.omitted.pct + '%'"
                                                                  :title="'Omitted: ' + activeChoiceBreakdown.omitted.count + ' (' + activeChoiceBreakdown.omitted.pct + '%)'"
-                                                                 class="h-full bg-slate-300 transition-all duration-300 cursor-pointer"
+                                                                 :aria-label="'Filter by Omitted: ' + activeChoiceBreakdown.omitted.count + ' students'"
+                                                                 :aria-pressed="inspectStudentFilter === 'omitted' ? 'true' : 'false'"
+                                                                 class="h-full bg-slate-300 transition-all duration-300 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
+                                                                 @keydown.enter.prevent="inspectStudentFilter = (inspectStudentFilter === 'omitted' ? 'all' : 'omitted')"
+                                                                 @keydown.space.prevent="inspectStudentFilter = (inspectStudentFilter === 'omitted' ? 'all' : 'omitted')"
                                                                  @click="inspectStudentFilter = (inspectStudentFilter === 'omitted' ? 'all' : 'omitted')">
                                                             </div>
                                                         </div>
@@ -860,17 +918,20 @@
                                                 <!-- Filter Pills -->
                                                 <div class="flex flex-wrap items-center gap-1.5 text-xs font-semibold">
                                                     <button type="button" @click="inspectStudentFilter = 'all'"
+                                                            :aria-pressed="inspectStudentFilter === 'all' ? 'true' : 'false'"
                                                             :class="inspectStudentFilter === 'all' ? 'bg-slate-800 text-white shadow-2xs' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'"
                                                             class="px-2.5 py-1 rounded-lg text-2xs transition-colors cursor-pointer">
-                                                        All (<span x-text="activeQuestion.students.length"></span>)
+                                                        All (<span x-text="(activeQuestion.students || []).length"></span>)
                                                     </button>
                                                     <button type="button" @click="inspectStudentFilter = 'correct'"
-                                                            :class="inspectStudentFilter === 'correct' ? 'bg-emerald-600 text-white shadow-2xs' : 'bg-emerald-50 text-emerald-700 border border-emerald-200 hover:bg-emerald-100'"
+                                                            :aria-pressed="inspectStudentFilter === 'correct' ? 'true' : 'false'"
+                                                            :class="inspectStudentFilter === 'correct' ? 'bg-emerald-800 text-white shadow-2xs' : 'bg-emerald-50 text-emerald-800 border border-emerald-300 hover:bg-emerald-100'"
                                                             class="px-2.5 py-1 rounded-lg text-2xs transition-colors cursor-pointer">
                                                         Correct (<span x-text="activeQuestion.correct_count"></span>)
                                                     </button>
                                                     <button type="button" @click="inspectStudentFilter = 'missed'"
-                                                            :class="inspectStudentFilter === 'missed' ? 'bg-rose-600 text-white shadow-2xs' : 'bg-rose-50 text-rose-700 border border-rose-200 hover:bg-rose-100'"
+                                                            :aria-pressed="inspectStudentFilter === 'missed' ? 'true' : 'false'"
+                                                            :class="inspectStudentFilter === 'missed' ? 'bg-rose-700 text-white shadow-2xs' : 'bg-rose-50 text-rose-800 border border-rose-300 hover:bg-rose-100'"
                                                             class="px-2.5 py-1 rounded-lg text-2xs transition-colors cursor-pointer">
                                                         Missed (<span x-text="activeQuestion.incorrect_count"></span>)
                                                     </button>
@@ -878,10 +939,20 @@
                                                         <div class="flex items-center gap-1">
                                                             <template x-for="c in activeChoiceBreakdown.choices" :key="c.label">
                                                                 <button type="button" @click="inspectStudentFilter = (inspectStudentFilter === c.label ? 'all' : c.label)"
+                                                                        :aria-pressed="inspectStudentFilter === c.label ? 'true' : 'false'"
                                                                         :class="inspectStudentFilter === c.label ? 'bg-blue-600 text-white shadow-2xs' : 'bg-white text-slate-700 border border-slate-200 hover:bg-slate-50'"
                                                                         class="px-2 py-0.5 rounded text-2xs font-mono transition-colors cursor-pointer"
                                                                         :title="'Filter by Choice ' + c.label">
                                                                     <span x-text="c.label + ' (' + c.count + ')'"></span>
+                                                                </button>
+                                                            </template>
+                                                            <template x-if="activeChoiceBreakdown.omitted && activeChoiceBreakdown.omitted.count > 0">
+                                                                <button type="button" @click="inspectStudentFilter = (inspectStudentFilter === 'omitted' ? 'all' : 'omitted')"
+                                                                        :aria-pressed="inspectStudentFilter === 'omitted' ? 'true' : 'false'"
+                                                                        :class="inspectStudentFilter === 'omitted' ? 'bg-slate-700 text-white shadow-2xs' : 'bg-white text-slate-700 border border-slate-200 hover:bg-slate-50'"
+                                                                        class="px-2 py-0.5 rounded text-2xs font-mono transition-colors cursor-pointer"
+                                                                        :title="'Filter by Omitted (' + activeChoiceBreakdown.omitted.count + ')'">
+                                                                    <span x-text="'Omitted (' + activeChoiceBreakdown.omitted.count + ')'"></span>
                                                                 </button>
                                                             </template>
                                                         </div>
@@ -933,7 +1004,7 @@
                                                     <template x-if="filteredInspectStudents.length === 0">
                                                         <div class="text-center py-8 text-xs text-slate-500 bg-slate-50/50 rounded-xl border border-dashed border-slate-200">
                                                             <p class="font-semibold m-0">No matching students found</p>
-                                                            <p class="text-3xs text-slate-400 mt-1 m-0">Try changing your filter or search query</p>
+                                                            <p class="text-3xs text-slate-600 mt-1 m-0">Try changing your filter or search query</p>
                                                         </div>
                                                     </template>
                                                 </div>
@@ -957,10 +1028,12 @@
                                 </div>
                             </template>
                         </x-ui.modal>
+                            </div>
+                        </template>
                     </div>
 
                     <!-- SETTINGS PANEL -->
-                    <div class="section-panel" :class="{ 'active': activeTab === 'settings' }">
+                    <div id="panel-settings" role="tabpanel" aria-labelledby="tab-settings" class="section-panel" :class="{ 'active': activeTab === 'settings' }">
                         @if ($assignment->classroom->status === 'active')
                             <div class="settings-card" style="margin-bottom: 16px;">
                                 <h3 class="settings-title lg">Edit details</h3>
@@ -979,12 +1052,12 @@
                                     </label>
                                     <div class="space-y-3 pt-3 border-t border-slate-200/70">
                                         <div class="flex items-center justify-between">
-                                            <div class="flex items-center gap-1.5 font-bold text-2xs uppercase tracking-wider text-slate-500">
-                                                <x-ui.icon name="calendar" class="w-3.5 h-3.5 text-slate-400" />
+                                            <div class="flex items-center gap-1.5 font-bold text-2xs uppercase tracking-wider text-slate-700">
+                                                <x-ui.icon name="calendar" class="w-3.5 h-3.5 text-slate-500" />
                                                 <span>Schedule &amp; Availability</span>
                                             </div>
-                                            <span class="inline-flex items-center gap-1 text-3xs font-medium text-slate-500 bg-slate-100 border border-slate-200/80 rounded-md px-1.5 py-0.5" title="All schedule dates and deadlines use this timezone">
-                                                <x-ui.icon name="clock" class="w-3 h-3 text-slate-400" />
+                                            <span class="inline-flex items-center gap-1 text-3xs font-semibold text-slate-700 bg-slate-100 border border-slate-300 rounded-md px-1.5 py-0.5" title="All schedule dates and deadlines use this timezone">
+                                                <x-ui.icon name="clock" class="w-3 h-3 text-slate-500" />
                                                 <span>Asia/Ho_Chi_Minh</span>
                                             </span>
                                         </div>
@@ -992,10 +1065,11 @@
                                         <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                                             <div>
                                                 <div class="flex items-center justify-between mb-1">
-                                                    <label for="settings_available_at" class="font-semibold text-3xs uppercase tracking-wider text-slate-500">{{ __('classroom.available_from') }}</label>
+                                                    <label id="label_settings_available_at" for="settings_available_at" class="font-semibold text-3xs uppercase tracking-wider text-slate-700">{{ __('classroom.available_from') }}</label>
                                                     <button type="button"
                                                         onclick="window.clearDatePicker?.('settings_available_at')"
-                                                        class="text-3xs text-slate-400 hover:text-slate-600 font-medium transition cursor-pointer">
+                                                        aria-label="Clear available from date"
+                                                        class="min-h-[28px] min-w-[36px] inline-flex items-center justify-end px-1.5 py-0.5 rounded text-3xs text-slate-600 hover:text-slate-900 font-medium transition cursor-pointer hover:bg-slate-100">
                                                         Clear
                                                     </button>
                                                 </div>
@@ -1006,19 +1080,22 @@
                                                         class="datetime-picker w-full text-xs bg-white border border-slate-300 rounded-lg px-2.5 py-1.5"
                                                         placeholder="{{ __('classroom.open_immediately') }}"
                                                         autocomplete="off"
+                                                        aria-labelledby="label_settings_available_at"
+                                                        aria-describedby="desc_settings_available_at"
                                                         data-allow-past="true"
                                                         data-window-role="start"
                                                         data-window-pair="settings_due_at">
                                                 </div>
-                                                <p class="text-3xs text-slate-400 mt-1">Students can start after this time. Leave empty to open immediately.</p>
+                                                <p id="desc_settings_available_at" class="text-3xs text-slate-600 mt-1">Students can start after this time. Leave empty to open immediately.</p>
                                             </div>
 
                                             <div>
                                                 <div class="flex items-center justify-between mb-1">
-                                                    <label for="settings_due_at" class="font-semibold text-3xs uppercase tracking-wider text-slate-500">{{ __('classroom.due_at') }}</label>
+                                                    <label id="label_settings_due_at" for="settings_due_at" class="font-semibold text-3xs uppercase tracking-wider text-slate-700">{{ __('classroom.due_at') }}</label>
                                                     <button type="button"
                                                         onclick="window.clearDatePicker?.('settings_due_at')"
-                                                        class="text-3xs text-slate-400 hover:text-slate-600 font-medium transition cursor-pointer">
+                                                        aria-label="Clear due at date"
+                                                        class="min-h-[28px] min-w-[36px] inline-flex items-center justify-end px-1.5 py-0.5 rounded text-3xs text-slate-600 hover:text-slate-900 font-medium transition cursor-pointer hover:bg-slate-100">
                                                         Clear
                                                     </button>
                                                 </div>
@@ -1029,11 +1106,13 @@
                                                         class="datetime-picker w-full text-xs bg-white border border-slate-300 rounded-lg px-2.5 py-1.5"
                                                         placeholder="{{ __('classroom.no_deadline') }}"
                                                         autocomplete="off"
+                                                        aria-labelledby="label_settings_due_at"
+                                                        aria-describedby="desc_settings_due_at"
                                                         data-allow-past="true"
                                                         data-window-role="end"
                                                         data-window-pair="settings_available_at">
                                                 </div>
-                                                <p class="text-3xs text-slate-400 mt-1">Submissions lock or mark late after this time. Leave empty for no deadline.</p>
+                                                <p id="desc_settings_due_at" class="text-3xs text-slate-600 mt-1">Submissions lock or mark late after this time. Leave empty for no deadline.</p>
                                             </div>
                                         </div>
                                     </div>
@@ -1042,13 +1121,13 @@
                             </div>
 
                             <div class="settings-card border border-rose-200 bg-rose-50/20 rounded-xl p-5">
-                                <h3 class="settings-title lg text-rose-600 mb-1">Danger Zone</h3>
-                                <p class="text-xs text-slate-500 mb-4">Once deleted, student results remain in the database but are detached from this classroom assignment.</p>
+                                <h3 class="settings-title lg text-rose-700 mb-1">Danger Zone</h3>
+                                <p class="text-xs text-slate-600 mb-4">Once deleted, student results remain in the database but are detached from this classroom assignment.</p>
                                 <form method="POST" action="{{ route('teacher.assignments.destroy', $assignment) }}"
                                     onsubmit="return confirm('Delete this assignment? Student attempt records will be detached.');">
                                     @csrf
                                     @method('DELETE')
-                                    <button type="submit" class="px-4 py-2 text-xs font-bold rounded-lg bg-rose-600 hover:bg-rose-700 text-white cursor-pointer transition shadow-xs">Delete assignment</button>
+                                    <button type="submit" class="px-4 py-2 text-xs font-bold rounded-lg bg-rose-700 hover:bg-rose-800 text-white cursor-pointer transition shadow-xs">Delete assignment</button>
                                 </form>
                             </div>
                         @else

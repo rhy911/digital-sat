@@ -94,7 +94,7 @@ class AssignmentController extends Controller
             ->latest('updated_at')
             ->get();
 
-        $report = $reports->build($assignment);
+        $report = $reports->build($assignment, perPage: 0, includeAnalysis: false);
         $origin = request('from') === 'workspace' ? 'workspace' : 'class';
         return view('teacher.assignments.show', compact('assignment', 'assignments', 'report', 'origin'));
     }
@@ -102,7 +102,7 @@ class AssignmentController extends Controller
     public function exportCsv(Assignment $assignment, AssignmentReportService $reports)
     {
         $this->authorize('view', $assignment);
-        $report = $reports->build($assignment, perPage: null);
+        $report = $reports->build($assignment, perPage: null, includeAnalysis: false);
         $filename = sprintf('assignment-results-%s.csv', \Illuminate\Support\Str::slug($assignment->title ?: 'assignment'));
 
         return response()->streamDownload(function () use ($report, $assignment) {
@@ -150,9 +150,21 @@ class AssignmentController extends Controller
         $report = $reports->build($assignment, perPage: null);
         $filename = sprintf('assignment-results-%s.pdf', \Illuminate\Support\Str::slug($assignment->title ?: 'assignment'));
 
-        return \Barryvdh\DomPDF\Facade\Pdf::loadView('teacher.assignments.export-print', compact('assignment', 'report'))
-            ->setPaper('letter', 'landscape')
-            ->stream($filename);
+        $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('teacher.assignments.export-print', compact('assignment', 'report'))
+            ->setPaper('letter', 'landscape');
+
+        $pdf->render();
+        $canvas = $pdf->getDomPDF()->getCanvas();
+        $font = $pdf->getDomPDF()->getFontMetrics()->getFont('DejaVu Sans', 'normal');
+        $size = 8.5;
+        $color = [0.45, 0.52, 0.62]; // slate-500
+        $titleText = 'Digital SAT · ' . ($assignment->title ?: 'Assignment') . ' · Class Performance Report';
+        $pageText = 'Page {PAGE_NUM} of {PAGE_COUNT}';
+
+        $canvas->page_text(28, 584, $titleText, $font, $size, $color);
+        $canvas->page_text(700, 584, $pageText, $font, $size, $color);
+
+        return $pdf->stream($filename);
     }
 
     public function attemptMonitor(Request $request, Assignment $assignment, User $student, AssignmentReportService $reports)
@@ -283,5 +295,19 @@ class AssignmentController extends Controller
         $classroom = $assignment->classroom;
         $service->delete($assignment);
         return redirect()->route('teacher.classes.show', $classroom)->with('success', 'Assignment deleted.');
+    }
+
+    public function analysisData(Assignment $assignment, AssignmentReportService $reports)
+    {
+        $this->authorize('view', $assignment);
+        return response()->json($reports->buildAnalysisSummary($assignment));
+    }
+
+    public function questionInspection(Assignment $assignment, \App\Models\Question $question, AssignmentReportService $reports)
+    {
+        $this->authorize('view', $assignment);
+        abort_unless($reports->assignmentContainsQuestion($assignment, $question), 404);
+
+        return response()->json($reports->buildQuestionInspection($assignment, $question));
     }
 }

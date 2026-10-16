@@ -18,118 +18,139 @@
     </div>
 
     <div wire:loading.class="opacity-50 pointer-events-none" class="transition-opacity duration-150">
-        <table>
-            <thead>
-                <tr>
-                    <th>
-                        <button type="button" wire:click="sortBy('name')" class="inline-flex items-center gap-1.5 hover:text-slate-900 cursor-pointer font-semibold {{ $sortField === 'name' ? 'text-brand' : '' }}">
-                            <span>Student</span>
-                            @if ($sortField === 'name')
-                                <span class="text-xs leading-none">{{ $sortDirection === 'asc' ? '↑' : '↓' }}</span>
-                            @endif
-                        </button>
-                    </th>
-                    <th>
-                        <button type="button" wire:click="sortBy('status')" class="inline-flex items-center gap-1.5 hover:text-slate-900 cursor-pointer font-semibold {{ $sortField === 'status' ? 'text-brand' : '' }}">
-                            <span>Status</span>
-                            @if ($sortField === 'status')
-                                <span class="text-xs leading-none">{{ $sortDirection === 'asc' ? '↑' : '↓' }}</span>
-                            @endif
-                        </button>
-                    </th>
-                    <th class="text-right">
-                        <button type="button" wire:click="sortBy('attempts')" class="inline-flex items-center gap-1.5 hover:text-slate-900 cursor-pointer font-semibold ml-auto {{ $sortField === 'attempts' ? 'text-brand' : '' }}">
-                            <span>Attempts</span>
-                            @if ($sortField === 'attempts')
-                                <span class="text-xs leading-none">{{ $sortDirection === 'asc' ? '↑' : '↓' }}</span>
-                            @endif
-                        </button>
-                    </th>
-                    <th class="text-right">
-                        <button type="button" wire:click="sortBy('score')" class="inline-flex items-center gap-1.5 hover:text-slate-900 cursor-pointer font-semibold ml-auto {{ $sortField === 'score' ? 'text-brand' : '' }}">
-                            <span>Best score</span>
-                            @if ($sortField === 'score')
-                                <span class="text-xs leading-none">{{ $sortDirection === 'asc' ? '↑' : '↓' }}</span>
-                            @endif
-                        </button>
-                    </th>
-                    @if($assignment->assign_type !== 'section')
-                        <th class="text-right">
-                            <button type="button" wire:click="sortBy('rw')" class="inline-flex items-center gap-1.5 hover:text-slate-900 cursor-pointer font-semibold ml-auto {{ $sortField === 'rw' ? 'text-brand' : '' }}">
-                                <span>R&amp;W Score</span>
-                                @if ($sortField === 'rw')
-                                    <span class="text-xs leading-none">{{ $sortDirection === 'asc' ? '↑' : '↓' }}</span>
-                                @endif
-                            </button>
-                        </th>
-                        <th class="text-right">
-                            <button type="button" wire:click="sortBy('math')" class="inline-flex items-center gap-1.5 hover:text-slate-900 cursor-pointer font-semibold ml-auto {{ $sortField === 'math' ? 'text-brand' : '' }}">
-                                <span>Math Score</span>
-                                @if ($sortField === 'math')
-                                    <span class="text-xs leading-none">{{ $sortDirection === 'asc' ? '↑' : '↓' }}</span>
-                                @endif
-                            </button>
-                        </th>
-                    @endif
-                    <th class="text-right">Actions</th>
-                </tr>
-            </thead>
-            <tbody wire:loading.class="opacity-50 pointer-events-none transition-opacity">
-                @forelse($report['rows'] as $row)
+        <div class="table-responsive-wrapper" tabindex="0" role="region" aria-label="Student results table">
+            <table>
+                <thead>
                     <tr>
-                        <td class="name-cell">
-                            <x-ui.person-cell :name="$row['recipient']->student->name"
-                                :email="$row['recipient']->student->email"
-                                :initials="$row['recipient']->student->initials" />
-                        </td>
-                        <td>
-                            <span class="status-pill {{ $row['recipient']->status === 'withdrawn' ? 'danger' : ($row['in_progress'] ? 'in-progress' : ($row['best'] ? 'ok' : 'pending')) }}">
-                                <span class="d"></span>
-                                {{ $row['recipient']->status === 'withdrawn' ? 'Withdrawn' : ($row['in_progress'] ? 'In progress' : ($row['best'] ? ($row['late'] ? 'Completed late' : 'Completed') : 'Not started')) }}
-                            </span>
-                        </td>
-                        <td class="text-right tabular-nums font-mono">
-                            @php $maxAllowed = $row['recipient']->maxAllowedAttempts(); @endphp
-                            {{ $row['completed_count'] }} / {{ $maxAllowed }}
-                            @if ($row['recipient']->extra_attempts > 0)
-                                <span class="inline-flex items-center gap-1 text-3xs font-semibold px-1.5 py-0.5 rounded bg-emerald-50 text-emerald-700 border border-emerald-200">+{{ $row['recipient']->extra_attempts }} bonus</span>
-                            @endif
-                        </td>
-                        <td class="text-right tabular-nums font-mono">
-                            @if ($row['best'])
-                                @if ($assignment->assign_type === 'section')
-                                    <strong>{{ $assignment->section_type === 'reading_writing' ? ($row['best']->score_reading_writing ?? '—') : ($row['best']->score_math ?? '—') }} / 800</strong>
-                                @else
-                                    <strong>{{ $row['best']->total_score ?? '—' }} / 1600</strong>
+                        <th aria-sort="{{ $sortField === 'name' ? ($sortDirection === 'asc' ? 'ascending' : 'descending') : 'none' }}">
+                            <button type="button" wire:click="sortBy('name')" class="inline-flex items-center gap-1.5 hover:text-slate-900 cursor-pointer font-semibold {{ $sortField === 'name' ? 'text-brand' : '' }}">
+                                <span>Student</span>
+                                @if ($sortField === 'name')
+                                    <span class="text-xs leading-none">{{ $sortDirection === 'asc' ? '↑' : '↓' }}</span>
                                 @endif
-                                <span class="block text-3xs font-medium text-slate-600 mt-0.5">
-                                    Correct: {{ $row['best']->correct_answers_count }}/{{ $row['best']->total_questions_count }}
-                                </span>
-                            @else
-                                —
-                            @endif
-                        </td>
+                            </button>
+                        </th>
+                        <th aria-sort="{{ $sortField === 'status' ? ($sortDirection === 'asc' ? 'ascending' : 'descending') : 'none' }}">
+                            <button type="button" wire:click="sortBy('status')" class="inline-flex items-center gap-1.5 hover:text-slate-900 cursor-pointer font-semibold {{ $sortField === 'status' ? 'text-brand' : '' }}">
+                                <span>Status</span>
+                                @if ($sortField === 'status')
+                                    <span class="text-xs leading-none">{{ $sortDirection === 'asc' ? '↑' : '↓' }}</span>
+                                @endif
+                            </button>
+                        </th>
+                        <th class="text-right" aria-sort="{{ $sortField === 'attempts' ? ($sortDirection === 'asc' ? 'ascending' : 'descending') : 'none' }}">
+                            <button type="button" wire:click="sortBy('attempts')" class="inline-flex items-center gap-1.5 hover:text-slate-900 cursor-pointer font-semibold ml-auto {{ $sortField === 'attempts' ? 'text-brand' : '' }}">
+                                <span>Attempts</span>
+                                @if ($sortField === 'attempts')
+                                    <span class="text-xs leading-none">{{ $sortDirection === 'asc' ? '↑' : '↓' }}</span>
+                                @endif
+                            </button>
+                        </th>
+                        <th class="text-right" aria-sort="{{ $sortField === 'score' ? ($sortDirection === 'asc' ? 'ascending' : 'descending') : 'none' }}">
+                            <button type="button" wire:click="sortBy('score')" class="inline-flex items-center gap-1.5 hover:text-slate-900 cursor-pointer font-semibold ml-auto {{ $sortField === 'score' ? 'text-brand' : '' }}">
+                                <span>Best score</span>
+                                @if ($sortField === 'score')
+                                    <span class="text-xs leading-none">{{ $sortDirection === 'asc' ? '↑' : '↓' }}</span>
+                                @endif
+                            </button>
+                        </th>
                         @if($assignment->assign_type !== 'section')
-                            <td class="text-right tabular-nums font-mono">{{ $row['best']?->score_reading_writing ?? '—' }}</td>
-                            <td class="text-right tabular-nums font-mono">{{ $row['best']?->score_math ?? '—' }}</td>
+                            <th class="text-right" aria-sort="{{ $sortField === 'rw' ? ($sortDirection === 'asc' ? 'ascending' : 'descending') : 'none' }}">
+                                <button type="button" wire:click="sortBy('rw')" class="inline-flex items-center gap-1.5 hover:text-slate-900 cursor-pointer font-semibold ml-auto {{ $sortField === 'rw' ? 'text-brand' : '' }}">
+                                    <span>R&amp;W Score</span>
+                                    @if ($sortField === 'rw')
+                                        <span class="text-xs leading-none">{{ $sortDirection === 'asc' ? '↑' : '↓' }}</span>
+                                    @endif
+                                </button>
+                            </th>
+                            <th class="text-right" aria-sort="{{ $sortField === 'math' ? ($sortDirection === 'asc' ? 'ascending' : 'descending') : 'none' }}">
+                                <button type="button" wire:click="sortBy('math')" class="inline-flex items-center gap-1.5 hover:text-slate-900 cursor-pointer font-semibold ml-auto {{ $sortField === 'math' ? 'text-brand' : '' }}">
+                                    <span>Math Score</span>
+                                    @if ($sortField === 'math')
+                                        <span class="text-xs leading-none">{{ $sortDirection === 'asc' ? '↑' : '↓' }}</span>
+                                    @endif
+                                </button>
+                            </th>
                         @endif
-                        <td class="text-right">
-                            @if ($row['attempts']->isNotEmpty())
-                                <a href="{{ route('teacher.assignments.students.show', [$assignment, $row['recipient']->student]) }}" class="link-action">
-                                    View attempts
-                                </a>
-                            @else
-                                —
+                        <th class="text-right">Actions</th>
+                    </tr>
+                </thead>
+                <tbody wire:loading.class="opacity-50 pointer-events-none transition-opacity">
+                    @forelse($report['rows'] as $row)
+                        <tr>
+                            <td class="name-cell">
+                                <x-ui.person-cell :name="$row['recipient']->student->name"
+                                    :email="$row['recipient']->student->email"
+                                    :initials="$row['recipient']->student->initials" />
+                            </td>
+                            <td>
+                                @php
+                                    $rowStatus = $row['status'] ?? \App\Support\AssignmentStatusResolver::resolve($assignment, $row['attempts'], $row['recipient']);
+                                    $pillClass = match ($rowStatus['variant']) {
+                                        'success' => 'ok',
+                                        'brand' => 'in-progress',
+                                        'danger' => 'danger',
+                                        'neutral' => 'draft',
+                                        default => 'pending',
+                                    };
+                                @endphp
+                                <span class="status-pill {{ $pillClass }}">
+                                    <span class="d"></span>
+                                    {{ $rowStatus['state'] }}
+                                </span>
+                            </td>
+                            <td class="text-right tabular-nums font-mono">
+                                @php $maxAllowed = $row['recipient']->maxAllowedAttempts(); @endphp
+                                {{ $row['completed_count'] }} / {{ $maxAllowed }}
+                                @if ($row['recipient']->extra_attempts > 0)
+                                    <span class="inline-flex items-center gap-1 text-3xs font-semibold px-1.5 py-0.5 rounded bg-emerald-50 text-emerald-700 border border-emerald-200">+{{ $row['recipient']->extra_attempts }} bonus</span>
+                                @endif
+                            </td>
+                            <td class="text-right tabular-nums font-mono">
+                                @if ($row['best'])
+                                    @if ($assignment->assign_type === 'section')
+                                        <strong>{{ $assignment->section_type === 'reading_writing' ? ($row['best']->score_reading_writing ?? '—') : ($row['best']->score_math ?? '—') }} / 800</strong>
+                                    @else
+                                        <strong>{{ $row['best']->total_score ?? '—' }} / 1600</strong>
+                                    @endif
+                                    <span class="block text-3xs font-medium text-slate-600 mt-0.5">
+                                        Correct: {{ $row['best']->correct_answers_count }}/{{ $row['best']->total_questions_count }}
+                                    </span>
+                                @else
+                                    —
+                                @endif
+                            </td>
+                            @if($assignment->assign_type !== 'section')
+                                <td class="text-right tabular-nums font-mono">{{ $row['best']?->score_reading_writing ?? '—' }}</td>
+                                <td class="text-right tabular-nums font-mono">{{ $row['best']?->score_math ?? '—' }}</td>
                             @endif
-                        </td>
-                    </tr>
-                @empty
-                    <tr>
-                        <td colspan="{{ $assignment->assign_type === 'section' ? 5 : 7 }}" class="empty-row">No recipients yet.</td>
-                    </tr>
-                @endforelse
-            </tbody>
-        </table>
+                            <td class="text-right">
+                                @if ($row['attempts']->isNotEmpty())
+                                    <a href="{{ route('teacher.assignments.students.show', [$assignment, $row['recipient']->student]) }}" class="link-action">
+                                        View attempts
+                                    </a>
+                                @else
+                                    —
+                                @endif
+                            </td>
+                        </tr>
+                    @empty
+                        <tr>
+                            <td colspan="{{ $assignment->assign_type === 'section' ? 5 : 7 }}" class="empty-row py-8 text-center text-slate-500">
+                                @if (trim($search) !== '')
+                                    <p class="text-sm font-medium text-slate-700 m-0">No students match &ldquo;{{ $search }}&rdquo;</p>
+                                    <button type="button" wire:click="$set('search', '')" class="mt-2 text-xs font-semibold text-brand hover:underline cursor-pointer">
+                                        Clear search
+                                    </button>
+                                @else
+                                    <p class="text-sm font-medium text-slate-700 m-0">No recipients yet.</p>
+                                @endif
+                            </td>
+                        </tr>
+                    @endforelse
+                </tbody>
+            </table>
+        </div>
     </div>
 
     @if (isset($report['paginator']) && $report['paginator'] && $report['paginator']->hasPages())

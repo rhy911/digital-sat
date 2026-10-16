@@ -4,8 +4,10 @@ namespace App\Services;
 
 use App\Models\Assignment;
 use App\Models\AssignmentRecipient;
+use App\Models\Question;
 use App\Models\UserTest;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 
 class AssignmentReportService
 {
@@ -183,7 +185,9 @@ class AssignmentReportService
         }
 
         $recipientsPaginator = null;
-        if ($perPage !== null) {
+        if ($perPage === 0) {
+            $rows = collect();
+        } elseif ($perPage !== null) {
             $currentPage = $page ?? \Illuminate\Pagination\Paginator::resolveCurrentPage() ?: 1;
             $totalCount = (clone $recipientsQuery)->reorder()->count('assignment_recipients.id');
 
@@ -195,58 +199,61 @@ class AssignmentReportService
             $pageRecipients = $recipientsQuery->get();
         }
 
-        $pageStudentIds = $pageRecipients->pluck('student_id');
+        if ($perPage !== 0) {
+            $pageStudentIds = $pageRecipients->pluck('student_id');
 
-        $pageAttempts = $pageStudentIds->isEmpty()
-            ? collect()
-            : UserTest::query()
-                ->where('assignment_id', $assignment->id)
-                ->whereIn('user_id', $pageStudentIds)
-                ->with(['currentModule.section'])
-                ->withCount([
-                    'userAnswers as total_questions_count' => function ($q) {
-                        $q->whereHas('question', fn ($qq) => $qq->where('is_pretest', false));
-                    },
-                    'userAnswers as correct_answers_count' => function ($q) {
-                        $q->where('is_correct', true)
-                          ->whereHas('question', fn ($qq) => $qq->where('is_pretest', false));
-                    },
-                ])
-                ->orderBy('attempt_number')
-                ->get();
+            $pageAttempts = $pageStudentIds->isEmpty()
+                ? collect()
+                : UserTest::query()
+                    ->where('assignment_id', $assignment->id)
+                    ->whereIn('user_id', $pageStudentIds)
+                    ->with(['currentModule.section'])
+                    ->withCount([
+                        'userAnswers as total_questions_count' => function ($q) {
+                            $q->whereHas('question', fn ($qq) => $qq->where('is_pretest', false));
+                        },
+                        'userAnswers as correct_answers_count' => function ($q) {
+                            $q->where('is_correct', true)
+                              ->whereHas('question', fn ($qq) => $qq->where('is_pretest', false));
+                        },
+                    ])
+                    ->orderBy('attempt_number')
+                    ->get();
 
-        $this->applyLiveElapsed($pageAttempts);
-        $attemptsByStudent = $pageAttempts->groupBy('user_id');
+            $this->applyLiveElapsed($pageAttempts);
+            $attemptsByStudent = $pageAttempts->groupBy('user_id');
 
-        $rows = $pageRecipients->map(function ($recipient) use ($attemptsByStudent, $assignment) {
-            $recipient->setRelation('assignment', $assignment);
-            $studentAttempts = $attemptsByStudent->get($recipient->student_id, collect());
-            $completed = $studentAttempts->where('status', 'completed');
-            if ($assignment->assign_type === 'section') {
-                $sortKey = $assignment->section_type === 'reading_writing' ? 'score_reading_writing' : 'score_math';
-                $best = $completed->sortByDesc($sortKey)->first();
-            } else {
-                $best = $completed->sortByDesc('total_score')->first();
+            $rows = $pageRecipients->map(function ($recipient) use ($attemptsByStudent, $assignment) {
+                $recipient->setRelation('assignment', $assignment);
+                $studentAttempts = $attemptsByStudent->get($recipient->student_id, collect());
+                $completed = $studentAttempts->where('status', 'completed');
+                if ($assignment->assign_type === 'section') {
+                    $sortKey = $assignment->section_type === 'reading_writing' ? 'score_reading_writing' : 'score_math';
+                    $best = $completed->sortByDesc($sortKey)->first();
+                } else {
+                    $best = $completed->sortByDesc('total_score')->first();
+                }
+
+                return [
+                    'recipient' => $recipient,
+                    'status' => \App\Support\AssignmentStatusResolver::resolve($assignment, $studentAttempts, $recipient),
+                    'attempts' => $studentAttempts,
+                    'completed_count' => $completed->count(),
+                    'best' => $best,
+                    'in_progress' => $studentAttempts->firstWhere('status', 'in_progress'),
+                    'late' => $best && $assignment->due_at ? $best->completed_at?->gt($assignment->due_at) : false,
+                ];
+            });
+
+            if ($perPage !== null) {
+                $recipientsPaginator = new \Illuminate\Pagination\LengthAwarePaginator(
+                    $rows,
+                    $totalCount,
+                    $perPage,
+                    $currentPage,
+                    ['path' => \Illuminate\Pagination\Paginator::resolveCurrentPath(), 'query' => request()->query()]
+                );
             }
-
-            return [
-                'recipient' => $recipient,
-                'attempts' => $studentAttempts,
-                'completed_count' => $completed->count(),
-                'best' => $best,
-                'in_progress' => $studentAttempts->firstWhere('status', 'in_progress'),
-                'late' => $best && $assignment->due_at ? $best->completed_at?->gt($assignment->due_at) : false,
-            ];
-        });
-
-        if ($perPage !== null) {
-            $recipientsPaginator = new \Illuminate\Pagination\LengthAwarePaginator(
-                $rows,
-                $totalCount,
-                $perPage,
-                $currentPage,
-                ['path' => \Illuminate\Pagination\Paginator::resolveCurrentPath(), 'query' => request()->query()]
-            );
         }
 
         $questionAnalysis = [];
@@ -363,6 +370,7 @@ class AssignmentReportService
         return [
             'paginator' => $perPage !== null ? $recipientsPaginator : null,
             'rows' => $rows,
+            'question_count' => $this->getAssignmentQuestionCount($assignment),
             'questionAnalysis' => $questionAnalysis,
             'metrics' => [
                 'assigned' => $assignedCount,
@@ -372,6 +380,221 @@ class AssignmentReportService
                 'average_rw' => $averageRw,
                 'average_math' => $averageMath,
             ],
+        ];
+    }
+
+    public function getAssignmentQuestionCount(Assignment $assignment): int
+    {
+        $sectionQuery = DB::table('module_questions')
+            ->join('section_modules', 'section_modules.module_id', '=', 'module_questions.module_id')
+            ->join('sections', 'sections.id', '=', 'section_modules.section_id')
+            ->join('questions', 'questions.id', '=', 'module_questions.question_id')
+            ->where('sections.test_id', $assignment->test_id)
+            ->whereNull('sections.deleted_at')
+            ->whereNull('questions.deleted_at')
+            ->where('questions.is_pretest', false);
+
+        if ($assignment->isSectionAssignment()) {
+            $sectionQuery->where('sections.type', $assignment->section_type === 'reading_writing' ? 'reading_writing' : 'math');
+        }
+
+        return (int) $sectionQuery->distinct()->count('module_questions.question_id');
+    }
+
+    public function buildAnalysisSummary(Assignment $assignment): array
+    {
+        $assignment->loadMissing(['classroom', 'test']);
+
+        $sectionQuery = $assignment->test->sections();
+        if ($assignment->assign_type === 'section') {
+            $sectionQuery->where('type', $assignment->section_type === 'reading_writing' ? 'reading_writing' : 'math');
+        }
+        $sections = $sectionQuery->with([
+            'modules.questions.answerChoices',
+            'modules.questions.sprCorrectAnswers',
+        ])->get();
+
+        $questionsMap = [];
+        foreach ($sections as $sec) {
+            foreach ($sec->modules as $mod) {
+                foreach ($mod->questions as $q) {
+                    if ($q->is_pretest) continue;
+
+                    $correctAns = '—';
+                    if ($q->question_type === 'multiple_choice') {
+                        $correctChoice = $q->answerChoices->firstWhere('is_correct', true);
+                        $correctAns = $correctChoice ? $correctChoice->label : '—';
+                    } else {
+                        $correctAns = $q->sprCorrectAnswers->pluck('answer')->implode(', ');
+                    }
+
+                    $questionsMap[$q->id] = [
+                        'id' => $q->id,
+                        'position' => $q->pivot->position,
+                        'module_label' => "Module {$mod->module_number}" . ($mod->difficulty_level === 'hard' ? ' (Hard)' : ($mod->difficulty_level === 'easy' ? ' (Easy)' : '')),
+                        'module_number' => $mod->module_number,
+                        'difficulty_level' => $mod->difficulty_level,
+                        'difficulty' => strtolower($q->difficulty ?? 'standard'),
+                        'domain' => Str::headline(str_replace('_', ' ', filled($q->skill_domain) ? $q->skill_domain : 'General Domain')),
+                        'section_label' => in_array($sec->type ?? $sec->section_type, ['math', \App\Models\Section::TYPE_MATH], true) ? 'Math' : 'Reading & Writing',
+                        'section_type' => in_array($sec->type ?? $sec->section_type, ['math', \App\Models\Section::TYPE_MATH], true) ? \App\Models\Section::TYPE_MATH : 'reading_writing',
+                        'question_type' => $q->question_type,
+                        'stem' => \App\Support\QuestionContentRenderer::markdown(Str::limit($q->stem, 200)),
+                        'correct_answer' => $correctAns,
+                        'incorrect_rate' => 0,
+                        'total_presented' => 0,
+                        'correct_count' => 0,
+                        'incorrect_count' => 0,
+                        'students' => [],
+                        'choices' => [],
+                        'spr_answers' => [],
+                        'explanation' => ['text' => null, 'strategy_tip' => null],
+                        'passage_body' => null,
+                        'passage_title' => null,
+                        'details_loaded' => false,
+                        'loading_details' => false,
+                        'load_error' => null,
+                    ];
+                }
+            }
+        }
+
+        $allCompletedAttempts = \App\Models\UserTest::where('assignment_id', $assignment->id)
+            ->where('status', 'completed')
+            ->with(['userAnswers:id,user_test_id,question_id,selected_answer,is_correct'])
+            ->get();
+
+        foreach ($allCompletedAttempts as $attempt) {
+            foreach ($attempt->userAnswers as $answer) {
+                $qId = $answer->question_id;
+                if (!isset($questionsMap[$qId])) continue;
+
+                $questionsMap[$qId]['total_presented']++;
+                if ($answer->is_correct) {
+                    $questionsMap[$qId]['correct_count']++;
+                } else {
+                    $questionsMap[$qId]['incorrect_count']++;
+                }
+            }
+        }
+
+        $questionList = collect($questionsMap)
+            ->filter(fn ($item) => $item['total_presented'] > 0)
+            ->map(function ($item) {
+                $item['incorrect_rate'] = $item['total_presented'] > 0
+                    ? (int) round(($item['incorrect_count'] / $item['total_presented']) * 100)
+                    : 0;
+                return $item;
+            })
+            ->sortBy(function ($item) {
+                $secWeight = ($item['section_type'] ?? '') === \App\Models\Section::TYPE_MATH ? 2 : 1;
+                $diffWeight = match ($item['difficulty_level']) {
+                    'standard' => 1,
+                    'easy' => 2,
+                    default => 3,
+                };
+                return [$secWeight, $item['module_number'], $diffWeight, $item['position']];
+            })
+            ->values();
+
+        $uniqueModules = $questionList->map(fn($q) => $q['section_label'] . ' — ' . $q['module_label'])->unique()->values();
+        $uniqueDomains = $questionList->pluck('domain')->filter()->unique()->values();
+        $avgErrorRate = $questionList->count() > 0 ? (int) round($questionList->avg('incorrect_rate')) : 0;
+        $mostChallenging = $questionList->sortByDesc('incorrect_rate')->first();
+
+        return [
+            'questions' => $questionList->all(),
+            'stats' => [
+                'total' => $questionList->count(),
+                'unique_modules' => $uniqueModules->all(),
+                'unique_domains' => $uniqueDomains->all(),
+                'avg_error_rate' => $avgErrorRate,
+                'most_challenging' => $mostChallenging,
+            ],
+        ];
+    }
+
+    public function assignmentContainsQuestion(Assignment $assignment, Question $question): bool
+    {
+        $assignment->loadMissing('test');
+        if (! $assignment->test_id || ! $assignment->test) {
+            return false;
+        }
+
+        if ($question->is_pretest) {
+            return false;
+        }
+
+        $sectionQuery = $assignment->test->sections();
+        if ($assignment->isSectionAssignment()) {
+            $sectionQuery->where('type', $assignment->section_type === 'reading_writing' ? 'reading_writing' : 'math');
+        }
+
+        return $sectionQuery->whereHas('modules.questions', function ($q) use ($question) {
+            $q->where('questions.id', $question->id);
+        })->exists();
+    }
+
+    public function buildQuestionInspection(Assignment $assignment, \App\Models\Question $question): array
+    {
+        $assignment->loadMissing(['classroom', 'test']);
+
+        $question->loadMissing([
+            'answerChoices',
+            'sprCorrectAnswers',
+            'explanation',
+            'passage',
+        ]);
+
+        $choices = $question->answerChoices->map(fn($c) => [
+            'label' => $c->label,
+            'content' => \App\Support\QuestionContentRenderer::markdown($c->content),
+            'is_correct' => (bool)$c->is_correct,
+        ])->values()->all();
+
+        $sprAnswers = $question->question_type === 'student_produced_response'
+            ? $question->sprCorrectAnswers->pluck('answer')->all()
+            : [];
+
+        $allCompletedAttempts = \App\Models\UserTest::where('assignment_id', $assignment->id)
+            ->where('status', 'completed')
+            ->with(['user', 'userAnswers' => fn($q) => $q->where('question_id', $question->id)])
+            ->get();
+
+        $students = [];
+        foreach ($allCompletedAttempts as $attempt) {
+            $student = $attempt->user;
+            $answer = $attempt->userAnswers->first();
+            if (!$answer) continue;
+
+            $status = ($answer->selected_answer === null || $answer->selected_answer === '')
+                ? 'omitted'
+                : ($answer->is_correct ? 'correct' : 'incorrect');
+
+            $students[] = [
+                'id' => $student->id,
+                'name' => $student->name,
+                'email' => $student->email,
+                'initials' => $student->initials ?? strtoupper(substr($student->name, 0, 1)),
+                'status' => $status,
+                'selected' => ($answer->selected_answer === null || $answer->selected_answer === '') ? 'Omitted' : $answer->selected_answer,
+            ];
+        }
+
+        return [
+            'id' => $question->id,
+            'stem' => \App\Support\QuestionContentRenderer::markdown($question->stem),
+            'passage_title' => $question->passage?->title,
+            'passage_body' => ($question->passage?->content ?? $question->passage?->body)
+                ? \App\Support\QuestionContentRenderer::markdown($question->passage?->content ?? $question->passage?->body)
+                : null,
+            'choices' => $choices,
+            'spr_answers' => $sprAnswers,
+            'explanation' => [
+                'text' => $question->explanation?->explanation ? \App\Support\QuestionContentRenderer::markdown($question->explanation->explanation) : null,
+                'strategy_tip' => $question->explanation?->strategy_tip ? \App\Support\QuestionContentRenderer::markdown($question->explanation->strategy_tip) : null,
+            ],
+            'students' => $students,
         ];
     }
 

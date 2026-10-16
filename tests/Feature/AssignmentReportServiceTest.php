@@ -514,4 +514,88 @@ class AssignmentReportServiceTest extends TestCase
         $this->assertContains('incorrect', $statuses);
         $this->assertContains('omitted', $statuses);
     }
+
+    public function test_question_inspection_endpoint_scopes_questions_and_rejects_unrelated_questions(): void
+    {
+        ['assignment' => $assignment, 'teacher' => $teacher, 'q1' => $assignedQuestion] = $this->createAssignment();
+
+        // An unrelated question belonging to another teacher's test
+        $otherTeacher = User::factory()->teacher()->create();
+        $unrelatedQuestion = Question::create([
+            'stem' => 'Unrelated question stem',
+            'question_type' => 'multiple_choice',
+            'skill_domain' => 'craft_and_structure',
+            'created_by' => $otherTeacher->id,
+            'is_pretest' => false,
+        ]);
+
+        // Pretest question inside the same test
+        $pretestQuestion = Question::create([
+            'stem' => 'Pretest question stem',
+            'question_type' => 'multiple_choice',
+            'skill_domain' => 'craft_and_structure',
+            'created_by' => $teacher->id,
+            'is_pretest' => true,
+        ]);
+        $section = $assignment->test->sections()->first();
+        $module = $section->modules()->first();
+        $module->questions()->attach($pretestQuestion->id, ['position' => 99]);
+
+        // 1. Authorized teacher inspects assigned question -> 200
+        $response = $this->actingAs($teacher)->getJson(route('teacher.assignments.question-inspection', [
+            'assignment' => $assignment,
+            'question' => $assignedQuestion,
+        ]));
+        $response->assertOk();
+        $response->assertJsonStructure(['stem', 'choices', 'students']);
+
+        // 2. Unrelated question -> 404
+        $unrelatedResponse = $this->actingAs($teacher)->getJson(route('teacher.assignments.question-inspection', [
+            'assignment' => $assignment,
+            'question' => $unrelatedQuestion,
+        ]));
+        $unrelatedResponse->assertNotFound();
+
+        // 3. Pretest question -> 404
+        $pretestResponse = $this->actingAs($teacher)->getJson(route('teacher.assignments.question-inspection', [
+            'assignment' => $assignment,
+            'question' => $pretestQuestion,
+        ]));
+        $pretestResponse->assertNotFound();
+    }
+
+    public function test_analysis_summary_supplies_safe_defaults_for_all_questions(): void
+    {
+        ['assignment' => $assignment, 'teacher' => $teacher, 'q1' => $assignedQuestion] = $this->createAssignment();
+        $service = app(AssignmentReportService::class);
+
+        // Test with a completed attempt so summary includes the question
+        $student = User::factory()->student()->create();
+        $attempt = UserTest::create([
+            'assignment_id' => $assignment->id,
+            'test_id' => $assignment->test_id,
+            'user_id' => $student->id,
+            'status' => 'completed',
+            'attempt_number' => 1,
+            'completed_at' => now(),
+        ]);
+        UserTestAnswer::create([
+            'user_test_id' => $attempt->id,
+            'question_id' => $assignedQuestion->id,
+            'module_id' => $assignment->test->sections()->first()->modules()->first()->id,
+            'is_correct' => true,
+            'selected_answer' => 'A',
+        ]);
+
+        $summary = $service->buildAnalysisSummary($assignment);
+        $this->assertNotEmpty($summary['questions']);
+
+        $first = $summary['questions'][0];
+        $this->assertIsArray($first['students']);
+        $this->assertEmpty($first['students']);
+        $this->assertIsArray($first['choices']);
+        $this->assertEmpty($first['choices']);
+        $this->assertFalse($first['details_loaded']);
+        $this->assertNull($first['load_error']);
+    }
 }

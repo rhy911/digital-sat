@@ -601,6 +601,28 @@ class TeacherClassManagementTest extends TestCase
         $this->assertNull($fresh->due_at);
     }
 
+    public function test_teacher_can_export_printed_assignment_pdf(): void
+    {
+        $teacher = $this->teacher();
+        $classroom = $this->classroom($teacher);
+        $test = $this->testFor($teacher);
+        $this->complete($test);
+
+        $assignment = $this->assignment($classroom, $test, [
+            'status' => 'published',
+            'available_at' => now()->subDay(),
+            'due_at' => now()->addDays(3),
+            'instructions' => 'Please complete all questions carefully.',
+        ]);
+
+        $response = $this->actingAs($teacher)
+            ->get(route('teacher.assignments.export.print', $assignment));
+
+        $response->assertOk();
+        $response->assertHeader('Content-Type', 'application/pdf');
+        $this->assertStringStartsWith('%PDF-', $response->getContent());
+    }
+
     public function test_teacher_can_delete_owned_assignment_soft_delete(): void
     {
         $teacher = $this->teacher();
