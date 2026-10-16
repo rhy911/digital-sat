@@ -46,7 +46,6 @@ class Classroom extends Model
     }
     public function note() { return $this->hasOne(ClassroomNote::class); }
     public function announcements() { return $this->hasMany(ClassroomAnnouncement::class); }
-    public function events() { return $this->hasMany(ClassroomEvent::class); }
 
     /**
      * Group documents and exclusive tests into structured study units.

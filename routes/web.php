@@ -166,9 +166,6 @@ Route::middleware(['auth', 'verified', 'role:admin,teacher'])->prefix('teacher')
         Route::post('/classes/{classroom}/announcements', [\App\Http\Controllers\Teacher\AnnouncementController::class, 'store'])->middleware('throttle:20,1')->name('announcements.store');
         Route::post('/classes/{classroom}/announcements/{announcement}/pin', [\App\Http\Controllers\Teacher\AnnouncementController::class, 'togglePin'])->name('announcements.pin');
         Route::delete('/classes/{classroom}/announcements/{announcement}', [\App\Http\Controllers\Teacher\AnnouncementController::class, 'destroy'])->name('announcements.destroy');
-        Route::post('/classes/{classroom}/events', [\App\Http\Controllers\Teacher\ClassroomEventController::class, 'store'])->name('events.store');
-        Route::put('/classes/{classroom}/events/{event}', [\App\Http\Controllers\Teacher\ClassroomEventController::class, 'update'])->name('events.update');
-        Route::delete('/classes/{classroom}/events/{event}', [\App\Http\Controllers\Teacher\ClassroomEventController::class, 'destroy'])->name('events.destroy');
         Route::get('/classes/{classroom}/students/{student}/progress', \App\Http\Controllers\Teacher\StudentProgressController::class)->name('classes.students.progress');
         Route::get('/classes/{classroom}/students/{student}/progress/export-pdf', [\App\Http\Controllers\Teacher\StudentProgressController::class, 'exportPdf'])->name('classes.students.progress.export-pdf');
         Route::post('/memberships/{membership}/approve', [\App\Http\Controllers\Teacher\MembershipController::class, 'approve'])->name('memberships.approve');
@@ -180,6 +177,8 @@ Route::middleware(['auth', 'verified', 'role:admin,teacher'])->prefix('teacher')
         Route::get('/assignments/{assignment}/students/{student}', [\App\Http\Controllers\Teacher\AssignmentController::class, 'studentAttempt'])->name('assignments.students.show');
         Route::get('/assignments/{assignment}/export.csv', [\App\Http\Controllers\Teacher\AssignmentController::class, 'exportCsv'])->name('assignments.export.csv');
         Route::get('/assignments/{assignment}/export/print', [\App\Http\Controllers\Teacher\AssignmentController::class, 'exportPrint'])->name('assignments.export.print');
+        Route::get('/assignments/{assignment}/analysis', [\App\Http\Controllers\Teacher\AssignmentController::class, 'analysisData'])->name('assignments.analysis');
+        Route::get('/assignments/{assignment}/questions/{question}/inspection', [\App\Http\Controllers\Teacher\AssignmentController::class, 'questionInspection'])->name('assignments.question-inspection');
         Route::get('/assignments/{assignment}/attempts/answers/{userAnswer}/preview', [\App\Http\Controllers\Teacher\AssignmentController::class, 'questionPreview'])->name('assignments.attempt-question-preview');
         Route::get('/assignments/{assignment}', [\App\Http\Controllers\Teacher\AssignmentController::class, 'show'])->name('assignments.show');
         Route::put('/assignments/{assignment}', [\App\Http\Controllers\Teacher\AssignmentController::class, 'update'])->name('assignments.update');

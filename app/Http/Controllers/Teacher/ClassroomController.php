@@ -80,7 +80,6 @@ class ClassroomController extends Controller
             'assignments.test',
             'documents.creator',
             'note',
-            'events' => fn ($query) => $query->orderBy('starts_at'),
         ])->loadCount([
             'activeMemberships',
             'coTeachers',
@@ -129,12 +128,6 @@ class ClassroomController extends Controller
             ->withQueryString()
             ->appends(['tab' => 'announce']);
 
-        $calendarItems = \App\Support\ClassroomCalendar::build(
-            $classroom->events,
-            $classroom->assignments,
-            fn ($assignment) => route('teacher.assignments.show', $assignment),
-        );
-
         $assignableTeacher = $user->role === 'admin' ? $classroom->owner : $user;
         $tests = Test::assignableTo($assignableTeacher)
             ->with('shares')
@@ -158,8 +151,7 @@ class ClassroomController extends Controller
             'units',
             'documentsPage',
             'assignmentsPage',
-            'announcementsPage',
-            'calendarItems'
+            'announcementsPage'
         ));
     }
 
