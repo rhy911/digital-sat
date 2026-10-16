@@ -11,8 +11,28 @@
     'classrooms' => null,
 ])
 
-{{-- Expects an ancestor with x-data containing: searchQuery (string), statusFilter (string), optional classFilter (string) --}}
-<div class="sidebar-col class-col">
+<div class="sidebar-col class-col"
+    x-data="{
+        allItems: @js(collect($items)->map(fn($item) => [
+            'name' => $item['name'] ?? '',
+            'subtitle' => $item['subtitle'] ?? '',
+            'class_name' => $item['class_name'] ?? $item['badge'] ?? '',
+            'meta' => implode(' ', $item['meta'] ?? []),
+            'status' => (string) ($item['status'] ?? 'all'),
+            'class_id' => (string) ($item['class_id'] ?? ''),
+        ])->all()),
+        get matchCount() {
+            const q = (typeof searchQuery === 'string' ? searchQuery : '').toLowerCase().trim();
+            const sf = typeof statusFilter === 'string' ? statusFilter : 'all';
+            return this.allItems.filter(it => {
+                const search = (it.name + ' ' + it.subtitle + ' ' + it.class_name + ' ' + it.meta).toLowerCase();
+                const matchesSearch = !q || search.includes(q);
+                const matchesStatus = sf === 'all' || it.status === sf;
+                const matchesClass = typeof classFilter === 'undefined' || classFilter === 'all' || String(it.class_id) === String(classFilter);
+                return matchesSearch && matchesStatus && matchesClass;
+            }).length;
+        }
+    }">
     <div class="sidebar-col-head class-col-head flex items-start justify-between gap-2">
         <div>
             <h1>{{ $title }}</h1>
@@ -77,10 +97,10 @@
                 $classId = (string) ($item['class_id'] ?? '');
                 $statusLabel = $item['status_label'] ?? ucfirst($status);
                 $pillClass = match($item['status_variant'] ?? $status) {
-                    'success', 'completed' => 'ok',
+                    'success', 'completed', 'published', 'active' => 'ok',
                     'danger', 'overdue' => 'danger',
                     'brand', 'in_progress', 'in-progress' => 'in-progress',
-                    'neutral', 'closed', 'archived' => 'draft',
+                    'neutral', 'closed', 'archived', 'draft' => 'draft',
                     default => 'pending',
                 };
             @endphp
@@ -116,5 +136,21 @@
                 </div>
             </a>
         @endforeach
+
+        @if (empty($items) || count($items) === 0)
+            <div class="p-6 text-center text-slate-500 text-xs">
+                <p class="font-medium text-slate-700 m-0">No assignments yet.</p>
+            </div>
+        @else
+            <div x-cloak x-show="allItems.length > 0 && matchCount === 0" class="p-6 text-center text-slate-500 text-xs">
+                <p class="font-medium text-slate-700 m-0" x-text="searchQuery.trim() ? 'No assignments match &ldquo;' + searchQuery + '&rdquo;' : 'No assignments match the selected filter.'"></p>
+                <button type="button" @click="searchQuery = ''; statusFilter = 'all'; if (typeof classFilter !== 'undefined') classFilter = 'all';"
+                    class="mt-2 text-xs font-semibold text-brand hover:underline cursor-pointer">
+                    Reset filters
+                </button>
+            </div>
+            <div class="sr-only" role="status" aria-live="polite"
+                x-text="allItems.length > 0 ? (matchCount + ' assignments found') : ''"></div>
+        @endif
     </div>
 </div>

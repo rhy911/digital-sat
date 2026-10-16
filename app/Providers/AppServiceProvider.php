@@ -26,5 +26,8 @@ class AppServiceProvider extends ServiceProvider
         \Illuminate\Support\Facades\Blade::directive('markdown', function ($expression) {
             return "<?php echo \App\Support\QuestionContentRenderer::markdown($expression); ?>";
         });
+
+        \Illuminate\Foundation\Console\ServeCommand::$passthroughVariables[] = 'SystemRoot';
+        \Illuminate\Foundation\Console\ServeCommand::$passthroughVariables[] = 'SystemDrive';
     }
 }

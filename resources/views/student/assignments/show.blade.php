@@ -14,12 +14,15 @@
         init() {
             this.$watch('classFilter', (val) => {
                 const url = new URL(window.location.href);
-                if (val && val !== 'all') {
-                    url.searchParams.set('classroom', val);
-                } else {
-                    url.searchParams.delete('classroom');
+                const currentVal = url.searchParams.get('classroom') || 'all';
+                if (val !== currentVal) {
+                    if (val && val !== 'all') {
+                        url.searchParams.set('classroom', val);
+                    } else {
+                        url.searchParams.delete('classroom');
+                    }
+                    window.location.href = url.toString();
                 }
-                window.history.replaceState({}, '', url.toString());
             });
         },
         assignmentUrl(baseRoute) {
@@ -242,7 +245,7 @@
                     <!-- ATTEMPT HISTORY PANEL -->
                     <div class="mt-6">
                         <h3 class="text-base font-bold text-slate-900 mb-3">Attempt history</h3>
-                        <div class="table-responsive-wrapper">
+                        <div class="table-responsive-wrapper" tabindex="0" role="region" aria-label="Attempt history table">
                             <table>
                                 <thead>
                                     <tr>

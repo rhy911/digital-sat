@@ -1,7 +1,42 @@
 @props(['tabs' => []])
 
 {{-- Expects an ancestor with x-data containing: activeTab (string) --}}
-<div class="class-tabs" role="tablist" aria-label="Class sections">
+<div class="class-tabs" role="tablist" aria-label="Class sections"
+    @keydown.right.prevent="focusNextTab($event)"
+    @keydown.down.prevent="focusNextTab($event)"
+    @keydown.left.prevent="focusPrevTab($event)"
+    @keydown.up.prevent="focusPrevTab($event)"
+    @keydown.home.prevent="focusFirstTab($event)"
+    @keydown.end.prevent="focusLastTab($event)"
+    x-data="{
+        focusNextTab(e) {
+            const tabs = Array.from(e.currentTarget.querySelectorAll('[role=tab]'));
+            const idx = tabs.indexOf(e.target);
+            if (idx === -1) return;
+            const next = tabs[(idx + 1) % tabs.length];
+            next?.focus();
+            next?.click();
+        },
+        focusPrevTab(e) {
+            const tabs = Array.from(e.currentTarget.querySelectorAll('[role=tab]'));
+            const idx = tabs.indexOf(e.target);
+            if (idx === -1) return;
+            const prev = tabs[(idx - 1 + tabs.length) % tabs.length];
+            prev?.focus();
+            prev?.click();
+        },
+        focusFirstTab(e) {
+            const first = e.currentTarget.querySelector('[role=tab]');
+            first?.focus();
+            first?.click();
+        },
+        focusLastTab(e) {
+            const tabs = e.currentTarget.querySelectorAll('[role=tab]');
+            const last = tabs[tabs.length - 1];
+            last?.focus();
+            last?.click();
+        }
+    }">
     @foreach ($tabs as $tab)
         <button id="tab-{{ $tab['key'] }}" class="seg-btn" role="tab"
             aria-controls="panel-{{ $tab['key'] }}"

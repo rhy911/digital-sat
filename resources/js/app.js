@@ -4,7 +4,6 @@ import { initTruncatedTooltips } from './ui/truncated-tooltip.js';
 import { initDialogManager } from './ui/dialog-manager.js';
 import { initAttemptMonitorPolling } from './teacher/attempt-monitor.js';
 import { initNotificationBell } from './notifications.js';
-import { initClassroomCalendars } from './classroom-calendar.js';
 import { initMobileClassroomNav } from './classroom-nav.js';
 
 if (!window.Alpine) {
@@ -22,7 +21,6 @@ initDialogManager();
 initAttemptMonitorPolling();
 initAutoDismissAlerts();
 initNotificationBell();
-initClassroomCalendars();
 initMobileClassroomNav();
 
 import flatpickr from 'flatpickr';
@@ -64,6 +62,35 @@ export function initDatePickers() {
             // through to the backdrop and close the modal. Keep it inside the open
             // dialog when present so it stays interactive.
             appendTo: input.closest('[data-modal-dialog]') || undefined,
+            onReady: (selectedDates, dateStr, instance) => {
+                const targetInput = instance.altInput || instance.input;
+                if (targetInput) {
+                    targetInput.addEventListener('keydown', (e) => {
+                        if (e.key === 'Escape' && instance.isOpen) {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            instance.close();
+                        }
+                    });
+                }
+                if (instance.altInput && instance.input) {
+                    const origId = instance.input.id;
+                    if (origId) {
+                        const altId = origId + '_alt';
+                        instance.altInput.id = altId;
+                        const label = document.querySelector(`label[for="${origId}"], label[for="${altId}"]`);
+                        if (label) {
+                            label.setAttribute('for', altId);
+                        }
+                    }
+                    const ariaLabel = instance.input.getAttribute('aria-label');
+                    if (ariaLabel) instance.altInput.setAttribute('aria-label', ariaLabel);
+                    const ariaLabelledby = instance.input.getAttribute('aria-labelledby');
+                    if (ariaLabelledby) instance.altInput.setAttribute('aria-labelledby', ariaLabelledby);
+                    const ariaDescribedby = instance.input.getAttribute('aria-describedby');
+                    if (ariaDescribedby) instance.altInput.setAttribute('aria-describedby', ariaDescribedby);
+                }
+            },
             onChange: () => syncAssignmentWindow(input),
             onClose: () => syncAssignmentWindow(input)
         });
@@ -74,7 +101,9 @@ export function initDatePickers() {
 window.initDatePickers = initDatePickers;
 
 export function clearDatePicker(id) {
-    const input = typeof id === 'string' ? document.getElementById(id) : id;
+    const input = typeof id === 'string'
+        ? (document.getElementById(id) || document.getElementById(id.replace('_alt', '')))
+        : id;
     if (!input) return;
     if (input._flatpickr) {
         input._flatpickr.clear();
@@ -143,7 +172,6 @@ document.addEventListener('livewire:navigated', () => {
     initDatePickers();
     initAutoDismissAlerts();
     initNotificationBell();
-    initClassroomCalendars();
 });
 
 export function initAutoDismissAlerts() {
