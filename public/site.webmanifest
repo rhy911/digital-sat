@@ -6,7 +6,7 @@
     { "src": "/brand/icon-512.png", "sizes": "512x512", "type": "image/png" },
     { "src": "/brand/icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
   ],
-  "theme_color": "#101935",
-  "background_color": "#101935",
+  "theme_color": "#0B3A6E",
+  "background_color": "#0B3A6E",
   "display": "standalone"
 }

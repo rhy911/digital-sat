@@ -1,7 +1,7 @@
 @props([
     'items' => [],
     'logoHref' => '#',
-    'logoLabel' => 'D',
+    'logoLabel' => 'DFET',
     'avatarLabel' => '',
     'profileHref' => null,
     'logoutHref' => null,
@@ -26,7 +26,7 @@
 <div class="mobile-nav-scrim" data-mobile-nav-scrim></div>
 
 <aside class="icon-rail" aria-label="Sidebar navigation">
-    <a href="{{ $logoHref }}" class="rail-logo" aria-label="{{ $logoLabel === 'D' ? 'DigiSAT home' : $logoLabel }}">
+    <a href="{{ $logoHref }}" class="rail-logo" aria-label="{{ in_array($logoLabel, ['D', 'DFET'], true) ? 'DigiSAT home' : $logoLabel }}">
         <img src="/brand/icon-light.svg" alt="" aria-hidden="true" class="rail-logo__img">
     </a>
 

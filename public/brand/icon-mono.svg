@@ -1,1 +1,20 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 160 160" width="160" height="160" role="img" aria-label="DigiSAT"><path d="M42 32 H78 A48 48 0 0 1 78 128 H42 Z M64 54 H82 A26 26 0 0 1 82 106 H64 Z" fill="currentColor" fill-rule="evenodd"/><g fill="currentColor"><rect x="68" y="86" width="8" height="14" rx="2"/><rect x="80" y="76" width="8" height="24" rx="2"/><rect x="92" y="66" width="8" height="34" rx="2"/></g></svg>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 240" width="240" height="240" role="img" aria-label="DigiSAT" fill="none">
+<rect width="116" height="116" rx="20" fill="currentColor"/>
+  <rect x="124" width="116" height="116" rx="20" fill="currentColor"/>
+  <rect y="124" width="116" height="116" rx="20" fill="currentColor"/>
+  <rect x="124" y="124" width="116" height="116" rx="20" fill="currentColor"/>
+
+  <path fill="#FFFFFF" fill-rule="evenodd" d="M32 24h28c22 0 38 15 38 34s-16 34-38 34H32V24Zm15 15h14c13 0 23 8.5 23 19s-10 19-23 19H47V39Z"/>
+
+  <rect x="156" y="24" width="14" height="68" rx="1.5" fill="#FFFFFF"/>
+  <rect x="156" y="24" width="56" height="14" rx="1.5" fill="#FFFFFF"/>
+  <rect x="156" y="51" width="40" height="14" rx="1.5" fill="#FFFFFF"/>
+
+  <rect x="32" y="148" width="14" height="68" rx="1.5" fill="#FFFFFF"/>
+  <rect x="32" y="148" width="56" height="14" rx="1.5" fill="#FFFFFF"/>
+  <rect x="32" y="175" width="44" height="14" rx="1.5" fill="#FFFFFF"/>
+  <rect x="32" y="202" width="56" height="14" rx="1.5" fill="#FFFFFF"/>
+
+  <rect x="152" y="148" width="60" height="14" rx="1.5" fill="#FFFFFF"/>
+  <rect x="175" y="148" width="14" height="68" rx="1.5" fill="#FFFFFF"/>
+</svg>
