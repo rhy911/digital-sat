@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="utf-8">
-    <title>Score Report - {{ $userTest->test->title }}</title>
+    <title>Practice Score Report - {{ $userTest->test->title }}</title>
     <style>
         @page {
             margin: 20px 24px;
@@ -36,7 +36,7 @@
         }
         .main-title {
             color: #ffffff;
-            font-size: 20px;
+            font-size: 18px;
             font-weight: bold;
             line-height: 1.2;
         }
@@ -61,7 +61,7 @@
             background: #f8fafc;
             border: 1.5px solid #cbd5e1;
             border-radius: 8px;
-            padding: 16px 20px;
+            padding: 14px 18px;
             margin-bottom: 16px;
         }
         .hero-table { width: 100%; border-collapse: collapse; }
@@ -69,23 +69,23 @@
             background: #ffffff;
             border: 1px solid #e2e8f0;
             border-radius: 6px;
-            padding: 12px 16px;
+            padding: 10px 14px;
             text-align: center;
         }
         .score-main {
             color: #0f172a;
-            font-size: 36px;
+            font-size: 32px;
             font-weight: bold;
             line-height: 1;
         }
         .score-max {
             color: #64748b;
-            font-size: 14px;
+            font-size: 13px;
             font-weight: normal;
         }
         .score-subtitle {
             color: #475569;
-            font-size: 10px;
+            font-size: 9px;
             font-weight: bold;
             text-transform: uppercase;
             letter-spacing: 0.5px;
@@ -98,131 +98,112 @@
             margin-top: 4px;
         }
         .disclosure-box {
-            color: #475569;
-            font-size: 10px;
-            line-height: 1.45;
             padding-left: 16px;
+            font-size: 10px;
+            color: #475569;
+            line-height: 1.45;
         }
 
-        /* STATS SUMMARY GRID */
+        /* STATS TABLE */
         .stats-table {
             width: 100%;
-            border-collapse: collapse;
-            margin-bottom: 18px;
+            border-collapse: separate;
+            border-spacing: 8px 0;
+            margin-bottom: 16px;
         }
         .stat-card {
-            background: #f1f5f9;
-            border: 1px solid #cbd5e1;
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
             border-radius: 6px;
             padding: 8px 12px;
             text-align: center;
-            width: 25%;
         }
         .stat-val {
-            color: #0f172a;
-            font-size: 16px;
-            font-weight: bold;
             display: block;
+            font-size: 18px;
+            font-weight: bold;
+            color: #0f172a;
+            line-height: 1.1;
         }
         .stat-lbl {
+            display: block;
             color: #64748b;
-            font-size: 8.5px;
-            font-weight: bold;
+            font-size: 8px;
             text-transform: uppercase;
             letter-spacing: 0.5px;
+            font-weight: bold;
+            margin-top: 2px;
         }
 
-        /* SECTION HEADINGS */
+        /* SECTION TITLES */
         .section-title {
             color: #0f172a;
-            font-size: 13px;
+            font-size: 12px;
             font-weight: bold;
             text-transform: uppercase;
             letter-spacing: 0.5px;
-            margin: 18px 0 8px;
+            border-bottom: 1.5px solid #0f172a;
             padding-bottom: 4px;
-            border-bottom: 2px solid #0f172a;
+            margin-top: 14px;
+            margin-bottom: 8px;
+        }
+        .section-desc {
+            color: #64748b;
+            font-size: 9.5px;
+            margin-bottom: 8px;
         }
 
-        /* TABLES */
-        table.data-table {
+        /* DATA TABLES */
+        .data-table {
             width: 100%;
             border-collapse: collapse;
-            margin-bottom: 16px;
+            font-size: 9.5px;
+            margin-bottom: 14px;
         }
-        table.data-table th {
-            background: #1e293b;
-            color: #ffffff;
-            font-size: 9px;
+        .data-table th {
+            background: #f1f5f9;
+            border-top: 1px solid #cbd5e1;
+            border-bottom: 1.5px solid #94a3b8;
+            color: #334155;
             font-weight: bold;
-            letter-spacing: 0.5px;
             padding: 6px 8px;
             text-align: left;
+            font-size: 9px;
             text-transform: uppercase;
+            letter-spacing: 0.5px;
         }
-        table.data-table td {
+        .data-table td {
             border-bottom: 1px solid #e2e8f0;
-            padding: 6px 8px;
+            padding: 5px 8px;
             vertical-align: middle;
-            font-size: 10px;
         }
-        table.data-table tr:nth-child(even) td {
-            background: #f8fafc;
+        .data-table tr:nth-child(even) td {
+            background: #fcfcfd;
         }
 
-        /* BADGES */
-        .badge {
-            display: inline-block;
-            font-size: 9px;
-            font-weight: bold;
-            padding: 2px 6px;
-            border-radius: 3px;
-            text-transform: uppercase;
-        }
-        .badge-correct { background: #dcfce7; color: #15803d; border: 1px solid #86efac; }
-        .badge-wrong { background: #fee2e2; color: #b91c1c; border: 1px solid #fca5a5; }
-        .badge-omitted { background: #f1f5f9; color: #475569; border: 1px solid #cbd5e1; }
-        .badge-easy { background: #ecfdf5; color: #047857; border: 1px solid #a7f3d0; }
-        .badge-medium { background: #fffbeb; color: #b45309; border: 1px solid #fde68a; }
-        .badge-hard { background: #fef2f2; color: #b91c1c; border: 1px solid #fecaca; }
-
-        .pill-sec {
-            background: #dbeafe;
-            color: #1e40af;
-            font-size: 9px;
-            font-weight: bold;
-            padding: 2px 6px;
-            border-radius: 3px;
-        }
-        .pill-sec.math {
-            background: #f3e8ff;
-            color: #6b21a8;
-        }
 
         /* PROGRESS METER IN TABLE */
         .meter-container {
             width: 100%;
             background: #e2e8f0;
-            height: 6px;
+            height: 5px;
             border-radius: 3px;
             overflow: hidden;
-            margin-top: 3px;
+            margin-top: 2px;
         }
         .meter-bar {
-            height: 6px;
+            height: 5px;
             border-radius: 3px;
+            background: #2563eb;
         }
-        .meter-green { background: #16a34a; }
-        .meter-amber { background: #d97706; }
-        .meter-red { background: #dc2626; }
 
         /* FOOTER */
         .page-footer {
             border-top: 1px solid #cbd5e1;
             color: #64748b;
-            font-size: 9px;
-            margin-top: 24px;
-            padding-top: 8px;
+            font-size: 8.5px;
+            margin-top: 16px;
+            padding-top: 6px;
         }
         .page-footer table { width: 100%; border-collapse: collapse; }
     </style>
@@ -241,17 +222,24 @@
         <table>
             <tr>
                 <td>
-                    <div class="brand-title">Digital SAT &middot; Official Score Report</div>
+                    <div class="brand-title">Digital SAT &middot; Practice Score Report</div>
                     <div class="main-title">{{ $userTest->test->title }}</div>
                     <div class="meta-line">
                         Student: <strong>{{ $userTest->user?->name ?? 'Student' }}</strong> ({{ $userTest->user?->email }}) &nbsp;&bull;&nbsp;
                         Completed: <strong>{{ $userTest->completed_at ? $userTest->completed_at->format('F j, Y · g:i A') : 'In progress' }}</strong>
+                        @if ($userTest->assignment)
+                            &nbsp;&bull;&nbsp; Class: <strong>{{ $userTest->assignment->classroom?->name ?: ($userTest->assignment->title ?: 'Assignment') }}</strong>
+                        @elseif ($userTest->examSession)
+                            &nbsp;&bull;&nbsp; Session: <strong>{{ $userTest->examSession->title ?: 'Exam Session' }}</strong>
+                        @else
+                            &nbsp;&bull;&nbsp; Mode: <strong>Self-Paced Practice</strong>
+                        @endif
                     </div>
                 </td>
                 <td style="text-align: right; vertical-align: top;">
                     <div class="badge-header">
-                        Calibrated 3PL IRT Model<br>
-                        Form ID: {{ $userTest->test->id }}
+                        {{ $scorePresentation['basisLabel'] }}<br>
+                        Form ID: {{ $userTest->test?->id }}
                     </div>
                 </td>
             </tr>
@@ -264,70 +252,44 @@
             <tr>
                 <td style="width: 32%; vertical-align: middle;">
                     <div class="score-box">
-                        @if ($userTest->attempt_type === 'section')
-                            <div class="score-main">
-                                {{ $userTest->section_type === 'reading_writing' ? ($userTest->score_reading_writing ?? '—') : ($userTest->score_math ?? '—') }}
-                                <span class="score-max">/ 800</span>
-                            </div>
-                            <div class="score-subtitle">
-                                {{ $userTest->section_type === 'reading_writing' ? 'Reading & Writing Score' : 'Math Score' }}
-                            </div>
-                        @elseif ($isScaledSatResult)
-                            <div class="score-main">
-                                {{ $userTest->total_score ?? '—' }}
-                                <span class="score-max">/ 1600</span>
-                            </div>
-                            <div class="score-subtitle">Total SAT Practice Score</div>
-                        @else
-                            <div class="score-main">
-                                {{ $correct }}
-                                <span class="score-max">/ {{ $totalQ }}</span>
-                            </div>
-                            <div class="score-subtitle">Raw Correct Answers</div>
+                        <div class="score-main">
+                            {{ $scorePresentation['score'] ?? '—' }}
+                            <span class="score-max">/ {{ $scorePresentation['maxScore'] }}</span>
+                        </div>
+                        <div class="score-subtitle">{{ $scorePresentation['contextLabel'] ?? $scorePresentation['sectionLabel'] }}</div>
+                        @if ($scorePresentation['hasRange'])
+                            <div class="score-range">Range: {{ $scorePresentation['rangeFormatted'] }}</div>
                         @endif
                     </div>
                 </td>
                 <td style="vertical-align: middle;">
                     <div class="disclosure-box">
-                        @if ($userTest->attempt_type === 'section')
-                            <p style="font-weight: bold; color: #0f172a; font-size: 11px; margin-bottom: 2px;">
-                                Section Performance Estimate
-                            </p>
-                            <p>
-                                @if($userTest->score_estimate_kind === 'adaptive_irt_provisional')
-                                    Adaptive IRT calculation based on your section routing.
-                                    Likely score range: <strong class="score-range">{{ $userTest->section_type === 'reading_writing' ? ($userTest->score_reading_writing_lower . ' – ' . $userTest->score_reading_writing_upper) : ($userTest->score_math_lower . ' – ' . $userTest->score_math_upper) }}</strong>.
-                                @else
-                                    Estimated score based on answered questions in this section.
-                                @endif
-                            </p>
-                        @elseif ($isScaledSatResult)
-                            <p style="font-weight: bold; color: #0f172a; font-size: 11px; margin-bottom: 2px;">
-                                Scale Score & Range Estimate
-                            </p>
-                            <p>
-                                @if($userTest->score_estimate_kind === 'adaptive_irt_provisional')
-                                    Theta MLE 3PL IRT model score. Likely score range: <strong class="score-range">{{ $userTest->total_score_lower }} – {{ $userTest->total_score_upper }}</strong>.
-                                @elseif($userTest->score_estimate_kind === 'normal_generic')
-                                    Converted with standard digital SAT scoring table (v{{ $userTest->score_conversion_version }}).
-                                @else
-                                    Converted with official test form scoring table (v{{ $userTest->scoreConversionSet?->version ?? '1.0' }}).
-                                @endif
-                            </p>
-                            @if($userTest->score_reading_writing && $userTest->score_math)
-                                <p style="margin-top: 4px; font-weight: bold;">
-                                    Reading &amp; Writing: <span style="color:#0a2d6e;">{{ $userTest->score_reading_writing }}</span> &nbsp;|&nbsp;
-                                    Math: <span style="color:#0a2d6e;">{{ $userTest->score_math }}</span>
-                                </p>
-                            @endif
-                        @else
-                            <p style="font-weight: bold; color: #0f172a; font-size: 11px; margin-bottom: 2px;">
-                                Raw Practice Summary
-                            </p>
-                            <p>{{ $correct }} of {{ $totalQ }} scored questions answered correctly.</p>
+                        <p style="font-weight: bold; color: #0f172a; font-size: 10.5px; margin-bottom: 2px;">
+                            {{ $scorePresentation['basisLabel'] }}
+                        </p>
+                        @if (!empty($scorePresentation['scoreDisclosure']))
+                            <p style="margin-bottom: 4px;">{{ $scorePresentation['scoreDisclosure'] }}</p>
                         @endif
-                        <p style="color: #94a3b8; font-size: 9px; margin-top: 4px; font-style: italic;">
-                            Note: Practice estimates simulate official Bluebook scoring guidelines.
+                        <p>{{ $scorePresentation['calculationDisclosure'] }}</p>
+
+                        @if ($scorePresentation['isScaledSatResult'] && ($scorePresentation['rwScore'] !== null || $scorePresentation['mathScore'] !== null))
+                            <p style="margin-top: 4px; font-weight: bold;">
+                                @if ($scorePresentation['rwScore'] !== null)
+                                    Reading &amp; Writing: <span style="color:#2563eb;">{{ $scorePresentation['rwScore'] }} / 800</span>
+                                    @if ($scorePresentation['rwRange']) ({{ $scorePresentation['rwRange'] }}) @endif
+                                @endif
+                                @if ($scorePresentation['rwScore'] !== null && $scorePresentation['mathScore'] !== null)
+                                    &nbsp;|&nbsp;
+                                @endif
+                                @if ($scorePresentation['mathScore'] !== null)
+                                    Math: <span style="color:#059669;">{{ $scorePresentation['mathScore'] }} / 800</span>
+                                    @if ($scorePresentation['mathRange']) ({{ $scorePresentation['mathRange'] }}) @endif
+                                @endif
+                            </p>
+                        @endif
+
+                        <p style="color: #64748b; font-size: 9px; margin-top: 4px; font-style: italic;">
+                            {{ $scorePresentation['unofficialNotice'] }}
                         </p>
                     </div>
                 </td>
@@ -340,15 +302,19 @@
         <tr>
             <td class="stat-card">
                 <span class="stat-val">{{ $totalQ }}</span>
-                <span class="stat-lbl">Total Questions</span>
+                <span class="stat-lbl">All Questions ({{ $unscored }} unscored)</span>
             </td>
             <td class="stat-card">
-                <span class="stat-val" style="color: #16a34a;">{{ $correct }}</span>
+                <span class="stat-val" style="color: #166534;">{{ $correct }}</span>
                 <span class="stat-lbl">Correct Answers</span>
             </td>
             <td class="stat-card">
-                <span class="stat-val" style="color: #dc2626;">{{ $wrong + $omitted }}</span>
-                <span class="stat-lbl">Incorrect / Omitted</span>
+                <span class="stat-val" style="color: #991b1b;">{{ $wrong }}</span>
+                <span class="stat-lbl">Incorrect</span>
+            </td>
+            <td class="stat-card">
+                <span class="stat-val" style="color: #475569;">{{ $omitted }}</span>
+                <span class="stat-lbl">Omitted</span>
             </td>
             <td class="stat-card">
                 <span class="stat-val" style="color: #2563eb;">{{ $totalTimeFormatted }}</span>
@@ -359,41 +325,31 @@
 
     <!-- KNOWLEDGE & SKILLS BREAKDOWN -->
     <div class="section-title">Knowledge &amp; Skill Performance</div>
+    <div class="section-desc">Performance across measured content domains. Learning diagnostics include unscored questions.</div>
     @if (count($domainSummaries))
         <table class="data-table">
             <thead>
                 <tr>
-                    <th style="width: 18%;">Section</th>
-                    <th style="width: 32%;">Domain</th>
-                    <th style="width: 18%;">Correct / Total</th>
-                    <th style="width: 20%;">Accuracy Meter</th>
-                    <th style="width: 12%;">Status</th>
+                    <th style="width: 22%;">Section</th>
+                    <th style="width: 36%;">Domain</th>
+                    <th style="width: 20%;">Correct / Total</th>
+                    <th style="width: 22%;">Observed Accuracy</th>
                 </tr>
             </thead>
             <tbody>
                 @foreach ($domainSummaries as $domain)
                     @php
                         $pct = $domain['percentCorrect'];
-                        $meterColor = $pct >= 75 ? 'meter-green' : ($pct >= 50 ? 'meter-amber' : 'meter-red');
                     @endphp
                     <tr>
                         <td><strong>{{ $domain['section'] }}</strong></td>
                         <td>{{ $domain['domain'] }}</td>
-                        <td><strong>{{ $domain['correct'] }} / {{ $domain['total'] }}</strong> ({{ $pct }}%)</td>
+                        <td><strong>{{ $domain['correct'] }} / {{ $domain['total'] }}</strong></td>
                         <td>
                             <div style="font-weight: bold; font-size: 9px; margin-bottom: 2px;">{{ $pct }}%</div>
                             <div class="meter-container">
-                                <div class="meter-bar {{ $meterColor }}" style="width: {{ $pct }}%;"></div>
+                                <div class="meter-bar" style="width: {{ $pct }}%;"></div>
                             </div>
-                        </td>
-                        <td>
-                            @if($pct >= 75)
-                                <span class="badge badge-correct">Mastered</span>
-                            @elseif($pct >= 50)
-                                <span class="badge" style="background:#fffbeb;color:#b45309;border:1px solid #fde68a;">On Track</span>
-                            @else
-                                <span class="badge badge-wrong">Needs Focus</span>
-                            @endif
                         </td>
                     </tr>
                 @endforeach
@@ -403,74 +359,36 @@
         <p style="color: #64748b; font-style: italic; margin-bottom: 16px;">No domain breakdown available for this attempt.</p>
     @endif
 
-    <!-- QUESTION REVIEW TABLE -->
-    <div class="section-title">Question-by-Question Detailed Review &amp; Time Tracked</div>
-    @if (count($allAnswers))
-        <table class="data-table">
+    <!-- DIFFICULTY BREAKDOWN -->
+    <div class="section-title">Difficulty Breakdown</div>
+    @if (count($difficultySummaries))
+        <table class="data-table" style="margin-bottom: 16px;">
             <thead>
                 <tr>
-                    <th style="width: 5%;">#</th>
-                    <th style="width: 16%;">Section &amp; Module</th>
-                    <th style="width: 11%;">Result</th>
-                    <th style="width: 30%;">Skill Domain</th>
-                    <th style="width: 10%;">Difficulty</th>
-                    <th style="width: 10%;">Time Spent</th>
-                    <th style="width: 9%;">Your Answer</th>
-                    <th style="width: 9%;">Correct</th>
+                    <th style="width: 25%;">Difficulty</th>
+                    <th style="width: 25%;">Questions</th>
+                    <th style="width: 25%;">Correct</th>
+                    <th style="width: 25%;">Accuracy</th>
                 </tr>
             </thead>
             <tbody>
-                @foreach ($allAnswers as $row)
-                    @php
-                        $sec = $row['timeSpent'] ?? 0;
-                        $m = floor($sec / 60);
-                        $s = $sec % 60;
-                        $rowTimeFormatted = $m > 0 ? "{$m}m {$s}s" : "{$sec}s";
-                    @endphp
-                    <tr style="page-break-inside: avoid;">
-                        <td><strong>{{ $row['idx'] }}</strong></td>
-                        <td>
-                            <span class="pill-sec {{ $row['sectionType'] === 'math' ? 'math' : '' }}">
-                                {{ $row['sectionName'] }}@if (!empty($row['moduleNumber'])) M{{ $row['moduleNumber'] }}@endif
-                            </span>
-                        </td>
-                        <td>
-                            @if ($row['statusKey'] === 'correct')
-                                <span class="badge badge-correct">Correct</span>
-                            @elseif ($row['statusKey'] === 'wrong')
-                                <span class="badge badge-wrong">Incorrect</span>
-                            @else
-                                <span class="badge badge-omitted">Omitted</span>
-                            @endif
-                        </td>
-                        <td>{{ $row['domainLabel'] }}</td>
-                        <td>
-                            @if(strtolower($row['difficulty'] ?? '') === 'easy')
-                                <span class="badge badge-easy">Easy</span>
-                            @elseif(strtolower($row['difficulty'] ?? '') === 'medium')
-                                <span class="badge badge-medium">Medium</span>
-                            @elseif(strtolower($row['difficulty'] ?? '') === 'hard')
-                                <span class="badge badge-hard">Hard</span>
-                            @else
-                                <span style="color:#94a3b8;">—</span>
-                            @endif
-                        </td>
-                        <td><strong>{{ $rowTimeFormatted }}</strong></td>
-                        <td><strong>{{ $row['answer']->selected_answer ?: 'Omitted' }}</strong></td>
-                        <td><strong style="color:#15803d;">{{ $row['correctAnswer'] }}</strong></td>
+                @foreach ($difficultySummaries as $diff)
+                    <tr>
+                        <td><strong>{{ $diff['label'] }}</strong></td>
+                        <td>{{ $diff['total'] }}</td>
+                        <td>{{ $diff['correct'] }}</td>
+                        <td><strong>{{ $diff['percentCorrect'] }}%</strong></td>
                     </tr>
                 @endforeach
             </tbody>
         </table>
-    @else
-        <p style="color: #64748b; font-style: italic;">No question details recorded.</p>
     @endif
 
     <!-- PAGE FOOTER -->
     <div class="page-footer">
         <table>
             <tr>
-                <td>Digital SAT Online Testing Platform &middot; Student Performance &amp; Time Tracking Report</td>
+                <td>Digital SAT Practice Platform &middot; Diagnostic Score Summary</td>
                 <td style="text-align: right;">Generated on {{ now()->format('F j, Y \a\t g:i A') }}</td>
             </tr>
         </table>

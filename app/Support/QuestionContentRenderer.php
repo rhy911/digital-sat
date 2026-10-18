@@ -102,14 +102,14 @@ class QuestionContentRenderer
     }
 
     /**
-     * Swap every `$$...$$` span for an inert alphanumeric token that CommonMark
-     * cannot reinterpret, keeping the normalized LaTeX aside for restoration.
+     * Swap supported math spans for inert tokens so CommonMark cannot reinterpret
+     * their delimiters, keeping normalized LaTeX aside for restoration.
      *
-     * @return array{0: string, 1: array<string, string>}
+     * @return array{0: string, 1: array<string, array{0: string, 1: string}>}
      */
     private static function extractMathSpans(string $content): array
     {
-        if (! str_contains($content, '$$')) {
+        if (! str_contains($content, '$') && ! str_contains($content, '\\[')) {
             return [$content, []];
         }
 
@@ -118,11 +118,15 @@ class QuestionContentRenderer
         $index = 0;
 
         $replaced = preg_replace_callback(
-            '/\$\$(.*?)\$\$/s',
+            <<<'REGEX'
+            /(?<![\\$])\$\$(.*?)\$\$|(?<![\\$])\$(?!\$)(.+?)(?<!\\)\$(?!\$)|(?<![\\$])\\\[(.*?)\\\]/s
+            REGEX,
             function (array $matches) use ($nonce, &$spans, &$index): string {
                 $token = 'mathspan'.$nonce.'i'.$index.'end';
                 $index++;
-                $spans[$token] = LatexNormalizer::normalizeMath($matches[1]);
+                $opening = str_starts_with($matches[0], '$$') ? '$$' : (str_starts_with($matches[0], '$') ? '$' : '\\[');
+                $body = $opening === '$$' ? $matches[1] : ($opening === '$' ? $matches[2] : $matches[3]);
+                $spans[$token] = [$opening, LatexNormalizer::normalizeMath($body)];
 
                 return $token;
             },
@@ -133,13 +137,19 @@ class QuestionContentRenderer
     }
 
     /**
-     * @param  array<string, string>  $spans
+     * @param  array<string, array{0: string, 1: string}>  $spans
      */
     private static function restoreMathSpans(string $html, array $spans): string
     {
-        foreach ($spans as $token => $math) {
+        foreach ($spans as $token => [$opening, $math]) {
+            $closing = $opening === '\\[' ? '\\]' : $opening;
             $escaped = htmlspecialchars($math, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
-            $html = str_replace($token, '$$'.$escaped.'$$', $html);
+            $class = $opening === '\\[' ? 'latex-pending latex-pending--display' : 'latex-pending';
+            $html = str_replace(
+                $token,
+                '<span class="'.$class.'" data-math-state="pending">'.$opening.$escaped.$closing.'</span>',
+                $html
+            );
         }
 
         return $html;

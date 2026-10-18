@@ -1,7 +1,6 @@
 const TRUNCATED_TEXT_SELECTOR = [
     '.truncate',
     '.text-truncate',
-    '.sd-tabs-bar-title',
     '.sd-domain-tag',
     '.test-title',
     '.section-name-sm',

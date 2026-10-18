@@ -414,36 +414,77 @@ window.showCustomConfirm = showCustomConfirm;
 window.copyToClipboard = copyToClipboard;
 
 export function initScoreDetailsPage() {
-    // ── Sticky tabs bar ─────────────────────────────────────────
-    const sentinel = document.getElementById('sd-tabs-sentinel');
-    const tabsBar = document.getElementById('sd-tabs-bar');
-    const pageHeader = document.querySelector('body > header');
-
-    const syncStickyHeaderOffset = () => {
-        const headerHeight = pageHeader ? Math.ceil(pageHeader.getBoundingClientRect().height) : 0;
-        document.documentElement.style.setProperty('--sd-sticky-header-height', `${headerHeight}px`);
-    };
-
-    syncStickyHeaderOffset();
-    window.addEventListener('resize', syncStickyHeaderOffset);
-
-    if (sentinel && tabsBar) {
-        new IntersectionObserver(
-            ([entry]) => tabsBar.classList.toggle('is-sticky', !entry.isIntersecting),
-            { threshold: 0 }
-        ).observe(sentinel);
-    }
-
-    // ── Stats from embedded JSON ────────────────────────────────
+    // ── Elements & Data ─────────────────────────────────────────
     const statsData = JSON.parse(
         document.getElementById('sd-stats-data')?.textContent ?? '{}'
     );
+    const questionDataMap = JSON.parse(
+        document.getElementById('score-question-data')?.textContent ?? '{}'
+    );
 
-    // ── State ───────────────────────────────────────────────────
-    let activeSection = 'all';
-    let activeStatusFilter = 'all';
-    let currentPage = 1;
+    const rootEl = document.getElementById('scores-report-root');
+    const modalEl = document.getElementById('reviewModal');
+    const isTeacher = Boolean(
+        rootEl?.dataset?.isTeacher === 'true' ||
+        rootEl?.getAttribute('data-is-teacher') === 'true' ||
+        modalEl?.dataset?.isTeacher === 'true' ||
+        modalEl?.getAttribute('data-is-teacher') === 'true' ||
+        document.querySelector('[data-is-teacher="true"]') !== null ||
+        document.body?.dataset?.isTeacher === 'true'
+    );
+
+    const updateTeacherOverrideDisplay = (itemData) => {
+        const teacherOverrideEl = document.getElementById('modalTeacherOverride');
+        const teacherOverrideVal = document.getElementById('modalTeacherOverrideVal');
+        const labelEl = document.getElementById('modalTeacherOverrideLabel') || teacherOverrideEl?.querySelector('span:first-child');
+        const errorTypeSelect = document.getElementById('modalErrorType');
+
+        if (!teacherOverrideEl) return;
+
+        const counterpartType = isTeacher ? itemData.student_error_type : itemData.teacher_error_type;
+        const hasCounterpart = counterpartType && counterpartType !== 'unclassified';
+
+        if (hasCounterpart) {
+            teacherOverrideEl.hidden = false;
+            if (labelEl) {
+                labelEl.textContent = isTeacher ? 'Student classification:' : 'Teacher override:';
+            }
+            if (teacherOverrideVal) {
+                const opt = errorTypeSelect?.querySelector(`option[value="${counterpartType}"]`);
+                teacherOverrideVal.textContent = opt ? opt.textContent : counterpartType;
+            }
+        } else {
+            teacherOverrideEl.hidden = true;
+            if (teacherOverrideVal) {
+                teacherOverrideVal.textContent = '';
+            }
+        }
+    };
+
+    // ── URL & State Resolution ──────────────────────────────────
+    const urlParams = new URLSearchParams(window.location.search);
+    let activeSection = ['all', 'rw', 'math'].includes(urlParams.get('subject'))
+        ? urlParams.get('subject')
+        : 'all';
+    let activeStatusFilter = ['all', 'correct', 'wrong', 'omitted'].includes(urlParams.get('result'))
+        ? urlParams.get('result')
+        : 'all';
+    let currentPage = Math.max(1, parseInt(urlParams.get('page'), 10) || 1);
     const pageSize = 30;
+
+    const syncUrlState = () => {
+        const url = new URL(window.location.href);
+        if (activeSection !== 'all') url.searchParams.set('subject', activeSection);
+        else url.searchParams.delete('subject');
+
+        if (activeStatusFilter !== 'all') url.searchParams.set('result', activeStatusFilter);
+        else url.searchParams.delete('result');
+
+        if (currentPage > 1) url.searchParams.set('page', String(currentPage));
+        else url.searchParams.delete('page');
+
+        window.history.replaceState(null, '', url.toString());
+    };
 
     const getQuestionRows = () => Array.from(
         document.querySelectorAll('#table-main tbody tr[data-section][data-status]')
@@ -455,6 +496,10 @@ export function initScoreDetailsPage() {
         return secOk && statusOk;
     });
 
+    const getFilteredAnswerIds = () => {
+        return getMatchingRows().map(r => r.dataset.answerId).filter(Boolean);
+    };
+
     function renderTablePagination(matchingRows) {
         const pagination = document.querySelector('[data-table-pagination="table-main"]');
         if (!pagination) return;
@@ -465,6 +510,7 @@ export function initScoreDetailsPage() {
         const nextBtn = pagination.querySelector('[data-page-action="next"]');
         const totalRows = matchingRows.length;
         const totalPages = Math.max(1, Math.ceil(totalRows / pageSize));
+        currentPage = Math.min(Math.max(1, currentPage), totalPages);
         const start = totalRows === 0 ? 0 : ((currentPage - 1) * pageSize) + 1;
         const end = Math.min(currentPage * pageSize, totalRows);
 
@@ -508,11 +554,56 @@ export function initScoreDetailsPage() {
     function applyFilters({ resetPage = false } = {}) {
         if (resetPage) currentPage = 1;
 
-        // Show/hide domain groups
+        // 1. Sync subject filter UI chips & aria-pressed state
+        document.querySelectorAll('.sd-tab[data-subject]').forEach(tab => {
+            const isActive = tab.getAttribute('data-subject') === activeSection;
+            tab.classList.toggle('active', isActive);
+            tab.setAttribute('aria-pressed', isActive ? 'true' : 'false');
+        });
+
+        // 2. Sync result filter buttons & aria-pressed state
+        document.querySelectorAll('.sd-view-btn[data-filter]').forEach(b => {
+            const isActive = b.dataset.filter === activeStatusFilter;
+            b.classList.toggle('active', isActive);
+            b.setAttribute('aria-pressed', isActive ? 'true' : 'false');
+        });
+
+        // 3. Domain groups scoped to subject
         document.querySelectorAll('.sd-domain-group').forEach(g => {
             g.style.display = (activeSection === 'all' || g.dataset.section === activeSection) ? '' : 'none';
         });
 
+        // 4. Difficulty breakdowns scoped to subject
+        document.querySelectorAll('.sd-difficulty-group').forEach(dg => {
+            dg.style.display = (dg.dataset.difficultySection === activeSection) ? '' : 'none';
+        });
+
+        // 5. Timeline sections scoped to subject
+        document.querySelectorAll('.sd-timeline-section-row').forEach(tr => {
+            tr.style.display = (activeSection === 'all' || tr.dataset.timelineSection === activeSection) ? '' : 'none';
+        });
+
+        // 6. Timeline nodes dim/highlight by result filter
+        document.querySelectorAll('.sd-timeline-node-wrapper').forEach(node => {
+            const secOk = activeSection === 'all' || node.dataset.section === activeSection;
+            const statusOk = activeStatusFilter === 'all' || node.dataset.status === activeStatusFilter;
+            const isVisible = secOk && statusOk;
+            node.style.opacity = isVisible ? '1' : '0.25';
+            node.style.pointerEvents = isVisible ? '' : 'none';
+            node.inert = !isVisible;
+            const btn = node.querySelector('button');
+            if (btn) {
+                btn.disabled = !isVisible;
+                btn.tabIndex = isVisible ? 0 : -1;
+            }
+            if (isVisible) {
+                node.removeAttribute('aria-hidden');
+            } else {
+                node.setAttribute('aria-hidden', 'true');
+            }
+        });
+
+        // 7. Table rows
         const rows = getQuestionRows();
         const matchingRows = getMatchingRows();
         const totalPages = Math.max(1, Math.ceil(matchingRows.length / pageSize));
@@ -530,24 +621,36 @@ export function initScoreDetailsPage() {
 
         renderTablePagination(matchingRows);
 
-        // Update stat counters
+        // 8. Update stat counters for current subject scope
         const s = statsData[activeSection] ?? statsData['all'] ?? {};
-        if (document.getElementById('stat-total')) document.getElementById('stat-total').textContent = s.total ?? '';
-        if (document.getElementById('stat-correct')) document.getElementById('stat-correct').textContent = s.correct ?? '';
-        if (document.getElementById('stat-wrong')) document.getElementById('stat-wrong').textContent = s.wrong ?? '';
+        if (document.getElementById('stat-total')) document.getElementById('stat-total').textContent = s.total ?? '0';
+        if (document.getElementById('stat-correct')) document.getElementById('stat-correct').textContent = s.correct ?? '0';
+        if (document.getElementById('stat-wrong')) document.getElementById('stat-wrong').textContent = s.wrong ?? '0';
+        if (document.getElementById('stat-omitted')) document.getElementById('stat-omitted').textContent = s.omitted ?? '0';
+
+        // 9. Update result filter count badges
+        const allSecRows = rows.filter(r => activeSection === 'all' || r.dataset.section === activeSection);
+        const cntAll = allSecRows.length;
+        const cntWrong = allSecRows.filter(r => r.dataset.status === 'wrong').length;
+        const cntOmitted = allSecRows.filter(r => r.dataset.status === 'omitted').length;
+        const cntCorrect = allSecRows.filter(r => r.dataset.status === 'correct').length;
+
+        const setCnt = (sel, val) => {
+            const el = document.querySelector(sel);
+            if (el) el.textContent = String(val);
+        };
+        setCnt('[data-count-filter="all"]', cntAll);
+        setCnt('[data-count-filter="wrong"]', cntWrong);
+        setCnt('[data-count-filter="omitted"]', cntOmitted);
+        setCnt('[data-count-filter="correct"]', cntCorrect);
+
+        syncUrlState();
     }
 
-    // ── Tab switching ───────────────────────────────────────────
-    document.querySelectorAll('#skillTabs .sd-tab').forEach(btn => {
+    // ── Subject Tab switching ───────────────────────────────────
+    document.querySelectorAll('.sd-tab[data-subject]').forEach(btn => {
         btn.addEventListener('click', () => {
-            document.querySelectorAll('#skillTabs .sd-tab').forEach(b => b.classList.remove('active'));
-            btn.classList.add('active');
-            activeSection = btn.getAttribute('data-target');
-            activeStatusFilter = 'all';
-            // Reset filter buttons
-            document.querySelectorAll('.sd-view-btn[data-filter]').forEach(b => {
-                b.classList.toggle('active', b.dataset.filter === 'all');
-            });
+            activeSection = btn.getAttribute('data-subject');
             applyFilters({ resetPage: true });
         });
     });
@@ -555,14 +658,20 @@ export function initScoreDetailsPage() {
     // ── Result filter buttons ───────────────────────────────────
     document.querySelectorAll('.sd-view-btn[data-filter]').forEach(btn => {
         btn.addEventListener('click', function () {
-            const toolbar = this.closest('.sd-table-toolbar');
-            toolbar.querySelectorAll('.sd-view-btn[data-filter]').forEach(b => b.classList.remove('active'));
-            this.classList.add('active');
             activeStatusFilter = this.getAttribute('data-filter');
             applyFilters({ resetPage: true });
         });
     });
 
+    // ── Clear filters button ────────────────────────────────────
+    document.querySelectorAll('.sd-clear-filters-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+            activeStatusFilter = 'all';
+            applyFilters({ resetPage: true });
+        });
+    });
+
+    // ── Table Pagination buttons ────────────────────────────────
     document.querySelectorAll('[data-table-pagination]').forEach(pagination => {
         pagination.addEventListener('click', e => {
             const button = e.target.closest('button');
@@ -591,166 +700,425 @@ export function initScoreDetailsPage() {
         });
     });
 
-    // ── Review modal ───────────────────────────────────────────
-    let activeReviewData = null;
+    // ── Anchor Navigation smooth scroll ────────────────────────
+    const prefersReducedMotion = () => window.matchMedia?.('(prefers-reduced-motion: reduce)')?.matches ?? false;
+
+    document.querySelectorAll('.sd-nav-link[data-anchor]').forEach(link => {
+        link.addEventListener('click', e => {
+            const anchor = link.getAttribute('data-anchor');
+            const targetSection = document.getElementById(anchor);
+            if (targetSection) {
+                e.preventDefault();
+                targetSection.scrollIntoView({ behavior: prefersReducedMotion() ? 'auto' : 'smooth', block: 'start' });
+                window.location.hash = anchor;
+                document.querySelectorAll('.sd-nav-link').forEach(l => l.classList.toggle('active', l === link));
+            }
+        });
+    });
+
+    // Initial hash scroll
+    if (window.location.hash) {
+        const hashId = window.location.hash.replace(/^#/, '');
+        const hashTarget = document.getElementById(hashId);
+        if (hashTarget) {
+            requestAnimationFrame(() => {
+                hashTarget.scrollIntoView({ behavior: prefersReducedMotion() ? 'auto' : 'smooth', block: 'start' });
+            });
+        }
+    }
+
+    // ── Score Explainer Popover Dismissal ──────────────────────
+    const explainerDetails = document.querySelector('.sd-score-explainer-popover');
+    if (explainerDetails) {
+        document.addEventListener('click', (e) => {
+            if (explainerDetails.hasAttribute('open') && !explainerDetails.contains(e.target)) {
+                explainerDetails.removeAttribute('open');
+            }
+        });
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape' && explainerDetails.hasAttribute('open')) {
+                explainerDetails.removeAttribute('open');
+                explainerDetails.querySelector('summary')?.focus();
+            }
+        });
+    }
+
+    // ── Review Questions Action Button Navigation ──────────────
+    const reviewBtn = document.getElementById('btn-goto-review');
+    if (reviewBtn) {
+        reviewBtn.addEventListener('click', (e) => {
+            const target = document.getElementById('review');
+            if (target) {
+                e.preventDefault();
+                target.scrollIntoView({ behavior: prefersReducedMotion() ? 'auto' : 'smooth', block: 'start' });
+                window.location.hash = 'review';
+                document.querySelectorAll('.sd-nav-link').forEach(l => l.classList.toggle('active', l.getAttribute('data-anchor') === 'review'));
+            }
+        });
+    }
+
+    // ── Review Modal State & Lifecycle ─────────────────────────
+    let currentModalAnswerId = null;
     const reviewModalEl = document.getElementById('reviewModal');
 
     const closeModal = () => {
         if (!reviewModalEl) return;
+        window.dispatchEvent(new CustomEvent('close-modal', { detail: 'reviewModal' }));
+    };
+
+    window.addEventListener('close-modal', (e) => {
+        if (e.detail !== 'reviewModal' || !reviewModalEl) return;
         reviewModalEl.classList.remove('is-open');
-        document.body.style.overflow = '';
         setTimeout(() => {
             if (!reviewModalEl.classList.contains('is-open')) {
                 reviewModalEl.classList.add('hidden');
             }
         }, 180);
-    };
+    });
 
-    const openReviewModal = (btn) => {
-        try {
-            const rawData = btn.getAttribute('data-question');
-            if (!rawData || !reviewModalEl) return;
+    const openReviewModal = (answerId) => {
+        const data = questionDataMap[answerId];
+        if (!data || !reviewModalEl) return;
 
-            const data = JSON.parse(rawData);
-            activeReviewData = data;
+        currentModalAnswerId = String(answerId);
 
-            // 1. Populate text & HTML contents
-            document.getElementById('modalQuestionStem').innerHTML = data.stem ?? '';
-            document.getElementById('modalCorrectAnswer').innerHTML = data.correct_answer ?? 'N/A';
-            document.getElementById('modalExplanation').innerHTML = data.explanation ?? '';
+        // Title and badges
+        const titleEl = document.getElementById('modalQuestionTitle');
+        if (titleEl) {
+            titleEl.textContent = `Question ${data.idx}`;
+        }
+        const sectionBadge = document.getElementById('modalQuestionSectionBadge');
+        if (sectionBadge) {
+            sectionBadge.textContent = `${data.section_name}${data.module_number ? ' M' + data.module_number : ''}`;
+            sectionBadge.className = `sd-section-pill ${data.section_type}`;
+            sectionBadge.style.display = '';
+        }
+        const unscoredBadge = document.getElementById('modalUnscoredBadge');
+        if (unscoredBadge) {
+            unscoredBadge.style.display = data.is_pretest ? '' : 'none';
+        }
 
-            const answerEl = document.getElementById('modalYourAnswer');
-            const answerBox = document.getElementById('modalYourAnswerBox');
-            answerEl.innerHTML = data.your_answer ?? 'Omitted';
+        // Passage (if present)
+        const passageBox = document.getElementById('modalPassageContainer');
+        const passageContent = document.getElementById('modalPassageContent');
+        if (passageBox && passageContent) {
+            if (data.passage) {
+                passageContent.innerHTML = data.passage;
+                passageBox.style.display = '';
+            } else {
+                passageContent.innerHTML = '';
+                passageBox.style.display = 'none';
+            }
+        }
+
+        // Question stem
+        const stemEl = document.getElementById('modalQuestionStem');
+        if (stemEl) stemEl.innerHTML = data.stem ?? '';
+
+        // Submitted vs Correct answer
+        // SECURITY: Student answer rendered strictly as TEXT!
+        const answerEl = document.getElementById('modalYourAnswer');
+        const answerBox = document.getElementById('modalYourAnswerBox');
+        if (answerEl) answerEl.textContent = data.your_answer ?? 'Omitted';
+        if (answerBox) {
             answerBox.className = 'sd-modal-answer-box your-answer';
             if (data.status === 'correct') answerBox.classList.add('is-correct');
             else if (data.status === 'wrong') answerBox.classList.add('is-wrong');
             else answerBox.classList.add('is-omitted');
+        }
 
-            // Dynamic Choice Review rendering
-            const mcLabel = document.querySelector('.js-mc-label');
-            const mcList = document.querySelector('.js-mc-list');
-            if (mcLabel) mcLabel.style.display = 'none';
+        const correctEl = document.getElementById('modalCorrectAnswer');
+        if (correctEl) correctEl.textContent = data.correct_answer ?? 'N/A';
+
+        // Pacing text
+        const pacingEl = document.getElementById('modalPacingText');
+        if (pacingEl) {
+            if (data.pacing) {
+                const estText = data.is_fallback_expected ? ' (estimate)' : '';
+                const timingStr = data.time_spent ? `${data.time_spent}s` : 'No timing data';
+                pacingEl.innerHTML = `<strong>Pacing:</strong> ${timingStr}` +
+                    (data.expected_time ? ` &middot; Expected ~${data.expected_time}s${estText}` : '') +
+                    ` &middot; <span style="font-weight:700;">${data.pacing.label}</span>`;
+            } else {
+                pacingEl.textContent = 'No timing data recorded for this question.';
+            }
+        }
+
+        // MCQ Choices with explicit accessible labels
+        const mcLabel = document.querySelector('.js-mc-label');
+        const mcList = document.querySelector('.js-mc-list');
+        if (mcLabel) mcLabel.style.display = 'none';
+        if (mcList) {
+            mcList.style.display = 'none';
+            mcList.innerHTML = '';
+        }
+
+        if (data.question_type === 'multiple_choice' && Array.isArray(data.choices) && data.choices.length > 0) {
+            if (mcLabel) mcLabel.style.display = '';
             if (mcList) {
-                mcList.style.display = 'none';
-                mcList.innerHTML = '';
-            }
+                mcList.style.display = 'flex';
+                const fragment = document.createDocumentFragment();
 
-            if (data.question_type === 'multiple_choice' && data.choices && data.choices.length > 0) {
-                if (mcLabel) mcLabel.style.display = '';
-                if (mcList) {
-                    mcList.style.display = 'flex';
-                    const fragment = document.createDocumentFragment();
-                    data.choices.forEach(choice => {
-                        const isCorrectChoice = choice.is_correct;
-                        const isUserChoice = (data.your_answer === choice.label);
+                data.choices.forEach(choice => {
+                    const isCorrectChoice = Boolean(choice.is_correct);
+                    const isUserChoice = (data.your_answer === choice.label);
 
-                        const choiceItem = document.createElement('div');
-                        choiceItem.className = 'sd-modal-choice-item';
-                        if (isCorrectChoice) {
-                            choiceItem.classList.add('is-correct-choice');
-                        } else if (isUserChoice && !isCorrectChoice) {
-                            choiceItem.classList.add('is-wrong-choice');
-                        }
+                    const choiceItem = document.createElement('div');
+                    choiceItem.className = 'sd-modal-choice-item';
 
-                        choiceItem.innerHTML = `
-                            <span class="sd-choice-letter">${choice.label}</span>
-                            <span class="sd-choice-text">${choice.content}</span>
-                        `;
-                        fragment.appendChild(choiceItem);
-                    });
-                    mcList.appendChild(fragment);
-                }
-            }
-
-            const errorPanel = document.getElementById('modalErrorReviewPanel');
-            const errorType = document.getElementById('modalErrorType');
-            const errorStatus = document.getElementById('modalErrorReviewStatus');
-            if (errorPanel && errorType) {
-                const reviewable = Boolean(data.reviewable && data.review_url);
-                errorPanel.hidden = !reviewable;
-                if (reviewable) {
-                    const value = data.teacher_error_type ?? data.student_error_type ?? data.effective_error_type ?? '';
-                    errorType.value = value === 'unclassified' ? '' : value;
-                    if (errorStatus) errorStatus.textContent = data.teacher_error_type ? 'Teacher override active.' : '';
-                }
-            }
-
-            // 2. Unhide DOM element & lock body scroll
-            reviewModalEl.classList.remove('hidden');
-            document.body.style.overflow = 'hidden';
-
-            // 3. Trigger 60/120fps GPU transition on next frame
-            requestAnimationFrame(() => {
-                requestAnimationFrame(() => {
-                    reviewModalEl.classList.add('is-open');
-                });
-            });
-
-            // 4. Render KaTeX expressions after opening animation settles so it never drops frames
-            if (window.smartRenderMath) {
-                setTimeout(() => {
-                    if (reviewModalEl.classList.contains('is-open')) {
-                        window.smartRenderMath(reviewModalEl);
+                    let badgesHtml = '';
+                    if (isUserChoice && isCorrectChoice) {
+                        choiceItem.classList.add('is-correct-choice');
+                        badgesHtml = '<span class="sd-choice-text-badge correct">Your answer &middot; Correct</span>';
+                    } else if (isUserChoice && !isCorrectChoice) {
+                        choiceItem.classList.add('is-wrong-choice');
+                        badgesHtml = '<span class="sd-choice-text-badge wrong">Your answer</span>';
+                    } else if (isCorrectChoice) {
+                        choiceItem.classList.add('is-correct-choice');
+                        badgesHtml = '<span class="sd-choice-text-badge correct">Correct answer</span>';
                     }
-                }, 120);
+
+                    choiceItem.innerHTML = `
+                        <div style="display: flex; align-items: flex-start; gap: 0.6rem; width: 100%;">
+                            <span class="sd-choice-letter" aria-hidden="true">${choice.label}</span>
+                            <div style="flex: 1;">
+                                <div class="sd-choice-text">${choice.content}</div>
+                                ${badgesHtml ? `<div style="margin-top: 0.35rem;">${badgesHtml}</div>` : ''}
+                            </div>
+                        </div>
+                    `;
+                    fragment.appendChild(choiceItem);
+                });
+                mcList.appendChild(fragment);
             }
-        } catch (e) {
-            console.error('Review modal error:', e);
+        }
+
+        // Explanation (honest unavailable message if missing)
+        const explEl = document.getElementById('modalExplanation');
+        if (explEl) {
+            if (data.has_explanation && data.explanation) {
+                explEl.innerHTML = data.explanation;
+                explEl.style.color = '';
+                explEl.style.fontStyle = '';
+            } else {
+                explEl.textContent = 'No explanation is available for this practice question.';
+                explEl.style.color = 'var(--ds-text-tertiary, #64748b)';
+                explEl.style.fontStyle = 'italic';
+            }
+        }
+
+        // Mistake reflection panel
+        const errorPanel = document.getElementById('modalErrorReviewPanel');
+        const errorType = document.getElementById('modalErrorType');
+        const errorStatus = document.getElementById('modalErrorReviewStatus');
+        const retryBtn = document.getElementById('modalRetrySaveBtn');
+
+        if (errorPanel && errorType) {
+            const reviewable = Boolean(data.reviewable && data.review_url);
+            errorPanel.hidden = !reviewable;
+            if (reviewable) {
+                updateTeacherOverrideDisplay(data);
+
+                const activeSaved = (isTeacher ? data.teacher_error_type : data.student_error_type) ?? '';
+                const displayVal = (data.pendingErrorType !== undefined && data.pendingErrorType !== null)
+                    ? data.pendingErrorType
+                    : (activeSaved === 'unclassified' ? '' : activeSaved);
+
+                errorType.value = displayVal;
+                errorType.disabled = Boolean(data.isSavingClassification);
+
+                if (data.isSavingClassification) {
+                    if (retryBtn) retryBtn.style.display = 'none';
+                    if (errorStatus) {
+                        errorStatus.textContent = 'Saving…';
+                        errorStatus.style.color = 'var(--ds-text-tertiary, #64748b)';
+                    }
+                } else if (data.classificationError) {
+                    if (retryBtn) retryBtn.style.display = '';
+                    if (errorStatus) {
+                        errorStatus.textContent = data.classificationError;
+                        errorStatus.style.color = 'var(--ds-danger-text, #b91c1c)';
+                    }
+                } else if (data.classificationSuccess) {
+                    if (retryBtn) retryBtn.style.display = 'none';
+                    if (errorStatus) {
+                        errorStatus.textContent = data.classificationSuccess;
+                        errorStatus.style.color = 'var(--ds-progress-strong, #15803d)';
+                    }
+                } else {
+                    if (retryBtn) retryBtn.style.display = 'none';
+                    if (errorStatus) {
+                        errorStatus.textContent = '';
+                        errorStatus.style.color = 'var(--ds-text-tertiary, #64748b)';
+                    }
+                }
+            }
+        }
+
+        // Traversal buttons (Previous / Next in filtered set)
+        const filteredIds = getFilteredAnswerIds();
+        const currIdx = filteredIds.indexOf(String(answerId));
+        const prevBtn = document.getElementById('modalPrevBtn');
+        const nextBtn = document.getElementById('modalNextBtn');
+        const counterEl = document.getElementById('modalTraversalCounter');
+
+        if (prevBtn) prevBtn.disabled = currIdx <= 0;
+        if (nextBtn) nextBtn.disabled = currIdx < 0 || currIdx >= filteredIds.length - 1;
+        if (counterEl) {
+            counterEl.textContent = currIdx >= 0
+                ? `${currIdx + 1} of ${filteredIds.length}`
+                : '';
+        }
+
+        // Open dialog using shared dialogManager
+        if (!reviewModalEl.classList.contains('is-open')) {
+            reviewModalEl.classList.remove('hidden');
+            window.dispatchEvent(new CustomEvent('open-modal', { detail: 'reviewModal' }));
+            requestAnimationFrame(() => {
+                reviewModalEl.classList.add('is-open');
+            });
+        }
+
+        // Math KaTeX rendering: render immediately without artificial delay
+        if (window.smartRenderMath && reviewModalEl) {
+            window.smartRenderMath(reviewModalEl);
         }
     };
 
-    // Event delegation for review buttons (handles pagination & dynamic rows cleanly)
-    if (!window._scoreReviewModalBound) {
-        window._scoreReviewModalBound = true;
-        document.addEventListener('click', function (e) {
-            const btn = e.target.closest('.js-review-btn');
-            if (btn) {
-                openReviewModal(btn);
-            }
-        });
-    }
+    // ── Save Classification with response isolation & retry ───
+    async function saveClassification(answerId, errorTypeValue) {
+        const data = questionDataMap[answerId];
+        if (!data || !data.review_url) return;
 
-    document.getElementById('modalErrorType')?.addEventListener('change', async function () {
-        if (!activeReviewData?.review_url) return;
+        data.pendingErrorType = errorTypeValue;
+        data.isSavingClassification = true;
+        data.classificationError = null;
+        data.classificationSuccess = null;
 
+        const errorTypeSelect = document.getElementById('modalErrorType');
         const status = document.getElementById('modalErrorReviewStatus');
-        this.disabled = true;
-        if (status) status.textContent = 'Saving…';
+        const retryBtn = document.getElementById('modalRetrySaveBtn');
+
+        if (currentModalAnswerId === String(answerId)) {
+            if (errorTypeSelect) {
+                errorTypeSelect.value = errorTypeValue || '';
+                errorTypeSelect.disabled = true;
+            }
+            if (retryBtn) retryBtn.style.display = 'none';
+            if (status) {
+                status.textContent = 'Saving…';
+                status.style.color = 'var(--ds-text-tertiary, #64748b)';
+            }
+        }
+
         try {
             const token = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
-            const response = await fetch(activeReviewData.review_url, {
+            const response = await fetch(data.review_url, {
                 method: 'PATCH',
                 headers: {
                     'Accept': 'application/json',
                     'Content-Type': 'application/json',
                     ...(token ? { 'X-CSRF-TOKEN': token } : {}),
                 },
-                body: JSON.stringify({ error_type: this.value || null }),
+                body: JSON.stringify({ error_type: errorTypeValue || null }),
             });
-            if (!response.ok) throw new Error('Could not save review classification.');
+
+            if (!response.ok) {
+                const errJson = await response.json().catch(() => null);
+                throw new Error(errJson?.message || 'Could not save review classification.');
+            }
+
             const saved = await response.json();
-            activeReviewData.effective_error_type = saved.effective_error_type;
-            activeReviewData.student_error_type = saved.student_error_type;
-            activeReviewData.teacher_error_type = saved.teacher_error_type;
-            if (status) status.textContent = saved.teacher_error_type ? 'Teacher override saved.' : 'Classification saved.';
+            // Bind strictly to originating answerId
+            data.isSavingClassification = false;
+            data.pendingErrorType = null;
+            data.classificationError = null;
+            data.classificationSuccess = 'Classification saved.';
+            data.effective_error_type = saved.effective_error_type;
+            data.student_error_type = saved.student_error_type;
+            data.teacher_error_type = saved.teacher_error_type;
+
+            if (currentModalAnswerId === String(answerId)) {
+                if (errorTypeSelect) {
+                    const val = (isTeacher ? data.teacher_error_type : data.student_error_type) ?? '';
+                    errorTypeSelect.value = val === 'unclassified' ? '' : val;
+                    errorTypeSelect.disabled = false;
+                }
+                updateTeacherOverrideDisplay(data);
+                if (retryBtn) retryBtn.style.display = 'none';
+                if (status) {
+                    status.textContent = data.classificationSuccess;
+                    status.style.color = 'var(--ds-progress-strong, #15803d)';
+                }
+            }
         } catch (error) {
-            if (status) status.textContent = error.message;
-        } finally {
-            this.disabled = false;
+            data.isSavingClassification = false;
+            data.classificationError = error.message || 'Could not save review classification.';
+            if (currentModalAnswerId === String(answerId)) {
+                if (errorTypeSelect) errorTypeSelect.disabled = false;
+                if (status) {
+                    status.textContent = data.classificationError;
+                    status.style.color = 'var(--ds-danger-text, #b91c1c)';
+                }
+                if (retryBtn) {
+                    retryBtn.style.display = '';
+                }
+            }
+        }
+    }
+
+    // ── Review button event delegation ──────────────────────────
+    if (!window._scoreReviewModalBound) {
+        window._scoreReviewModalBound = true;
+        document.addEventListener('click', function (e) {
+            const btn = e.target.closest('.js-review-btn');
+            if (btn) {
+                if (btn.disabled) return;
+                const answerId = btn.getAttribute('data-answer-id');
+                if (answerId) {
+                    openReviewModal(answerId);
+                }
+            }
+        });
+    }
+
+    // Modal Traversal click listeners
+    document.getElementById('modalPrevBtn')?.addEventListener('click', () => {
+        const filteredIds = getFilteredAnswerIds();
+        const currIdx = filteredIds.indexOf(String(currentModalAnswerId));
+        if (currIdx > 0) {
+            openReviewModal(filteredIds[currIdx - 1]);
         }
     });
 
-    document.getElementById('reviewModalCloseBtn')?.addEventListener('click', closeModal);
-    document.getElementById('reviewModalCloseBtn2')?.addEventListener('click', closeModal);
-    document.getElementById('reviewModal')?.addEventListener('click', function (e) {
-        if (e.target === this) closeModal();
-    });
-    document.addEventListener('keydown', e => {
-        if (e.key === 'Escape') closeModal();
+    document.getElementById('modalNextBtn')?.addEventListener('click', () => {
+        const filteredIds = getFilteredAnswerIds();
+        const currIdx = filteredIds.indexOf(String(currentModalAnswerId));
+        if (currIdx >= 0 && currIdx < filteredIds.length - 1) {
+            openReviewModal(filteredIds[currIdx + 1]);
+        }
     });
 
-    applyFilters({ resetPage: true });
+    document.getElementById('modalRetrySaveBtn')?.addEventListener('click', () => {
+        if (!currentModalAnswerId) return;
+        const data = questionDataMap[currentModalAnswerId];
+        const val = data?.pendingErrorType ?? document.getElementById('modalErrorType')?.value ?? '';
+        saveClassification(currentModalAnswerId, val);
+    });
+
+    document.getElementById('modalErrorType')?.addEventListener('change', function () {
+        if (!currentModalAnswerId) return;
+        saveClassification(currentModalAnswerId, this.value);
+    });
+
+    // Close listeners
+    document.getElementById('reviewModalCloseBtn')?.addEventListener('click', closeModal);
+    document.getElementById('reviewModalCloseBtn2')?.addEventListener('click', closeModal);
+    reviewModalEl?.addEventListener('click', function (e) {
+        if (e.target === this) closeModal();
+    });
+
+    applyFilters({ resetPage: false });
 }
 window.initScoreDetailsPage = initScoreDetailsPage;
 

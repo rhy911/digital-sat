@@ -54,6 +54,8 @@
     --ds-danger: oklch(58% 0.16 24);
     --ds-danger-hover: oklch(50% 0.16 24);
     --ds-danger-soft: oklch(95% 0.035 24);
+    --ds-danger-strong: oklch(38% 0.16 24);
+    --ds-danger-text: var(--ds-danger-strong);
 
     /* --- Interaction States & High-Contrast Focus Indicator --- */
     --ds-focus: oklch(42% 0.15 258);

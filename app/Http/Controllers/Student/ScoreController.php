@@ -29,18 +29,47 @@ class ScoreController extends Controller
         return redirect()->route('student.scores.show', $latest);
     }
 
-    public function show(UserTest $userTest): \Illuminate\View\View
+    public function show(UserTest $userTest): \Illuminate\Http\RedirectResponse|\Illuminate\View\View|\Illuminate\Http\Response
     {
         $authUser = Auth::user();
         $this->authorize('view', $userTest);
-        $userTest->loadMissing(['user', 'assignment.classroom']);
 
-        $attempts = UserTest::with(['test', 'assignment.classroom'])
+        if ($userTest->status !== 'completed') {
+            if ($authUser->role === 'student') {
+                if ($userTest->status === 'in_progress') {
+                    return redirect()->route('my-practice', $userTest);
+                }
+
+                return redirect()->route('home.practice')->with('error', 'That practice attempt is no longer available.');
+            }
+
+            return response()->view('student.scores.unavailable', [
+                'user' => $userTest->user,
+                'authUser' => $authUser,
+                'userTest' => $userTest,
+            ], 409);
+        }
+
+        $userTest->loadMissing(['user', 'assignment.classroom', 'examSession']);
+
+        $attemptsQuery = UserTest::with(['test', 'assignment.classroom', 'examSession'])
             ->where('user_id', $userTest->user_id)
             ->where('status', 'completed')
             ->excludingAbsorbedSections()
-            ->orderBy('completed_at', 'desc')
-            ->get();
+            ->orderBy('completed_at', 'desc');
+
+        if ($authUser->role === 'teacher') {
+            $attemptsQuery->where(function ($query) use ($authUser) {
+                $query->whereHas('assignment.classroom', function ($cq) use ($authUser) {
+                    $cq->where('owner_id', $authUser->id)
+                        ->orWhereHas('coTeachers', fn ($teachers) => $teachers->whereKey($authUser->id));
+                })->orWhereHas('examSession', function ($eq) use ($authUser) {
+                    $eq->where('teacher_id', $authUser->id);
+                });
+            });
+        }
+
+        $attempts = $attemptsQuery->get();
 
         // An absorbed section attempt is hidden from the list but can still be
         // opened directly (e.g. from an assignment report) — keep it visible so
@@ -49,8 +78,25 @@ class ScoreController extends Controller
             $attempts = $attempts->push($userTest->loadMissing('test'))->sortByDesc('completed_at')->values();
         }
 
+        $classroom = $userTest->assignment?->classroom;
+        $progressUrl = match (true) {
+            $authUser->role === 'student' => route('student.progress'),
+            $authUser->role === 'teacher' && (bool) $classroom => route('teacher.classes.students.progress', [
+                'classroom' => $classroom,
+                'student' => $userTest->user_id,
+            ]),
+            $authUser->role === 'teacher' => route('teacher.progress'),
+            default => route('student.progress'),
+        };
+
         return view('student.scores.show', array_merge(
-            ['user' => $userTest->user, 'authUser' => $authUser, 'attempts' => $attempts, 'selectedUlid' => $userTest->ulid],
+            [
+                'user' => $userTest->user,
+                'authUser' => $authUser,
+                'attempts' => $attempts,
+                'selectedUlid' => $userTest->ulid,
+                'progressUrl' => $progressUrl,
+            ],
             $this->reportService->buildReportData($this->loadForReport($userTest))
         ));
     }
@@ -58,6 +104,7 @@ class ScoreController extends Controller
     public function exportPdf(UserTest $userTest): \Symfony\Component\HttpFoundation\StreamedResponse|\Illuminate\Http\Response
     {
         $this->authorize('view', $userTest);
+        abort_if($userTest->status !== 'completed', 409, 'Score report PDF is unavailable until the attempt is completed.');
 
         $report   = $this->reportService->buildReportData($this->loadForReport($userTest));
         $filename = sprintf(
@@ -80,11 +127,14 @@ class ScoreController extends Controller
         $relations = [
             'test',
             'user',
+            'examSession',
+            'assignment.classroom',
             'scoreConversionSet',
             'userAnswers.module',
             'userAnswers.question.explanation',
             'userAnswers.question.answerChoices',
             'userAnswers.question.sprCorrectAnswers',
+            'userAnswers.question.passage',
         ];
         if (Schema::hasTable('user_test_answer_reviews')) {
             $relations[] = 'userAnswers.review';

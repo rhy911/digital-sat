@@ -75,6 +75,17 @@ MARKDOWN);
         $this->assertStringContainsString($expected, QuestionContentRenderer::markdown($input));
     }
 
+    public function test_it_marks_every_supported_math_delimiter_as_pending(): void
+    {
+        $html = QuestionContentRenderer::markdown('$$x$$ and $y$ and \\(z\\) and \\[w\\]');
+
+        $this->assertSame(4, substr_count($html, 'class="latex-pending'));
+        $this->assertSame(1, substr_count($html, 'latex-pending--display'));
+        $this->assertStringContainsString('data-math-state="pending">$$x$$</span>', $html);
+        $this->assertStringContainsString('data-math-state="pending">$y$</span>', $html);
+        $this->assertStringContainsString('data-math-state="pending">\\[w\\]</span>', $html);
+    }
+
     /**
      * Content authored under the historical "double every backslash" rule must
      * keep rendering identically, so no data migration is required.
@@ -153,8 +164,8 @@ MARKDOWN);
             '<table><tbody><tr><td>$$\frac{1}{2}$$</td><td>$$50\%$$</td></tr></tbody></table>'
         );
 
-        $this->assertStringContainsString('<td>$$\displaystyle \frac{1}{2}$$</td>', $html);
-        $this->assertStringContainsString('<td>$$50\%$$</td>', $html);
+        $this->assertStringContainsString('<td><span class="latex-pending" data-math-state="pending">$$\displaystyle \frac{1}{2}$$</span></td>', $html);
+        $this->assertStringContainsString('<td><span class="latex-pending" data-math-state="pending">$$50\%$$</span></td>', $html);
     }
 
     public function test_it_leaves_an_unmatched_delimiter_alone(): void
@@ -233,7 +244,7 @@ MARKDOWN);
 | --- | --- |
 | Value $$x$$ | Fraction $$\frac{1}{2}$$ |
 TABLE,
-                ['<table>', '<th>Column 1</th>', '<td>Value $$x$$</td>', '<td>Fraction $$\displaystyle \frac{1}{2}$$</td>'],
+                ['<table>', '<th>Column 1</th>', '<td>Value <span class="latex-pending" data-math-state="pending">$$x$$</span></td>', '<td>Fraction <span class="latex-pending" data-math-state="pending">$$\displaystyle \frac{1}{2}$$</span></td>'],
             ],
             'unsafe HTML sanitized' => [
                 '<div onclick="evil()">Safe text</div><script>bad()</script><iframe src="javascript:alert(1)"></iframe>',

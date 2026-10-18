@@ -26,9 +26,10 @@
   - **Finding 3 [P2] (Failed load handling & recovery)**: Added `res.ok` status validation and payload structure validation to both `loadAnalysis` and `openInspection`. Maintained `analysisError` and `q.load_error` states without caching failure as success or merging error envelopes, and rendered dedicated error state banners with visible "Retry" buttons for both analysis data and modal inspection details.
   - **Finding 4 [P2] (Safe pending detail bindings)**: Populated safe defaults (`students => []`, `choices => []`, `spr_answers => []`, `explanation => [...]`, `details_loaded => false`, `load_error => null`) directly in `buildAnalysisSummary()`, and updated Blade inspection bindings to evaluate safe lengths `((activeQuestion.students || []).length)`. Wrapped modal body in `x-show="activeQuestion && !activeQuestion.loading_details && !activeQuestion.load_error"` to prevent evaluation before details arrive.
   - **Verification**: `npm run build` compiled cleanly (11.12s). Added comprehensive tests in `AssignmentReportServiceTest` asserting 200 on assigned question inspection, 404 on unrelated/pretest questions, and safe summary defaults across all 11 test assertions (100 assertions total, all passing).
+- **Pretest Question Visibility (2026-10-18)**: Included pretest questions in teacher assignment views (Student Results tab displays full count e.g. out of 98 with pretests counted in correct answers; Question Analysis tab includes all presented questions and factors them into summary stats). Allowed inspection of assigned pretest questions and added an informational `Unscored pretest` pill badge to the question inspection modal header. All 12 tests in `AssignmentReportServiceTest` pass (108 assertions); `npm run build` compiled cleanly.
 
 ## Next Immediate Steps
-1. Perform git review of uncommitted changes (`git diff`).
+1. Perform git review of the combined uncommitted changes (`git diff`), including unrelated pre-existing score report work.
 2. Await explicit user request before committing changes per repo rules.
 
 ## Gotchas & Uncommitted Discoveries

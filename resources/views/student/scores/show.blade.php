@@ -16,8 +16,10 @@
             :items="\App\Support\NavRail::forUser($viewer, $isTeacherView ? 'reports' : 'scores')" />
 
         <!-- COLUMN 2: ATTEMPTS LIST -->
-        <x-shell.sidebar-list :title="$isTeacherView ? $user->name . ' Scores' : 'My Scores'" count-text="{{ $attempts->count() }} completed"
-            search-placeholder="Search tests..." :filters="[
+        <x-shell.sidebar-list :title="$isTeacherView ? $user->name . ' Scores' : 'My Scores'"
+            item-label="attempts"
+            count-text="{{ $attempts->count() }} completed"
+            search-placeholder="Search attempts..." :filters="[
                 ['value' => 'all', 'label' => 'All'],
                 ['value' => 'full', 'label' => 'Full tests'],
                 ['value' => 'section', 'label' => 'Sections'],
@@ -31,71 +33,69 @@
                         'meta' => [
                             optional($a->completed_at)->format('M j, Y'),
                             $a->attempt_type === 'section'
-                                ? ($a->section_type === 'reading_writing' ? $a->score_reading_writing : $a->score_math) ?? '—'
-                                : $a->total_score ?? '—',
+                                ? (($a->section_type === 'reading_writing' ? $a->score_reading_writing : $a->score_math) !== null
+                                    ? (($a->section_type === 'reading_writing' ? $a->score_reading_writing : $a->score_math) . ' / 800')
+                                    : 'Practice attempt')
+                                : ($a->total_score !== null ? ($a->total_score . ' / 1600') : 'Practice attempt'),
                         ],
                     ],
                 )
                 ->all()">
         </x-shell.sidebar-list>
 
-        <!-- COLUMN 3: LEDGER PANE (report workspace + corkboard) -->
-        <div class="ledger-pane">
+        <!-- COLUMN 3: LEDGER PANE (continuous paper workspace, no corkboard) -->
+        <div class="ledger-pane no-corkboard">
             <x-ui.flash />
 
             <!-- MAIN LEDGER COLUMN -->
             <div class="binder-panel">
-                <div class="ledger-header">
-                    <div class="dh-left">
-                        <h2>{{ $userTest->test->title }}</h2>
-                        <div class="dh-desc">
-                            Student: <strong>{{ $user->name }}</strong> ({{ $user->email }}) &middot;
-                            {{ $userTest->completed_at ? $userTest->completed_at->format('F j, Y') : 'In progress' }}
+                <div class="ledger-header" style="display: flex; justify-content: space-between; align-items: flex-start; gap: 1rem; flex-wrap: wrap; margin-bottom: 1.5rem; padding-bottom: 1rem; border-bottom: 1px solid var(--ds-border-default, #e2e8f0);">
+                    <div class="dh-left" style="flex: 1; min-width: 260px;">
+                        @if ($isTeacherView)
+                            <div class="sd-teacher-student-card">
+                                <span class="sd-teacher-student-badge">Student</span>
+                                <span class="sd-teacher-student-name">{{ $user->name }}</span>
+                                <span class="sd-teacher-student-email">({{ $user->email }})</span>
+                            </div>
+                        @endif
+
+                        <h1 style="font-size: 1.6rem; font-weight: 800; color: var(--ds-text-primary, #0f172a); line-height: 1.25; margin: 0;">{{ $userTest->test->title }}</h1>
+                        <div class="dh-desc" style="font-size: 0.85rem; color: var(--ds-text-secondary, #64748b); margin-top: 0.35rem;">
+                            <span>{{ $userTest->attempt_type === 'section' ? ($userTest->section_type === 'reading_writing' ? 'Reading & Writing section' : 'Math section') : 'Full-length practice test' }}</span>
+                            &middot;
+                            <span>Completed {{ optional($userTest->completed_at)->format('F j, Y') ?: 'In progress' }}</span>
                             @if ($userTest->assignment)
-                                &middot; via {{ $userTest->assignment->classroom->name }}
+                                &middot;
+                                <span>via {{ $userTest->assignment->classroom?->name ?: ($userTest->assignment->title ?: 'Assignment') }}</span>
+                            @elseif ($userTest->examSession)
+                                &middot;
+                                <span>via {{ $userTest->examSession->title ?: 'Exam Session' }}</span>
+                            @else
+                                &middot;
+                                <span>Self-Paced Practice</span>
                             @endif
                         </div>
                     </div>
-                </div>
 
-                <x-shell.stat-row :stats="[
-                    ['value' => $attempts->count(), 'label' => 'Attempts'],
-                    ['value' => $attempts->max('total_score') ?? '—', 'label' => 'Best score'],
-                    ['value' => $userTest->total_score ?? ($correct . '/' . $totalQ), 'label' => 'This attempt'],
-                    ['value' => $accuracyPercent . '%', 'label' => 'Accuracy'],
-                ]" />
+                    <div class="dh-right" style="display: flex; gap: 0.75rem; align-items: center;">
+                        <a href="{{ $progressUrl }}"
+                           class="sd-action-btn secondary"
+                           title="View long-term progress analytics">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                                <polyline points="23 6 13.5 15.5 8.5 10.5 1 18"></polyline>
+                                <polyline points="17 6 23 6 23 12"></polyline>
+                            </svg>
+                            View Progress
+                        </a>
+                    </div>
+                </div>
 
                 @include('student.scores.partials.report')
             </div>
-
-            <!-- CORKBOARD -->
-            <x-shell.corkboard header="Digest">
-                <div class="cork-note">
-                    <h3>Latest score</h3>
-                    @php($latest = $attempts->first())
-                    @if ($latest)
-                        <p class="digest-line"><strong>{{ $latest->test->title }}</strong></p>
-                        <p class="cork-empty mt-2">{{ $latest->total_score ?? '—' }} ·
-                            {{ optional($latest->completed_at)->format('M j, Y') }}</p>
-                    @else
-                        <p class="cork-empty">No completed tests yet.</p>
-                    @endif
-                </div>
-
-                <div class="cork-note">
-                    <h3>Weakest domain</h3>
-                    @php($weakest = collect($domainSummaries)->sortBy('percentCorrect')->first())
-                    @if ($weakest)
-                        <p class="digest-line"><strong>{{ $weakest['domain'] }}</strong></p>
-                        <p class="cork-empty mt-2">{{ $weakest['percentCorrect'] }}% correct ·
-                            {{ $weakest['section'] }}</p>
-                    @else
-                        <p class="cork-empty">No scored domains for this attempt.</p>
-                    @endif
-                </div>
-            </x-shell.corkboard>
         </div>
     </div>
+
+    @include('student.scores.partials.modal')
 
     <x-slot name="scripts">
         <script>

@@ -13,7 +13,8 @@ import {
   showReviewSection,
   initializeAutosave,
   nextQuestion,
-  prevQuestion
+  prevQuestion,
+  preprocessQuestionMedia
 } from './test/navigation.js';
 import {
   initializeHighlightFeature,
@@ -83,7 +84,7 @@ function handleReviewButtonClick(e) {
 // MAIN EXECUTION
 // ============================================================================
 
-document.addEventListener("DOMContentLoaded", () => {
+document.addEventListener("DOMContentLoaded", async () => {
   initializeDOMElements();
   generateQuestionButtons();
   initializeQuestionTracking();
@@ -101,14 +102,32 @@ document.addEventListener("DOMContentLoaded", () => {
   const duration = window.durationMinutes ?? 32;
   startTimer(duration);
 
-  // Show initial question
+  // Pre-process all question media placeholders upfront
+  preprocessQuestionMedia();
+
+  // Pre-render KaTeX across all questions and passages while loading screen is active
+  if (window.smartRenderMath) {
+    await window.smartRenderMath(document.body);
+  }
+
+  // Preload and await KaTeX font readiness to prevent FOUT layout shift
+  if (document.fonts) {
+    try {
+      document.fonts.load('1em KaTeX_Main');
+      document.fonts.load('1em KaTeX_Math');
+      document.fonts.load('1em KaTeX_Size1');
+      await document.fonts.ready;
+    } catch (_) {}
+  }
+
+  // Show initial question (already pre-rendered at final layout)
   showQuestion(state.currentQuestionIndex);
 
   // Event Delegation
   document.addEventListener("click", handleQuestionButtonClick);
   document.addEventListener("click", handleReviewButtonClick);
 
-  // Hide initial loading screen once fully initialized
+  // Hide initial loading screen once fully initialized and fonts are settled
   hideLoadingScreen();
 
   // Prevent browser visual search and operations on exam images

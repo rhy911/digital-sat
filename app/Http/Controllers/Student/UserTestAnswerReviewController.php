@@ -17,6 +17,7 @@ class UserTestAnswerReviewController extends Controller
     {
         abort_unless(Schema::hasTable('user_test_answer_reviews'), 503, 'Answer review storage is not ready. Run database migrations.');
         $this->authorize('view', $userTest);
+        abort_if($userTest->status !== 'completed', 409, 'Answer review is unavailable until the attempt is completed.');
         abort_unless((int) $answer->user_test_id === (int) $userTest->id, 404);
         abort_if((bool) $answer->is_correct, 422, 'Only missed or omitted answers can be classified.');
 

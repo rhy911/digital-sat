@@ -52,6 +52,72 @@
     --z-tooltip: 10000;
 }
 
+.latex-pending {
+    visibility: hidden;
+}
+
+.latex-pending--display {
+    display: block;
+}
+
+.latex-pending[data-math-state="rendered"],
+.latex-pending[data-math-state="ready"],
+.latex-pending[data-math-state="error"] {
+    visibility: visible;
+}
+
+.latex-error-message {
+    color: #991b1b;
+}
+
+.latex-retry {
+    margin-inline-start: 0.35rem;
+    color: #1d4ed8;
+    text-decoration: underline;
+    cursor: pointer;
+}
+
+.question,
+.passage-container,
+.question-content,
+.question-card,
+.sd-modal-body,
+.edit-question-preview-pane,
+[data-math-container],
+[data-math-container-state] {
+    transition: opacity 120ms ease-out;
+}
+
+.question:has(.latex-pending[data-math-state="pending"]),
+.passage-container:has(.latex-pending[data-math-state="pending"]),
+.question-content:has(.latex-pending[data-math-state="pending"]),
+.question-card:has(.latex-pending[data-math-state="pending"]),
+.sd-modal-body:has(.latex-pending[data-math-state="pending"]),
+.edit-question-preview-pane:has(.latex-pending[data-math-state="pending"]),
+[data-math-container]:has(.latex-pending[data-math-state="pending"]),
+[data-math-container-state="pending"] {
+    opacity: 0.01;
+    pointer-events: none;
+}
+
+:is(.question, .passage-container, .question-content, .question-card, .sd-modal-body, .edit-question-preview-pane, [data-math-container]):has(.latex-pending[data-math-state="pending"]) :is(.question, .passage-container, .question-content, .question-card, .sd-modal-body, .edit-question-preview-pane, [data-math-container]) {
+    opacity: 1;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .question,
+    .passage-container,
+    .question-content,
+    .question-card,
+    .sd-modal-body,
+    .edit-question-preview-pane,
+    [data-math-container],
+    [data-math-container-state] {
+        opacity: 1 !important;
+        transition: none !important;
+    }
+}
+
 /* --- High-Contrast Focus Ring System (WCAG 2.1 AA Affordance) --- */
 .focus-ring,
 :focus-visible {

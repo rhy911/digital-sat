@@ -556,12 +556,13 @@ class AssignmentReportServiceTest extends TestCase
         ]));
         $unrelatedResponse->assertNotFound();
 
-        // 3. Pretest question -> 404
+        // 3. Pretest question belonging to test -> 200 (now inspectable with is_pretest flag)
         $pretestResponse = $this->actingAs($teacher)->getJson(route('teacher.assignments.question-inspection', [
             'assignment' => $assignment,
             'question' => $pretestQuestion,
         ]));
-        $pretestResponse->assertNotFound();
+        $pretestResponse->assertOk();
+        $this->assertTrue($pretestResponse->json('is_pretest'));
     }
 
     public function test_analysis_summary_supplies_safe_defaults_for_all_questions(): void
@@ -597,5 +598,67 @@ class AssignmentReportServiceTest extends TestCase
         $this->assertEmpty($first['choices']);
         $this->assertFalse($first['details_loaded']);
         $this->assertNull($first['load_error']);
+    }
+
+    public function test_student_results_and_analysis_include_pretest_questions(): void
+    {
+        ['assignment' => $assignment, 'teacher' => $teacher, 'q1' => $opQuestion, 'rwModule' => $rwModule] = $this->createAssignment();
+        $service = app(AssignmentReportService::class);
+
+        // Create a pretest question attached to the same module
+        $pretestQuestion = Question::create([
+            'stem' => 'Pretest stem',
+            'question_type' => 'multiple_choice',
+            'skill_domain' => 'craft_and_structure',
+            'created_by' => $teacher->id,
+            'is_pretest' => true,
+        ]);
+        $rwModule->questions()->attach($pretestQuestion->id, ['position' => 2]);
+
+        // Student completes both questions, getting both correct
+        $student = User::factory()->student()->create();
+        $this->createRecipient($assignment, $student);
+
+        $attempt = UserTest::create([
+            'assignment_id' => $assignment->id,
+            'test_id' => $assignment->test_id,
+            'user_id' => $student->id,
+            'status' => 'completed',
+            'attempt_number' => 1,
+            'total_score' => 1200,
+            'completed_at' => now(),
+        ]);
+
+        UserTestAnswer::create([
+            'user_test_id' => $attempt->id,
+            'question_id' => $opQuestion->id,
+            'module_id' => $rwModule->id,
+            'is_correct' => true,
+            'selected_answer' => 'A',
+        ]);
+        UserTestAnswer::create([
+            'user_test_id' => $attempt->id,
+            'question_id' => $pretestQuestion->id,
+            'module_id' => $rwModule->id,
+            'is_correct' => true,
+            'selected_answer' => 'B',
+        ]);
+
+        // 1. Report build: total_questions_count and correct_answers_count include pretest
+        $report = $service->build($assignment, perPage: 15, page: 1, includeAnalysis: false);
+        $bestAttempt = $report['rows'][0]['best'];
+        $this->assertSame(2, (int) $bestAttempt->total_questions_count);
+        $this->assertSame(2, (int) $bestAttempt->correct_answers_count);
+
+        // 2. Question count for assignment includes pretest
+        $this->assertSame(2, $service->getAssignmentQuestionCount($assignment));
+
+        // 3. Question analysis summary includes pretest question with is_pretest = true
+        $summary = $service->buildAnalysisSummary($assignment);
+        $this->assertCount(2, $summary['questions']);
+        $pretestItem = collect($summary['questions'])->firstWhere('id', $pretestQuestion->id);
+        $this->assertNotNull($pretestItem);
+        $this->assertTrue($pretestItem['is_pretest']);
+        $this->assertSame(2, $summary['stats']['total']);
     }
 }

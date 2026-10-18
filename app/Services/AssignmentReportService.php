@@ -209,12 +209,9 @@ class AssignmentReportService
                     ->whereIn('user_id', $pageStudentIds)
                     ->with(['currentModule.section'])
                     ->withCount([
-                        'userAnswers as total_questions_count' => function ($q) {
-                            $q->whereHas('question', fn ($qq) => $qq->where('is_pretest', false));
-                        },
+                        'userAnswers as total_questions_count',
                         'userAnswers as correct_answers_count' => function ($q) {
-                            $q->where('is_correct', true)
-                              ->whereHas('question', fn ($qq) => $qq->where('is_pretest', false));
+                            $q->where('is_correct', true);
                         },
                     ])
                     ->orderBy('attempt_number')
@@ -275,8 +272,6 @@ class AssignmentReportService
             foreach ($sections as $sec) {
                 foreach ($sec->modules as $mod) {
                     foreach ($mod->questions as $q) {
-                        if ($q->is_pretest) continue;
-                        
                         $correctAns = '—';
                         if ($q->question_type === 'multiple_choice') {
                             $correctChoice = $q->answerChoices->where('is_correct', true)->first();
@@ -391,8 +386,7 @@ class AssignmentReportService
             ->join('questions', 'questions.id', '=', 'module_questions.question_id')
             ->where('sections.test_id', $assignment->test_id)
             ->whereNull('sections.deleted_at')
-            ->whereNull('questions.deleted_at')
-            ->where('questions.is_pretest', false);
+            ->whereNull('questions.deleted_at');
 
         if ($assignment->isSectionAssignment()) {
             $sectionQuery->where('sections.type', $assignment->section_type === 'reading_writing' ? 'reading_writing' : 'math');
@@ -418,8 +412,6 @@ class AssignmentReportService
         foreach ($sections as $sec) {
             foreach ($sec->modules as $mod) {
                 foreach ($mod->questions as $q) {
-                    if ($q->is_pretest) continue;
-
                     $correctAns = '—';
                     if ($q->question_type === 'multiple_choice') {
                         $correctChoice = $q->answerChoices->firstWhere('is_correct', true);
@@ -439,6 +431,7 @@ class AssignmentReportService
                         'section_label' => in_array($sec->type ?? $sec->section_type, ['math', \App\Models\Section::TYPE_MATH], true) ? 'Math' : 'Reading & Writing',
                         'section_type' => in_array($sec->type ?? $sec->section_type, ['math', \App\Models\Section::TYPE_MATH], true) ? \App\Models\Section::TYPE_MATH : 'reading_writing',
                         'question_type' => $q->question_type,
+                        'is_pretest' => (bool) $q->is_pretest,
                         'stem' => \App\Support\QuestionContentRenderer::markdown(Str::limit($q->stem, 200)),
                         'correct_answer' => $correctAns,
                         'incorrect_rate' => 0,
@@ -521,10 +514,6 @@ class AssignmentReportService
             return false;
         }
 
-        if ($question->is_pretest) {
-            return false;
-        }
-
         $sectionQuery = $assignment->test->sections();
         if ($assignment->isSectionAssignment()) {
             $sectionQuery->where('type', $assignment->section_type === 'reading_writing' ? 'reading_writing' : 'math');
@@ -583,6 +572,7 @@ class AssignmentReportService
 
         return [
             'id' => $question->id,
+            'is_pretest' => (bool)$question->is_pretest,
             'stem' => \App\Support\QuestionContentRenderer::markdown($question->stem),
             'passage_title' => $question->passage?->title,
             'passage_body' => ($question->passage?->content ?? $question->passage?->body)

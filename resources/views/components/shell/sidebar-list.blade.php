@@ -9,6 +9,7 @@
         ['value' => 'archived', 'label' => 'Archived'],
     ],
     'classrooms' => null,
+    'itemLabel' => 'assignments',
 ])
 
 <div class="sidebar-col class-col"
@@ -139,18 +140,18 @@
 
         @if (empty($items) || count($items) === 0)
             <div class="p-6 text-center text-slate-500 text-xs">
-                <p class="font-medium text-slate-700 m-0">No assignments yet.</p>
+                <p class="font-medium text-slate-700 m-0">No {{ $itemLabel }} yet.</p>
             </div>
         @else
             <div x-cloak x-show="allItems.length > 0 && matchCount === 0" class="p-6 text-center text-slate-500 text-xs">
-                <p class="font-medium text-slate-700 m-0" x-text="searchQuery.trim() ? 'No assignments match &ldquo;' + searchQuery + '&rdquo;' : 'No assignments match the selected filter.'"></p>
+                <p class="font-medium text-slate-700 m-0" x-text="searchQuery.trim() ? ('No {{ $itemLabel }} match &ldquo;' + searchQuery + '&rdquo;') : ('No {{ $itemLabel }} match the selected filter.')"></p>
                 <button type="button" @click="searchQuery = ''; statusFilter = 'all'; if (typeof classFilter !== 'undefined') classFilter = 'all';"
                     class="mt-2 text-xs font-semibold text-brand hover:underline cursor-pointer">
                     Reset filters
                 </button>
             </div>
             <div class="sr-only" role="status" aria-live="polite"
-                x-text="allItems.length > 0 ? (matchCount + ' assignments found') : ''"></div>
+                x-text="allItems.length > 0 ? (matchCount + ' {{ $itemLabel }} found') : ''"></div>
         @endif
     </div>
 </div>

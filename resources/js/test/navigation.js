@@ -178,26 +178,44 @@ export function showQuestion(index) {
 
   if (state.questionNumberSpan) state.questionNumberSpan.textContent = index + 1;
 
+  if (rightPanel) rightPanel.scrollTop = 0;
+  if (leftPanel) leftPanel.scrollTop = 0;
+
   const popoverBtn = document.querySelector(".popover-btn");
   if (popoverBtn) popoverBtn.classList.remove("hidden");
 
   updateNavigationButtons();
   updateQuestionButtonStates();
 
-  // Handle [Media:filename] placeholders - Optimized: only current question + mark as processed
+  // Fast-path: ensure current question media is processed
   const currentPassageEl = state.passageElements[index];
-  const processElements = [];
-  
-  if (currentQuestionEl) {
-    processElements.push(...currentQuestionEl.querySelectorAll('.stem-text, .answer-option label'));
+  if (currentQuestionEl) preprocessQuestionMedia(currentQuestionEl);
+  if (currentPassageEl) preprocessQuestionMedia(currentPassageEl);
+
+  // If formulas were not pre-rendered, render fallback
+  if (window.smartRenderMath) {
+    if (currentQuestionEl?.querySelector('.latex-pending[data-math-state="pending"]')) {
+      window.smartRenderMath(currentQuestionEl);
+    }
+    if (currentPassageEl && !currentPassageEl.classList.contains('hidden') && currentPassageEl.querySelector('.latex-pending[data-math-state="pending"]')) {
+      window.smartRenderMath(currentPassageEl);
+    }
   }
-  if (currentPassageEl) {
-    processElements.push(currentPassageEl);
+}
+
+export function preprocessQuestionMedia(container) {
+  const root = container || document;
+  const processElements = root.querySelectorAll?.('.stem-text, .answer-option label, .passage-container')
+    ? Array.from(root.querySelectorAll('.stem-text, .answer-option label, .passage-container'))
+    : [];
+
+  if (root.matches?.('.stem-text, .answer-option label, .passage-container')) {
+    processElements.push(root);
   }
 
   processElements.forEach(area => {
     if (area.classList.contains('media-processed')) return;
-    
+
     const originalHTML = area.innerHTML;
     const newHTML = originalHTML.replace(/(?<!\!)\[Media:([^\]]+)\]/gi, (match, filename) => {
       const safeFilename = filename.trim();
@@ -207,20 +225,12 @@ export function showQuestion(index) {
 
       return `<img src="/media/${safeFilename}" alt="${safeFilename}" class="question-media img-fluid">`;
     });
-    
+
     if (newHTML !== originalHTML) {
       area.innerHTML = newHTML;
     }
     area.classList.add('media-processed');
   });
-
-  if (window.smartRenderMath) {
-    window.smartRenderMath(currentQuestionEl);
-    // If there's a passage, render it too
-    if (currentPassageEl && !currentPassageEl.classList.contains('hidden')) {
-      window.smartRenderMath(currentPassageEl);
-    }
-  }
 }
 
 export function showReviewSection() {

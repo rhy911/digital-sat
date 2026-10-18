@@ -43,27 +43,44 @@ class UserTestAnswer extends Model
 
     public function getQuestionAttribute()
     {
+        $resolveLive = function () {
+            if (array_key_exists('question', $this->relations)) {
+                return $this->relations['question'];
+            }
+
+            $live = $this->question_id ? $this->question()->first() : null;
+            $this->setRelation('question', $live);
+
+            return $live;
+        };
+
         if ($this->question_snapshot) {
             $snapshot = is_array($this->question_snapshot) ? $this->question_snapshot : json_decode($this->question_snapshot, true);
+
+            if (! is_array($snapshot)) {
+                return $resolveLive();
+            }
 
             $q = new Question;
             $q->forceFill([
                 'id' => $this->question_id,
-                'stem' => $snapshot['stem'] ?? '',
-                'question_type' => $snapshot['question_type'] ?? '',
-                'difficulty' => $snapshot['difficulty'] ?? '',
-                'skill_domain' => $snapshot['skill_domain'] ?? '',
-                'skill_subdomain' => $snapshot['skill_subdomain'] ?? '',
-                'expected_time' => $snapshot['expected_time'] ?? null,
-                'module_position' => $snapshot['module_position'] ?? null,
-                'is_pretest' => $snapshot['is_pretest'] ?? false,
-                'calculator_allowed' => $snapshot['calculator_allowed'] ?? false,
-                'irt_a' => $snapshot['irt_a'] ?? null,
-                'irt_b' => $snapshot['irt_b'] ?? null,
-                'irt_c' => $snapshot['irt_c'] ?? null,
-                'irt_calibration_status' => $snapshot['irt_calibration_status'] ?? 'provisional',
-                'irt_calibration_version' => $snapshot['irt_calibration_version'] ?? null,
-                'section_type' => $snapshot['section_type'] ?? null,
+                'stem' => array_key_exists('stem', $snapshot) ? $snapshot['stem'] : ($resolveLive()?->stem ?? ''),
+                'question_type' => array_key_exists('question_type', $snapshot) ? $snapshot['question_type'] : ($resolveLive()?->question_type ?? ''),
+                'difficulty' => array_key_exists('difficulty', $snapshot) ? $snapshot['difficulty'] : ($resolveLive()?->difficulty ?? ''),
+                'skill_domain' => array_key_exists('skill_domain', $snapshot) ? $snapshot['skill_domain'] : ($resolveLive()?->skill_domain ?? ''),
+                'skill_subdomain' => array_key_exists('skill_subdomain', $snapshot) ? $snapshot['skill_subdomain'] : ($resolveLive()?->skill_subdomain ?? ''),
+                'expected_time' => array_key_exists('expected_time', $snapshot) ? $snapshot['expected_time'] : $resolveLive()?->expected_time,
+                'module_position' => array_key_exists('module_position', $snapshot)
+                    ? $snapshot['module_position']
+                    : (array_key_exists('question_number', $snapshot) ? $snapshot['question_number'] : $resolveLive()?->module_position),
+                'is_pretest' => array_key_exists('is_pretest', $snapshot) ? (bool) $snapshot['is_pretest'] : ($resolveLive()?->is_pretest ?? false),
+                'calculator_allowed' => array_key_exists('calculator_allowed', $snapshot) ? (bool) $snapshot['calculator_allowed'] : ($resolveLive()?->calculator_allowed ?? false),
+                'irt_a' => array_key_exists('irt_a', $snapshot) ? $snapshot['irt_a'] : $resolveLive()?->irt_a,
+                'irt_b' => array_key_exists('irt_b', $snapshot) ? $snapshot['irt_b'] : $resolveLive()?->irt_b,
+                'irt_c' => array_key_exists('irt_c', $snapshot) ? $snapshot['irt_c'] : $resolveLive()?->irt_c,
+                'irt_calibration_status' => array_key_exists('irt_calibration_status', $snapshot) ? $snapshot['irt_calibration_status'] : ($resolveLive()?->irt_calibration_status ?? 'provisional'),
+                'irt_calibration_version' => array_key_exists('irt_calibration_version', $snapshot) ? $snapshot['irt_calibration_version'] : $resolveLive()?->irt_calibration_version,
+                'section_type' => array_key_exists('section_type', $snapshot) ? $snapshot['section_type'] : $resolveLive()?->section_type,
             ]);
             $q->exists = true;
 
@@ -74,51 +91,73 @@ class UserTestAnswer extends Model
                 ]);
                 $passage->exists = true;
                 $q->setRelation('passage', $passage);
+            } elseif (array_key_exists('passage', $snapshot)) {
+                $q->setRelation('passage', null);
+            } elseif (($live = $resolveLive()) && ($live->relationLoaded('passage') || $live->passage)) {
+                $q->setRelation('passage', $live->passage);
             }
 
-            $choices = collect($snapshot['choices'] ?? [])->map(function ($choice) {
-                $c = new AnswerChoice;
-                $c->forceFill([
-                    'label' => $choice['label'] ?? '',
-                    'content' => $choice['content'] ?? '',
-                    'is_correct' => $choice['is_correct'] ?? false,
-                    'order' => $choice['order'] ?? 0,
-                ]);
-                $c->exists = true;
+            if (! empty($snapshot['choices'])) {
+                $choices = collect($snapshot['choices'])->map(function ($choice) {
+                    $c = new AnswerChoice;
+                    $c->forceFill([
+                        'label' => $choice['label'] ?? '',
+                        'content' => $choice['content'] ?? '',
+                        'is_correct' => $choice['is_correct'] ?? false,
+                        'order' => $choice['order'] ?? 0,
+                    ]);
+                    $c->exists = true;
 
-                return $c;
-            });
-            $q->setRelation('answerChoices', $choices);
+                    return $c;
+                });
+                $q->setRelation('answerChoices', $choices);
+            } elseif (array_key_exists('choices', $snapshot)) {
+                $q->setRelation('answerChoices', collect());
+            } elseif (($live = $resolveLive()) && ($live->relationLoaded('answerChoices') || $live->answerChoices)) {
+                $q->setRelation('answerChoices', $live->answerChoices);
+            }
 
-            $spr = collect($snapshot['spr_answers'] ?? [])->map(function ($ans) {
-                $s = new SprCorrectAnswer;
-                $s->forceFill([
-                    'answer' => $ans['answer'] ?? '',
-                    'answer_type' => $ans['answer_type'] ?? 'exact',
-                    'tolerance' => $ans['tolerance'] ?? null,
-                ]);
-                $s->exists = true;
+            if (! empty($snapshot['spr_answers'])) {
+                $spr = collect($snapshot['spr_answers'])->map(function ($ans) {
+                    $s = new SprCorrectAnswer;
+                    $s->forceFill([
+                        'answer' => $ans['answer'] ?? '',
+                        'answer_type' => $ans['answer_type'] ?? 'exact',
+                        'tolerance' => $ans['tolerance'] ?? null,
+                    ]);
+                    $s->exists = true;
 
-                return $s;
-            });
-            $q->setRelation('sprCorrectAnswers', $spr);
+                    return $s;
+                });
+                $q->setRelation('sprCorrectAnswers', $spr);
+            } elseif (array_key_exists('spr_answers', $snapshot)) {
+                $q->setRelation('sprCorrectAnswers', collect());
+            } elseif (($live = $resolveLive()) && ($live->relationLoaded('sprCorrectAnswers') || $live->sprCorrectAnswers)) {
+                $q->setRelation('sprCorrectAnswers', $live->sprCorrectAnswers);
+            }
 
             if (! empty($snapshot['explanation'])) {
                 $expl = new QuestionExplanation;
                 $expl->forceFill([
-                    'explanation' => $snapshot['explanation']['explanation'] ?? '',
-                    'rationale_a' => $snapshot['explanation']['rationale_a'] ?? null,
-                    'rationale_b' => $snapshot['explanation']['rationale_b'] ?? null,
-                    'rationale_c' => $snapshot['explanation']['rationale_c'] ?? null,
-                    'rationale_d' => $snapshot['explanation']['rationale_d'] ?? null,
+                    'explanation' => is_array($snapshot['explanation'])
+                        ? ($snapshot['explanation']['explanation'] ?? '')
+                        : (string) $snapshot['explanation'],
+                    'rationale_a' => is_array($snapshot['explanation']) ? ($snapshot['explanation']['rationale_a'] ?? null) : null,
+                    'rationale_b' => is_array($snapshot['explanation']) ? ($snapshot['explanation']['rationale_b'] ?? null) : null,
+                    'rationale_c' => is_array($snapshot['explanation']) ? ($snapshot['explanation']['rationale_c'] ?? null) : null,
+                    'rationale_d' => is_array($snapshot['explanation']) ? ($snapshot['explanation']['rationale_d'] ?? null) : null,
                 ]);
                 $expl->exists = true;
                 $q->setRelation('explanation', $expl);
+            } elseif (array_key_exists('explanation', $snapshot)) {
+                $q->setRelation('explanation', null);
+            } elseif (($live = $resolveLive()) && ($live->relationLoaded('explanation') || $live->explanation)) {
+                $q->setRelation('explanation', $live->explanation);
             }
 
             return $q;
         }
 
-        return $this->relations['question'] ?? $this->question()->first();
+        return $resolveLive();
     }
 }

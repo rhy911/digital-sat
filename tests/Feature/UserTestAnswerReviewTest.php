@@ -37,6 +37,76 @@ class UserTestAnswerReviewTest extends TestCase
         $this->actingAs($other)->patchJson($route, ['error_type' => 'guess'])->assertForbidden();
     }
 
+    public function test_teacher_can_override_classification_and_clearing_retains_student_classification(): void
+    {
+        $teacher = User::factory()->teacher()->create();
+        $student = User::factory()->student()->create();
+        $classroom = \App\Models\Classroom::create(['owner_id' => $teacher->id, 'name' => 'Cohort Review']);
+        \App\Models\ClassroomMembership::create(['classroom_id' => $classroom->id, 'student_id' => $student->id, 'status' => 'active']);
+
+        [$attempt, $answer] = $this->attemptWithWrongAnswer($student);
+        $assignment = \App\Models\Assignment::create([
+            'classroom_id' => $classroom->id,
+            'teacher_id' => $teacher->id,
+            'test_id' => $attempt->test_id,
+            'title' => 'Assigned Review Test',
+        ]);
+        $attempt->update(['assignment_id' => $assignment->id]);
+
+        $route = route('student.scores.answers.review', [$attempt, $answer]);
+
+        // 1. Student classifies as guess
+        $this->actingAs($student)->patchJson($route, ['error_type' => 'guess'])
+            ->assertOk()
+            ->assertJson([
+                'effective_error_type' => 'guess',
+                'student_error_type' => 'guess',
+                'teacher_error_type' => null,
+            ]);
+
+        // 2. Teacher overrides as calculation
+        $this->actingAs($teacher)->patchJson($route, ['error_type' => 'calculation'])
+            ->assertOk()
+            ->assertJson([
+                'effective_error_type' => 'calculation',
+                'student_error_type' => 'guess',
+                'teacher_error_type' => 'calculation',
+            ]);
+
+        $this->assertDatabaseHas('user_test_answer_reviews', [
+            'user_test_answer_id' => $answer->id,
+            'student_error_type' => 'guess',
+            'teacher_error_type' => 'calculation',
+            'teacher_id' => $teacher->id,
+        ]);
+
+        // 3. Teacher views score report -> sees data-is-teacher="true"
+        $teacherView = $this->actingAs($teacher)->get(route('student.scores.show', $attempt));
+        $teacherView->assertOk()
+            ->assertSee('data-is-teacher="true"', false);
+
+        // 4. Student views score report -> sees data-is-teacher="false"
+        $studentView = $this->actingAs($student)->get(route('student.scores.show', $attempt));
+        $studentView->assertOk()
+            ->assertSee('data-is-teacher="false"', false);
+
+        // 5. Teacher clears override
+        $this->actingAs($teacher)->patchJson($route, ['error_type' => null])
+            ->assertOk()
+            ->assertJson([
+                'effective_error_type' => 'guess',
+                'student_error_type' => 'guess',
+                'teacher_error_type' => null,
+            ]);
+
+        $this->assertDatabaseHas('user_test_answer_reviews', [
+            'user_test_answer_id' => $answer->id,
+            'student_error_type' => 'guess',
+            'teacher_error_type' => null,
+            'teacher_id' => null,
+        ]);
+    }
+
     private function attemptWithWrongAnswer(User $student): array
     {
         $teacher = User::factory()->teacher()->create();

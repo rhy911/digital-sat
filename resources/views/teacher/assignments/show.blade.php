@@ -329,12 +329,10 @@
 
                         renderModalMath() {
                             this.$nextTick(() => {
-                                setTimeout(() => {
-                                    const modalEl = document.getElementById('modal-inspect-question');
-                                    if (window.smartRenderMath) {
-                                        window.smartRenderMath(modalEl || document.body);
-                                    }
-                                }, 50);
+                                const modalEl = document.getElementById('modal-inspect-question');
+                                if (window.smartRenderMath) {
+                                    window.smartRenderMath(modalEl || document.body);
+                                }
                             });
                         },
 
@@ -677,6 +675,9 @@
                                                   }"
                                                   x-text="activeQuestion.difficulty"></span>
                                             <span class="text-3xs font-medium text-slate-500 truncate max-w-[170px]" :title="activeQuestion.domain" x-text="activeQuestion.domain"></span>
+                                            <template x-if="activeQuestion.is_pretest">
+                                                <span class="status-pill draft text-3xs font-bold uppercase tracking-wider" title="Pretest items do not count toward the score">Unscored pretest</span>
+                                            </template>
                                         </div>
 
                                         <!-- Navigation Controls and Close Button -->

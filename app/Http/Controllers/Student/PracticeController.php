@@ -42,6 +42,10 @@ class PracticeController extends Controller
                 : redirect()->route('home.practice')->with('error', 'That practice attempt cannot be resumed.');
         }
 
+        if ($userTest->status !== 'completed') {
+            return redirect()->route('home.practice')->with('error', 'That practice attempt is no longer available.');
+        }
+
         return redirect()->route('student.scores.show', $userTest);
     }
 
