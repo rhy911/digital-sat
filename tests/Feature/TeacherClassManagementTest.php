@@ -80,8 +80,21 @@ class TeacherClassManagementTest extends TestCase
         $this->actingAs($admin)
             ->get(route('admin.teacher-applications.index'))
             ->assertOk()
+            ->assertSee('icon-rail--product')
             ->assertSee('Teacher applications')
             ->assertSee('Test Builder');
+    }
+
+    public function test_content_suite_uses_shared_product_layout_for_teachers_and_admins(): void
+    {
+        foreach ([$this->teacher(), User::factory()->admin()->create()] as $author) {
+            $this->actingAs($author)->get(route('home-dashboard.index'))
+                ->assertOk()
+                ->assertSee('product-ui')
+                ->assertSee('Content Suite')
+                ->assertSee('id="dashboardTabs"', false)
+                ->assertSee('id="recycle-bin-tab"', false);
+        }
     }
 
     public function test_class_and_report_entry_points_open_real_pages(): void

@@ -24,13 +24,13 @@
                     };
                 @endphp
                 <div class="rounded-xl border border-slate-200/80 p-3.5 bg-white">
-                    <div class="flex items-center justify-between text-xs font-semibold text-slate-700 mb-2">
+                    <div class="flex items-center justify-between text-sm font-semibold text-slate-700 mb-2">
                         <span class="font-bold text-sm">{{ $row['label'] }} Tier</span>
                         <div class="flex items-center gap-2">
                             <x-ui.status-badge :status="$status">
                                 {{ $pace }}
                             </x-ui.status-badge>
-                            <span class="font-bold text-slate-800 tabular-nums">{{ $avgSpent }}s <span class="text-slate-400 font-normal">/ {{ $avgExpected }}s target</span></span>
+                            <span class="font-bold text-slate-800 tabular-nums">{{ $avgSpent }}s <span class="text-slate-500 font-normal">/ {{ $avgExpected }}s target</span></span>
                         </div>
                     </div>
 
@@ -47,7 +47,7 @@
         <div class="p-empty-state">
             <x-ui.icon name="clock" class="w-10 h-10 text-slate-300 mb-2" aria-hidden="true" />
             <p class="font-semibold text-slate-700">No pacing data yet</p>
-            <p class="text-xs text-slate-500 max-w-sm mt-1">Complete a timed practice test to assess your pacing speed.</p>
+            <p class="text-sm text-slate-500 max-w-sm mt-1">Complete a timed practice test to assess your pacing speed.</p>
         </div>
     @endif
 </article>

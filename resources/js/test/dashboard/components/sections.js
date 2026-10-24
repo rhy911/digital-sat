@@ -26,17 +26,17 @@ function sectionUpdateUrl(sectionId) {
 function renderSectionRowHtml(s) {
     const isOwner = s.is_owner;
     const creatorName = s.created_by_name || 'Admin';
-    const createdByHtml = `<span class="text-xs font-semibold text-slate-600 truncate max-w-[110px] block" title="${escapeHtml(creatorName)}">${escapeHtml(creatorName)}</span>`;
+    const createdByHtml = `<span class="text-sm font-semibold text-slate-600 truncate max-w-[110px] block" title="${escapeHtml(creatorName)}">${escapeHtml(creatorName)}</span>`;
 
     // Section Name input/span
     const nameHtml = isOwner
-        ? `<input type="text" class="section-name-input w-full bg-transparent border-0 hover:bg-slate-100 focus:bg-white focus:ring-2 focus:ring-brand/20 focus:outline-none rounded-lg px-2 py-1 font-semibold text-slate-800 transition-all" value="${escapeHtml(s.name)}" data-id="${s.id}">`
+        ? `<input type="text" aria-label="Section name" class="section-name-input w-full bg-transparent border-0 hover:bg-slate-100 focus:bg-white focus:ring-2 focus:ring-brand/20 focus:outline-none rounded-lg px-2 py-1 font-semibold text-slate-800 transition-all" value="${escapeHtml(s.name)}" data-id="${s.id}">`
         : `<span class="px-2 py-1 font-semibold text-slate-800">${escapeHtml(s.name)}</span>`;
 
     // Public toggle checkbox
     const publicHtml = isOwner
         ? `<div class="flex items-center justify-center"><input type="checkbox" data-id="${s.id}" class="w-4 h-4 text-brand border-slate-300 bg-white rounded cursor-pointer section-public-checkbox" ${s.is_public ? 'checked' : ''} title="${s.is_public ? 'Public (Click to make Private)' : 'Private (Click to make Public)'}" aria-label="Toggle public visibility"></div>`
-        : `<div class="flex items-center justify-center"><input type="checkbox" checked disabled class="w-4 h-4 text-slate-400 border-slate-200 bg-slate-100 rounded cursor-not-allowed opacity-60" title="Shared (View only)" aria-label="Shared resource"></div>`;
+        : `<div class="flex items-center justify-center"><input type="checkbox" checked disabled class="w-4 h-4 text-slate-500 border-slate-200 bg-slate-100 rounded cursor-not-allowed opacity-60" title="Shared (View only)" aria-label="Shared resource"></div>`;
 
     // Adaptive IRT separation badge
     let irtHtml = '<span class="text-slate-300 font-semibold text-center block">—</span>';
@@ -48,16 +48,16 @@ function renderSectionRowHtml(s) {
             const tooltip = `Hard mean: ${s.adaptive_irt.hard_mean} | Easy mean: ${s.adaptive_irt.easy_mean} (Target ≥ +0.50b)`;
             if (s.adaptive_irt.meets_target) {
                 irtHtml = `<div class="flex items-center justify-center" title="${tooltip}">
-                    <span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-bold bg-emerald-50 text-emerald-700 ring-1 ring-inset ring-emerald-600/20">
+                    <span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-sm font-bold bg-emerald-50 text-emerald-700 ring-1 ring-inset ring-emerald-600/20">
                         ${diffText}
-                        <span class="text-[10px] font-medium text-emerald-600">Optimal</span>
+                        <span class="text-sm font-medium text-emerald-600">Optimal</span>
                     </span>
                 </div>`;
             } else {
                 irtHtml = `<div class="flex items-center justify-center" title="${tooltip}">
-                    <span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-bold bg-amber-50 text-amber-700 ring-1 ring-inset ring-amber-600/20">
+                    <span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-sm font-bold bg-amber-50 text-amber-700 ring-1 ring-inset ring-amber-600/20">
                         ${diffText}
-                        <span class="text-[10px] font-medium text-amber-600">&lt;0.50</span>
+                        <span class="text-sm font-medium text-amber-600">&lt;0.50</span>
                     </span>
                 </div>`;
             }
@@ -65,7 +65,7 @@ function renderSectionRowHtml(s) {
             const easyTxt = s.adaptive_irt.easy_mean !== null ? s.adaptive_irt.easy_mean : 'None';
             const hardTxt = s.adaptive_irt.hard_mean !== null ? s.adaptive_irt.hard_mean : 'None';
             irtHtml = `<div class="flex items-center justify-center" title="Easy: ${easyTxt} | Hard: ${hardTxt}">
-                <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium bg-slate-100 text-slate-500">
+                <span class="inline-flex items-center px-2 py-0.5 rounded-full text-sm font-medium bg-slate-100 text-slate-500">
                     Pending items
                 </span>
             </div>`;
@@ -75,7 +75,7 @@ function renderSectionRowHtml(s) {
     // Actions dropdown
     const actionsHtml = isOwner
         ? `<div class="actions-dropdown">
-            <button type="button" class="px-2.5 py-1.5 text-xs font-bold rounded-lg border border-slate-200 bg-white text-slate-700 cursor-pointer hover:bg-slate-50 flex items-center gap-1" data-dropdown-trigger="true" aria-expanded="false" aria-label="Toggle actions menu">
+            <button type="button" class="px-2.5 py-1.5 text-sm font-bold rounded-lg border border-slate-200 bg-white text-slate-700 cursor-pointer hover:bg-slate-50 flex items-center gap-1" data-dropdown-trigger="true" aria-expanded="false" aria-label="Toggle actions menu">
                 Actions ${icon('chevron-down', 'w-2.5 h-2.5')}
             </button>
             <div class="dropdown-menu hidden">
@@ -83,12 +83,12 @@ function renderSectionRowHtml(s) {
                 <button type="button" class="dropdown-item text-danger delete-section-btn" data-id="${s.id}">${icon('trash', 'w-4 h-4 mr-2')} Delete</button>
             </div>
           </div>`
-        : `<button type="button" class="min-h-9 rounded-lg border border-slate-300 bg-white px-3 text-xs font-bold text-slate-700 hover:bg-slate-50 reuse-section-btn" data-id="${s.id}">Reuse</button>`;
+        : `<button type="button" class="min-h-9 rounded-lg border border-slate-300 bg-white px-3 text-sm font-bold text-slate-700 hover:bg-slate-50 reuse-section-btn" data-id="${s.id}">Reuse</button>`;
 
     const rowClass = isOwner ? '' : 'row-shared';
 
     return `<tr class="${rowClass}">
-        <td class="font-semibold text-slate-400 text-center">${escapeHtml(s.id)}</td>
+        <td class="font-semibold text-slate-500 text-center">${escapeHtml(s.id)}</td>
         <td>${escapeHtml(s.test_title)}</td>
         <td>${nameHtml}</td>
         <td class="text-center">${irtHtml}</td>
@@ -103,30 +103,30 @@ function renderSectionRowHtml(s) {
 function _renderSectionsChunked(tbody, items, emptyHtml) {
     currentSectionsRenderId++;
     const renderId = currentSectionsRenderId;
-    
+
     if (!items.length) {
         tbody.innerHTML = emptyHtml;
         return;
     }
-    
+
     tbody.innerHTML = '';
     let index = 0;
     const chunkSize = 20;
-    
+
     function renderChunk() {
         if (renderId !== currentSectionsRenderId) return;
-        
+
         const chunk = items.slice(index, index + chunkSize);
         if (!chunk.length) return;
-        
+
         tbody.insertAdjacentHTML('beforeend', chunk.map(renderSectionRowHtml).join(''));
         index += chunkSize;
-        
+
         if (index < items.length) {
             requestAnimationFrame(() => setTimeout(renderChunk, 0));
         }
     }
-    
+
     renderChunk();
 }
 
@@ -136,7 +136,7 @@ function renderSectionsPage() {
 
     const page = window.__tdSectionsPage || 1;
     const perPage = window.__tdSectionsPerPage || 30;
-    
+
     const start = (page - 1) * perPage;
     const end = page * perPage;
     const sliced = currentFilteredSections.slice(start, end);
@@ -145,7 +145,7 @@ function renderSectionsPage() {
         + '<td colspan="10" class="px-6 py-20 text-center">'
         + '<div class="flex flex-col items-center justify-center">'
         + '<div class="w-20 h-20 rounded-full bg-slate-50 border border-slate-200 flex items-center justify-center mb-6">'
-        + icon('inbox', 'w-10 h-10 text-slate-400')
+        + icon('inbox', 'w-10 h-10 text-slate-500')
         + '</div>'
         + '<h4 class="text-lg font-bold text-slate-800">No sections found</h4>'
         + '<p class="text-sm text-slate-500 mt-1 max-w-xs mx-auto">Create one section to assign modules.</p>'
@@ -160,35 +160,35 @@ function renderSectionsPage() {
 export function renderSectionsPagination(total) {
     const wrap = document.getElementById('sectionsPoolPagination');
     if (!wrap) return;
-    
+
     if (total === 0) {
         wrap.innerHTML = '';
         return;
     }
-    
+
     const cur = window.__tdSectionsPage || 1;
     const perPage = window.__tdSectionsPerPage || 30;
     const last = Math.ceil(total / perPage) || 1;
-    
+
     let html = '<div class="flex flex-wrap justify-between items-center w-full gap-3 px-2">';
-    html += '<span class="text-xs font-semibold text-slate-600">Page ' + cur + ' of ' + last + ' <span class="mx-1 text-slate-300">•</span> ' + total + ' sections</span>';
+    html += '<span class="text-sm font-semibold text-slate-600">Page ' + cur + ' of ' + last + ' <span class="mx-1 text-slate-300">•</span> ' + total + ' sections</span>';
     html += '<div class="flex gap-2">';
-    html += '<button type="button" class="min-h-9 px-3 py-1.5 text-xs font-semibold rounded-lg border border-slate-200 bg-white text-slate-700 hover:bg-slate-50 hover:border-slate-300 transition-colors duration-150 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer" data-s-page="prev"' + (cur <= 1 ? ' disabled' : '') + '>Previous</button>';
-    html += '<button type="button" class="min-h-9 px-3 py-1.5 text-xs font-semibold rounded-lg border border-slate-200 bg-white text-slate-700 hover:bg-slate-50 hover:border-slate-300 transition-colors duration-150 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer" data-s-page="next"' + (cur >= last ? ' disabled' : '') + '>Next</button>';
+    html += '<button type="button" class="min-h-9 px-3 py-1.5 text-sm font-semibold rounded-lg border border-slate-200 bg-white text-slate-700 hover:bg-slate-50 hover:border-slate-300 transition-colors duration-150 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer" data-s-page="prev"' + (cur <= 1 ? ' disabled' : '') + '>Previous</button>';
+    html += '<button type="button" class="min-h-9 px-3 py-1.5 text-sm font-semibold rounded-lg border border-slate-200 bg-white text-slate-700 hover:bg-slate-50 hover:border-slate-300 transition-colors duration-150 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer" data-s-page="next"' + (cur >= last ? ' disabled' : '') + '>Next</button>';
     html += '</div></div>';
     wrap.innerHTML = html;
-    
+
     if (wrap.dataset.bound !== '1') {
         wrap.dataset.bound = '1';
         wrap.addEventListener('click', function (e) {
             const btn = e.target.closest('[data-s-page]');
             if (!btn || btn.disabled) return;
-            
+
             const dir = btn.getAttribute('data-s-page');
             const curPage = window.__tdSectionsPage || 1;
-            
+
             showTableLoader('sectionsTableContainer');
-            
+
             setTimeout(() => {
                 if (dir === 'prev') {
                     window.__tdSectionsPage = Math.max(1, curPage - 1);
@@ -303,10 +303,10 @@ function initSectionsEvents() {
         tbody.addEventListener('change', function(e) {
             const checkbox = e.target.closest('.section-public-checkbox');
             if (!checkbox) return;
-            
+
             const sectionId = checkbox.dataset.id;
             const checked = checkbox.checked;
-            
+
             fetch(sectionUpdateUrl(sectionId), {
                 method: 'PUT',
                 headers: {
@@ -347,9 +347,9 @@ function initSectionsEvents() {
 
             fetch(sectionUpdateUrl(sectionId), {
                 method: 'PUT',
-                headers: { 
-                    'Content-Type': 'application/json', 
-                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content, 
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
                     'Accept': 'application/json',
                     'X-Requested-With': 'XMLHttpRequest'
                 },

@@ -29,8 +29,22 @@
     background: var(--app-bg);
 }
 
+.app-shell:not(:has(.sidebar-col)):not(:has(.class-col)),
 .app-shell--no-list {
     grid-template-columns: 74px 1fr;
+}
+
+@media (min-width: 1280px) {
+    .app-shell:has(.icon-rail--product),
+    .app-shell.app-shell--student {
+        grid-template-columns: 224px var(--shell-sidebar-width, 304px) 1fr;
+    }
+
+    .app-shell--no-list:has(.icon-rail--product),
+    .app-shell--no-list.app-shell--student,
+    .app-shell:has(.icon-rail--product):not(:has(.sidebar-col)):not(:has(.class-col)) {
+        grid-template-columns: 224px 1fr;
+    }
 }
 
 .shell-content {
@@ -267,7 +281,7 @@
     border-radius: 12px;
     padding: 8px;
     box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.15), 0 4px 10px -4px rgba(0, 0, 0, 0.08);
-    z-index: 350;
+    z-index: 30;
 }
 
 .rail-account__user {
@@ -620,7 +634,7 @@
         bottom: 0;
         left: 0;
         width: 74px;
-        z-index: 300;
+        z-index: 45;
         transform: translateX(-100%);
         transition: transform 0.2s ease;
     }
@@ -651,7 +665,7 @@
         position: fixed;
         top: 14px;
         left: 14px;
-        z-index: 210;
+        z-index: 35;
         width: 42px;
         height: 42px;
         padding: 0;
@@ -699,7 +713,7 @@
         left: auto;
         right: 14px;
         top: 14px;
-        z-index: 350;
+        z-index: 46;
         background: #1a2538;
         transform: none;
         border-color: rgba(255, 255, 255, 0.3);
@@ -721,7 +735,7 @@
         display: block;
         position: fixed;
         inset: 0;
-        z-index: 150;
+        z-index: 40;
         background: rgba(11, 22, 38, 0.45);
     }
 
@@ -731,12 +745,317 @@
         left: calc(100% + 8px);
         bottom: 0;
         right: auto;
-        z-index: 350;
+        z-index: 46;
         width: min(240px, calc(100vw - 88px));
         box-shadow: 0 16px 36px rgba(11, 22, 38, 0.35);
     }
 
     .rail-bell__menu {
         width: min(280px, calc(100vw - 88px));
+    }
+
+    .icon-rail--product .rail-account__menu,
+    .icon-rail--product .rail-bell__menu {
+        left: 0;
+        right: 0;
+        bottom: calc(100% + 8px);
+        width: 100%;
+        box-sizing: border-box;
+    }
+}
+
+/* ============ SHARED EXPANDED / COMPACT SIDEBAR ============ */
+.icon-rail--product .rail-logo {
+    width: auto;
+    height: 42px;
+    padding: 0 10px;
+    border-radius: 10px;
+    gap: 10px;
+    justify-content: flex-start;
+}
+
+.icon-rail--product .rail-logo__text {
+    font-size: 16px;
+    font-weight: 700;
+    color: #ffffff;
+    letter-spacing: -0.01em;
+}
+
+.icon-rail--product .rail-group {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.icon-rail--product .rail-group__title {
+    font-size: 10.5px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: rgba(255, 255, 255, 0.60);
+    padding: 8px 10px 4px;
+    margin-top: 2px;
+    user-select: none;
+}
+
+.mobile-drawer-switcher {
+    display: none;
+}
+
+.mobile-drawer-switcher[hidden] {
+    display: none !important;
+}
+
+/* Shared labeled rail on desktop and in the phone drawer */
+@media (min-width: 1280px), (max-width: 640px) {
+    .icon-rail.icon-rail--product {
+        align-items: stretch;
+    }
+
+    .icon-rail--product .rail-nav {
+        align-items: stretch;
+        padding: 0;
+        gap: 8px;
+    }
+
+    .icon-rail--product .rail-divider {
+        width: 100%;
+        margin: 4px 0;
+    }
+
+    .icon-rail--product .rail-item {
+        width: 100%;
+        min-height: 40px;
+        padding: 8px 12px;
+        flex-direction: row;
+        justify-content: flex-start;
+        align-items: center;
+        gap: 12px;
+        border-radius: 8px;
+    }
+
+    .icon-rail--product .rail-item .rail-item__icon {
+        width: 20px;
+        height: 20px;
+        flex-shrink: 0;
+    }
+
+    .icon-rail--product .rail-item .rail-item__label--desktop {
+        display: block;
+        font-size: 13.5px;
+        font-weight: 500;
+        text-align: left;
+        max-width: none;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    .icon-rail--product .rail-item .rail-item__label--compact {
+        display: none;
+    }
+
+    .icon-rail--product .rail-bottom {
+        padding: 4px 0 0;
+        align-items: stretch;
+        width: 100%;
+    }
+
+    .icon-rail--product .rail-bottom .rail-divider {
+        width: 100%;
+    }
+
+    .icon-rail--product .rail-bell,
+    .icon-rail--product .rail-account {
+        width: 100%;
+    }
+
+    .icon-rail--product .rail-bell__btn,
+    .icon-rail--product .rail-avatar__btn {
+        width: 100%;
+        min-height: 40px;
+        padding: 8px 12px;
+        flex-direction: row;
+        justify-content: flex-start;
+        align-items: center;
+        gap: 12px;
+        border-radius: 8px;
+    }
+
+    .icon-rail--product .rail-bell__btn .rail-item__label--desktop,
+    .icon-rail--product .rail-avatar__btn .rail-item__label--desktop {
+        display: block;
+        font-size: 13.5px;
+        font-weight: 500;
+        text-align: left;
+        max-width: none;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    .icon-rail--product .rail-bell__btn .rail-item__label--compact,
+    .icon-rail--product .rail-avatar__btn .rail-item__label--compact {
+        display: none;
+    }
+}
+
+/* Default / Desktop (>= 1280px): 224px labeled navy sidebar */
+@media (min-width: 1280px) {
+    .icon-rail.icon-rail--product {
+        width: 224px;
+        padding: 18px 12px 14px;
+    }
+}
+
+/* Compact presentation between 641px and 1279px */
+@media (max-width: 1279px) and (min-width: 641px) {
+    .icon-rail.icon-rail--product {
+        width: 74px;
+        align-items: center;
+        padding: 16px 0 12px;
+    }
+
+    .icon-rail--product .rail-logo {
+        width: 38px;
+        height: 38px;
+        padding: 0;
+        justify-content: center;
+    }
+
+    .icon-rail--product .rail-logo__text {
+        display: none;
+    }
+
+    .icon-rail--product .rail-group__title {
+        display: none;
+    }
+
+    .icon-rail--product .rail-group {
+        align-items: center;
+    }
+
+    .icon-rail--product .rail-item {
+        width: 62px;
+        min-height: 52px;
+        padding: 7px 4px 6px;
+        flex-direction: column;
+        justify-content: center;
+        gap: 3px;
+    }
+
+    .icon-rail--product .rail-item .rail-item__label--desktop {
+        display: none;
+    }
+
+    .icon-rail--product .rail-item .rail-item__label--compact {
+        display: block;
+        font-size: 11px;
+        font-weight: 500;
+        text-align: center;
+        max-width: 58px;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    .icon-rail--product .rail-bell__btn,
+    .icon-rail--product .rail-avatar__btn {
+        width: 62px;
+        min-height: 52px;
+        flex-direction: column;
+        justify-content: center;
+        gap: 3px;
+    }
+
+    .icon-rail--product .rail-bell__btn .rail-item__label--desktop,
+    .icon-rail--product .rail-avatar__btn .rail-item__label--desktop {
+        display: none;
+    }
+
+    .icon-rail--product .rail-bell__btn .rail-item__label--compact,
+    .icon-rail--product .rail-avatar__btn .rail-item__label--compact {
+        display: block;
+        font-size: 11px;
+        text-align: center;
+    }
+}
+
+/* Phone labeled drawer capped at viewport width minus 48px */
+@media (max-width: 640px) {
+    .app-shell .icon-rail.icon-rail--product,
+    .app-shell--no-list .icon-rail.icon-rail--product {
+        width: min(280px, calc(100vw - 48px));
+        max-width: calc(100vw - 48px);
+        padding: 20px 14px 16px;
+    }
+
+    .app-shell:not(.app-shell--no-list) .icon-rail.icon-rail--product {
+        padding-top: 60px;
+    }
+
+    .icon-rail--product .rail-logo {
+        width: auto;
+        height: 40px;
+        padding: 0 8px;
+        justify-content: flex-start;
+        margin-bottom: 12px;
+    }
+
+    .icon-rail--product .rail-logo__text {
+        display: inline-block;
+        font-size: 16px;
+        font-weight: 700;
+        color: #ffffff;
+    }
+
+    .icon-rail--product .rail-group__title {
+        display: block;
+        font-size: 10.5px;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        padding: 8px 10px 4px;
+    }
+
+    /* Mobile Drawer Switcher: Navigation / List */
+    .app-shell.rail-open .mobile-drawer-switcher {
+        display: flex;
+        position: fixed;
+        top: 14px;
+        left: 14px;
+        width: calc(min(280px, calc(100vw - 48px)) - 28px);
+        z-index: 46;
+        background: rgba(11, 22, 38, 0.95);
+        border: 1px solid rgba(255, 255, 255, 0.15);
+        border-radius: 8px;
+        padding: 3px;
+        gap: 4px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
+    }
+
+    .mobile-drawer-tab {
+        flex: 1;
+        padding: 6px 12px;
+        border: 0;
+        background: transparent;
+        color: rgba(255, 255, 255, 0.7);
+        font-size: 12px;
+        font-weight: 600;
+        border-radius: 6px;
+        cursor: pointer;
+        text-align: center;
+        transition: background 0.15s ease, color 0.15s ease;
+    }
+
+    .mobile-drawer-tab:hover {
+        color: #ffffff;
+    }
+
+    .mobile-drawer-tab.active {
+        background: rgba(56, 120, 245, 0.35);
+        color: #ffffff;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
     }
 }

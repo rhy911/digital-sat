@@ -1,9 +1,9 @@
-<x-layouts.student :user="$user" :title="__('classroom.my_classes')" header-type="none">
+<x-layouts.student :user="$user" :title="__('classroom.my_classes')" header-type="none" ui="product">
     @push('styles')
         @vite(['resources/css/classroom-workspace.css'])
     @endpush
 
-    <div class="app-shell app-shell--no-list">
+    <div class="app-shell app-shell--no-list" x-data="{}">
         <x-shell.icon-rail :logo-href="route('home')" :avatar-label="$user->initials"
             :items="\App\Support\NavRail::student('classes')" />
 

@@ -57,4 +57,24 @@ class StudentProgressGoalTest extends TestCase
 
         $response->assertUnprocessable();
     }
+
+    public function test_goal_can_be_cleared_and_both_boundaries_are_saved(): void
+    {
+        $student = User::factory()->student()->create(['target_score' => 1450]);
+        foreach ([null, 400, 1600] as $target) {
+            $this->actingAs($student)->postJson(route('student.progress.goal'), ['target_score' => $target])
+                ->assertOk()->assertJsonPath('target_score', $target);
+            $this->assertSame($target, $student->fresh()->target_score);
+        }
+    }
+
+    public function test_invalid_goals_preserve_the_previous_score(): void
+    {
+        $student = User::factory()->student()->create(['target_score' => 1450]);
+        foreach ([1601, 1450.5, 'not a score'] as $target) {
+            $this->actingAs($student)->postJson(route('student.progress.goal'), ['target_score' => $target])
+                ->assertUnprocessable()->assertJsonValidationErrors('target_score');
+            $this->assertSame(1450, $student->fresh()->target_score);
+        }
+    }
 }

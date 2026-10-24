@@ -71,7 +71,7 @@
                 </div>
                 <input wire:model.live.debounce.250ms="search" type="text" inputmode="search"
                     placeholder="{{ __('classroom.search_students_placeholder') }}"
-                    class="text-xs pl-8 pr-7 py-2 border border-slate-200/90 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand/30 focus:border-brand w-full bg-white transition-colors placeholder:text-slate-400"
+                    class="text-sm pl-8 pr-7 py-2 border border-slate-200/90 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand/30 focus:border-brand w-full bg-white transition-colors placeholder:text-slate-400"
                     aria-label="{{ __('classroom.search_students_placeholder') }}">
                 @if ($search !== '')
                     <button type="button" wire:click="clearSearch"
@@ -93,7 +93,7 @@
             <table class="w-full min-w-[540px] border-0 rounded-none shadow-none">
                 <thead>
                     <tr class="bg-slate-50/80 border-b border-slate-200/80">
-                        <th scope="col" class="py-3 px-4 text-xs font-semibold uppercase tracking-wider text-left"
+                        <th scope="col" class="py-3 px-4 text-sm font-semibold uppercase tracking-wider text-left"
                             @if ($sortField === 'name') aria-sort="{{ $sortDirection === 'asc' ? 'ascending' : 'descending' }}" @endif>
                             <button type="button" wire:click="sortBy('name')"
                                 class="group inline-flex items-center gap-1.5 cursor-pointer select-none transition-colors {{ $sortField === 'name' ? 'text-brand font-bold' : 'text-slate-500 hover:text-slate-800' }}">
@@ -126,7 +126,7 @@
                                 </span>
                             </button>
                         </th>
-                        <th scope="col" class="py-3 px-4 text-xs font-semibold uppercase tracking-wider text-left"
+                        <th scope="col" class="py-3 px-4 text-sm font-semibold uppercase tracking-wider text-left"
                             @if ($sortField === 'joined') aria-sort="{{ $sortDirection === 'asc' ? 'ascending' : 'descending' }}" @endif>
                             <button type="button" wire:click="sortBy('joined')"
                                 class="group inline-flex items-center gap-1.5 cursor-pointer select-none transition-colors {{ $sortField === 'joined' ? 'text-brand font-bold' : 'text-slate-500 hover:text-slate-800' }}">
@@ -159,7 +159,7 @@
                                 </span>
                             </button>
                         </th>
-                        <th class="py-3 px-4 text-xs font-semibold text-slate-500 uppercase tracking-wider text-right">
+                        <th class="py-3 px-4 text-sm font-semibold text-slate-500 uppercase tracking-wider text-right">
                             {{ __('classroom.col_actions') }}</th>
                     </tr>
                 </thead>
@@ -170,7 +170,7 @@
                             <td class="py-3.5 px-4 name-cell">
                                 <x-ui.person-cell :name="$membership->student->name" :email="$membership->student->email" :initials="$membership->student->initials" />
                             </td>
-                            <td class="py-3.5 px-4 tabular-nums font-mono text-xs text-slate-600">
+                            <td class="py-3.5 px-4 tabular-nums text-sm text-slate-600">
                                 {{ $membership->decided_at?->format('d/m/Y') ?? $membership->created_at->format('d/m/Y') }}
                             </td>
                             <td class="py-3.5 px-4 text-right">
@@ -190,7 +190,7 @@
                                         </x-slot:trigger>
                                         <x-slot:content>
                                             <a href="{{ route('teacher.classes.students.progress', [$classroom, $membership->student]) }}"
-                                                class="flex items-center gap-2 px-3.5 py-3 text-xs font-medium text-slate-700 hover:bg-slate-50 transition-colors text-left">
+                                                class="flex items-center gap-2 px-3.5 py-3 text-sm font-medium text-slate-700 hover:bg-slate-50 transition-colors text-left">
                                                 <x-ui.icon name="bar-chart-2" class="w-3.5 h-3.5 text-slate-400" />
                                                 <span>{{ __('classroom.view_progress') }}</span>
                                             </a>
@@ -203,7 +203,7 @@
                                                                 actionUrl: @js(route('teacher.memberships.remove', $membership)),
                                                                 confirmButtonText: @js(__('classroom.action_remove'))
                                                             })"
-                                                        class="w-full flex items-center gap-2 px-3.5 py-3 text-xs font-medium text-rose-600 hover:bg-rose-50/70 transition-colors text-left cursor-pointer">
+                                                        class="w-full flex items-center gap-2 px-3.5 py-3 text-sm font-medium text-rose-600 hover:bg-rose-50/70 transition-colors text-left cursor-pointer">
                                                         <x-ui.icon name="trash" class="w-3.5 h-3.5 text-rose-500" />
                                                         <span>{{ __('classroom.action_remove') }}</span>
                                                     </button>
@@ -226,16 +226,16 @@
                                         <p class="text-sm font-semibold text-slate-800">
                                             {{ __('No students found matching') }} "<span
                                                 class="text-brand">{{ $search }}</span>"</p>
-                                        <p class="text-xs text-slate-500">Check the spelling or try searching by
+                                        <p class="text-sm text-slate-500">Check the spelling or try searching by
                                             student name or email.</p>
                                         <button type="button" wire:click="clearSearch"
-                                            class="mt-2 inline-flex items-center px-3 py-1.5 text-xs font-semibold text-brand hover:text-brand-hover bg-brand/5 hover:bg-brand/10 rounded-lg transition-colors cursor-pointer">
+                                            class="mt-2 inline-flex items-center px-3 py-1.5 text-sm font-semibold text-brand hover:text-brand-hover bg-brand/5 hover:bg-brand/10 rounded-lg transition-colors cursor-pointer">
                                             Clear search filter
                                         </button>
                                     @else
                                         <p class="text-sm font-semibold text-slate-800">
                                             {{ __('No students in this class yet') }}</p>
-                                        <p class="text-xs text-slate-500">{!! __('classroom.no_students_roster', [
+                                        <p class="text-sm text-slate-500">{!! __('classroom.no_students_roster', [
                                             'code' => '<strong class="font-mono text-slate-800">' . e($classroom->join_code) . '</strong>',
                                         ]) !!}</p>
                                     @endif

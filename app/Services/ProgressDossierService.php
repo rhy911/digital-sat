@@ -45,8 +45,8 @@ class ProgressDossierService
             ];
         })->all();
 
-        $events = $this->questionEvents($attempts);
-        $skills = $this->skillMetrics($events, $attempts->count());
+        $events = $this->questionEvents($activityAttempts);
+        $skills = $this->skillMetrics($events, $activityAttempts->count());
         $domains = $this->domainMetrics($events);
         $score = $this->scoreSummary($history, $targetScore);
         $prioritySkills = collect($skills)
@@ -108,6 +108,30 @@ class ProgressDossierService
         $recommendations = $this->recommendations($weakAreas);
 
         return $recommendations[0] ?? $fallback;
+    }
+
+    /** @return array{skill: string, domain: string, correct: int, total: int}|null */
+    public function studySuggestion(Collection $completedAttempts): ?array
+    {
+        if ($completedAttempts->isEmpty()) {
+            return null;
+        }
+
+        $areas = $this->weakAreaSummaries($this->questionEvents($completedAttempts));
+        foreach ($areas as $area) {
+            foreach ($area['skills'] as $skill) {
+                if ($skill['correct'] < $skill['total']) {
+                    return [
+                        'skill' => $skill['name'],
+                        'domain' => $area['domain'],
+                        'correct' => $skill['correct'],
+                        'total' => $skill['total'],
+                    ];
+                }
+            }
+        }
+
+        return null;
     }
 
     private function isComparable(UserTest $attempt): bool
@@ -198,7 +222,7 @@ class ProgressDossierService
             return $omitted ? 'omitted' : 'unclassified';
         }
 
-        $review = $answer->relationLoaded('review') ? $answer->review : $answer->review()->first();
+        $review = $answer->relationLoaded('review') ? $answer->review : null;
 
         return $review?->teacher_error_type
             ?? $review?->student_error_type

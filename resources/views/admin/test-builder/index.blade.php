@@ -1,4 +1,4 @@
-<x-layouts.admin title="Test Dashboard">
+<x-layouts.admin ui="product" title="Content Suite">
     @push('styles')
         @vite(['resources/css/admin/test-builder.css'])
     @endpush
@@ -8,7 +8,7 @@
         $workspaceLabel = auth()->user()->role === 'admin' ? 'Admin workspace' : 'Home';
     @endphp
 
-    <div data-test-builder-shell class="test-builder-shell flex bg-[#f6f8fb] text-[#0f172a] relative font-sans"
+    <div data-test-builder-shell class="test-builder-shell flex bg-[var(--ds-bg)] text-[var(--ds-text-primary)] relative font-sans"
         x-data="{
             activeTab: (() => {
                 const hashTab = window.location.hash.replace('#', '');
@@ -53,16 +53,16 @@
 
         <!-- Sidebar Navigation -->
         <aside id="testDashboardSidebar"
-            class="test-builder-sidebar h-screen bg-[#0a1122] border-r border-[#1e293b]/70 flex flex-col shrink-0 text-slate-300 z-40 fixed inset-y-0 left-0 transform -translate-x-full transition-transform duration-200 lg:static lg:translate-x-0"
+            class="test-builder-sidebar h-screen bg-[var(--ds-rail-bg)] border-r border-[#1e293b]/70 flex flex-col shrink-0 text-slate-300 z-40 fixed inset-y-0 left-0 transform -translate-x-full transition-transform duration-200 lg:static lg:translate-x-0"
             :class="mobileSidebarOpen ? 'translate-x-0' : '-translate-x-full'"
             @keydown.escape.window="mobileSidebarOpen = false">
-            <div class="test-builder-sidebar-header border-b border-slate-800">
+            <div class="test-builder-sidebar-header border-b border-white/15">
                 <a href="{{ $workspaceUrl }}" class="test-builder-sidebar-brand flex flex-col gap-1 no-underline"
                     title="Return to {{ $workspaceLabel }}">
-                    <span class="test-builder-sidebar-wordmark"><x-brand.wordmark size="lg"
+                    <span class="test-builder-sidebar-wordmark"><x-brand.wordmark size="sm"
                             tone="inverse" /></span>
                     <span
-                        class="test-builder-sidebar-label text-[10px] text-brand font-extrabold tracking-widest uppercase">Content
+                        class="test-builder-sidebar-label text-sm text-slate-200 font-semibold">Content
                         Suite</span>
                 </a>
                 <button type="button" class="test-builder-sidebar-toggle" data-sidebar-toggle
@@ -134,14 +134,15 @@
         </aside>
 
         <!-- Main Content Area -->
-        <main class="test-builder-main flex-1 flex flex-col bg-[#f6f8fb]">
+        <main class="test-builder-main flex-1 flex flex-col bg-[var(--ds-bg)]">
             <!-- Modern Header inside Main Area -->
             <header
-                class="test-builder-header flex justify-between items-center gap-4 border-b border-[#e2e8f0] z-10 bg-white text-[#0f172a]">
+                class="test-builder-header flex justify-between items-center gap-4 border-b border-[#e2e8f0] z-10 bg-white text-[var(--ds-text-primary)]">
                 <div class="flex min-w-0 items-center">
                     <button @click="mobileSidebarOpen = !mobileSidebarOpen"
                         class="lg:hidden p-2 text-slate-600 hover:text-slate-900 hover:bg-slate-100 rounded-lg mr-3 shrink-0"
-                        aria-label="Open navigation menu">
+                        aria-label="Open navigation menu" aria-controls="testDashboardSidebar"
+                        :aria-expanded="mobileSidebarOpen ? 'true' : 'false'">
                         <x-ui.icon name="list" class="w-6 h-6" />
                     </button>
                     <div class="min-w-0">

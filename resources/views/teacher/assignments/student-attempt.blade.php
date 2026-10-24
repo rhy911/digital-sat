@@ -1,4 +1,4 @@
-<x-layouts.student :user="auth()->user()" :title="$student->name . ' — ' . $assignment->title" header-type="none">
+<x-layouts.student ui="product" body-class="antialiased teacher-workspace" :user="auth()->user()" :title="$student->name . ' — ' . $assignment->title" header-type="none">
     @push('styles')
         @vite(['resources/css/classroom-workspace.css', 'resources/css/student/scores.css', 'resources/js/question-renderer.js'])
     @endpush
@@ -55,7 +55,7 @@
                             </div>
                         </div>
                     </div>
-                    
+
                     <div class="ledger-header__actions flex-wrap">
                         <a href="{{ route('teacher.assignments.show', $assignment) }}"
                             class="btn-sm-ghost ledger-header__action-btn">
@@ -65,22 +65,22 @@
                             </svg>
                             Back to Report
                         </a>
-                        <a href="{{ $prevStudentId ? route('teacher.assignments.students.show', [$assignment, $prevStudentId]) : '#' }}"
-                            class="btn-sm-ghost ledger-header__action-btn @if(!$prevStudentId) is-disabled @endif">
+                        <x-ui.button :href="$prevStudentId ? route('teacher.assignments.students.show', [$assignment, $prevStudentId]) : null"
+                            :disabled="!$prevStudentId" variant="secondary" size="sm" class="ledger-header__action-btn">
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                 <line x1="19" y1="12" x2="5" y2="12"></line>
                                 <polyline points="12 19 5 12 12 5"></polyline>
                             </svg>
                             Prev Student
-                        </a>
-                        <a href="{{ $nextStudentId ? route('teacher.assignments.students.show', [$assignment, $nextStudentId]) : '#' }}"
-                            class="btn-sm-ghost ledger-header__action-btn @if(!$nextStudentId) is-disabled @endif">
+                        </x-ui.button>
+                        <x-ui.button :href="$nextStudentId ? route('teacher.assignments.students.show', [$assignment, $nextStudentId]) : null"
+                            :disabled="!$nextStudentId" variant="secondary" size="sm" class="ledger-header__action-btn">
                             Next Student
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                 <line x1="5" y1="12" x2="19" y2="12"></line>
                                 <polyline points="12 5 19 12 12 19"></polyline>
                             </svg>
-                        </a>
+                        </x-ui.button>
                         @if ($initialAttempt && ($initialAttempt->status === 'completed' || $initialAttempt->total_score !== null))
                             <a href="{{ route('student.scores.show', $initialAttempt) }}" target="_blank" rel="noopener noreferrer" class="btn-sm-primary ledger-header__action-btn">
                                 Open Score Report &rarr;
@@ -95,9 +95,9 @@
 
                 <div class="student-attempt-wrapper">
                     @include('teacher.assignments.partials.attempt-monitor', [
-                        'assignment' => $assignment, 
-                        'row' => $row, 
-                        'initialAttempt' => $initialAttempt, 
+                        'assignment' => $assignment,
+                        'row' => $row,
+                        'initialAttempt' => $initialAttempt,
                         'attemptModalId' => $attemptModalId,
                         'hideHeader' => true
                     ])

@@ -1,6 +1,6 @@
-<x-layouts.student :user="$user" title="Home" header-type="none">
+<x-layouts.student :user="$user" title="Home" header-type="none" ui="product" :body-class="$user->role === 'student' ? 'antialiased student-home-page' : 'antialiased teacher-workspace'">
     @push('styles')
-        @vite(['resources/css/classroom-workspace.css', 'resources/css/student/analytics.css'])
+        @vite(['resources/css/classroom-workspace.css', 'resources/css/student/analytics.css', 'resources/css/student/study-home.css'])
     @endpush
 
     @php
@@ -16,9 +16,6 @@
             ? (in_array($storedHomeTab, ['overview', 'progress'], true) ? $storedHomeTab : 'overview')
             : 'progress';
 
-        $featuredDuration = $featuredTest?->total_duration_minutes
-            ?: $featuredTest?->sections?->sum(fn ($section) => $section->modules->unique('module_number')->sum('duration_minutes'));
-        $featuredSections = $featuredTest?->sections?->count();
         $featuredPost = $latestPosts->first();
         $moreposts = $latestPosts->skip(1);
         $isTeacher = $canUseTeacherWorkspace;
@@ -38,19 +35,19 @@
             return $title;
         };
 
-        // A section-only attempt scores out of 800, not 1600, and its score is not
-        // comparable to $bestScore (which aggregates full-length attempts only).
-        $isSectionAttempt = $lastCompletedAttempt?->attempt_type === 'section';
+        // Emphasize the latest comparable full-test score; fall back to latest completed activity if none
+        $overviewAttempt = $latestComparableAttempt ?? $lastCompletedAttempt;
+        $isSectionAttempt = $overviewAttempt?->attempt_type === 'section';
         $lastSectionLabel = $isSectionAttempt
-            ? ($lastCompletedAttempt->section_type === 'reading_writing' ? 'Reading & Writing' : 'Math')
+            ? ($overviewAttempt->section_type === 'reading_writing' ? 'Reading & Writing' : 'Math')
             : null;
 
-        if ($lastCompletedAttempt) {
+        if ($overviewAttempt) {
             $lastScore = $isSectionAttempt
-                ? ($lastCompletedAttempt->section_type === 'reading_writing' ? $lastCompletedAttempt->score_reading_writing : $lastCompletedAttempt->score_math)
-                : $lastCompletedAttempt->total_score;
-            $mathScore = $lastCompletedAttempt->score_math;
-            $rwScore = $lastCompletedAttempt->score_reading_writing;
+                ? ($overviewAttempt->section_type === 'reading_writing' ? $overviewAttempt->score_reading_writing : $overviewAttempt->score_math)
+                : $overviewAttempt->total_score;
+            $mathScore = $overviewAttempt->score_math;
+            $rwScore = $overviewAttempt->score_reading_writing;
         } else {
             $lastScore = null;
             $mathScore = null;
@@ -62,6 +59,11 @@
 
         // Resuming goes through the same readiness confirmation the assignment
         // and classroom pages use, so the timer never restarts on a stray click.
+        $promotedAssignment = !$isTeacher && !$inProgressAttempt ? $assignments->first() : null;
+        $remainingAssignments = $promotedAssignment
+            ? $assignments->reject(fn ($assignment) => $assignment->id === $promotedAssignment->id)
+            : $assignments;
+
         $resumeModule = $inProgressAttempt?->currentModule;
         $resumeModalPayload = $inProgressAttempt
             ? [
@@ -82,8 +84,9 @@
         @teacher-home-tab-changed.window="tab = $event.detail.tab"
         @keydown.window="
             if (['INPUT', 'TEXTAREA', 'SELECT'].includes($event.target.tagName) || $event.target.isContentEditable) return;
-            if ($event.key.toLowerCase() === 'p') { window.location.href = '{{ route('home.practice') }}'; }
-            else if ($event.key.toLowerCase() === 'q') { $dispatch('open-modal', 'modal-ask-question'); $event.preventDefault(); }
+            if (!$event.altKey) return;
+            if ($event.key.toLowerCase() === 'p') { $event.preventDefault(); window.location.href = '{{ route('home.practice') }}'; }
+            else if ($event.key.toLowerCase() === 'q') { $event.preventDefault(); $dispatch('open-modal', 'modal-ask-question'); }
         ">
         <x-shell.icon-rail :logo-href="\App\Support\NavRail::logoHrefForUser($user)" :avatar-label="$user->initials"
             :items="\App\Support\NavRail::forUser($user, 'home')" />
@@ -134,7 +137,7 @@
                                 </div>
 
                                 @if($teacherStats['pendingRequestsCount'] > 0)
-                                    <a href="{{ route('teacher.classes.index') }}" class="home-stat home-stat--action">
+                                    <a href="{{ route('teacher.classes.index', ['all' => 1]) }}" class="home-stat home-stat--action">
                                         <span class="home-stat__label">Pending approvals</span>
                                         <span class="home-stat__value home-num home-stat__value--warning">{{ $teacherStats['pendingRequestsCount'] }}</span>
                                         <span class="home-stat__note">
@@ -157,12 +160,12 @@
                             </div>
                         </x-ui.card>
 
-                        <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+                        <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
                             <div class="lg:col-span-7">
-                                <x-ui.card stretch aria-labelledby="classes-title">
+                                <x-ui.card aria-labelledby="classes-title">
                                     <x-slot:header>
                                         <h2 id="classes-title" class="home-panel__title">Your active classes</h2>
-                                        <a href="{{ route('teacher.classes.index') }}" class="home-link">
+                                        <a href="{{ route('teacher.classes.index', ['all' => 1]) }}" class="home-link">
                                             View all classes
                                             <x-ui.icon name="arrow-right" class="w-3.5 h-3.5" />
                                         </a>
@@ -207,7 +210,7 @@
                             </div>
 
                             <div class="lg:col-span-5">
-                                <x-ui.card stretch aria-labelledby="recent-assignments-title">
+                                <x-ui.card aria-labelledby="recent-assignments-title">
                                     <x-slot:header>
                                         <h2 id="recent-assignments-title" class="home-panel__title">Recent assignments</h2>
                                         <a href="{{ route('teacher.assignments.index') }}" class="home-link">
@@ -266,7 +269,16 @@
             @endif
 
             {{-- ================= STUDENT PRACTICE & PROGRESS ================= --}}
-            <div class="home" @if($canUseTeacherWorkspace) x-show="tab === 'progress'" x-cloak @endif>
+            @if($user->role === 'student')
+                @include('student.analytics.partials.study-home')
+            @elseif($canUseTeacherWorkspace)
+                <div x-show="tab === 'progress'" x-cloak>
+                    @include('student.analytics.partials.study-home')
+                </div>
+            @else
+            <div @class(['home', 'home--guided' => !$isTeacher])
+                @if(!$isTeacher) x-data="studentHome(@js(['endpoint' => route('student.progress.goal'), 'csrf' => csrf_token(), 'goal' => $user->target_score ? (int) $user->target_score : null, 'latestScore' => $latestComparableAttempt ? (int) $latestComparableAttempt->total_score : null]))" @endif
+                @if($canUseTeacherWorkspace) x-show="tab === 'progress'" x-cloak @endif>
                 <header class="home-head">
                     <div class="home-head__lead">
                         <div class="home-head__meta">
@@ -284,7 +296,7 @@
                                 open: $openAssignments,
                                 overdue: $overdueAssignments,
                                 dueSoon: $dueSoonAssignments,
-                                hasAnyAssignment: $hasActiveAssignments,
+                                hasAnyAssignment: !$isTeacher && ($hasAnyAssignment ?? false),
                                 hasAttemptInProgress: (bool) $inProgressAttempt,
                                 completedCount: $completedCount,
                                 bestScore: $bestScore,
@@ -297,26 +309,160 @@
                             @include('student.analytics.partials.view-switcher')
                         @endif
 
-                        {{-- A signed-in student handed an exam code needs a way in
-                             that is not the public landing page. --}}
                         <x-ui.button size="sm" variant="secondary" :href="route('exam-join.entry')">
                             <x-slot:icon><x-ui.icon name="box-arrow-right" class="w-4 h-4" /></x-slot:icon>
-                            Join with a code
+                            Join an exam
                         </x-ui.button>
 
-                        @if($hasActiveAssignments)
-                            <x-ui.button size="sm" variant="secondary" :href="route('student.assignments.index')">
-                                My class assignments
-                            </x-ui.button>
-                        @else
-                            <x-ui.button size="sm" variant="secondary" :href="route('home.practice')">
-                                Explore the test library
-                            </x-ui.button>
-                        @endif
+                        <x-ui.button size="sm" variant="secondary" :href="route('student.classes.index')">
+                            <x-slot:icon><x-ui.icon name="mortarboard" class="w-4 h-4" /></x-slot:icon>
+                            Join a class
+                        </x-ui.button>
                     </div>
                 </header>
 
-                {{-- Progress Portal Card --}}
+                {{-- ================= A. CURRENT WORK ================= --}}
+                @if(!$isTeacher)
+                    @include('student.analytics.partials.next-step')
+                @else
+                @if ($inProgressAttempt || $hasActiveAssignments)
+                    <div class="home-current">
+                        <div @class([
+                            'grid grid-cols-1 lg:grid-cols-12 gap-6 items-stretch' => $inProgressAttempt && $hasActiveAssignments,
+                        ])>
+                            {{-- Resumable Attempt (Primary emphasis) --}}
+                            @if ($inProgressAttempt)
+                                <div @class(['lg:col-span-7' => $hasActiveAssignments])>
+                                    <x-ui.card :stretch="(bool) $hasActiveAssignments" class="home-current__card home-current__card--primary" aria-labelledby="active-task-title">
+                                        <x-slot:header>
+                                            <div class="home-panel__headline">
+                                                <h2 id="active-task-title" class="home-panel__title">{{ $formatTitle($inProgressAttempt->test->title, 'Adaptive Full Practice Test 1') }}</h2>
+                                                <p class="home-panel__sub">Started {{ $inProgressAttempt->created_at->diffForHumans() }}</p>
+                                            </div>
+                                            <x-ui.status-badge status="warning">In progress</x-ui.status-badge>
+                                        </x-slot:header>
+
+                                        <ul class="home-chips">
+                                            <li class="home-chip">
+                                                <x-ui.icon name="clock" class="w-3.5 h-3.5" />
+                                                {{ $resumeModule && $resumeModule->section ? $resumeModule->section->name . ' • Module ' . $resumeModule->module_number : 'Module in progress' }}
+                                            </li>
+                                            <li class="home-chip">
+                                                <x-ui.icon name="layers" class="w-3.5 h-3.5" />
+                                                Adaptive practice
+                                            </li>
+                                        </ul>
+                                        <p class="home-note">Your responses are saved automatically as you go.</p>
+
+                                        <x-slot:footer>
+                                            <div class="home-panel__foot">
+                                                <span>Pick up where you left off</span>
+                                                <x-ui.button @click="$dispatch('open-ready-modal', {{ \Illuminate\Support\Js::from($resumeModalPayload) }})">
+                                                    Continue practice
+                                                </x-ui.button>
+                                            </div>
+                                        </x-slot:footer>
+                                    </x-ui.card>
+                                </div>
+                            @endif
+
+                            {{-- Active Assignments --}}
+                            @if ($hasActiveAssignments)
+                                <div @class(['lg:col-span-5' => $inProgressAttempt])>
+                                    <x-ui.card :stretch="(bool) $inProgressAttempt" id="classroom-assignments" @class([
+                                        'home-current__card',
+                                        'home-current__card--primary' => ! $inProgressAttempt,
+                                    ]) aria-labelledby="assignments-title">
+                                        <x-slot:header>
+                                            <div class="home-panel__headline">
+                                                <h2 id="assignments-title" class="home-panel__title">Assigned by your teacher</h2>
+                                                <p class="home-panel__sub">{{ $openAssignments > 0 ? $openAssignments.' open' : 'All caught up' }}</p>
+                                            </div>
+                                            <x-ui.status-badge status="brand">Class work</x-ui.status-badge>
+                                        </x-slot:header>
+
+                                        <ul class="home-list">
+                                            @foreach($assignments->take(3) as $a)
+                                                @php
+                                                    $resolved = $a->resolved ?? \App\Support\AssignmentStatusResolver::resolve($a, $a->attempts);
+                                                    $state = $resolved['state'];
+                                                    $isCompleted = $state === 'Completed';
+                                                    $isInProgress = $resolved['inProgress'] !== null;
+                                                    $actionLabel = $isCompleted ? 'Review'
+                                                        : ($isInProgress ? 'Resume'
+                                                        : ($resolved['canStart'] ? 'Start' : 'View'));
+                                                @endphp
+                                                <li>
+                                                    <div class="home-row home-row--static">
+                                                        <span class="home-row__main">
+                                                            <span class="home-row__title">{{ $a->title }}</span>
+                                                            <span class="home-row__meta">
+                                                                {{ $a->classroom->name }}
+                                                                <span aria-hidden="true">&middot;</span>
+                                                                {{ $a->due_at ? 'Due ' . $a->due_at->diffForHumans() : 'No due date' }}
+                                                            </span>
+                                                        </span>
+                                                        <span class="home-row__aside">
+                                                            <x-ui.status-badge :status="$resolved['variant']">{{ $state }}</x-ui.status-badge>
+                                                            <x-ui.button size="sm" variant="secondary" :href="route('student.assignments.show', ['assignment' => $a->ulid])">
+                                                                {{ $actionLabel }}
+                                                            </x-ui.button>
+                                                        </span>
+                                                    </div>
+                                                </li>
+                                            @endforeach
+                                        </ul>
+
+                                        <x-slot:footer>
+                                            <div class="home-panel__foot">
+                                                <span>All classroom tasks and scores</span>
+                                                <a href="{{ route('student.assignments.index') }}" class="home-link">
+                                                    View all assignments
+                                                    <x-ui.icon name="arrow-right" class="w-3.5 h-3.5" />
+                                                </a>
+                                            </div>
+                                        </x-slot:footer>
+                                    </x-ui.card>
+                                </div>
+                            @endif
+                        </div>
+                    </div>
+                @elseif ($completedCount === 0)
+                    {{-- Fresh student with no completed tests and no active work: give Test Preview primary emphasis --}}
+                    <div class="home-current">
+                        <x-ui.card class="home-current__card home-current__card--preview" aria-labelledby="preview-launch-title">
+                            <x-slot:header>
+                                <div class="home-panel__headline">
+                                    <h2 id="preview-launch-title" class="home-panel__title">Get started with Test Preview</h2>
+                                    <p class="home-panel__sub">Explore the digital testing experience before taking a scored test</p>
+                                </div>
+                                <x-ui.status-badge status="brand">Recommended start</x-ui.status-badge>
+                            </x-slot:header>
+
+                            <p class="home-note text-slate-700 m-0">
+                                Explore sample questions, the built-in Desmos graphing calculator, reference sheet, and testing navigation tools without time limits or a recorded score.
+                            </p>
+
+                            <x-slot:footer>
+                                <div class="home-panel__foot">
+                                    <span>Ready to see the test tools in action?</span>
+                                    <div class="flex items-center gap-3">
+                                        <a href="{{ route('home.practice') }}" class="home-link">
+                                            Browse practice tests
+                                            <x-ui.icon name="arrow-right" class="w-3.5 h-3.5" />
+                                        </a>
+                                        <x-ui.button :href="route('test.preview')">
+                                            Try Test Preview
+                                        </x-ui.button>
+                                    </div>
+                                </div>
+                            </x-slot:footer>
+                        </x-ui.card>
+                    </div>
+                @endif
+                @endif
+
+                {{-- ================= B. YOUR PROGRESS PERFORMANCE OVERVIEW ================= --}}
                 <x-ui.card class="home-portal" aria-labelledby="progress-portal-title">
                     <x-slot:header>
                         <div class="home-panel__headline">
@@ -329,363 +475,509 @@
                         </a>
                     </x-slot:header>
 
-                    @if(!empty($homeScoreTrend['attempts']))
-                        <div class="home-portal__grid">
-                            <div class="home-portal__metrics">
-                                <div class="home-portal__metric">
-                                    <span class="home-portal__metric-label">Latest score</span>
-                                    <span class="home-portal__metric-value home-num">{{ end($homeScoreTrend['attempts'])['score'] }}</span>
-                                </div>
-                                <div class="home-portal__metric">
-                                    <span class="home-portal__metric-label">Personal best</span>
-                                    <span class="home-portal__metric-value home-num">{{ $bestScore ?? '—' }}</span>
-                                </div>
-                                <div class="home-portal__metric">
-                                    <span class="home-portal__metric-label">Tests completed</span>
-                                    <span class="home-portal__metric-value home-num">{{ $completedCount }}</span>
-                                </div>
-                                <div class="home-portal__metric">
-                                    <span class="home-portal__metric-label">Target goal</span>
-                                    <span class="home-portal__metric-value home-num">{{ $user->target_score ?? 1600 }}</span>
-                                    @if($user->target_score)
-                                        <span class="home-portal__target-tag">Target set</span>
+                    @if($lastScore !== null || !empty($homeScoreTrend['attempts']) || $completedCount > 0)
+                        <div class="home-portal__metrics">
+                            <div class="home-portal__metric">
+                                <span class="home-portal__metric-label">Latest score</span>
+                                <div class="flex items-baseline gap-1.5 flex-wrap">
+                                    <span class="home-portal__metric-value home-num">{{ $lastScore ?? (end($homeScoreTrend['attempts'])['score'] ?? '—') }}</span>
+                                    <span class="text-xs text-slate-600 font-semibold">/ {{ $lastScoreMax }}</span>
+                                    @if($isPersonalBest)
+                                        <x-ui.status-badge status="success" class="ml-auto">Personal best</x-ui.status-badge>
+                                    @elseif($isSectionAttempt)
+                                        <x-ui.status-badge status="neutral" class="ml-auto">{{ $lastSectionLabel }} only</x-ui.status-badge>
                                     @endif
                                 </div>
+                                @if(!$isSectionAttempt && ($mathScore || $rwScore))
+                                    <div class="text-xs text-slate-600 mt-1 flex items-center gap-2">
+                                        <span>RW: <strong class="text-slate-700">{{ $rwScore ?? '—' }}</strong></span>
+                                        <span aria-hidden="true">&middot;</span>
+                                        <span>Math: <strong class="text-slate-700">{{ $mathScore ?? '—' }}</strong></span>
+                                    </div>
+                                @endif
                             </div>
 
-                            <div class="home-portal__chart">
-                                <div class="home-portal__chart-head">
-                                    <span class="home-portal__chart-title">Score trend</span>
-                                    @if($user->target_score)
-                                        <span class="home-portal__target-indicator">
-                                            <span class="home-portal__target-line-sample"></span>
-                                            Target ({{ $user->target_score }})
-                                        </span>
-                                    @endif
-                                </div>
-
-                                @php
-                                    $trendAttempts = $homeScoreTrend['attempts'];
-                                    $attemptCount = count($trendAttempts);
-                                    $targetScore = $user->target_score;
-                                    $svgWidth = 300;
-                                    $svgHeight = 80;
-                                    $padX = 20;
-                                    $padY = 14;
-                                    $minScore = 400;
-                                    $maxScore = 1600;
-
-                                    $getY = function($score) use ($svgHeight, $padY, $minScore, $maxScore) {
-                                        $clamped = max($minScore, min($maxScore, $score));
-                                        $ratio = ($clamped - $minScore) / ($maxScore - $minScore);
-                                        return round(($svgHeight - $padY) - ($ratio * ($svgHeight - 2 * $padY)), 1);
-                                    };
-
-                                    $pointsStr = '';
-                                    $circles = [];
-                                    foreach ($trendAttempts as $idx => $att) {
-                                        $x = $attemptCount > 1
-                                            ? round($padX + ($idx / ($attemptCount - 1)) * ($svgWidth - 2 * $padX), 1)
-                                            : round($svgWidth / 2, 1);
-                                        $y = $getY($att['score']);
-                                        $pointsStr .= "{$x},{$y} ";
-                                        $circles[] = ['x' => $x, 'y' => $y, 'score' => $att['score'], 'date' => $att['date']];
-                                    }
-                                    $targetY = $targetScore ? $getY($targetScore) : null;
-                                @endphp
-
-                                <div class="home-sparkline-container">
-                                    <svg viewBox="0 0 300 80" class="home-sparkline" aria-label="Score trend sparkline" role="img">
-                                        @if($targetY !== null)
-                                            <line x1="10" y1="{{ $targetY }}" x2="290" y2="{{ $targetY }}" class="home-sparkline__target-line" stroke-dasharray="4 4" />
-                                        @endif
-
-                                        @if($attemptCount > 1)
-                                            <polyline points="{{ trim($pointsStr) }}" class="home-sparkline__line" />
-                                        @endif
-
-                                        @foreach($circles as $c)
-                                            <circle cx="{{ $c['x'] }}" cy="{{ $c['y'] }}" r="4" class="home-sparkline__point">
-                                                <title>{{ $c['score'] }} ({{ $c['date'] }})</title>
-                                            </circle>
-                                        @endforeach
-                                    </svg>
-                                </div>
+                            <div class="home-portal__metric">
+                                <span class="home-portal__metric-label">Personal best</span>
+                                <span class="home-portal__metric-value home-num">{{ $bestScore ?? '—' }}</span>
+                                @if($bestScore)
+                                    <span class="text-xs text-slate-600">out of 1600</span>
+                                @endif
                             </div>
+
+                            <div class="home-portal__metric">
+                                <span class="home-portal__metric-label">Practice completed</span>
+                                <span class="home-portal__metric-value home-num">{{ $completedCount }}</span>
+                                <span class="text-xs text-slate-600">{{ \Illuminate\Support\Str::plural('test', $completedCount) }} finished</span>
+                            </div>
+
+                            @if($isTeacher)
+                            <div class="home-portal__metric">
+                                <span class="home-portal__metric-label">Target goal</span>
+                                @if($user->target_score)
+                                    <span class="home-portal__metric-value home-num">{{ $user->target_score }}</span>
+                                    <a href="{{ route('student.progress') }}" class="home-portal__target-tag">Target set &middot; Edit</a>
+                                @else
+                                    <span class="home-portal__metric-value text-slate-400">
+                                        <a href="{{ route('student.progress') }}" class="home-link font-semibold">Not set</a>
+                                    </span>
+                                    <a href="{{ route('student.progress') }}" class="home-portal__target-tag">Set target goal</a>
+                                @endif
+                            </div>
+                            @endif
                         </div>
                     @else
                         <div class="home-empty home-empty--portal">
                             <x-ui.icon name="graph-up-arrow" class="home-empty__icon w-6 h-6" />
                             <p class="home-empty__title">No score trend yet</p>
-                            <p class="home-empty__body">Take practice tests to track your score progress, view trends, and monitor your target goal.</p>
-                            <x-ui.button size="sm" variant="secondary" :href="route('home.practice')">
-                                Explore the test library
-                            </x-ui.button>
+                            <p class="home-empty__body">
+                                Your score history, section subscores, and progress trajectory will appear here after you finish your first practice test. Set a target score at any time to monitor your goal.
+                            </p>
+
+                            <div class="home-portal__metrics-preview">
+                                <div class="home-portal__metric">
+                                    <span class="home-portal__metric-label">Latest score</span>
+                                    <span class="home-portal__metric-value home-num">—</span>
+                                </div>
+                                <div class="home-portal__metric">
+                                    <span class="home-portal__metric-label">Personal best</span>
+                                    <span class="home-portal__metric-value home-num">—</span>
+                                </div>
+                                <div class="home-portal__metric">
+                                    <span class="home-portal__metric-label">Practice completed</span>
+                                    <span class="home-portal__metric-value home-num">0</span>
+                                </div>
+                                @if($isTeacher)
+                                <div class="home-portal__metric">
+                                    <span class="home-portal__metric-label">Target goal</span>
+                                    @if($user->target_score)
+                                        <span class="home-portal__metric-value home-num">{{ $user->target_score }}</span>
+                                    @else
+                                        <span class="home-portal__metric-value text-slate-400">
+                                            <a href="{{ route('student.progress') }}" class="home-link font-semibold">Not set</a>
+                                        </span>
+                                    @endif
+                                </div>
+                                @endif
+                            </div>
+
+                            <div class="flex items-center gap-3 mt-4 flex-wrap justify-center">
+                                <x-ui.button size="sm" variant="secondary" :href="route('home.practice')">
+                                    Explore the test library
+                                </x-ui.button>
+                                @if($isTeacher)
+                                    <a href="{{ route('student.progress') }}" class="home-link">Set target goal</a>
+                                @endif
+                            </div>
                         </div>
                     @endif
                 </x-ui.card>
 
-                {{-- Row 1: what to do next + where you stand --}}
-                <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
-                    <div class="lg:col-span-7">
-                        @if ($hasActiveAssignments)
-                            <x-ui.card id="classroom-assignments" stretch aria-labelledby="assignments-title">
+                {{-- ================= C. SCORE HISTORY & RECENT WORK ================= --}}
+                @if($completedCount > 0 || $recentWorkAttempts->isNotEmpty())
+                    <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-stretch">
+                        {{-- 2/3 Score History Chart --}}
+                        <div class="lg:col-span-8">
+                            <x-ui.card stretch aria-labelledby="score-history-title">
                                 <x-slot:header>
                                     <div class="home-panel__headline">
-                                        <h2 id="assignments-title" class="home-panel__title">Assigned by your teacher</h2>
-                                        <p class="home-panel__sub">{{ $openAssignments > 0 ? $openAssignments.' open' : 'All caught up' }}</p>
+                                        <h2 id="score-history-title" class="home-panel__title">Score history</h2>
+                                        <p class="home-panel__sub">Last {{ min(5, count($homeScoreTrend['attempts'])) }} comparable full tests</p>
                                     </div>
-                                    <x-ui.status-badge status="brand">Class work</x-ui.status-badge>
+                                    @if($user->target_score || !$isTeacher)
+                                        <span class="home-portal__target-indicator" @if(!$isTeacher) x-show="savedGoal !== null" @endif>
+                                            <span class="home-portal__target-line-sample"></span>
+                                            Target (<span @if(!$isTeacher) x-text="savedGoal" @endif>{{ $user->target_score }}</span>)
+                                        </span>
+                                    @endif
                                 </x-slot:header>
 
-                                <ul class="home-list">
-                                    @foreach($assignments->take(2) as $a)
-                                        @php
-                                            // The resolver is the single source of truth for state: it also
-                                            // reports Overdue / Upcoming / Closed, which a completed-vs-in-progress
-                                            // check silently rendered as "no badge at all".
-                                            $resolved = \App\Support\AssignmentStatusResolver::resolve($a, $a->attempts);
-                                            $state = $resolved['state'];
-                                            $isCompleted = $state === 'Completed';
-                                            $isInProgress = $resolved['inProgress'] !== null;
-                                            $actionLabel = $isCompleted ? 'Review'
-                                                : ($isInProgress ? 'Resume'
-                                                : ($resolved['canStart'] ? 'Start' : 'View'));
-                                        @endphp
-                                        <li>
-                                            <div class="home-row home-row--static">
-                                                <span class="home-row__main">
-                                                    <span class="home-row__title">{{ $a->title }}</span>
-                                                    <span class="home-row__meta">
-                                                        {{ $a->classroom->name }}
-                                                        <span aria-hidden="true">&middot;</span>
-                                                        {{ $a->due_at ? 'Due ' . $a->due_at->diffForHumans() : 'No due date' }}
-                                                    </span>
-                                                </span>
-                                                <span class="home-row__aside">
-                                                    <x-ui.status-badge :status="$resolved['variant']">{{ $state }}</x-ui.status-badge>
-                                                    <x-ui.button size="sm" :href="route('student.assignments.show', ['assignment' => $a->ulid])">
-                                                        {{ $actionLabel }}
-                                                    </x-ui.button>
-                                                </span>
-                                            </div>
-                                        </li>
-                                    @endforeach
-                                </ul>
-
-                                <x-slot:footer>
-                                    <div class="home-panel__foot">
-                                        <span>Track every classroom task and score</span>
-                                        <a href="{{ route('student.assignments.index') }}" class="home-link">
-                                            View all assignments
-                                            <x-ui.icon name="arrow-right" class="w-3.5 h-3.5" />
-                                        </a>
-                                    </div>
-                                </x-slot:footer>
+                                @include('student.analytics.partials.score-history')
                             </x-ui.card>
-                        @elseif ($inProgressAttempt)
-                            <x-ui.card stretch aria-labelledby="active-task-title">
+                        </div>
+
+                        {{-- 1/3 Recent Work --}}
+                        <div class="lg:col-span-4">
+                            <x-ui.card stretch aria-labelledby="recent-work-title">
                                 <x-slot:header>
                                     <div class="home-panel__headline">
-                                        <h2 id="active-task-title" class="home-panel__title">{{ $formatTitle($inProgressAttempt->test->title, 'Adaptive Full Practice Test 1') }}</h2>
-                                        <p class="home-panel__sub">Started {{ $inProgressAttempt->created_at->diffForHumans() }}</p>
+                                        <h2 id="recent-work-title" class="home-panel__title">Recent work</h2>
+                                        <p class="home-panel__sub">Latest practice sessions</p>
                                     </div>
-                                    <x-ui.status-badge status="warning">In progress</x-ui.status-badge>
+                                    <a href="{{ route('student.scores.index') }}" class="home-link">
+                                        All score reports
+                                        <x-ui.icon name="arrow-right" class="w-3.5 h-3.5" />
+                                    </a>
                                 </x-slot:header>
 
-                                <ul class="home-chips">
-                                    <li class="home-chip">
-                                        <x-ui.icon name="clock" class="w-3.5 h-3.5" />
-                                        Module in progress
-                                    </li>
-                                    <li class="home-chip">
-                                        <x-ui.icon name="layers" class="w-3.5 h-3.5" />
-                                        Adaptive theta routing
-                                    </li>
-                                </ul>
-                                <p class="home-note">Your responses are saved automatically as you go.</p>
+                                @if($recentWorkAttempts->isNotEmpty())
+                                    <ul class="home-list">
+                                        @foreach($recentWorkAttempts as $rw)
+                                            @php
+                                                $rwIsSection = $rw->attempt_type === 'section';
+                                                $rwScore = $rwIsSection
+                                                    ? ($rw->section_type === 'reading_writing' ? $rw->score_reading_writing : $rw->score_math)
+                                                    : $rw->total_score;
+                                                $rwMax = $rwIsSection ? 800 : 1600;
+                                                $rwFormat = $rwIsSection
+                                                    ? ($rw->section_type === 'reading_writing' ? 'Reading & Writing' : 'Math')
+                                                    : 'Full test';
+                                            @endphp
+                                            <li>
+                                                <div class="home-row home-row--static">
+                                                    <span class="home-row__main">
+                                                        <span class="home-row__title">{{ $formatTitle($rw->test?->title, 'Practice Test') }}</span>
+                                                        <span class="home-row__meta">
+                                                            <span class="font-medium text-slate-700">{{ $rwFormat }}</span>
+                                                            <span aria-hidden="true">&middot;</span>
+                                                            <span>{{ $rw->completed_at ? $rw->completed_at->diffForHumans() : 'Recently' }}</span>
+                                                        </span>
+                                                    </span>
+                                                    <span class="home-row__aside">
+                                                        <span class="flex items-baseline gap-1">
+                                                            <span class="home-num font-bold text-base text-slate-900">{{ $rwScore ?? '—' }}</span>
+                                                            <span class="text-xs text-slate-500">/ {{ $rwMax }}</span>
+                                                        </span>
+                                                        <x-ui.button size="sm" variant="secondary" :href="route('student.scores.show', $rw)">
+                                                            Review
+                                                        </x-ui.button>
+                                                    </span>
+                                                </div>
+                                            </li>
+                                        @endforeach
+                                    </ul>
 
-                                <x-slot:footer>
-                                    <div class="home-panel__foot">
-                                        <span>Pick up where you left off</span>
-                                        <x-ui.button @click="$dispatch('open-ready-modal', {{ \Illuminate\Support\Js::from($resumeModalPayload) }})">
-                                            Continue practice
+                                    <x-slot:footer>
+                                        <div class="home-panel__foot">
+                                            @if($lastCompletedAttempt)
+                                                <a href="{{ route('student.scores.show', $lastCompletedAttempt) }}" class="home-link">
+                                                    Review latest test
+                                                    <x-ui.icon name="arrow-right" class="w-3.5 h-3.5" />
+                                                </a>
+                                            @endif
+                                            <a href="{{ route('student.scores.index') }}" class="home-link">
+                                                All score reports
+                                                <x-ui.icon name="arrow-right" class="w-3.5 h-3.5" />
+                                            </a>
+                                        </div>
+                                    </x-slot:footer>
+                                @else
+                                    <div class="home-empty">
+                                        <x-ui.icon name="journal-check" class="home-empty__icon w-6 h-6" />
+                                        <p class="home-empty__title">No completed practice yet</p>
+                                        <p class="home-empty__body">Take a test from the library to see your score reports here.</p>
+                                        <x-ui.button size="sm" variant="secondary" :href="route('home.practice')">
+                                            Browse practice tests
                                         </x-ui.button>
                                     </div>
-                                </x-slot:footer>
-                            </x-ui.card>
-                        @else
-                            <x-ui.card stretch aria-labelledby="ledger-title">
-                                <x-slot:header>
-                                    <h2 id="ledger-title" class="home-panel__title">My study ledger</h2>
-                                </x-slot:header>
-
-                                @if($completedCount === 0)
-                                    {{-- Nothing to tally yet: point at the first step instead of three zeroes. --}}
-                                    <div class="home-empty">
-                                        <x-ui.icon name="list-stars" class="home-empty__icon w-6 h-6" />
-                                        <p class="home-empty__title">Your ledger starts with one test</p>
-                                        <p class="home-empty__body">Take a full-length adaptive practice test to unlock your score, section breakdown, and study tips.</p>
-                                        <x-ui.button size="sm" variant="secondary" :href="route('home.practice')">Start your first test</x-ui.button>
-                                    </div>
-                                @else
-                                    <dl class="home-ledger">
-                                        <div class="home-ledger__row">
-                                            <dt>Personal best</dt>
-                                            <dd class="home-num">{{ $bestScore ?: '—' }}</dd>
-                                        </div>
-                                        <div class="home-ledger__row">
-                                            <dt>Practice completed</dt>
-                                            <dd class="home-num">{{ $completedCount }} {{ \Illuminate\Support\Str::plural('test', $completedCount) }}</dd>
-                                        </div>
-                                        <div class="home-ledger__row">
-                                            <dt>Target goal</dt>
-                                            <dd class="home-num">1600</dd>
-                                        </div>
-                                    </dl>
                                 @endif
-
-                                <x-slot:footer>
-                                    <div class="home-panel__foot">
-                                        <span>See section and domain trends</span>
-                                        <a href="{{ route('student.progress') }}" class="home-link">
-                                            Detailed progress
-                                            <x-ui.icon name="arrow-right" class="w-3.5 h-3.5" />
-                                        </a>
-                                    </div>
-                                </x-slot:footer>
                             </x-ui.card>
-                        @endif
+                        </div>
                     </div>
+                @endif
 
+                {{-- ================= D. WEEKLY ACTIVITY & STUDY GUIDANCE ================= --}}
+                <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-stretch">
+                    {{-- Left: Weekly activity --}}
                     <div class="lg:col-span-5">
-                        <x-ui.card stretch aria-labelledby="score-anchor-title">
+                        <x-ui.card stretch aria-labelledby="weekly-activity-title">
                             <x-slot:header>
-                                <h2 id="score-anchor-title" class="home-panel__title">Latest score</h2>
-                                @if ($lastCompletedAttempt)
-                                    <span class="home-panel__sub home-num">{{ $lastCompletedAttempt->completed_at?->format('M j, Y') ?? 'Recent' }}</span>
-                                @endif
+                                <div class="home-panel__headline">
+                                    <h2 id="weekly-activity-title" class="home-panel__title">Weekly activity</h2>
+                                    <p class="home-panel__sub">Effort this week (Mon &ndash; Sun, VN time)</p>
+                                </div>
+                                <x-ui.status-badge status="brand">This week</x-ui.status-badge>
                             </x-slot:header>
 
-                            @if ($lastScore)
-                                <div class="home-score">
-                                    <span class="home-score__value home-num">{{ $lastScore }}</span>
-                                    <span class="home-score__max home-num">/ {{ $lastScoreMax }}</span>
-                                    @if($isPersonalBest)
-                                        <x-ui.status-badge status="success" class="home-score__badge">Personal best</x-ui.status-badge>
-                                    @elseif($isSectionAttempt)
-                                        <x-ui.status-badge status="neutral" class="home-score__badge">{{ $lastSectionLabel }} only</x-ui.status-badge>
-                                    @endif
+                            <div class="home-activity-grid">
+                                <div class="home-activity-tile">
+                                    <div class="home-activity-tile__icon">
+                                        <x-ui.icon name="check2-circle" class="w-5 h-5 text-indigo-600" />
+                                    </div>
+                                    <div>
+                                        <div class="home-stat__value home-num text-2xl font-bold text-slate-900">{{ $weeklyActivity['practiceCount'] }}</div>
+                                        <div class="home-activity-tile__label">{{ \Illuminate\Support\Str::plural('test', $weeklyActivity['practiceCount']) }} completed</div>
+                                    </div>
                                 </div>
 
-                                @if(!$isSectionAttempt && ($mathScore || $rwScore))
-                                    <dl class="home-split">
-                                        <div class="home-split__cell">
-                                            <dt>Reading &amp; Writing</dt>
-                                            <dd class="home-num">{{ $rwScore ?? '—' }} <span>/ 800</span></dd>
-                                        </div>
-                                        <div class="home-split__cell">
-                                            <dt>Math</dt>
-                                            <dd class="home-num">{{ $mathScore ?? '—' }} <span>/ 800</span></dd>
-                                        </div>
-                                    </dl>
-                                @endif
-                            @else
-                                <div class="home-empty">
-                                    <x-ui.icon name="graph-up-arrow" class="home-empty__icon w-6 h-6" />
-                                    <p class="home-empty__title">No scores yet</p>
-                                    <p class="home-empty__body">Finish a practice test and your score breakdown appears here.</p>
+                                <div class="home-activity-tile">
+                                    <div class="home-activity-tile__icon">
+                                        <x-ui.icon name="pencil-square" class="w-5 h-5 text-indigo-600" />
+                                    </div>
+                                    <div>
+                                        <div class="home-stat__value home-num text-2xl font-bold text-slate-900">{{ $weeklyActivity['questionsCount'] }}</div>
+                                        <div class="home-activity-tile__label">questions answered</div>
+                                    </div>
                                 </div>
-                            @endif
+                            </div>
 
-                            <x-slot:footer>
-                                <div class="home-panel__foot">
-                                    @if($lastCompletedAttempt)
-                                        <span>Question-by-question review</span>
-                                        <a href="{{ route('student.scores.show', $lastCompletedAttempt) }}" class="home-link">
-                                            View breakdown
-                                            <x-ui.icon name="arrow-right" class="w-3.5 h-3.5" />
-                                        </a>
-                                    @else
-                                        <span>Start with a full-length test</span>
-                                        <a href="{{ route('home.practice') }}" class="home-link">
-                                            Test library
-                                            <x-ui.icon name="arrow-right" class="w-3.5 h-3.5" />
-                                        </a>
-                                    @endif
-                                </div>
-                            </x-slot:footer>
+                            <p class="home-note mt-3 text-xs text-slate-500">
+                                Tracks tests and session answers recorded between Monday 00:00 and next Monday 00:00 (Asia/Ho_Chi_Minh).
+                            </p>
                         </x-ui.card>
+                    </div>
+
+                    {{-- Right: Study guidance --}}
+                    <div class="lg:col-span-7">
+                        <div class="home-stack h-full justify-between">
+                            <section class="home-suggestion" aria-labelledby="tip-title">
+                                <div>
+                                    <h2 id="tip-title" class="home-panel__title">Suggested focus</h2>
+                                    @if($suggestion)
+                                        <h3 class="home-suggestion__skill">{{ $suggestion['skill'] }}</h3>
+                                        <p class="home-note">{{ $suggestion['domain'] }} · Correct on {{ $suggestion['correct'] }} of {{ $suggestion['total'] }} recent {{ \Illuminate\Support\Str::plural('question', $suggestion['total']) }}.</p>
+                                        @if($suggestion['total'] < 5)
+                                            <p class="home-note">This is limited evidence. Try more questions to understand whether this is a consistent gap.</p>
+                                        @else
+                                            <p class="home-note">Revisit this topic in your next practice, then review the answer explanations.</p>
+                                        @endif
+                                    @else
+                                        <h3 class="home-suggestion__skill">Keep building your practice</h3>
+                                        <p class="home-note">Complete practice and review your answers to build evidence for a suggested focus.</p>
+                                    @endif
+                                </div>
+                                <x-ui.button variant="secondary" :href="route('home.practice')">Browse practice tests</x-ui.button>
+                            </section>
+                        </div>
                     </div>
                 </div>
 
-                {{-- A practice attempt left open while class work is also due --}}
-                @if ($hasActiveAssignments && $inProgressAttempt)
-                    <section class="home-resume" aria-labelledby="active-practice-title">
-                        <span class="home-resume__dot" aria-hidden="true"></span>
-                        <div class="home-resume__body">
-                            <p class="home-resume__label">Practice attempt still open</p>
-                            <h2 id="active-practice-title" class="home-resume__title">
-                                {{ $formatTitle($inProgressAttempt->test->title, 'Adaptive Full Practice Test 1') }}
-                            </h2>
-                        </div>
-                        <x-ui.button size="sm" variant="secondary" @click="$dispatch('open-ready-modal', {{ \Illuminate\Support\Js::from($resumeModalPayload) }})">
-                            Continue practice
-                        </x-ui.button>
-                    </section>
-                @endif
-
-                {{-- Recommended self-study test --}}
-                @if ($featuredTest)
-                    <x-ui.card aria-labelledby="featured-title">
-                        <div class="home-featured">
-                            <div class="home-featured__body">
-                                <div class="home-head__meta">
-                                    <x-ui.status-badge status="neutral">Self-study</x-ui.status-badge>
-                                    <span class="home-date">Recommended from your recent practice</span>
-                                </div>
-                                <h2 id="featured-title" class="home-featured__title">
-                                    {{ $formatTitle($featuredTest->title, 'Adaptive Full Length Practice Test 1') }}
-                                </h2>
-                                <p class="home-featured__desc">
-                                    {{ $featuredTest->description ? \Illuminate\Support\Str::limit($featuredTest->description, 140) : 'A full-length adaptive SAT practice exam that matches Bluebook structure and theta scoring curves.' }}
-                                </p>
-                                <ul class="home-chips">
-                                    <li class="home-chip">Full-length</li>
-                                    <li class="home-chip"><span class="home-num">{{ $featuredDuration ?: '134' }}</span> min</li>
-                                    <li class="home-chip"><span class="home-num">{{ $featuredSections ?: 2 }}</span> {{ \Illuminate\Support\Str::plural('section', $featuredSections ?: 2) }}</li>
-                                    <li class="home-chip">IRT adaptive</li>
-                                </ul>
-                            </div>
-                            <div class="home-featured__action">
-                                <x-ui.button :href="route('home.practice')">Start practice</x-ui.button>
-                            </div>
-                        </div>
-                    </x-ui.card>
-                @endif
-
-                {{-- Guidance and community --}}
-                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                    <div class="home-stack">
-                        <section class="home-callout home-callout--tip" aria-labelledby="tip-title">
-                            <x-ui.icon name="lightbulb" class="home-callout__icon w-4 h-4" />
-                            <div>
-                                <h2 id="tip-title" class="home-callout__title">Quick tip</h2>
-                                <p class="home-callout__body">{!! preg_replace('/\*\*(.*?)\*\*/', '<strong>$1</strong>', e($tip)) !!}</p>
-                            </div>
-                        </section>
-
-                        <section class="home-callout home-callout--info" aria-labelledby="adaptive-title">
-                            <x-ui.icon name="layers" class="home-callout__icon w-4 h-4" />
-                            <div>
-                                <h2 id="adaptive-title" class="home-callout__title">Your test adapts to you</h2>
-                                <p class="home-callout__body">
-                                    Adaptive full tests route you to an easier or harder second module based on your answers, then use IRT (EAP 3PL) scoring to estimate your score range.
-                                </p>
-                            </div>
-                        </section>
+                {{-- ================= E. PERMANENT TOOL SHOWCASE ================= --}}
+                <section class="home-tools-section" aria-labelledby="study-tools-title">
+                    <div class="home-section-head">
+                        <h2 id="study-tools-title" class="home-section-title">Explore your study tools</h2>
+                        <p class="home-section-sub">Five core areas to help you master the Digital SAT</p>
                     </div>
 
+                    <div class="home-tools-grid">
+                        {{-- 1. Test Preview (modest brand-tinted emphasis) --}}
+                        <div class="home-tool-card home-tool-card--featured">
+                            <div class="home-tool-card__header">
+                                <div class="home-tool-card__icon home-tool-card__icon--brand">
+                                    <x-ui.icon name="compass" class="w-5 h-5" />
+                                </div>
+                                <div class="home-tool-card__heading">
+                                    <h3 class="home-tool-card__title">Test Preview</h3>
+                                    <x-ui.status-badge status="brand">Untimed</x-ui.status-badge>
+                                </div>
+                            </div>
+                            <p class="home-tool-card__purpose">
+                                Explore sample questions and testing tools without timing or a scored result.
+                            </p>
+                            <p class="home-tool-card__context">
+                                Practice using the built-in Desmos graphing calculator, formula sheets, highlighter, and answer eliminator in a low-stakes environment.
+                            </p>
+                            <div class="home-tool-demo">
+                                <span class="home-tool-demo__pill"><x-ui.icon name="calculator" class="w-3.5 h-3.5" /> Desmos</span>
+                                <span class="home-tool-demo__pill"><x-ui.icon name="file-earmark-text" class="w-3.5 h-3.5" /> Reference</span>
+                                <span class="home-tool-demo__pill"><x-ui.icon name="slash-circle" class="w-3.5 h-3.5" /> Eliminator</span>
+                            </div>
+                            <div class="home-tool-card__actions">
+                                <a href="{{ route('test.preview') }}" class="home-link">
+                                    Launch Test Preview
+                                    <x-ui.icon name="arrow-right" class="w-3.5 h-3.5" />
+                                </a>
+                            </div>
+                        </div>
+
+                        {{-- 2. Practice --}}
+                        <div class="home-tool-card">
+                            <div class="home-tool-card__header">
+                                <div class="home-tool-card__icon">
+                                    <x-ui.icon name="journal-text" class="w-5 h-5" />
+                                </div>
+                                <div class="home-tool-card__heading">
+                                    <h3 class="home-tool-card__title">Practice</h3>
+                                </div>
+                            </div>
+                            <p class="home-tool-card__purpose">
+                                Browse available tests and choose a suitable practice format.
+                            </p>
+                            <p class="home-tool-card__context">
+                                Choose full-length adaptive tests with realistic scoring or focused single-section practice.
+                            </p>
+                            <div class="home-tool-demo">
+                                <span class="home-tool-demo__pill"><x-ui.icon name="clock" class="w-3.5 h-3.5" /> Adaptive Full &middot; 134m</span>
+                                <span class="home-tool-demo__pill"><x-ui.icon name="journal-text" class="w-3.5 h-3.5" /> Section &middot; 32m</span>
+                            </div>
+                            <div class="home-tool-card__actions">
+                                <a href="{{ route('home.practice') }}" class="home-link">
+                                    Explore test library
+                                    <x-ui.icon name="arrow-right" class="w-3.5 h-3.5" />
+                                </a>
+                            </div>
+                        </div>
+
+                        {{-- 3. Classes & Assignments --}}
+                        <div class="home-tool-card">
+                            <div class="home-tool-card__header">
+                                <div class="home-tool-card__icon">
+                                    <x-ui.icon name="mortarboard" class="w-5 h-5" />
+                                </div>
+                                <div class="home-tool-card__heading">
+                                    <h3 class="home-tool-card__title">Classes &amp; Assignments</h3>
+                                </div>
+                            </div>
+                            <p class="home-tool-card__purpose">
+                                Join a teacher’s class, find assigned work, and access class materials.
+                            </p>
+                            <p class="home-tool-card__context">
+                                Submit teacher-assigned tests before deadlines, track completion status, and access study materials shared by your teacher.
+                            </p>
+                            <div class="home-tool-demo">
+                                @if($primaryClassroom)
+                                    <span class="home-tool-demo__pill"><x-ui.icon name="mortarboard" class="w-3.5 h-3.5" /> {{ \Illuminate\Support\Str::limit($primaryClassroom->name, 22) }}</span>
+                                    <span class="home-tool-demo__pill home-tool-demo__pill--brand"><x-ui.icon name="calendar-check" class="w-3.5 h-3.5" /> {{ $assignments->isNotEmpty() && $assignments->first()->due_at ? 'Due ' . $assignments->first()->due_at->isoFormat('ddd') : 'Enrolled' }}</span>
+                                @else
+                                    <span class="home-tool-demo__pill"><x-ui.icon name="mortarboard" class="w-3.5 h-3.5" /> Example: Cohort Class</span>
+                                    <span class="home-tool-demo__pill home-tool-demo__pill--brand"><x-ui.icon name="calendar-check" class="w-3.5 h-3.5" /> Example: Due Friday</span>
+                                @endif
+                            </div>
+                            <div class="home-tool-card__actions">
+                                <a href="{{ route('student.classes.index') }}" class="home-link">
+                                    My classes
+                                    <x-ui.icon name="arrow-right" class="w-3.5 h-3.5" />
+                                </a>
+                                <span class="home-tool-card__sep" aria-hidden="true">&middot;</span>
+                                <a href="{{ route('student.assignments.index') }}" class="home-link">
+                                    View assignments
+                                    <x-ui.icon name="arrow-right" class="w-3.5 h-3.5" />
+                                </a>
+                            </div>
+                        </div>
+
+                        {{-- 4. Scores & Progress --}}
+                        <div class="home-tool-card">
+                            <div class="home-tool-card__header">
+                                <div class="home-tool-card__icon">
+                                    <x-ui.icon name="graph-up-arrow" class="w-5 h-5" />
+                                </div>
+                                <div class="home-tool-card__heading">
+                                    <h3 class="home-tool-card__title">Scores &amp; Progress</h3>
+                                </div>
+                            </div>
+                            <p class="home-tool-card__purpose">
+                                Review completed answers, understand performance, and track a target score.
+                            </p>
+                            <p class="home-tool-card__context">
+                                Inspect detailed explanations for every question, review domain and skill accuracy, and monitor your score trajectory.
+                            </p>
+                            <div class="home-tool-demo">
+                                <span class="home-tool-demo__pill"><x-ui.icon name="graph-up-arrow" class="w-3.5 h-3.5" /> Domain Analysis</span>
+                                <span class="home-tool-demo__pill home-tool-demo__pill--brand"><x-ui.icon name="bullseye" class="w-3.5 h-3.5" /> Target Tracking</span>
+                            </div>
+                            <div class="home-tool-card__actions">
+                                <a href="{{ route('student.scores.index') }}" class="home-link">
+                                    Score history
+                                    <x-ui.icon name="arrow-right" class="w-3.5 h-3.5" />
+                                </a>
+                                <span class="home-tool-card__sep" aria-hidden="true">&middot;</span>
+                                <a href="{{ route('student.progress') }}" class="home-link">
+                                    Detailed progress
+                                    <x-ui.icon name="arrow-right" class="w-3.5 h-3.5" />
+                                </a>
+                            </div>
+                        </div>
+
+                        {{-- 5. Guides & Community --}}
+                        <div class="home-tool-card home-tool-card--wide">
+                            <div class="home-tool-card__header">
+                                <div class="home-tool-card__icon">
+                                    <x-ui.icon name="chat-left-quote" class="w-5 h-5" />
+                                </div>
+                                <div class="home-tool-card__heading">
+                                    <h3 class="home-tool-card__title">Guides &amp; Community</h3>
+                                </div>
+                            </div>
+                            <p class="home-tool-card__purpose">
+                                Read teacher articles or ask questions in the forum.
+                            </p>
+                            <p class="home-tool-card__context">
+                                Read expert strategy breakdowns and subject walkthroughs from verified teachers, or discuss difficult problems with peers in the forum.
+                            </p>
+                            <div class="home-tool-demo">
+                                <span class="home-tool-demo__pill"><x-ui.icon name="book" class="w-3.5 h-3.5" /> Strategy Guides</span>
+                                <span class="home-tool-demo__pill"><x-ui.icon name="chat-dots" class="w-3.5 h-3.5" /> Peer Discussions</span>
+                            </div>
+                            <div class="home-tool-card__actions">
+                                <a href="{{ route('blog.index') }}" class="home-link">
+                                    Read articles
+                                    <x-ui.icon name="arrow-right" class="w-3.5 h-3.5" />
+                                </a>
+                                <span class="home-tool-card__sep" aria-hidden="true">&middot;</span>
+                                <a href="{{ route('forum.index') }}" class="home-link">
+                                    Community forum
+                                    <x-ui.icon name="arrow-right" class="w-3.5 h-3.5" />
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                {{-- ================= HOW YOUR PRACTICE CONNECTS ================= --}}
+                <section class="home-sequence" aria-labelledby="sequence-title">
+                    <div class="home-section-head">
+                        <h2 id="sequence-title" class="home-section-title">How your practice connects</h2>
+                        <p class="home-section-sub">A continuous cycle to build test confidence and improve your score</p>
+                    </div>
+
+                    <div class="home-sequence__track">
+                        <div class="home-sequence__step">
+                            <div class="home-sequence__step-head">
+                                <span class="home-sequence__num">1</span>
+                                <h3 class="home-sequence__title">Choose practice</h3>
+                            </div>
+                            <p class="home-sequence__desc">
+                                Select a full-length adaptive test or focused section that matches your preparation goals.
+                            </p>
+                        </div>
+
+                        <div class="home-sequence__divider" aria-hidden="true">
+                            <x-ui.icon name="arrow-right" class="w-4 h-4" />
+                        </div>
+
+                        <div class="home-sequence__step">
+                            <div class="home-sequence__step-head">
+                                <span class="home-sequence__num">2</span>
+                                <h3 class="home-sequence__title">Review your answers</h3>
+                            </div>
+                            <p class="home-sequence__desc">
+                                Inspect question explanations, timing per question, and mistake patterns after each session.
+                            </p>
+                        </div>
+
+                        <div class="home-sequence__divider" aria-hidden="true">
+                            <x-ui.icon name="arrow-right" class="w-4 h-4" />
+                        </div>
+
+                        <div class="home-sequence__step">
+                            <div class="home-sequence__step-head">
+                                <span class="home-sequence__num">3</span>
+                                <h3 class="home-sequence__title">Track progress</h3>
+                            </div>
+                            <p class="home-sequence__desc">
+                                Monitor your score trajectory across domains and work consistently toward your target score.
+                            </p>
+                        </div>
+                    </div>
+                </section>
+
+                <section class="home-help" aria-labelledby="home-help-title">
+                    <h2 id="home-help-title" class="home-section-title">Understand your practice</h2>
+                    <details>
+                        <summary>What is Test Preview?</summary>
+                        <p>Test Preview lets you explore sample questions, Desmos, the reference sheet, and answer tools without time limits or a recorded score.</p>
+                        <a href="{{ route('test.preview') }}" class="home-link">Open Test Preview <x-ui.icon name="arrow-right" class="w-4 h-4" /></a>
+                    </details>
+                    <details>
+                        <summary>How does adaptive practice work?</summary>
+                        <p>Full adaptive practice has two modules per section. Your answers in the first module help determine the difficulty of the second. Review your score report after completion to understand your results.</p>
+                        <a href="{{ route('home.practice') }}" class="home-link">Explore adaptive practice <x-ui.icon name="arrow-right" class="w-4 h-4" /></a>
+                    </details>
+                </section>
+
+                {{-- ================= F. RESOURCES AND COMMUNITY ================= --}}
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <x-ui.card stretch aria-labelledby="blog-title">
                         <x-slot:header>
                             <h2 id="blog-title" class="home-panel__title">From the blog</h2>
@@ -706,7 +998,7 @@
 
                             @if($moreposts->isNotEmpty())
                                 <ul class="home-minilist">
-                                    @foreach($moreposts as $post)
+                                    @foreach($moreposts->take(2) as $post)
                                         <li>
                                             <a href="{{ route('blog.show', $post) }}" class="home-minilist__link">
                                                 <span class="home-minilist__title">{{ $post->title }}</span>
@@ -717,10 +1009,12 @@
                                 </ul>
                             @endif
                         @else
-                            <div class="home-empty">
-                                <x-ui.icon name="journal-text" class="home-empty__icon w-6 h-6" />
-                                <p class="home-empty__title">No posts yet</p>
-                                <p class="home-empty__body">Study tips written by teachers will show up here.</p>
+                            <div class="home-feed-empty">
+                                <p class="home-feed-empty__text">Study tips written by teachers will show up here.</p>
+                                <a href="{{ route('blog.index') }}" class="home-link">
+                                    Browse blog archive
+                                    <x-ui.icon name="arrow-right" class="w-3.5 h-3.5" />
+                                </a>
                             </div>
                         @endif
                     </x-ui.card>
@@ -739,7 +1033,7 @@
 
                         @if($latestThreads->isNotEmpty())
                             <ul class="home-minilist home-minilist--flush">
-                                @foreach($latestThreads as $thread)
+                                @foreach($latestThreads->take(4) as $thread)
                                     <li>
                                         <a href="{{ route('forum.show', $thread) }}" class="home-minilist__link">
                                             <span class="home-minilist__title">{{ $thread->title }}</span>
@@ -753,19 +1047,25 @@
                                 @endforeach
                             </ul>
                         @else
-                            <div class="home-empty">
-                                <x-ui.icon name="chat-left-quote" class="home-empty__icon w-6 h-6" />
-                                <p class="home-empty__title">No discussions yet</p>
-                                <p class="home-empty__body">Ask the first question and a teacher will answer it.</p>
-                                <x-ui.button size="sm" variant="secondary" @click="$dispatch('open-modal', 'modal-ask-question')">
-                                    Ask a question
-                                </x-ui.button>
+                            <div class="home-feed-empty">
+                                <p class="home-feed-empty__text">Ask the first question and a teacher will answer it.</p>
+                                <div class="home-feed-empty__actions">
+                                    <a href="{{ route('forum.index') }}" class="home-link">
+                                        Open forum
+                                        <x-ui.icon name="arrow-right" class="w-3.5 h-3.5" />
+                                    </a>
+                                    <span aria-hidden="true">&middot;</span>
+                                    <button type="button" class="home-link" @click="$dispatch('open-modal', 'modal-ask-question')">
+                                        Ask a question
+                                    </button>
+                                </div>
                             </div>
                         @endif
                     </x-ui.card>
                 </div>
             </div>
 
+            @endif
         </main>
 
         @include('forum.partials.ask-modal')

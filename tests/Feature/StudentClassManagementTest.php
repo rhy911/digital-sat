@@ -35,6 +35,20 @@ class StudentClassManagementTest extends TestCase
             ->assertRedirect(route('student.classes.show', $classroom));
     }
 
+    public function test_join_code_controls_on_all_classes_page_are_inside_an_alpine_root(): void
+    {
+        $teacher = $this->teacher();
+        $student = $this->student();
+        $classroom = $this->classroom($teacher);
+        ClassroomMembership::create(['classroom_id' => $classroom->id, 'student_id' => $student->id, 'status' => 'active']);
+
+        $this->actingAs($student)
+            ->get(route('student.classes.index', ['all' => 1]))
+            ->assertOk()
+            ->assertSee('<div class="app-shell app-shell--no-list" x-data="{}">', false)
+            ->assertSee('@click="$dispatch(\'open-modal\', \'modal-join-class\')"', false);
+    }
+
     public function test_index_shows_empty_state_when_no_active_classroom(): void
     {
         $student = $this->student();

@@ -1,4 +1,4 @@
-<x-layouts.student :user="$user" header-type="none" title="My Scores - Digital SAT" :cancel-route="route('home')">
+<x-layouts.student :user="$user" header-type="none" title="My Scores - Digital SAT" ui="product" :cancel-route="route('home')">
     @push('styles')
         @vite(['resources/css/classroom-workspace.css', 'resources/css/student/analytics.css'])
     @endpush

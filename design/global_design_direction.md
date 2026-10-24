@@ -1,5 +1,7 @@
 # Định hướng thiết kế toàn cục (sau redesign Classroom)
 
+> **Visual direction superseded for the student product rollout.** Manila paper, corkboard, binder, pins, tape, and handwriting decoration are retired on migrated student pages in favor of the approved warm DigiSAT product language in [`../DESIGN.md`](../DESIGN.md). Retain this document’s functional constraints and any teacher/admin guidance until those surfaces receive their own migration.
+
 Tài liệu này chốt lại hướng thiết kế thống nhất cho toàn bộ frontend (trừ **test engine** — `resources/views/engine/**`, giữ nguyên không đụng vào), dựa trên phân tích redesign Classroom (`student/classes/show.blade.php`, `teacher/classes/show.blade.php`, `classroom-workspace.css`, `components/classroom/*`) và các quyết định đã chốt với chủ dự án.
 
 ---

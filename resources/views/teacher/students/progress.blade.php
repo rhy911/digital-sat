@@ -1,4 +1,4 @@
-<x-layouts.student :user="auth()->user()" :title="$student->name . ' - Student Analytics'" header-type="none">
+<x-layouts.student ui="product" body-class="antialiased teacher-workspace" :user="auth()->user()" :title="$student->name . ' - Student Analytics'" header-type="none">
     @push('styles')
         @vite(['resources/css/classroom-workspace.css', 'resources/css/student/progress.css'])
     @endpush

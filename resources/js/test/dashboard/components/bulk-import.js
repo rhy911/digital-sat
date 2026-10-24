@@ -1,5 +1,5 @@
-import { 
-    BULK_PREVIEW_URL, CSV_BULK_PREVIEW_URL, BULK_STORE_URL, CSV_BULK_URL, BASE_URL 
+import {
+    BULK_PREVIEW_URL, CSV_BULK_PREVIEW_URL, BULK_STORE_URL, CSV_BULK_URL, BASE_URL
 } from '../core/config.js';
 import { showAlert, showCustomConfirm } from '../utils/custom-alert.js';
 import { getTomSelectValue, captureTomSelectPreservation } from '../utils/tomselect.js';
@@ -184,7 +184,7 @@ function createCellFormatter(fieldName) {
     return function (cell) {
         const rowData = cell.getRow().getData();
         const value = cell.getValue() || '';
-        
+
         const moduleSelect = document.getElementById('bulkQuestionModule');
         let sectionType = 'reading_writing';
         if (moduleSelect && moduleSelect.selectedOptions && moduleSelect.selectedOptions[0]) {
@@ -368,7 +368,7 @@ export function openValidationGrid(items) {
 export function updateGridStatusCounts() {
     if (!validationGridTable) return;
     const rows = validationGridTable.getData();
-    
+
     const moduleSelect = document.getElementById('bulkQuestionModule');
     let sectionType = 'reading_writing';
     if (moduleSelect && moduleSelect.selectedOptions && moduleSelect.selectedOptions[0]) {
@@ -400,19 +400,19 @@ export function updateGridStatusCounts() {
         statusTitle.textContent = "Blocker Errors Found";
         statusMsg.textContent = "You must resolve all blockers highlighted in red before those rows can be imported.";
         importApprovedBtn.textContent = "Import Approved Rows";
-        importApprovedBtn.className = "px-6 py-3 bg-amber-700 hover:bg-amber-800 text-white font-extrabold text-xs uppercase tracking-wider rounded-xl cursor-pointer";
+        importApprovedBtn.className = "px-6 py-3 bg-amber-700 hover:bg-amber-800 text-white font-extrabold text-sm uppercase tracking-wider rounded-xl cursor-pointer";
     } else if (warningCount > 0) {
         statusAlert.className = "p-4 rounded-xl mb-5 bg-amber-500/5 border border-amber-500/15 text-amber-300 flex items-center justify-between shadow-xl gap-4";
         statusTitle.textContent = "Warnings Present";
         statusMsg.textContent = "Grid has minor warnings highlighted in yellow. You are ready to import all rows; missing details will use defaults.";
         importApprovedBtn.textContent = "Import All Rows";
-        importApprovedBtn.className = "px-6 py-3 bg-emerald-700 hover:bg-emerald-800 text-white font-extrabold text-xs uppercase tracking-wider rounded-xl cursor-pointer";
+        importApprovedBtn.className = "px-6 py-3 bg-emerald-700 hover:bg-emerald-800 text-white font-extrabold text-sm uppercase tracking-wider rounded-xl cursor-pointer";
     } else {
         statusAlert.className = "p-4 rounded-xl mb-5 bg-emerald-500/5 border border-emerald-500/15 text-emerald-300 flex items-center justify-between shadow-xl gap-4";
         statusTitle.textContent = "Validation Passed Successfully";
         statusMsg.textContent = "All rows are 100% valid! You are ready to import.";
         importApprovedBtn.textContent = "Import All Rows";
-        importApprovedBtn.className = "px-6 py-3 bg-emerald-700 hover:bg-emerald-800 text-white font-extrabold text-xs uppercase tracking-wider rounded-xl cursor-pointer";
+        importApprovedBtn.className = "px-6 py-3 bg-emerald-700 hover:bg-emerald-800 text-white font-extrabold text-sm uppercase tracking-wider rounded-xl cursor-pointer";
     }
 }
 
@@ -438,32 +438,32 @@ export function renderPreview(items) {
             if (content.trim()) {
                 passageHtml = `
                     <div class="p-3 mb-3 bg-slate-900/40 border-l-4 border-brand rounded-r-lg shadow-sm">
-                        <h6 class="text-brand text-xs font-bold mb-1.5 flex items-center gap-1">${icon('justify-left', 'w-4 h-4')} Passage</h6>
-                        <div class="passage-content text-slate-300 text-xs leading-relaxed" style="max-height: 150px; overflow-y: auto;">
+                        <h6 class="text-brand text-sm font-bold mb-1.5 flex items-center gap-1">${icon('justify-left', 'w-4 h-4')} Passage</h6>
+                        <div class="passage-content text-slate-300 text-sm leading-relaxed" style="max-height: 150px; overflow-y: auto;">
                             ${content}
                         </div>
-                        ${title ? `<div class="mt-2 text-slate-500 text-[10px]">Source: ${title}</div>` : ''}
+                        ${title ? `<div class="mt-2 text-slate-500 text-sm">Source: ${title}</div>` : ''}
                     </div>
                 `;
             }
         }
 
         const sectionBadge = item.section_type
-            ? `<span class="inline-flex items-center px-2 py-0.5 rounded bg-slate-800 text-slate-400 border border-slate-700/60 font-semibold text-[10px]">${item.section_type === 'reading_writing' ? 'Reading & Writing' : 'Math'}</span>`
+            ? `<span class="inline-flex items-center px-2 py-0.5 rounded bg-slate-800 text-slate-500 border border-slate-700/60 font-semibold text-sm">${item.section_type === 'reading_writing' ? 'Reading & Writing' : 'Math'}</span>`
             : '';
 
         let choicesHtml = '';
         if (item.choices && item.choices.length) {
             choicesHtml = `
-                <h6 class="text-xs font-bold text-slate-400 mb-2">Choices:</h6>
+                <h6 class="text-sm font-bold text-slate-500 mb-2">Choices:</h6>
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-2.5 mb-4">
                     ${item.choices.map(c => {
                         const content = c.content_html || '';
                         return `
                             <div class="p-3 border rounded-xl h-100 ${c.is_correct ? 'bg-emerald-500/10 border-emerald-500/30 shadow-sm' : 'bg-slate-900/20 border-slate-800/80'}">
                                 <div class="flex items-center gap-2">
-                                    <strong class="flex items-center justify-center w-6 h-6 rounded-full bg-slate-800/80 border border-slate-700/60 text-xs text-slate-300">${escapeHtml(c.label)}</strong>
-                                    <div class="grow text-xs text-slate-200">${content}</div>
+                                    <strong class="flex items-center justify-center w-6 h-6 rounded-full bg-slate-800/80 border border-slate-700/60 text-sm text-slate-300">${escapeHtml(c.label)}</strong>
+                                    <div class="grow text-sm text-slate-200">${content}</div>
                                     ${c.is_correct ? icon('check-circle-fill', 'w-4 h-4 text-emerald-400') : ''}
                                 </div>
                             </div>
@@ -477,11 +477,11 @@ export function renderPreview(items) {
         if (item.spr_correct_answers && item.spr_correct_answers.length) {
             sprHtml = `
                 <div class="mb-4">
-                    <h6 class="text-xs font-bold text-slate-400 mb-2">Accepted Answers (SPR):</h6>
+                    <h6 class="text-sm font-bold text-slate-500 mb-2">Accepted Answers (SPR):</h6>
                     <div class="p-3 bg-emerald-500/5 border border-emerald-500/15 rounded-xl flex flex-wrap gap-2">
-                        ${item.spr_correct_answers.map(ans => `<span class="inline-flex items-center px-2.5 py-0.5 rounded-lg text-xs font-bold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">${escapeHtml(ans)}</span>`).join('')}
+                        ${item.spr_correct_answers.map(ans => `<span class="inline-flex items-center px-2.5 py-0.5 rounded-lg text-sm font-bold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">${escapeHtml(ans)}</span>`).join('')}
                     </div>
-                    ${item.spr_hint ? `<div class="mt-1.5 text-xs text-slate-500 italic">Hint: ${escapeHtml(item.spr_hint)}</div>` : ''}
+                    ${item.spr_hint ? `<div class="mt-1.5 text-sm text-slate-500 italic">Hint: ${escapeHtml(item.spr_hint)}</div>` : ''}
                 </div>
             `;
         }
@@ -489,9 +489,9 @@ export function renderPreview(items) {
         let expHtml = '';
         if (item.explanation) {
             expHtml = `
-                <div class="mt-3 p-3 bg-slate-900/40 border border-slate-800/60 rounded-xl text-xs">
-                    <h6 class="font-bold text-slate-400 mb-1.5 flex items-center gap-1">${icon('info-circle', 'w-4 h-4')} Explanation:</h6>
-                    <div class="text-slate-400 leading-relaxed">${item.explanation_html || ''}</div>
+                <div class="mt-3 p-3 bg-slate-900/40 border border-slate-800/60 rounded-xl text-sm">
+                    <h6 class="font-bold text-slate-500 mb-1.5 flex items-center gap-1">${icon('info-circle', 'w-4 h-4')} Explanation:</h6>
+                    <div class="text-slate-500 leading-relaxed">${item.explanation_html || ''}</div>
                 </div>
             `;
         }
@@ -500,22 +500,22 @@ export function renderPreview(items) {
             <div class="dash-panel p-5 mb-4">
                 <div class="flex justify-between items-center flex-wrap gap-2 border-b border-slate-800/80 pb-3 mb-3">
                     <div class="flex items-center gap-2 flex-wrap">
-                        <span class="inline-flex items-center px-2 py-0.5 rounded bg-brand/10 text-brand border border-brand/20 font-extrabold text-[10px]">Item ${index + 1}</span>
+                        <span class="inline-flex items-center px-2 py-0.5 rounded bg-brand/10 text-brand border border-brand/20 font-extrabold text-sm">Item ${index + 1}</span>
                         ${sectionBadge}
-                        <span class="inline-flex items-center px-2 py-0.5 rounded bg-brand/10 text-brand border border-brand/20 font-extrabold text-[10px] uppercase">${escapeHtml(humanizeUnderscores(item.skill_domain || ''))}</span>
-                        ${item.skill_subdomain ? `<span class="inline-flex items-center px-2 py-0.5 rounded bg-slate-800 text-slate-400 border border-slate-700/60 font-semibold text-[10px]">${escapeHtml(item.skill_subdomain)}</span>` : ''}
+                        <span class="inline-flex items-center px-2 py-0.5 rounded bg-brand/10 text-brand border border-brand/20 font-extrabold text-sm uppercase">${escapeHtml(humanizeUnderscores(item.skill_domain || ''))}</span>
+                        ${item.skill_subdomain ? `<span class="inline-flex items-center px-2 py-0.5 rounded bg-slate-800 text-slate-500 border border-slate-700/60 font-semibold text-sm">${escapeHtml(item.skill_subdomain)}</span>` : ''}
                     </div>
                     <div class="flex items-center gap-2">
-                        <span class="inline-flex items-center px-2 py-0.5 rounded bg-slate-800 text-slate-300 border border-slate-700/60 font-bold text-[10px] uppercase">${escapeHtml(humanizeUnderscores(item.difficulty || ''))}</span>
-                        ${item.is_pretest ? '<span class="inline-flex items-center px-2 py-0.5 rounded bg-rose-500/10 text-rose-400 border border-rose-500/20 font-extrabold text-[10px] uppercase">Pretest</span>' : ''}
-                        ${item.external_id ? `<small class="text-slate-500 text-[10px]">ID: ${escapeHtml(item.external_id)}</small>` : ''}
+                        <span class="inline-flex items-center px-2 py-0.5 rounded bg-slate-800 text-slate-300 border border-slate-700/60 font-bold text-sm uppercase">${escapeHtml(humanizeUnderscores(item.difficulty || ''))}</span>
+                        ${item.is_pretest ? '<span class="inline-flex items-center px-2 py-0.5 rounded bg-rose-500/10 text-rose-400 border border-rose-500/20 font-extrabold text-sm uppercase">Pretest</span>' : ''}
+                        ${item.external_id ? `<small class="text-slate-500 text-sm">ID: ${escapeHtml(item.external_id)}</small>` : ''}
                     </div>
                 </div>
                 <div class="space-y-4">
                     ${passageHtml}
                     <div>
-                        <h6 class="text-xs font-bold text-slate-400 mb-2">Question Stem:</h6>
-                        <div class="p-3.5 bg-slate-900/20 border border-slate-800/80 rounded-xl text-slate-200 text-xs leading-relaxed">${stemProcessed}</div>
+                        <h6 class="text-sm font-bold text-slate-500 mb-2">Question Stem:</h6>
+                        <div class="p-3.5 bg-slate-900/20 border border-slate-800/80 rounded-xl text-slate-200 text-sm leading-relaxed">${stemProcessed}</div>
                     </div>
                     ${choicesHtml}
                     ${sprHtml}
@@ -810,11 +810,11 @@ export function initBulkImport() {
         fd.append('zip_file', fileInput.files[0]);
         fd.append('module_id', moduleId);
         fd.append('start_position', document.getElementById('bulkStartPosition')?.value || 1);
-        
+
         const btn = this;
         btn.disabled = true;
         btn.innerHTML = 'Importing...';
-        
+
         try {
             const response = await fetch(`${BASE_URL}/questions/bulk-zip`, {
                 method: 'POST',
@@ -841,7 +841,7 @@ export function initBulkImport() {
     document.getElementById('gridCloseBtn')?.addEventListener('click', () => {
         document.getElementById('validation-grid-container').classList.add('hidden');
     });
-    
+
     document.getElementById('gridCancelBtn')?.addEventListener('click', async () => {
         if (await showCustomConfirm('Discard import items and reset the validation grid?', 'warning', 'Discard Import')) {
             document.getElementById('validation-grid-container').classList.add('hidden');
@@ -849,7 +849,7 @@ export function initBulkImport() {
             validationGridTable = null;
         }
     });
-    
+
     document.getElementById('gridRevalidateBtn')?.addEventListener('click', () => {
         if (validationGridTable) {
             validationGridTable.redraw(true);
@@ -857,13 +857,13 @@ export function initBulkImport() {
             showAlert('success', 'Grid visual validations re-rendered successfully.');
         }
     });
-    
+
     document.getElementById('gridImportApprovedBtn')?.addEventListener('click', async function () {
         if (!validationGridTable) return;
 
         const formModule = getTomSelectValue('bulkQuestionModule');
         const formStart = document.getElementById('bulkStartPosition')?.value || 1;
-        
+
         const moduleSelect = document.getElementById('bulkQuestionModule');
         let sectionType = 'reading_writing';
         if (moduleSelect && moduleSelect.selectedOptions && moduleSelect.selectedOptions[0]) {

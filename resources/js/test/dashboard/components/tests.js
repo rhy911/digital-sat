@@ -45,17 +45,17 @@ function renderTestRowHtml(t) {
     const isOwner = t.is_owner;
     const isShared = t.is_shared;
     const creatorName = t.created_by_name || 'Admin';
-    const createdByHtml = `<span class="text-xs font-medium text-slate-600 truncate max-w-[110px] block" title="${escapeHtml(creatorName)}">${escapeHtml(creatorName)}</span>`;
+    const createdByHtml = `<span class="text-sm font-medium text-slate-600 truncate max-w-[110px] block" title="${escapeHtml(creatorName)}">${escapeHtml(creatorName)}</span>`;
     const sharedBadge = t.shares_count > 0 && isOwner
-        ? `<span class="ml-2 rounded-full bg-[var(--color-brand-soft)] px-2 py-0.5 text-[10px] font-bold text-brand ring-1 ring-inset ring-brand/20">${escapeHtml(t.shares_count)} shared</span>`
+        ? `<span class="ml-2 rounded-full bg-[var(--color-brand-soft)] px-2 py-0.5 text-sm font-bold text-brand ring-1 ring-inset ring-brand/20">${escapeHtml(t.shares_count)} shared</span>`
         : '';
     const accessBadge = isShared
-        ? `<span class="ml-2 rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-bold text-slate-600 ring-1 ring-inset ring-slate-200">Shared with you</span>`
+        ? `<span class="ml-2 rounded-full bg-slate-100 px-2 py-0.5 text-sm font-bold text-slate-600 ring-1 ring-inset ring-slate-200">Shared with you</span>`
         : '';
 
     // Title input/span
     const titleHtml = isOwner
-        ? `<input type="text" class="test-title-input w-full bg-transparent border-0 hover:bg-slate-100 focus:bg-white focus:ring-2 focus:ring-brand/20 focus:outline-none rounded-lg px-2 py-1 font-semibold text-slate-800 transition-all" value="${escapeHtml(t.title)}" data-id="${t.id}">`
+        ? `<input type="text" aria-label="Test title" class="test-title-input w-full bg-transparent border-0 hover:bg-slate-100 focus:bg-white focus:ring-2 focus:ring-brand/20 focus:outline-none rounded-lg px-2 py-1 font-semibold text-slate-800 transition-all" value="${escapeHtml(t.title)}" data-id="${t.id}">`
         : `<span class="px-2 py-1 font-semibold text-slate-800">${escapeHtml(t.title)}${accessBadge}</span>`;
 
     let adaptivePillsHtml = '';
@@ -67,11 +67,11 @@ function renderTestRowHtml(t) {
                     ? 'text-emerald-700 bg-emerald-50 ring-emerald-600/20'
                     : 'text-amber-700 bg-amber-50 ring-amber-600/20';
                 const prefix = sec.irt.diff >= 0 ? '+' : '';
-                return `<span class="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-bold ring-1 ring-inset ${cls}" title="${escapeHtml(sec.name)}: Hard (${sec.irt.hard_mean}) - Easy (${sec.irt.easy_mean})">
+                return `<span class="inline-flex items-center px-1.5 py-0.5 rounded text-sm font-bold ring-1 ring-inset ${cls}" title="${escapeHtml(sec.name)}: Hard (${sec.irt.hard_mean}) - Easy (${sec.irt.easy_mean})">
                     ${shortName} Δb: ${prefix}${sec.irt.diff.toFixed(2)}b
                 </span>`;
             } else if (sec.irt) {
-                return `<span class="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium text-slate-500 bg-slate-100" title="${escapeHtml(sec.name)}: M2 items pending">
+                return `<span class="inline-flex items-center px-1.5 py-0.5 rounded text-sm font-medium text-slate-500 bg-slate-100" title="${escapeHtml(sec.name)}: M2 items pending">
                     ${shortName} Δb: Pending
                 </span>`;
             }
@@ -86,7 +86,7 @@ function renderTestRowHtml(t) {
     // Public toggle checkbox
     const publicHtml = isOwner
         ? `<div class="flex items-center justify-center"><input type="checkbox" data-id="${t.id}" class="w-4 h-4 text-brand border-slate-300 bg-white rounded cursor-pointer test-public-checkbox" ${t.is_public ? 'checked' : ''} title="${t.is_public ? 'Public (Click to make Private)' : 'Private (Click to make Public)'}" aria-label="Toggle public visibility"></div>`
-        : `<div class="flex items-center justify-center"><input type="checkbox" checked disabled class="w-4 h-4 text-slate-400 border-slate-200 bg-slate-100 rounded cursor-not-allowed opacity-60" title="Shared (View only)" aria-label="Shared resource"></div>`;
+        : `<div class="flex items-center justify-center"><input type="checkbox" checked disabled class="w-4 h-4 text-slate-500 border-slate-200 bg-slate-100 rounded cursor-not-allowed opacity-60" title="Shared (View only)" aria-label="Shared resource"></div>`;
 
     let chipClass = 'status-chip status-chip-readonly';
     if (t.status === 'active') chipClass = 'status-chip status-chip-active';
@@ -97,7 +97,7 @@ function renderTestRowHtml(t) {
     // Actions dropdown
     const actionsHtml = isOwner
         ? `<div class="actions-dropdown">
-            <button type="button" class="px-2.5 py-1.5 text-xs font-bold rounded-lg border border-slate-200 bg-white text-slate-700 cursor-pointer hover:bg-slate-50 flex items-center gap-1" data-dropdown-trigger="true" aria-expanded="false" aria-label="Toggle actions menu">
+            <button type="button" class="px-2.5 py-1.5 text-sm font-bold rounded-lg border border-slate-200 bg-white text-slate-700 cursor-pointer hover:bg-slate-50 flex items-center gap-1" data-dropdown-trigger="true" aria-expanded="false" aria-label="Toggle actions menu">
                 Actions ${icon('chevron-down', 'w-2.5 h-2.5')}
             </button>
             <div class="dropdown-menu hidden">
@@ -114,7 +114,7 @@ function renderTestRowHtml(t) {
           </div>`
         : isShared
             ? `<div class="actions-dropdown">
-                <button type="button" class="px-2.5 py-1.5 text-xs font-bold rounded-lg border border-slate-200 bg-white text-slate-700 cursor-pointer hover:bg-slate-50 flex items-center gap-1" data-dropdown-trigger="true" aria-expanded="false" aria-label="Toggle actions menu">
+                <button type="button" class="px-2.5 py-1.5 text-sm font-bold rounded-lg border border-slate-200 bg-white text-slate-700 cursor-pointer hover:bg-slate-50 flex items-center gap-1" data-dropdown-trigger="true" aria-expanded="false" aria-label="Toggle actions menu">
                     Actions ${icon('chevron-down', 'w-2.5 h-2.5')}
                 </button>
                 <div class="dropdown-menu hidden">
@@ -128,14 +128,14 @@ function renderTestRowHtml(t) {
     const rowClass = isOwner ? '' : 'row-shared';
 
     return `<tr class="${rowClass}">
-        <td class="font-semibold text-slate-400 text-center">${escapeHtml(t.id)}</td>
+        <td class="font-semibold text-slate-500 text-center">${escapeHtml(t.id)}</td>
         <td>${titleHtml}${adaptivePillsHtml}</td>
         <td>${escapeHtml(t.type)}</td>
         <td class="text-center font-semibold text-slate-500">${escapeHtml(t.created_at || 'N/A')}</td>
         <td>${createdByHtml}</td>
         <td class="text-center">${publicHtml}</td>
         <td class="text-center">${statusHtml}</td>
-        <td class="font-bold text-slate-700 text-center">${escapeHtml(t.duration)}<span class="text-[10px] ml-0.5 opacity-50 uppercase tracking-tighter">min</span></td>
+        <td class="font-bold text-slate-700 text-center">${escapeHtml(t.duration)}<span class="text-sm ml-1 font-normal text-slate-500">min</span></td>
         <td class="text-center">${actionsHtml}</td>
     </tr>`;
 }
@@ -143,30 +143,30 @@ function renderTestRowHtml(t) {
 function _renderTestsChunked(tbody, items, emptyHtml) {
     currentTestsRenderId++;
     const renderId = currentTestsRenderId;
-    
+
     if (!items.length) {
         tbody.innerHTML = emptyHtml;
         return;
     }
-    
+
     tbody.innerHTML = '';
     let index = 0;
     const chunkSize = 20;
-    
+
     function renderChunk() {
         if (renderId !== currentTestsRenderId) return;
-        
+
         const chunk = items.slice(index, index + chunkSize);
         if (!chunk.length) return;
-        
+
         tbody.insertAdjacentHTML('beforeend', chunk.map(renderTestRowHtml).join(''));
         index += chunkSize;
-        
+
         if (index < items.length) {
             requestAnimationFrame(() => setTimeout(renderChunk, 0));
         }
     }
-    
+
     renderChunk();
 }
 
@@ -176,7 +176,7 @@ function renderTestsPage() {
 
     const page = window.__tdTestsPage || 1;
     const perPage = window.__tdTestsPerPage || 30;
-    
+
     const start = (page - 1) * perPage;
     const end = page * perPage;
     const sliced = currentFilteredTests.slice(start, end);
@@ -185,7 +185,7 @@ function renderTestsPage() {
         + '<td colspan="9" class="px-6 py-20 text-center">'
         + '<div class="flex flex-col items-center justify-center">'
         + '<div class="w-20 h-20 rounded-full bg-slate-50 border border-slate-200 flex items-center justify-center mb-6">'
-        + icon('inbox', 'w-10 h-10 text-slate-400')
+        + icon('inbox', 'w-10 h-10 text-slate-500')
         + '</div>'
         + '<h4 class="text-lg font-bold text-slate-800">No tests found</h4>'
         + '<p class="text-sm text-slate-500 mt-1 max-w-xs mx-auto">Create one practice test to get started.</p>'
@@ -200,35 +200,35 @@ function renderTestsPage() {
 export function renderTestsPagination(total) {
     const wrap = document.getElementById('testsPoolPagination');
     if (!wrap) return;
-    
+
     if (total === 0) {
         wrap.innerHTML = '';
         return;
     }
-    
+
     const cur = window.__tdTestsPage || 1;
     const perPage = window.__tdTestsPerPage || 30;
     const last = Math.ceil(total / perPage) || 1;
-    
+
     let html = '<div class="flex flex-wrap justify-between items-center w-full gap-3 px-2">';
-    html += '<span class="text-xs font-semibold text-slate-600">Page ' + cur + ' of ' + last + ' <span class="mx-1 text-slate-300">•</span> ' + total + ' tests</span>';
+    html += '<span class="text-sm font-semibold text-slate-600">Page ' + cur + ' of ' + last + ' <span class="mx-1 text-slate-300">•</span> ' + total + ' tests</span>';
     html += '<div class="flex gap-2">';
-    html += '<button type="button" class="min-h-9 px-3 py-1.5 text-xs font-semibold rounded-lg border border-slate-200 bg-white text-slate-700 hover:bg-slate-50 hover:border-slate-300 transition-colors duration-150 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer" data-t-page="prev"' + (cur <= 1 ? ' disabled' : '') + '>Previous</button>';
-    html += '<button type="button" class="min-h-9 px-3 py-1.5 text-xs font-semibold rounded-lg border border-slate-200 bg-white text-slate-700 hover:bg-slate-50 hover:border-slate-300 transition-colors duration-150 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer" data-t-page="next"' + (cur >= last ? ' disabled' : '') + '>Next</button>';
+    html += '<button type="button" class="min-h-9 px-3 py-1.5 text-sm font-semibold rounded-lg border border-slate-200 bg-white text-slate-700 hover:bg-slate-50 hover:border-slate-300 transition-colors duration-150 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer" data-t-page="prev"' + (cur <= 1 ? ' disabled' : '') + '>Previous</button>';
+    html += '<button type="button" class="min-h-9 px-3 py-1.5 text-sm font-semibold rounded-lg border border-slate-200 bg-white text-slate-700 hover:bg-slate-50 hover:border-slate-300 transition-colors duration-150 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer" data-t-page="next"' + (cur >= last ? ' disabled' : '') + '>Next</button>';
     html += '</div></div>';
     wrap.innerHTML = html;
-    
+
     if (wrap.dataset.bound !== '1') {
         wrap.dataset.bound = '1';
         wrap.addEventListener('click', function (e) {
             const btn = e.target.closest('[data-t-page]');
             if (!btn || btn.disabled) return;
-            
+
             const dir = btn.getAttribute('data-t-page');
             const curPage = window.__tdTestsPage || 1;
-            
+
             showTableLoader('testsTableContainer');
-            
+
             setTimeout(() => {
                 if (dir === 'prev') {
                     window.__tdTestsPage = Math.max(1, curPage - 1);
@@ -304,7 +304,7 @@ export function renderTestsTable(tests) {
             is_owner: t.is_owner !== undefined ? t.is_owner : (t.created_by === window.__currentUserId || window.__currentUserRole === 'admin')
         };
     });
-    
+
     const tableContainer = document.getElementById('testsTableContainer');
     const emptyState = document.getElementById('testsEmptyState');
     if (!tableContainer) return;
@@ -393,10 +393,10 @@ function initTestsEvents() {
         tbody.addEventListener('change', function(e) {
             const checkbox = e.target.closest('.test-public-checkbox');
             if (!checkbox) return;
-            
+
             const testId = checkbox.dataset.id;
             const checked = checkbox.checked;
-            
+
             fetch(testUpdateUrl(testId), {
                 method: 'PUT',
                 headers: {
@@ -437,9 +437,9 @@ function initTestsEvents() {
 
             fetch(testUpdateUrl(testId), {
                 method: 'PUT',
-                headers: { 
-                    'Content-Type': 'application/json', 
-                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content, 
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
                     'Accept': 'application/json',
                     'X-Requested-With': 'XMLHttpRequest'
                 },
@@ -682,7 +682,7 @@ function renderShareList(shares, loading = false) {
     if (loadingEl) loadingEl.remove();
 
     badge.textContent = `${shares.length} teacher${shares.length === 1 ? '' : 's'}`;
-    
+
     // Animate empty state
     if (!shares.length) {
         if (empty.classList.contains('hidden')) {
@@ -728,10 +728,10 @@ function renderShareList(shares, loading = false) {
             const wrapper = document.createElement('div');
             wrapper.className = 'grid grid-rows-[0fr] transition-[grid-template-rows] duration-300 ease-[var(--ease-out-quart,cubic-bezier(0.25,1,0.5,1))]';
             wrapper.dataset.shareRowId = share.user_id;
-            
+
             const inner = document.createElement('div');
             inner.className = 'overflow-hidden transition-opacity duration-300 opacity-0';
-            
+
             inner.innerHTML = `
                 <div class="test-sharing-row">
                     <div class="min-w-0">
@@ -743,14 +743,14 @@ function renderShareList(shares, loading = false) {
                     </button>
                 </div>
             `;
-            
+
             wrapper.appendChild(inner);
             list.appendChild(wrapper);
-            
+
             // Setup remove handler
             const removeBtn = inner.querySelector('.test-sharing-remove');
             removeBtn.addEventListener('click', () => removeSharedTeacher(share.user_id));
-            
+
             requestAnimationFrame(() => {
                 wrapper.classList.remove('grid-rows-[0fr]');
                 wrapper.classList.add('grid-rows-[1fr]');
@@ -787,7 +787,7 @@ function showShareModalAlert(type, message) {
     const alertWrapper = document.getElementById('shareAlertWrapper');
     const alertEl = document.getElementById('shareAlertContainer');
     if (!alertWrapper || !alertEl) return;
-    
+
     alertEl.className = 'rounded-lg p-3 text-sm font-medium mb-3 opacity-0 transition-opacity duration-300';
     if (type === 'success') {
         alertEl.classList.add('bg-emerald-50', 'text-emerald-700', 'border', 'border-emerald-200');
@@ -796,11 +796,11 @@ function showShareModalAlert(type, message) {
         alertEl.classList.add('bg-rose-50', 'text-rose-700', 'border', 'border-rose-200');
         alertEl.innerHTML = `${icon('exclamation-circle-fill', 'w-4 h-4 mr-2')}${escapeHtml(message)}`;
     }
-    
+
     // Expand height
     alertWrapper.classList.remove('grid-rows-[0fr]');
     alertWrapper.classList.add('grid-rows-[1fr]');
-    
+
     // Fade in text slightly after height starts expanding
     requestAnimationFrame(() => {
         alertEl.classList.remove('opacity-0');
@@ -811,7 +811,7 @@ function showShareModalAlert(type, message) {
         // Fade out text
         alertEl.classList.remove('opacity-100');
         alertEl.classList.add('opacity-0');
-        
+
         setTimeout(() => {
             // Collapse height
             alertWrapper.classList.remove('grid-rows-[1fr]');

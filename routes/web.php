@@ -93,6 +93,7 @@ Route::middleware(['auth', 'verified'])->prefix('student')->group(function () {
     Route::get('/progress-analytics', \App\Http\Controllers\Student\ProgressController::class)->name('student.progress');
     Route::get('/progress-analytics/export-pdf', [\App\Http\Controllers\Student\ProgressController::class, 'exportPdf'])->name('student.progress.export-pdf');
     Route::post('/progress-analytics/goal', [\App\Http\Controllers\Student\ProgressController::class, 'updateGoal'])->name('student.progress.goal');
+    Route::patch('/home/guide', \App\Http\Controllers\Student\HomeGuideController::class)->middleware('role:student')->name('student.home.guide');
 
     Route::get('/practice', [\App\Http\Controllers\Student\PracticeController::class, 'index'])->name('home.practice');
     Route::get('/practice/preview', [\App\Http\Controllers\Student\PracticeController::class, 'preview'])->name('test.preview');
@@ -100,7 +101,7 @@ Route::middleware(['auth', 'verified'])->prefix('student')->group(function () {
     Route::post('/practice/{userTest:ulid}/resume', [\App\Http\Controllers\Student\PracticeController::class, 'resume'])->name('my-practice.resume');
     Route::delete('/practice/{userTest:ulid}', [\App\Http\Controllers\Student\PracticeController::class, 'destroy'])->name('my-practice.destroy');
     Route::get('/scores', [\App\Http\Controllers\Student\ScoreController::class, 'index'])->name('student.scores.index');
-    Route::get('/scores/{userTest:ulid}', [\App\Http\Controllers\Student\ScoreController::class, 'show'])->name('student.scores.show');
+    Route::get('/scores/{userTest:ulid}', [\App\Http\Controllers\Student\ScoreController::class, 'show'])->middleware(\App\Http\Middleware\RecordHomeOpening::class)->name('student.scores.show');
     Route::get('/scores/{userTest:ulid}/export-pdf', [\App\Http\Controllers\Student\ScoreController::class, 'exportPdf'])->name('student.scores.export-pdf');
     Route::patch('/scores/{userTest:ulid}/answers/{answer}/review', [\App\Http\Controllers\Student\UserTestAnswerReviewController::class, 'update'])->name('student.scores.answers.review');
     Route::middleware('role:student')->group(function () {
@@ -211,7 +212,7 @@ Route::middleware(['auth', 'verified'])->prefix('engine')->group(function () {
         return view('engine.mobile-blocked');
     })->name('engine.mobile-blocked');
 
-    Route::get('/session/{ulid?}', [SessionController::class, 'show'])->name('engine.session');
+    Route::get('/session/{ulid?}', [SessionController::class, 'show'])->middleware(\App\Http\Middleware\RecordHomeOpening::class)->name('engine.session');
     Route::get('/session/{test_ulid}/teacher-preview', [SessionController::class, 'teacherPreview'])->name('engine.teacher-preview');
     Route::get('/submit-status/{userTest:ulid}', [SubmissionController::class, 'checkStatus'])->name('engine.submit-status');
 

@@ -1,4 +1,4 @@
-<x-layouts.student :user="$user" title="Test Library" header-type="none">
+<x-layouts.student :user="$user" title="Test Library" header-type="none" ui="product">
     @push('styles')
         @vite(['resources/css/classroom-workspace.css', 'resources/css/student/practice.css', 'resources/css/student/analytics.css'])
     @endpush
@@ -114,16 +114,22 @@
                                 @php
                                     $sections = $test->sections;
                                     $modules = $sections->flatMap->modules->unique('id');
-                                    $duration =
-                                        $test->total_duration_minutes ?:
-                                        $sections->sum(
+                                    $isFullLengthTest = in_array(
+                                        $test->test_type,
+                                        [\App\Models\Test::TYPE_FULL, \App\Models\Test::TYPE_ADAPTIVE_FULL],
+                                        true,
+                                    );
+                                    $duration = $isFullLengthTest
+                                        ? (2 * \App\Models\Module::RW_DURATION) + (2 * \App\Models\Module::MATH_DURATION)
+                                        : ($test->total_duration_minutes ?: $sections->sum(
                                             fn($section) => $section->modules
                                                 ->unique('module_number')
                                                 ->sum('duration_minutes'),
-                                        );
+                                        ));
 
                                     $inProgressAttempt = $test->userTests->firstWhere('status', 'in_progress');
                                     $latestCompletedAttempt = $test->userTests->firstWhere('status', 'completed');
+                                    $isRetake = !$inProgressAttempt && $latestCompletedAttempt;
                                 @endphp
                                 <article class="index-card test-index-card {{ $inProgressAttempt ? 'is-in-progress' : '' }}"
                                     aria-labelledby="test-card-{{ $test->id }}-title">
@@ -157,10 +163,10 @@
                                     </div>
 
                                     <div class="test-card-action">
-                                        <button type="button" class="library-btn-primary" data-test-id="{{ $test->id }}">
+                                        <button type="button" class="library-btn-primary {{ $isRetake ? 'library-btn-primary--retake' : '' }}" data-test-id="{{ $test->id }}">
                                             @if ($inProgressAttempt)
                                                 Resume practice
-                                            @elseif($latestCompletedAttempt)
+                                            @elseif($isRetake)
                                                 Retake test
                                             @else
                                                 Start practice

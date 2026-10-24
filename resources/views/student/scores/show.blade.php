@@ -4,7 +4,7 @@
     $userInitials = $viewer->initials ?? 'U';
 @endphp
 
-<x-layouts.student :user="$viewer" title="Score Details - {{ $user->name }} — {{ $userTest->test->title }}" header-type="none">
+<x-layouts.student :user="$viewer" title="Score Details - {{ $user->name }} — {{ $userTest->test->title }}" header-type="none" ui="product" :body-class="$isTeacherView ? 'antialiased teacher-workspace' : 'antialiased'">
     @push('styles')
         @vite(['resources/css/classroom-workspace.css', 'resources/css/student/scores.css', 'resources/js/question-renderer.js'])
     @endpush
@@ -50,7 +50,7 @@
             <!-- MAIN LEDGER COLUMN -->
             <div class="binder-panel">
                 <div class="ledger-header" style="display: flex; justify-content: space-between; align-items: flex-start; gap: 1rem; flex-wrap: wrap; margin-bottom: 1.5rem; padding-bottom: 1rem; border-bottom: 1px solid var(--ds-border-default, #e2e8f0);">
-                    <div class="dh-left" style="flex: 1; min-width: 260px;">
+                    <div class="dh-left" style="flex: 1 1 16rem; min-width: 0;">
                         @if ($isTeacherView)
                             <div class="sd-teacher-student-card">
                                 <span class="sd-teacher-student-badge">Student</span>

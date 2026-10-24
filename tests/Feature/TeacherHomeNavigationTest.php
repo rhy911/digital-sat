@@ -27,6 +27,11 @@ class TeacherHomeNavigationTest extends TestCase
         $this->classroomFor($teacher);
 
         $response = $this->actingAs($teacher)->get('/home')->assertOk();
+        $response->assertSee('product-ui')->assertSee('teacher-workspace');
+        $response->assertSee('study-home')->assertSee('Getting started')->assertSee('Explore your study tools');
+        $response->assertSee("x-show=\"tab === 'progress'\"", escape: false);
+        $response->assertSee(route('teacher.classes.index'), escape: false);
+        $response->assertDontSee(route('student.classes.index'), escape: false);
 
         $response->assertSee(route('teacher.classes.index', ['new' => 1]), escape: false);
         $response->assertSee(route('teacher.classes.index'), escape: false);

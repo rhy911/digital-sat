@@ -34,6 +34,25 @@ class StudentPracticeVisibilityTest extends TestCase
         $response->assertSee($publicTest->title);
     }
 
+    public function test_full_length_library_card_shows_standard_duration_instead_of_stale_saved_total(): void
+    {
+        $student = User::factory()->create([
+            'role' => 'student',
+            'email_verified_at' => now(),
+        ]);
+
+        $test = $this->createPracticeTest('Full Length With Stale Duration', true);
+        $test->forceFill(['total_duration_minutes' => 99])->save();
+        $test->sections()->first()->modules()->first()->forceFill(['duration_minutes' => 25])->save();
+
+        $response = $this->actingAs($student)->get(route('home.practice'));
+
+        $response->assertOk();
+        $response->assertSee('134 min');
+        $response->assertDontSee('99 min');
+        $this->assertSame(99, $test->fresh()->total_duration_minutes);
+    }
+
     public function test_student_can_take_public_test_module_but_private_module_returns_404(): void
     {
         $student = User::factory()->create([

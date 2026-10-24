@@ -1,4 +1,4 @@
-<x-layouts.student :user="$user" :title="__('classroom.classes_title')" header-type="none">
+<x-layouts.student ui="product" body-class="antialiased teacher-workspace" :user="$user" :title="__('classroom.classes_title')" header-type="none">
     @push('styles')
         @vite(['resources/css/classroom-workspace.css'])
     @endpush
@@ -145,13 +145,13 @@
                 <form method="POST" action="{{ route('teacher.classes.store') }}" class="flex flex-col gap-4">
                     @csrf
                     <div>
-                        <label for="modal_class_name" class="block font-semibold text-xs uppercase tracking-wider text-slate-600 mb-1.5">{{ __('classroom.class_name') }}</label>
+                        <label for="modal_class_name" class="block font-semibold text-sm uppercase tracking-wider text-slate-600 mb-1.5">{{ __('classroom.class_name') }}</label>
                         <input id="modal_class_name" name="name" required maxlength="150"
                             placeholder="{{ __('classroom.class_name_placeholder') }}"
                             class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded-lg text-sm text-slate-900 placeholder:text-slate-400 focus:bg-white focus:border-brand focus:ring-2 focus:ring-brand/20 transition" autofocus>
                     </div>
                     <div>
-                        <label for="modal_class_desc" class="block font-semibold text-xs uppercase tracking-wider text-slate-600 mb-1.5">{{ __('classroom.description') }}</label>
+                        <label for="modal_class_desc" class="block font-semibold text-sm uppercase tracking-wider text-slate-600 mb-1.5">{{ __('classroom.description') }}</label>
                         <textarea id="modal_class_desc" name="description" maxlength="2000" rows="3"
                             placeholder="{{ __('classroom.class_desc_placeholder') }}"
                             class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded-lg text-sm text-slate-900 placeholder:text-slate-400 focus:bg-white focus:border-brand focus:ring-2 focus:ring-brand/20 transition resize-v"></textarea>

@@ -1,5 +1,7 @@
 # Đề xuất thiết kế: Student Progress View
 
+> **Visual direction superseded.** Student progress and score pages use the shared warm product language in [`../DESIGN.md`](../DESIGN.md). Keep the score meaning, units, disclosures, diagnostics, review content, and navigation described below; retire the desk, paper, binder, and corkboard treatment as the student routes migrate.
+
 Tài liệu này mô tả ý tưởng và cấu trúc thiết kế giao diện cho trang **Tiến độ học tập & Điểm số của học sinh (Student Progress & Scores View)**, kế thừa phong cách giả lập học tập cơ học (Analog mechanical design) đồng bộ với lớp học: **Sổ tay da Manila đặt trên mặt bàn gỗ tối màu**.
 
 Để giảm thiểu tải lượng nhận thức (cognitive load) cho học sinh, sổ tay da được thiết kế phân đôi bằng hai tab cọc sổ ở cạnh trên: **Overall Progress & Mastery (Tiến trình & Làm chủ kỹ năng)** và **Test Scores & Exam Ledger (Bảng điểm & Lịch sử thi thử)**.

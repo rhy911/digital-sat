@@ -9,6 +9,7 @@ export default defineConfig({
                 'resources/css/app.css',
                 'resources/css/auth.css',
                 'resources/css/student/analytics.css',
+                'resources/css/student/study-home.css',
                 'resources/css/student/practice.css',
                 'resources/css/student/scores.css',
                 'resources/css/student/progress.css',

@@ -5,7 +5,7 @@
                 <x-ui.icon name="question-circle" class="w-4 h-4 text-brand" /> Question #{DISPLAY_INDEX}
             </span>
             <button type="button"
-                class="px-2.5 py-1 text-xs border border-rose-200 bg-rose-50 hover:bg-rose-100 text-rose-700 font-bold rounded-lg remove-block-btn"
+                class="px-2.5 py-1 text-sm border border-rose-200 bg-rose-50 hover:bg-rose-100 text-rose-700 font-bold rounded-lg remove-block-btn"
                 aria-label="Remove question card">
                 Remove
             </button>
@@ -13,7 +13,7 @@
         <div class="p-5 space-y-5">
             <!-- R&W Passage (Hidden by default, shown if module is R&W) -->
             <div class="builder-passage-container hidden">
-                <label class="block text-xs font-bold text-slate-600 tracking-wider uppercase mb-2">Passage (Reading &
+                <label class="block text-sm font-bold text-slate-600 tracking-wider uppercase mb-2">Passage (Reading &
                     Writing only)</label>
                 <textarea
                     class="w-full px-4 py-2.5 text-sm rounded-xl border border-slate-200 bg-white text-slate-800 placeholder-slate-400 focus:border-brand focus:ring-4 focus:ring-brand/10 outline-none builder-passage"
@@ -21,7 +21,7 @@
             </div>
 
             <div>
-                <label class="block text-xs font-bold text-slate-600 tracking-wider uppercase mb-2">Question Stem <span
+                <label class="block text-sm font-bold text-slate-600 tracking-wider uppercase mb-2">Question Stem <span
                         class="text-rose-500">*</span></label>
                 <textarea
                     class="w-full px-4 py-2.5 text-sm rounded-xl border border-slate-200 bg-white text-slate-800 placeholder-slate-400 focus:border-brand focus:ring-4 focus:ring-brand/10 outline-none builder-stem"
@@ -30,7 +30,7 @@
 
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                    <label class="block text-xs font-bold text-slate-600 tracking-wider uppercase mb-2">Domain
+                    <label class="block text-sm font-bold text-slate-600 tracking-wider uppercase mb-2">Domain
                         (Optional)</label>
                     <select
                         class="w-full px-4 py-2.5 text-sm rounded-xl border border-slate-200 bg-white text-slate-800 focus:border-brand focus:ring-4 focus:ring-brand/10 outline-none appearance-none bg-no-repeat bg-[right_1rem_center] bg-[length:1em_1em] builder-domain"
@@ -39,7 +39,7 @@
                     </select>
                 </div>
                 <div>
-                    <label class="block text-xs font-bold text-slate-600 tracking-wider uppercase mb-2">Difficulty
+                    <label class="block text-sm font-bold text-slate-600 tracking-wider uppercase mb-2">Difficulty
                         (Optional)</label>
                     <select
                         class="w-full px-4 py-2.5 text-sm rounded-xl border border-slate-200 bg-white text-slate-800 focus:border-brand focus:ring-4 focus:ring-brand/10 outline-none appearance-none bg-no-repeat bg-[right_1rem_center] bg-[length:1em_1em] builder-difficulty"
@@ -53,7 +53,7 @@
             </div>
 
             <div>
-                <label class="block text-xs font-bold text-slate-600 tracking-wider uppercase mb-2">Question
+                <label class="block text-sm font-bold text-slate-600 tracking-wider uppercase mb-2">Question
                     Format</label>
                 <div class="flex rounded-xl overflow-hidden border border-slate-200 p-1 bg-slate-50 gap-1"
                     role="radiogroup" aria-label="Question format">
@@ -62,7 +62,7 @@
                             name="format_{INDEX}" id="format_mcq_{INDEX}" autocomplete="off" checked
                             value="multiple_choice" role="radio" aria-checked="true">
                         <label
-                            class="flex items-center justify-center gap-1.5 px-3 py-2 text-xs font-bold text-slate-600 rounded-lg cursor-pointer hover:bg-slate-100 peer-checked:bg-white peer-checked:text-brand peer-checked:shadow-sm"
+                            class="flex items-center justify-center gap-1.5 px-3 py-2 text-sm font-bold text-slate-600 rounded-lg cursor-pointer hover:bg-slate-100 peer-checked:bg-white peer-checked:text-brand peer-checked:shadow-sm"
                             for="format_mcq_{INDEX}">
                             <x-ui.icon name="list-ol" class="w-4 h-4" /> Multiple Choice (MCQ)
                         </label>
@@ -72,7 +72,7 @@
                             name="format_{INDEX}" id="format_spr_{INDEX}" autocomplete="off"
                             value="student_produced_response" role="radio" aria-checked="false">
                         <label
-                            class="flex items-center justify-center gap-1.5 px-3 py-2 text-xs font-bold text-slate-600 rounded-lg cursor-pointer hover:bg-slate-100 peer-checked:bg-white peer-checked:text-brand peer-checked:shadow-sm"
+                            class="flex items-center justify-center gap-1.5 px-3 py-2 text-sm font-bold text-slate-600 rounded-lg cursor-pointer hover:bg-slate-100 peer-checked:bg-white peer-checked:text-brand peer-checked:shadow-sm"
                             for="format_spr_{INDEX}">
                             <x-ui.icon name="pencil-square" class="w-4 h-4" /> Student Produced Response (SPR)
                         </label>
@@ -84,7 +84,7 @@
                 <!-- MCQ Container -->
                 <div class="builder-mcq-container space-y-3">
                     <h6
-                        class="text-xs font-bold text-brand uppercase tracking-wider flex items-center gap-1.5 mb-3">
+                        class="text-sm font-bold text-brand uppercase tracking-wider flex items-center gap-1.5 mb-3">
                         <x-ui.icon name="list-stars" class="w-4 h-4" /> MCQ Choices (Mark correct one)</h6>
                     <div class="builder-choices-container space-y-2.5">
                         <!-- 4 choices -->
@@ -96,7 +96,7 @@
                                         class="w-4 h-4 text-brand border-slate-200 bg-white focus:ring-brand focus:ring-offset-white builder-correct-radio"
                                         type="radio" name="correct_{INDEX}" value="{{ $choiceLabel }}"
                                         @if ($choiceLabel === 'A') checked @endif>
-                                    <span class="text-xs font-bold text-slate-600">{{ $choiceLabel }}</span>
+                                    <span class="text-sm font-bold text-slate-600">{{ $choiceLabel }}</span>
                                 </div>
                                 <input type="text"
                                     class="w-full px-4 py-2.5 text-sm text-slate-800 bg-white placeholder-slate-400 focus:border-brand focus:ring-4 focus:ring-brand/10 outline-none builder-choice-content"
@@ -110,19 +110,19 @@
                 <!-- SPR Container -->
                 <div class="builder-spr-container hidden space-y-2">
                     <h6
-                        class="text-xs font-bold text-brand uppercase tracking-wider flex items-center gap-1.5 mb-3">
+                        class="text-sm font-bold text-brand uppercase tracking-wider flex items-center gap-1.5 mb-3">
                         <x-ui.icon name="check-all" class="w-4 h-4" /> SPR Accepted Answers <span class="text-rose-500">*</span></h6>
                     <input type="text"
                         class="w-full px-4 py-2.5 text-sm rounded-xl border border-slate-200 bg-white text-slate-800 placeholder-slate-400 focus:border-brand focus:ring-4 focus:ring-brand/10 outline-none builder-spr-answers"
                         placeholder="e.g. 3|3.0 (separate multiple answers with | or ;)">
-                    <div class="text-[11px] text-slate-500 mt-2 flex items-center gap-1.5 font-medium"><x-ui.icon name="info-circle"
+                    <div class="text-sm text-slate-500 mt-2 flex items-center gap-1.5 font-medium"><x-ui.icon name="info-circle"
                             class="w-4 h-4" /> Use | or ; to specify multiple accepted formats (e.g. decimal
                         and fraction).</div>
                 </div>
             </div>
 
             <div class="border-t border-slate-200 pt-4">
-                <label class="block text-xs font-bold text-slate-600 tracking-wider uppercase mb-2">Explanation
+                <label class="block text-sm font-bold text-slate-600 tracking-wider uppercase mb-2">Explanation
                     (Optional)</label>
                 <textarea
                     class="w-full px-4 py-2.5 text-sm rounded-xl border border-slate-200 bg-white text-slate-800 placeholder-slate-400 focus:border-brand focus:ring-4 focus:ring-brand/10 outline-none builder-explanation"

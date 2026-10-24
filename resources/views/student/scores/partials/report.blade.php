@@ -149,10 +149,9 @@
         STICKY ANCHOR & SUBJECT NAVIGATION BAR
     ══════════════════════════════════════════════ --}}
     <nav class="sd-tabs-bar" id="sd-tabs-bar" aria-label="Score report navigation">
-        <div
-            style="display: flex; justify-content: space-between; align-items: center; gap: 1rem; flex-wrap: wrap; padding: 1rem 0;">
+        <div style="display: flex; justify-content: space-between; align-items: center; gap: 1rem; flex-wrap: wrap;">
             {{-- Anchor Links --}}
-            <div class="sd-anchor-nav" style="display: flex; gap: 0.5rem;" aria-label="Report sections">
+            <div class="sd-anchor-nav" style="display: flex;" aria-label="Report sections">
                 <a href="#overview" class="sd-nav-link active" data-anchor="overview">Score overview</a>
                 <a href="#performance" class="sd-nav-link" data-anchor="performance">Performance</a>
                 <a href="#review" class="sd-nav-link" data-anchor="review">Question review</a>

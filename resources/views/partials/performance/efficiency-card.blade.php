@@ -16,16 +16,16 @@
             $rwMax = max(90, max($rwCorrect, $rwIncorrect));
         @endphp
         <div class="rounded-xl border border-slate-200/80 p-3.5 bg-white">
-            <h4 class="font-bold text-xs uppercase tracking-wider text-teal-700 mb-2.5">Reading & Writing</h4>
+            <h4 class="font-bold text-sm uppercase tracking-wider text-teal-700 mb-2.5">Reading & Writing</h4>
             <div class="space-y-2">
-                <div class="flex items-center gap-3 text-xs">
+                <div class="flex items-center gap-3 text-sm">
                     <span class="w-16 font-semibold text-slate-600">Correct</span>
                     <div class="flex-1 h-2 rounded-full bg-slate-100 overflow-hidden relative">
                         <div class="absolute inset-0 h-full rounded-full bg-emerald-500" style="transform: scaleX({{ min(1, $rwCorrect / $rwMax) }}); transform-origin: left;"></div>
                     </div>
                     <span class="w-12 text-right font-bold text-slate-800 tabular-nums">{{ $rwCorrect }}s</span>
                 </div>
-                <div class="flex items-center gap-3 text-xs">
+                <div class="flex items-center gap-3 text-sm">
                     <span class="w-16 font-semibold text-slate-600">Incorrect</span>
                     <div class="flex-1 h-2 rounded-full bg-slate-100 overflow-hidden relative">
                         <div class="absolute inset-0 h-full rounded-full bg-rose-500" style="transform: scaleX({{ min(1, $rwIncorrect / $rwMax) }}); transform-origin: left;"></div>
@@ -42,16 +42,16 @@
             $mMax = max(90, max($mCorrect, $mIncorrect));
         @endphp
         <div class="rounded-xl border border-slate-200/80 p-3.5 bg-white">
-            <h4 class="font-bold text-xs uppercase tracking-wider text-orange-700 mb-2.5">Math</h4>
+            <h4 class="font-bold text-sm uppercase tracking-wider text-orange-700 mb-2.5">Math</h4>
             <div class="space-y-2">
-                <div class="flex items-center gap-3 text-xs">
+                <div class="flex items-center gap-3 text-sm">
                     <span class="w-16 font-semibold text-slate-600">Correct</span>
                     <div class="flex-1 h-2 rounded-full bg-slate-100 overflow-hidden relative">
                         <div class="absolute inset-0 h-full rounded-full bg-emerald-500" style="transform: scaleX({{ min(1, $mCorrect / $mMax) }}); transform-origin: left;"></div>
                     </div>
                     <span class="w-12 text-right font-bold text-slate-800 tabular-nums">{{ $mCorrect }}s</span>
                 </div>
-                <div class="flex items-center gap-3 text-xs">
+                <div class="flex items-center gap-3 text-sm">
                     <span class="w-16 font-semibold text-slate-600">Incorrect</span>
                     <div class="flex-1 h-2 rounded-full bg-slate-100 overflow-hidden relative">
                         <div class="absolute inset-0 h-full rounded-full bg-rose-500" style="transform: scaleX({{ min(1, $mIncorrect / $mMax) }}); transform-origin: left;"></div>

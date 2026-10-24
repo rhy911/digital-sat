@@ -25,7 +25,7 @@
 
         @if($latestCompleted)
             <div class="p-hero-meta">
-                <x-ui.icon name="file-text" class="w-3.5 h-3.5 text-slate-400" aria-hidden="true" />
+                <x-ui.icon name="file-text" class="w-3.5 h-3.5 text-slate-500" aria-hidden="true" />
                 <span class="font-medium text-slate-700">{{ $latestCompleted->test?->title ?? 'Practice Test' }}</span>
                 <span>&bull;</span>
                 <span>{{ optional($latestCompleted->completed_at)->format('M j, Y') }}</span>
@@ -36,7 +36,7 @@
                 <div class="p-subscore-item">
                     <div class="flex items-center justify-between">
                         <span class="p-subscore-label">Reading & Writing</span>
-                        <span class="text-xs text-slate-400 font-medium">200–800</span>
+                        <span class="text-sm text-slate-500 font-medium">200–800</span>
                     </div>
                     <strong class="p-subscore-val text-teal-600">{{ $rwScore ?? '—' }}</strong>
                     <div class="p-mini-bar" role="progressbar" aria-valuenow="{{ $rwScore ?? 0 }}" aria-valuemin="200" aria-valuemax="800">
@@ -46,7 +46,7 @@
                 <div class="p-subscore-item">
                     <div class="flex items-center justify-between">
                         <span class="p-subscore-label">Math</span>
-                        <span class="text-xs text-slate-400 font-medium">200–800</span>
+                        <span class="text-sm text-slate-500 font-medium">200–800</span>
                     </div>
                     <strong class="p-subscore-val text-orange-600">{{ $mathScore ?? '—' }}</strong>
                     <div class="p-mini-bar" role="progressbar" aria-valuenow="{{ $mathScore ?? 0 }}" aria-valuemin="200" aria-valuemax="800">
@@ -103,9 +103,9 @@
         <div class="p-goal-box">
             <div>
                 <div class="flex items-center justify-between mb-2">
-                    <span class="text-xs font-bold uppercase tracking-wider text-slate-500">Target SAT Goal</span>
+                    <span class="text-sm font-bold uppercase tracking-wider text-slate-500">Target SAT Goal</span>
                     @if($targetScore && $latestScore)
-                        <span class="text-xs font-semibold {{ $latestScore >= $targetScore ? 'text-emerald-600' : 'text-slate-600' }}">
+                        <span class="text-sm font-semibold {{ $latestScore >= $targetScore ? 'text-emerald-600' : 'text-slate-600' }}">
                             @if($latestScore >= $targetScore)
                                 Goal reached! 🎉
                             @else
@@ -141,15 +141,15 @@
                             <span x-show="saved" x-cloak class="text-white font-bold">Saved ✓</span>
                         </x-ui.button>
                     </div>
-                    <p x-show="error" x-text="error" class="text-xs text-rose-600 font-medium mt-1" x-cloak></p>
-                    <span class="text-[11px] text-slate-400 mt-1.5 block">Target line is charted against your score trajectory.</span>
+                    <p x-show="error" x-text="error" class="text-sm text-rose-600 font-medium mt-1" x-cloak></p>
+                    <span class="text-sm text-slate-500 mt-1.5 block">Target line is charted against your score trajectory.</span>
                 </div>
             @else
                 <div class="mt-auto">
                     <div class="text-2xl font-extrabold text-slate-800 tabular-nums">
                         {{ $targetScore ? $targetScore . ' pts' : 'Not set by student' }}
                     </div>
-                    <span class="text-[11px] text-slate-400 mt-1 block">Student target score reference.</span>
+                    <span class="text-sm text-slate-500 mt-1 block">Student target score reference.</span>
                 </div>
             @endif
         </div>

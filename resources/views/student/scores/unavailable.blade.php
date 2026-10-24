@@ -4,7 +4,7 @@
     $userInitials = $viewer->initials ?? 'U';
 @endphp
 
-<x-layouts.student :user="$viewer" title="Score Report Unavailable — {{ $userTest->test->title }}" header-type="none">
+<x-layouts.student :user="$viewer" title="Score Report Unavailable — {{ $userTest->test->title }}" header-type="none" ui="product" :body-class="$isTeacherView ? 'antialiased teacher-workspace' : 'antialiased'">
     @push('styles')
         @vite(['resources/css/classroom-workspace.css', 'resources/css/student/scores.css'])
     @endpush

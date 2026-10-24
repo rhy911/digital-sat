@@ -52,7 +52,7 @@
                                 <div class="flex-1 h-2 rounded-full bg-slate-100 overflow-hidden relative" role="progressbar" aria-valuenow="{{ $pct }}" aria-valuemin="0" aria-valuemax="100">
                                     <div class="absolute inset-0 h-full rounded-full {{ $barColor }}" style="transform: scaleX({{ $pct / 100 }}); transform-origin: left;"></div>
                                 </div>
-                                <span class="text-xs font-semibold text-slate-500 w-16 text-right tabular-nums">
+                                <span class="text-sm font-semibold text-slate-500 w-16 text-right tabular-nums">
                                     {{ $row['correct'] }}/{{ $row['total'] }}
                                 </span>
                             </div>
@@ -64,7 +64,7 @@
                             </x-ui.status-badge>
 
                             @if($hasSkills)
-                                <button type="button" class="p-1 text-slate-400 hover:text-slate-600 transition-transform" :class="{ 'rotate-180': open }" aria-label="Toggle sub-skills">
+                                <button type="button" class="p-1 text-slate-500 hover:text-slate-600 transition-transform" :class="{ 'rotate-180': open }" aria-label="Toggle sub-skills">
                                     <x-ui.icon name="chevron-down" class="w-4 h-4" aria-hidden="true" />
                                 </button>
                             @endif
@@ -80,7 +80,7 @@
                                     $sBarColor = $sPct >= 80 ? 'bg-emerald-400' : ($sPct >= 60 ? 'bg-amber-400' : 'bg-rose-400');
                                 @endphp
                                 <div class="pl-3 border-l-2 border-slate-200">
-                                    <div class="flex items-center justify-between text-xs mb-1">
+                                    <div class="flex items-center justify-between text-sm mb-1">
                                         <span class="text-slate-600 font-medium">{{ $skill['name'] }}</span>
                                         <span class="text-slate-500 font-semibold tabular-nums">{{ $sPct }}% ({{ $skill['correct'] }}/{{ $skill['total'] }})</span>
                                     </div>
@@ -98,7 +98,7 @@
         <div class="p-empty-state">
             <x-ui.icon name="bar-chart-2" class="w-10 h-10 text-slate-300 mb-2" aria-hidden="true" />
             <p class="font-semibold text-slate-700">{{ $emptyTitle }}</p>
-            <p class="text-xs text-slate-500 max-w-sm mt-1">{{ $emptyBody }}</p>
+            <p class="text-sm text-slate-500 max-w-sm mt-1">{{ $emptyBody }}</p>
         </div>
     @endif
 </article>

@@ -1,0 +1,792 @@
+/* Shared student and teacher product surfaces opt in through `ui="product"`.
+   Authenticated workspaces share the rail skin through `.icon-rail--product`. */
+body.product-ui {
+    --ds-bg: #f6f8fc;
+    --ds-surface: #ffffff;
+    --ds-surface-elevated: #ffffff;
+    --ds-surface-muted: #eef3fa;
+    --ds-surface-soft: #f6f8fc;
+    --ds-surface-raised: #ffffff;
+    --ds-text-primary: #10234a;
+    --ds-text-secondary: #566175;
+    --ds-text-tertiary: #566175;
+    --ds-text-disabled: #667085;
+    --ds-text-inverse: #ffffff;
+    --ds-ink: #10234a;
+    --ds-ink-strong: #10234a;
+    --ds-muted: #566175;
+    --ds-muted-strong: #566175;
+    --ds-border-subtle: #e8edf5;
+    --ds-border-default: #dce3ef;
+    --ds-border-strong: #7c8aa3;
+    --ds-border: #dce3ef;
+    --ds-brand: #2f5bea;
+    --ds-brand-hover: #244bd0;
+    --ds-brand-active: #1e40af;
+    --ds-brand-soft: #eaf0ff;
+    --ds-brand-line: #9db5ff;
+    --ds-primary: #2f5bea;
+    --ds-primary-hover: #244bd0;
+    --ds-primary-soft: #eaf0ff;
+    --ds-primary-line: #9db5ff;
+    --ui-action-bg: #f6b93b;
+    --ui-action-hover: #ffca58;
+    --ui-action-fg: #10234a;
+    --color-brand: #2f5bea;
+    --color-brand-hover: #244bd0;
+    --color-brand-soft: #eaf0ff;
+    --color-danger: var(--ds-danger);
+    --color-success: var(--ds-progress-strong);
+    --color-warning: var(--ds-warning);
+    --color-neutral: var(--ds-muted);
+    --color-slate-50: #f6f8fc;
+    --color-slate-100: #eef3fa;
+    --color-slate-200: #dce3ef;
+    --color-slate-300: #c1cad8;
+    --color-slate-400: #7c8aa3;
+    --color-slate-500: #566175;
+    --color-slate-600: #566175;
+    --color-slate-700: #34466a;
+    --color-slate-800: #10234a;
+    --color-slate-900: #10234a;
+    --color-blue-600: #2f5bea;
+    --color-blue-700: #2f5bea;
+    --color-blue-800: #244bd0;
+    --color-blue-100: #eaf0ff;
+    --font-sans: var(--font-body);
+    --ds-focus: #2f5bea;
+    --ds-selection: #dce7ff;
+    --ds-rail-bg: #10234a;
+    --ds-rail-item-active-bg: #34466a;
+    --ds-rail-item-active-border: transparent;
+    --ds-rail-item-active-icon: #ffffff;
+    --app-bg: #f6f8fc;
+    --panel: #ffffff;
+    --border: #dce3ef;
+    --border-strong: #7c8aa3;
+    --ink: #10234a;
+    --ink-soft: #566175;
+    --ink-faint: #566175;
+    --accent: #2f5bea;
+    --accent-hover: #244bd0;
+    --accent-soft: #eaf0ff;
+    --binder-bg: #ffffff;
+    --binder-border: #dce3ef;
+    --manila: #ffffff;
+    --manila-ink: #10234a;
+    --manila-soft: #566175;
+    --rail-bg: #10234a;
+    --rail-item-active-bg: #34466a;
+    --rail-item-active-border: transparent;
+    --rail-item-active-icon: #ffffff;
+    --cw-ink: var(--ds-text-primary);
+    --cw-ink-strong: var(--ds-text-primary);
+    --cw-muted: var(--ds-text-secondary);
+    --cw-muted-strong: var(--ds-text-secondary);
+    --cw-line: var(--ds-border-default);
+    --cw-line-strong: var(--ds-border-strong);
+    --cw-surface: var(--ds-surface);
+    --cw-surface-soft: var(--ds-surface-muted);
+    --cw-accent: var(--ds-brand);
+    --cw-accent-dark: var(--ds-brand-hover);
+    --cw-accent-soft: var(--ds-brand-soft);
+    background: #f6f8fc;
+    color: #10234a;
+    font-family: var(--font-body);
+    font-size: 1rem;
+    line-height: 1.5;
+    accent-color: #2f5bea;
+    scrollbar-color: #aab6ca #f6f8fc;
+}
+
+.product-ui ::selection {
+    background: #dce7ff;
+    color: #10234a;
+}
+
+.product-ui :is(input, textarea, [contenteditable="true"]) {
+    caret-color: #2f5bea;
+}
+
+.product-ui :is(.app-shell, .shell-content, .ledger-pane) {
+    background-color: #f6f8fc;
+    color: #10234a;
+    font-family: var(--font-body);
+}
+
+.product-ui .shell-content {
+    padding: 2rem;
+    gap: 1.5rem;
+}
+
+.product-ui .ledger-pane {
+    padding: 2rem clamp(1rem, 3vw, 2.5rem);
+    min-width: 0;
+}
+
+.product-ui .app-shell .ledger-pane {
+    padding-inline: clamp(1rem, 3vw, 2.5rem);
+}
+
+.product-ui .ledger-pane.no-corkboard .binder-panel {
+    width: min(100%, 75rem);
+    margin-inline: auto;
+}
+
+/* Retire the paper/binder skin while retaining the workspace structure. */
+.product-ui .ledger-pane.no-corkboard > .binder-panel {
+    padding: 0;
+    border: 0;
+    border-radius: 0;
+    background: transparent;
+    box-shadow: none;
+}
+
+.product-ui .ledger-pane.no-corkboard .handwriting,
+.product-ui .ledger-pane.no-corkboard .status-quote,
+.product-ui .ledger-pane.no-corkboard .corkboard-pane,
+.product-ui .ledger-pane.no-corkboard .ledger-corkboard {
+    display: none;
+}
+
+.icon-rail--product {
+    --rail-bg: #10234a;
+    --rail-item-active-bg: #34466a;
+    --rail-item-active-border: transparent;
+    --rail-item-active-icon: #ffffff;
+    background: #10234a;
+    font-family: var(--font-body);
+}
+
+.icon-rail--product .rail-item__label--desktop {
+    font-family: var(--font-body);
+    font-size: 0.875rem;
+    font-weight: 600;
+}
+
+.icon-rail--product .rail-group__title {
+    color: #bdc8df;
+}
+
+.icon-rail--product .rail-item.active .rail-item__icon {
+    color: #ffffff;
+}
+
+/* Shared surfaces use the same quiet border and restrained elevation. */
+.product-ui
+    :is(
+        .binder-panel,
+        .settings-card,
+        .leaderboard-summary-card,
+        .announce-composer
+    ) {
+    border-color: #dce3ef;
+    border-radius: 16px;
+    box-shadow: 0 1px 2px rgb(16 35 74 / 5%);
+}
+
+.product-ui .ui-card {
+    border-color: #dce3ef;
+    border-radius: 16px;
+    background: #ffffff;
+    box-shadow: 0 1px 2px rgb(16 35 74 / 5%);
+}
+
+.product-ui .study-home :is(.study-panel, .home-goal) {
+    min-width: 0;
+    padding: 1.5rem;
+    border: 1px solid #dce3ef;
+    border-radius: 16px;
+    background: #ffffff;
+    box-shadow: 0 1px 2px rgb(16 35 74 / 5%);
+}
+
+.product-ui .ui-button {
+    font-family: var(--font-body);
+    font-size: 1rem;
+    line-height: 1.4;
+    text-align: center;
+    text-decoration: none;
+    white-space: normal;
+}
+
+.product-ui .ui-button--primary {
+    color: #10234a;
+}
+
+.product-ui .ledger-header :is(h1, h2),
+.product-ui .dh-left h2,
+.product-ui :is(.workspace-title, .library-section-heading) {
+    color: #10234a;
+    font-family: var(--font-body);
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    line-height: 1.3;
+    overflow-wrap: anywhere;
+}
+
+.product-ui .ledger-header {
+    border-bottom: 1px solid #dce3ef;
+}
+
+.product-ui :is(.handwriting, .status-quote) {
+    display: none;
+}
+
+.product-ui .dh-left h2,
+.product-ui .ledger-header h2 {
+    font-size: 1.875rem;
+}
+
+.product-ui .dh-desc,
+.product-ui .ledger-header .dh-desc {
+    color: #566175;
+    font-size: 1rem;
+    line-height: 1.55;
+}
+
+.product-ui :is(.btn-sm-primary, .btn-primary, .btn-px-16) {
+    border-radius: 10px;
+    font-family: var(--font-body);
+    font-size: 1rem;
+    font-weight: 700;
+    min-height: 2.75rem;
+    transition:
+        background-color 150ms ease-out,
+        border-color 150ms ease-out,
+        color 150ms ease-out,
+        transform 100ms ease-out;
+}
+
+.product-ui .btn-sm-primary:not(.btn-row-secondary),
+.product-ui .btn-primary:not(.btn-row-secondary) {
+    background: #f6b93b;
+    border-color: #f6b93b;
+    color: #10234a;
+}
+
+.product-ui
+    :is(.btn-sm-primary, .btn-primary):hover:not(:disabled):not(
+        [aria-disabled="true"]
+    ) {
+    background: #ffca58;
+    border-color: #ffca58;
+    color: #10234a;
+}
+
+.product-ui
+    :is(
+        .btn-outline,
+        .btn-sm-ghost,
+        .sd-action-btn.secondary,
+        .library-btn-outline
+    ) {
+    border-color: #7c8aa3;
+    border-radius: 10px;
+    color: #10234a;
+    font-family: var(--font-body);
+    font-size: 1rem;
+    min-height: 2.5rem;
+}
+
+.product-ui
+    :is(
+        .btn-outline,
+        .btn-sm-ghost,
+        .sd-action-btn.secondary,
+        .library-btn-outline
+    ):hover {
+    border-color: #2f5bea;
+    background: #eaf0ff;
+    color: #10234a;
+}
+
+.product-ui .library-btn-primary {
+    min-height: 2.75rem;
+    border: 1px solid #f6b93b;
+    border-radius: 10px;
+    background: #f6b93b;
+    color: #10234a;
+    font-family: var(--font-body);
+    font-size: 1rem;
+    font-weight: 700;
+}
+
+.product-ui .library-btn-primary:hover {
+    border-color: #ffca58;
+    background: #ffca58;
+    color: #10234a;
+}
+
+.product-ui .class-catalog-card .btn-sm-primary,
+.product-ui .assignment-list-item .btn-sm-primary {
+    background: #ffffff;
+    border: 1px solid #7c8aa3;
+    color: #10234a;
+}
+
+.product-ui
+    :is(
+        .class-catalog-card .btn-sm-primary,
+        .assignment-list-item .btn-sm-primary
+    ):hover {
+    background: #eaf0ff;
+    border-color: #2f5bea;
+}
+
+.product-ui .test-index-card .library-btn-primary:not(.library-btn-primary--retake) {
+    background: #f6b93b;
+    border-color: #f6b93b;
+    color: #10234a;
+}
+
+.product-ui .test-index-card .library-btn-primary:not(.library-btn-primary--retake):hover {
+    background: #ffca58;
+    border-color: #ffca58;
+}
+
+.product-ui .test-index-card .library-btn-primary--retake {
+    background: #ffffff;
+    border: 1px solid #7c8aa3;
+    color: #244bd0;
+}
+
+.product-ui .test-index-card .library-btn-primary--retake:hover {
+    background: #eaf0ff;
+    border-color: #2f5bea;
+    color: #10234a;
+}
+
+.product-ui
+    :is(input:not([type="checkbox"]):not([type="radio"]), select, textarea) {
+    border-color: #7c8aa3;
+    border-radius: 10px;
+    color: #10234a;
+    font-family: var(--font-body);
+    font-size: 1rem;
+}
+
+.product-ui :is(input, select, textarea):focus-visible {
+    border-color: #2f5bea;
+    outline: 2px solid #2f5bea;
+    outline-offset: 2px;
+}
+
+.product-ui .status-pill,
+.product-ui .type-tag,
+.product-ui .library-count {
+    font-family: var(--font-body);
+}
+
+.product-ui .status-pill {
+    border-style: solid;
+    border-radius: 999px;
+    transform: none;
+}
+
+.product-ui .class-catalog-grid,
+.product-ui .tests-grid {
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 19rem), 1fr));
+    gap: 1rem;
+}
+
+.product-ui
+    :is(
+        .class-catalog-card .card-title,
+        .library-resume-card__title,
+        .test-index-card .card-title
+    ) {
+    color: #10234a;
+    font-family: var(--font-body);
+    font-size: 1.125rem;
+    font-weight: 700;
+    line-height: 1.4;
+}
+
+.product-ui
+    :is(
+        .class-catalog-card .card-desc,
+        .test-card-desc,
+        .library-resume-card__status,
+        .library-resume-card__meta
+    ) {
+    color: #566175;
+    font-size: 0.875rem;
+    line-height: 1.5;
+}
+
+.product-ui .test-card-meta-flat {
+    flex-wrap: wrap;
+    gap: 0.4rem 0.6rem;
+    border-top-style: solid;
+    font-size: 0.875rem;
+}
+
+.product-ui
+    :is(.card-stats-row, .stat-pill, .library-count, .type-tag, .status-pill) {
+    font-size: 0.875rem;
+}
+
+.product-ui .library-section + .library-section {
+    margin-block-start: 2rem;
+}
+
+.product-ui .library-section-heading {
+    font-size: 1.25rem;
+}
+
+.product-ui :is(.class-catalog-card, .test-index-card, .library-resume-card) {
+    min-width: 0;
+    border: 1px solid #dce3ef;
+    border-radius: 16px;
+    background: #ffffff;
+    box-shadow: 0 1px 2px rgb(16 35 74 / 5%);
+}
+
+.product-ui
+    :is(.card-title, .card-desc, .test-card-desc, .library-resume-card__title) {
+    overflow-wrap: anywhere;
+}
+
+.product-ui .test-card-action,
+.product-ui .library-resume-card__action {
+    flex-wrap: wrap;
+}
+
+.product-ui .ledger-pane table {
+    border-color: #dce3ef;
+    border-radius: 12px;
+    box-shadow: none;
+}
+
+.product-ui .ledger-pane thead th {
+    font-size: 0.875rem;
+}
+
+.product-ui .ledger-pane tbody td {
+    color: #10234a;
+    font-size: 0.875rem;
+}
+
+.product-ui .sd-score-hero {
+    background: #10234a;
+    border: 0;
+    border-radius: 16px;
+    box-shadow: 0 2px 8px rgb(16 35 74 / 14%);
+    color: #ffffff;
+}
+
+.product-ui .sd-score-hero .sd-action-btn.secondary {
+    border-color: rgb(255 255 255 / 55%);
+    background: rgb(255 255 255 / 10%);
+    color: #ffffff;
+    backdrop-filter: none;
+}
+
+.product-ui .sd-score-hero .sd-action-btn.secondary:hover {
+    border-color: #ffffff;
+    background: rgb(255 255 255 / 20%);
+    color: #ffffff;
+}
+
+.product-ui .sd-anchor-nav {
+    min-width: 0;
+    flex-wrap: wrap;
+}
+
+.product-ui .sd-nav-link {
+    min-width: 0;
+    white-space: normal;
+}
+
+.product-ui .sd-table-toolbar > *,
+.product-ui .sd-view-btns {
+    min-width: 0;
+    max-width: 100%;
+}
+
+.product-ui .sd-view-btns {
+    flex-wrap: wrap;
+}
+
+.product-ui .filter-chip .count-pill {
+    color: #475569;
+}
+
+.product-ui .sd-modal-expl-box {
+    max-width: 72ch;
+}
+
+.product-ui :focus-visible {
+    scroll-margin-block: 1rem;
+}
+
+/* The same classroom primitives serve both roles. Density follows the task. */
+.product-ui .class-tabs {
+    flex-wrap: wrap;
+    overflow: visible;
+    top: 0;
+    gap: 0.375rem;
+    padding-block: 0.75rem;
+    background: var(--ds-bg);
+    border-color: var(--ds-border-default);
+    box-shadow: none;
+}
+
+.product-ui .seg-btn {
+    min-height: 2.75rem;
+    margin: 0;
+    padding: 0.625rem 0.875rem;
+    border: 1px solid transparent;
+    border-radius: 10px;
+    color: var(--ds-text-secondary);
+    font-family: var(--font-body);
+    font-size: 0.875rem;
+    white-space: normal;
+    text-align: start;
+}
+
+.product-ui .seg-btn.active {
+    background: var(--ds-brand-soft);
+    color: var(--ds-brand);
+    border-color: var(--ds-brand-line);
+}
+
+.product-ui .seg-btn .count {
+    font-family: var(--font-body);
+    font-size: 0.875rem;
+    font-variant-numeric: tabular-nums;
+}
+
+.product-ui .stat-row {
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 8.5rem), 1fr));
+    gap: 1rem;
+}
+
+.product-ui .stat-row .s {
+    padding: 1rem;
+    background: var(--ds-surface);
+    border-color: var(--ds-border-default);
+    border-radius: 16px;
+    transition: none;
+}
+
+.product-ui .stat-row .s:hover {
+    border-color: var(--ds-border-default);
+    box-shadow: none;
+}
+
+.product-ui .stat-row .s .num {
+    color: var(--ds-text-primary);
+    font-family: var(--font-body);
+    font-variant-numeric: tabular-nums;
+    font-size: 1.5rem;
+}
+
+.product-ui .stat-row .s .lbl {
+    color: var(--ds-text-secondary);
+    font-size: 0.875rem;
+    letter-spacing: normal;
+    text-transform: none;
+}
+
+.product-ui :is(.settings-title, .announce-composer__title) {
+    color: var(--ds-text-primary);
+    font-family: var(--font-body);
+    font-size: 1.125rem;
+}
+
+.product-ui .settings-title.danger {
+    color: var(--ds-danger);
+}
+
+.product-ui .workspace-top-bar {
+    flex-wrap: wrap;
+    gap: 1rem;
+}
+
+.product-ui :is(.class-switcher, .class-switcher-btn) {
+    min-width: 0;
+    max-width: 100%;
+}
+
+.product-ui .class-switcher-btn {
+    white-space: normal;
+    overflow-wrap: anywhere;
+    font-size: 1rem;
+}
+
+.product-ui .class-switcher-menu {
+    width: min(24rem, calc(100vw - 2rem));
+    max-width: 100%;
+}
+
+.product-ui .announce-card {
+    border-color: var(--ds-border-default);
+    border-radius: 16px;
+    box-shadow: none;
+}
+
+.product-ui .announce-card__body {
+    font-size: 1rem;
+    line-height: 1.6;
+}
+
+.product-ui :is(.announce-composer__hint, .announce-card__time, .announce-comment__body) {
+    color: var(--ds-text-secondary);
+    font-size: 0.875rem;
+}
+
+.product-ui .ledger-header__avatar-stamp {
+    background: var(--ds-brand-soft);
+    color: var(--ds-brand);
+    font-family: var(--font-body);
+    transform: none;
+    box-shadow: none;
+}
+
+.product-ui :is(.si-name, .ci-name) {
+    font-size: 0.875rem;
+}
+
+.product-ui :is(.si-meta, .ci-meta, .sidebar-col-head .count) {
+    color: var(--ds-text-secondary);
+    font-size: 0.875rem;
+    line-height: 1.5;
+}
+
+.product-ui .si-meta {
+    flex-wrap: wrap;
+}
+
+.product-ui .home-title {
+    font-size: 2rem;
+}
+
+/* Teacher analytical workspaces use available width rather than reading width. */
+.teacher-workspace .ledger-pane.no-corkboard .binder-panel {
+    width: 100%;
+    max-width: 95rem;
+}
+
+.teacher-workspace :is(.home-row__title, .settings-label) {
+    font-size: 1rem;
+}
+
+.teacher-workspace :is(.home-row__title, .home-title, .ledger-header__subtitle) {
+    white-space: normal;
+    overflow-wrap: anywhere;
+}
+
+.teacher-workspace .home-num {
+    font-family: var(--font-body);
+    font-variant-numeric: tabular-nums;
+}
+
+.teacher-workspace .ledger-header {
+    flex-wrap: wrap;
+    gap: 1rem;
+}
+
+.teacher-workspace :is(.dh-left, .ledger-header__identity, .ledger-header__title-group) {
+    min-width: 0;
+}
+
+@media (max-width: 767px) {
+    .product-ui .class-tabs {
+        position: static;
+    }
+
+    .teacher-workspace .home-head__actions {
+        width: 100%;
+    }
+
+    .teacher-workspace .home-head__actions > .ui-button {
+        flex: 1 1 auto;
+    }
+
+    .teacher-workspace .ledger-header__actions {
+        flex-wrap: wrap;
+    }
+}
+
+@media (max-width: 767px) {
+    .product-ui .shell-content {
+        padding: 1.5rem 1rem;
+    }
+
+    .product-ui .app-shell .ledger-pane {
+        padding: 4rem 1rem 1.5rem;
+    }
+
+    .product-ui .ledger-pane.no-corkboard .binder-panel {
+        padding: 0;
+    }
+
+    .product-ui .study-home :is(.study-panel, .home-goal) {
+        padding: 1.25rem;
+    }
+
+    .product-ui .dh-left h2,
+    .product-ui .ledger-header h2 {
+        font-size: 1.625rem;
+    }
+
+    .product-ui .ledger-header :is(a, button),
+    .product-ui .dh-right :is(a, button) {
+        max-width: 100%;
+        white-space: normal;
+    }
+
+    .product-ui .library-resume-card {
+        flex-wrap: wrap;
+        gap: 1rem;
+    }
+
+    .product-ui .library-resume-card__info {
+        min-width: 0;
+    }
+
+    .product-ui .class-catalog-grid,
+    .product-ui .tests-grid {
+        grid-template-columns: minmax(0, 1fr);
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .product-ui
+        :is(
+            .btn-sm-primary,
+            .btn-primary,
+            .btn-outline,
+            .btn-sm-ghost,
+            .class-catalog-card,
+            .test-index-card,
+            .library-resume-card
+        ) {
+        transition: none;
+    }
+}
+
+@media (forced-colors: active) {
+    .product-ui
+        :is(
+            .btn-sm-primary,
+            .btn-primary,
+            .btn-outline,
+            .btn-sm-ghost,
+            input,
+            select,
+            textarea,
+            .class-catalog-card,
+            .test-index-card,
+            .library-resume-card
+        ) {
+        border: 1px solid ButtonText;
+    }
+
+    .icon-rail--product .rail-item.active {
+        outline: 2px solid Highlight;
+        outline-offset: 1px;
+    }
+}

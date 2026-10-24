@@ -6,7 +6,6 @@ use App\Http\Controllers\Controller;
 use App\Http\Controllers\ForumController;
 use App\Models\BlogPost;
 use App\Models\ForumThread;
-use App\Models\Test;
 use App\Services\ProgressDossierService;
 use Illuminate\Http\Request;
 
@@ -20,15 +19,6 @@ class AnalyticsController extends Controller
     private function homeData(Request $request, ProgressDossierService $dossierService): array
     {
         $user = $request->user();
-        $attemptedTestIds = $user->userTests()->pluck('test_id');
-
-        $baseTests = Test::visibleTo($user)
-            ->where('status', 'active')
-            ->where('title', '!=', 'Test Preview')
-            ->with('sections.modules');
-
-        $featuredTest = (clone $baseTests)->whereNotIn('id', $attemptedTestIds)->inRandomOrder()->first()
-            ?? (clone $baseTests)->inRandomOrder()->first();
 
         $inProgressAttempt = $user->userTests()
             ->where('status', 'in_progress')
@@ -36,37 +26,97 @@ class AnalyticsController extends Controller
             ->orderBy('updated_at', 'desc')
             ->first();
 
-        $recentCompleted = $user->userTests()
-            ->whereHas('test', fn ($q) => $q->where('title', '!=', 'Test Preview'))
-            ->with('userAnswers')
+        // 1. Comparable cohort: completed, non-preview, non-section attempts with both section scores and total score
+        $baseComparableQuery = $user->userTests()
             ->where('status', 'completed')
-            ->excludingAbsorbedSections()
+            ->where('attempt_type', '!=', 'section')
+            ->whereNotNull('total_score')
+            ->whereNotNull('score_reading_writing')
+            ->whereNotNull('score_math')
+            ->whereHas('test', fn ($q) => $q->where('title', '!=', 'Test Preview'))
+            ->excludingAbsorbedSections();
+
+        $comparableCohort = (clone $baseComparableQuery)
+            ->with(['test.sections'])
             ->orderBy('completed_at', 'desc')
-            ->limit(10)
+            ->orderBy('id', 'desc')
             ->get();
 
-        $scoredAttempts = $recentCompleted
-            ->whereNotNull('total_score')
-            ->take(5)
-            ->reverse()
-            ->values();
+        $latestComparableAttempt = $comparableCohort->first();
+        $bestScore = $comparableCohort->isNotEmpty() ? (int) $comparableCohort->max('total_score') : null;
+
+        $chartAttempts = $comparableCohort->take(5)->reverse()->values();
 
         $homeScoreTrend = [
-            'attempts' => $scoredAttempts->map(fn ($attempt) => [
+            'attempts' => $chartAttempts->map(fn ($attempt) => [
                 'score' => (int) $attempt->total_score,
                 'date' => $attempt->completed_at ? $attempt->completed_at->format('M j') : null,
+                'dateFull' => $attempt->completed_at?->format('M j, Y'),
+                'timestamp' => $attempt->completed_at?->getTimestamp(),
             ])->all(),
             'target_score' => $user->target_score ? (int) $user->target_score : null,
         ];
 
-        $tip = $dossierService->studyTip($recentCompleted);
-
-        // Ledger stats in one aggregate query (was two separate queries run inside the Blade view).
-        $completedStats = $user->userTests()
+        // 2. Recent completed work (up to 3 completed attempts including section attempts)
+        $recentWorkAttempts = $user->userTests()
             ->where('status', 'completed')
+            ->whereHas('test', fn ($q) => $q->where('title', '!=', 'Test Preview'))
             ->excludingAbsorbedSections()
-            ->selectRaw('COUNT(*) as completed_count, MAX(score_reading_writing + score_math) as best_score')
-            ->first();
+            ->with(['test.sections', 'userAnswers'])
+            ->orderBy('completed_at', 'desc')
+            ->orderBy('id', 'desc')
+            ->limit(3)
+            ->get();
+
+        $lastCompletedAttempt = $recentWorkAttempts->first();
+
+        // Total practice completed count (all qualifying attempts)
+        $completedCount = $user->userTests()
+            ->where('status', 'completed')
+            ->whereHas('test', fn ($q) => $q->where('title', '!=', 'Test Preview'))
+            ->excludingAbsorbedSections()
+            ->count();
+
+        // 3. Weekly activity totals in Vietnam timezone (Monday 00:00 to following Monday 00:00)
+        $tz = 'Asia/Ho_Chi_Minh';
+        $nowInTz = now($tz);
+        $startOfWeek = (clone $nowInTz)->startOfWeek(\Carbon\Carbon::MONDAY);
+        $endOfWeek = (clone $startOfWeek)->addWeek();
+
+        $weeklyAttemptsQuery = $user->userTests()
+            ->where('status', 'completed')
+            ->whereHas('test', fn ($q) => $q->where('title', '!=', 'Test Preview'))
+            ->excludingAbsorbedSections()
+            ->where('completed_at', '>=', $startOfWeek)
+            ->where('completed_at', '<', $endOfWeek);
+
+        $weeklyAttempts = (clone $weeklyAttemptsQuery)->get(['id', 'completed_at']);
+        $weeklyCompletedCount = $weeklyAttempts->count();
+        $weeklyAttemptIds = $weeklyAttempts->pluck('id');
+
+        $weeklyAnsweredCount = 0;
+        if ($weeklyAttemptIds->isNotEmpty()) {
+            $weeklyAnsweredCount = \App\Models\UserTestAnswer::whereIn('user_test_id', $weeklyAttemptIds)
+                ->whereNotNull('selected_answer')
+                ->where('selected_answer', '!=', '')
+                ->count();
+        }
+
+        $weeklyActivity = [
+            'practiceCount' => $weeklyCompletedCount,
+            'questionsCount' => $weeklyAnsweredCount,
+            'days' => collect(range(0, 6))->map(function ($offset) use ($startOfWeek, $nowInTz, $weeklyAttempts, $tz) {
+                $date = $startOfWeek->copy()->addDays($offset);
+                return [
+                    'label' => $date->format('D'),
+                    'date' => $date->toDateString(),
+                    'today' => $date->isSameDay($nowInTz),
+                    'completed' => $weeklyAttempts->contains(fn ($attempt) => $attempt->completed_at->copy()->timezone($tz)->isSameDay($date)),
+                ];
+            })->all(),
+        ];
+
+        $suggestion = $dossierService->studySuggestion($recentWorkAttempts);
 
         $hasClassroom = $user->classroomMemberships()->where('status', 'active')->exists();
         $primaryClassroom = $hasClassroom
@@ -75,36 +125,65 @@ class AnalyticsController extends Controller
 
         $assignments = collect();
         $assignmentFocus = ['open' => 0, 'overdue' => 0, 'dueSoon' => 0];
+        $hasAnyAssignment = false;
 
         if ($user->role === 'student' || $user->role === 'teacher') {
             $recipientScope = \App\Models\Assignment::whereHas('recipients', fn ($query) => $query->where('student_id', $user->id)->where('status', 'active'))
                 ->whereIn('status', ['published', 'closed']);
 
-            $assignments = (clone $recipientScope)
-                ->with(['classroom', 'test', 'attempts' => fn ($query) => $query->where('user_id', $user->id)])
-                ->latest('published_at')
-                ->limit(3)
+            // Preload student assignments with relations
+            $allStudentAssignments = (clone $recipientScope)
+                ->with([
+                    'classroom',
+                    'test.sections',
+                    'attempts' => fn ($query) => $query->where('user_id', $user->id),
+                    'recipients' => fn ($query) => $query->where('student_id', $user->id),
+                ])
                 ->get();
 
-            // Counted separately from the list above, which is capped at 3 and
-            // includes completed work — deriving a headline count from it lies.
-            // "Open" means still finishable: published, already available, not
-            // completed, and either in a live class or holding a resumable
-            // attempt (archiving blocks new starts but preserves resume).
-            $openDueDates = (clone $recipientScope)
-                ->where('status', 'published')
-                ->where(fn ($query) => $query->whereNull('available_at')->orWhere('available_at', '<=', now()))
-                ->whereDoesntHave('attempts', fn ($query) => $query->where('user_id', $user->id)->where('status', 'completed'))
-                ->where(fn ($query) => $query
-                    ->whereHas('classroom', fn ($classroom) => $classroom->where('status', 'active'))
-                    ->orWhereHas('attempts', fn ($attempt) => $attempt->where('user_id', $user->id)->where('status', 'in_progress')))
-                ->pluck('due_at');
+            $hasAnyAssignment = $allStudentAssignments->isNotEmpty();
 
+            // Authoritative resolved eligibility for each assignment
+            $allStudentAssignments->each(function ($a) {
+                $recipient = $a->recipients->first();
+                $a->resolved = \App\Support\AssignmentStatusResolver::resolve($a, $a->attempts, $recipient);
+            });
+
+            // Actionable pool: can actually be started or resumed, excluding completed without in-progress attempt
+            $actionablePool = $allStudentAssignments->filter(function ($a) {
+                return $a->resolved['canStart'] && ($a->resolved['completed']->isEmpty() || $a->resolved['inProgress'] !== null);
+            });
+
+            // Derive headline counts directly from actionable pool before visual deduplication or display limits
+            $openDueDates = $actionablePool->pluck('due_at');
             $assignmentFocus = [
                 'open' => $openDueDates->count(),
-                'overdue' => $openDueDates->filter(fn ($due) => $due && now()->gte($due))->count(),
+                'overdue' => $actionablePool->filter(fn ($a) => $a->resolved['state'] === 'Overdue' || ($a->due_at && now()->gte($a->due_at)))->count(),
                 'dueSoon' => $openDueDates->filter(fn ($due) => $due && now()->lt($due) && $due->lte(now()->addDays(2)))->count(),
             ];
+
+            // Deduplicate if $inProgressAttempt is already for this assignment on the current work card
+            $actionable = $actionablePool->reject(function ($a) use ($inProgressAttempt) {
+                return $inProgressAttempt && $inProgressAttempt->assignment_id && (int) $inProgressAttempt->assignment_id === (int) $a->id;
+            });
+
+            // Prioritize: resumable work (has in_progress attempt), then overdue that remain available, then nearest deadlines
+            $sortedActionable = $actionable->sort(function ($a, $b) {
+                $rankA = $a->resolved['inProgress'] ? 1 : ($a->resolved['state'] === 'Overdue' ? 2 : ($a->due_at ? 3 : 4));
+                $rankB = $b->resolved['inProgress'] ? 1 : ($b->resolved['state'] === 'Overdue' ? 2 : ($b->due_at ? 3 : 4));
+
+                if ($rankA !== $rankB) {
+                    return $rankA <=> $rankB;
+                }
+
+                if ($a->due_at && $b->due_at) {
+                    return $a->due_at <=> $b->due_at;
+                }
+
+                return $b->published_at <=> $a->published_at;
+            });
+
+            $assignments = $sortedActionable->take(3)->values();
         }
 
         $teacherStats = null;
@@ -129,18 +208,30 @@ class AnalyticsController extends Controller
 
         return [
             'user' => $user,
-            'featuredTest' => $featuredTest,
             'inProgressAttempt' => $inProgressAttempt,
             'latestPosts' => BlogPost::with('teacher')->latest('published_at')->limit(3)->get(),
             'latestThreads' => ForumThread::withCount('replies')->latest()->limit(5)->get(),
             'categories' => ForumController::CATEGORIES,
-            'tip' => $tip,
-            'lastCompletedAttempt' => $recentCompleted->first(),
+            'suggestion' => $suggestion,
+            'lastCompletedAttempt' => $lastCompletedAttempt,
+            'latestComparableAttempt' => $latestComparableAttempt,
+            'recentWorkAttempts' => $recentWorkAttempts,
+            'weeklyActivity' => $weeklyActivity,
             'hasClassroom' => $hasClassroom,
             'primaryClassroom' => $primaryClassroom,
-            'completedCount' => (int) ($completedStats->completed_count ?? 0),
-            'bestScore' => $completedStats->best_score ? (int) $completedStats->best_score : null,
+            'completedCount' => $completedCount,
+            'comparableCount' => $comparableCohort->count(),
+            'homeGuide' => [
+                'previewOpened' => $user->home_preview_opened_at !== null,
+                'practiceCompleted' => $completedCount > 0 || $user->home_report_opened_at !== null,
+                'reportOpened' => $user->home_report_opened_at !== null,
+                'preference' => $user->home_guide_preference ?? 'auto',
+                'expanded' => $user->home_guide_preference === 'expanded' ||
+                    (($user->home_guide_preference ?? 'auto') === 'auto' && $user->home_report_opened_at === null),
+            ],
+            'bestScore' => $bestScore,
             'assignments' => $assignments,
+            'hasAnyAssignment' => $hasAnyAssignment,
             'assignmentFocus' => $assignmentFocus,
             'teacherStats' => $teacherStats,
             'homeScoreTrend' => $homeScoreTrend,

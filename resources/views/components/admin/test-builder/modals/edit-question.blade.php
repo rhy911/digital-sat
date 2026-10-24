@@ -13,7 +13,7 @@
             <div class="flex flex-col items-center gap-4">
                 <div class="w-12 h-12 border-4 border-slate-200 border-t-brand rounded-full animate-spin">
                 </div>
-                <div class="text-[10px] font-black text-slate-600 uppercase tracking-widest">Initialising editor...
+                <div class="text-sm font-black text-slate-600 uppercase tracking-widest">Initialising editor...
                 </div>
             </div>
         </div>
@@ -28,14 +28,14 @@
                 <div
                     class="lg:col-span-7 p-6 border-r border-slate-200 overflow-y-auto h-full space-y-4 text-slate-900 bg-white edit-question-form-pane">
                     <div id="editPassageContainer" class="hidden">
-                        <label for="editPassageContent" class="block text-xs font-bold text-slate-700 mb-1.5">Passage
+                        <label for="editPassageContent" class="block text-sm font-bold text-slate-700 mb-1.5">Passage
                             Content (Reading & Writing)</label>
                         <textarea
                             class="w-full px-3 py-2 text-sm text-slate-900 bg-white border border-slate-300 rounded-lg placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-brand/20 focus:border-brand"
                             id="editPassageContent" name="passage_content" rows="6"></textarea>
                     </div>
                     <div>
-                        <label for="editQuestionStem" class="block text-xs font-bold text-slate-700 mb-1.5">Question
+                        <label for="editQuestionStem" class="block text-sm font-bold text-slate-700 mb-1.5">Question
                             Stem / Prompt</label>
                         <textarea
                             class="w-full px-3 py-2 text-sm text-slate-900 bg-white border border-slate-300 rounded-lg placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-brand/20 focus:border-brand"
@@ -43,7 +43,7 @@
                     </div>
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div>
-                            <label for="editQuestionType" class="block text-xs font-bold text-slate-700 mb-1.5">Question
+                            <label for="editQuestionType" class="block text-sm font-bold text-slate-700 mb-1.5">Question
                                 Type</label>
                             <select
                                 class="w-full px-3 py-2 text-sm text-slate-900 bg-white border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand/20 focus:border-brand"
@@ -54,7 +54,7 @@
                         </div>
                         <div>
                             <label for="editDifficulty"
-                                class="block text-xs font-bold text-slate-700 mb-1.5">Difficulty</label>
+                                class="block text-sm font-bold text-slate-700 mb-1.5">Difficulty</label>
                             <select
                                 class="w-full px-3 py-2 text-sm text-slate-900 bg-white border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand/20 focus:border-brand"
                                 id="editDifficulty" name="difficulty">
@@ -66,14 +66,14 @@
                     </div>
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div>
-                            <label for="editSkillDomain" class="block text-xs font-bold text-slate-700 mb-1.5">Skill
+                            <label for="editSkillDomain" class="block text-sm font-bold text-slate-700 mb-1.5">Skill
                                 Domain</label>
                             <select
                                 class="w-full px-3 py-2 text-sm text-slate-900 bg-white border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand/20 focus:border-brand"
                                 id="editSkillDomain" name="skill_domain"></select>
                         </div>
                         <div>
-                            <label for="editSkillSubdomain" class="block text-xs font-bold text-slate-700 mb-1.5">Skill
+                            <label for="editSkillSubdomain" class="block text-sm font-bold text-slate-700 mb-1.5">Skill
                                 Subdomain</label>
                             <select
                                 class="w-full px-3 py-2 text-sm text-slate-900 bg-white border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand/20 focus:border-brand"
@@ -82,14 +82,14 @@
                     </div>
                     <div class="grid grid-cols-1 md:grid-cols-12 gap-4 items-end">
                         <div class="md:col-span-4" id="editSprHintContainer">
-                            <label for="editSprHint" class="block text-xs font-bold text-slate-700 mb-1.5">SPR
+                            <label for="editSprHint" class="block text-sm font-bold text-slate-700 mb-1.5">SPR
                                 Hint</label>
                             <input type="text"
                                 class="w-full px-3 py-2 text-sm text-slate-900 bg-white border border-slate-300 rounded-lg placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-brand/20 focus:border-brand"
                                 id="editSprHint" name="spr_hint">
                         </div>
                         <div class="md:col-span-3 pb-2">
-                            <label for="editExpectedTime" class="block text-xs font-bold text-slate-700 mb-1.5">Expected Time (s)</label>
+                            <label for="editExpectedTime" class="block text-sm font-bold text-slate-700 mb-1.5">Expected Time (s)</label>
                             <input type="number"
                                 class="w-full px-3 py-2 text-sm text-slate-900 bg-white border border-slate-300 rounded-lg placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-brand/20 focus:border-brand"
                                 id="editExpectedTime" name="expected_time" min="0" placeholder="e.g. 60">
@@ -131,7 +131,7 @@
                                     </div>
                                     <div class="col-span-3 pl-2">
                                         <label
-                                            class="flex items-center gap-1.5 cursor-pointer text-xs font-semibold text-slate-600">
+                                            class="flex items-center gap-1.5 cursor-pointer text-sm font-semibold text-slate-600">
                                             <input
                                                 class="w-4 h-4 text-brand border-slate-300 bg-white focus:ring-brand focus:ring-2 edit-choice-radio"
                                                 type="radio" name="correct_choice" value="{{ $label }}"
@@ -149,7 +149,7 @@
                             </h6>
                             <div>
                                 <label for="editSprAnswers"
-                                    class="block text-xs font-bold text-slate-700 mb-1.5">Comma-separated accepted
+                                    class="block text-sm font-bold text-slate-700 mb-1.5">Comma-separated accepted
                                     values</label>
                                 <input type="text"
                                     class="w-full px-3 py-2 text-sm text-slate-900 bg-white border border-slate-300 rounded-lg placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-brand/20 focus:border-brand"
@@ -160,7 +160,7 @@
 
                     <div class="border-t border-slate-200 pt-4 space-y-4">
                         <div>
-                            <label for="editExplanation" class="block text-xs font-bold text-slate-700 mb-1.5">Correct
+                            <label for="editExplanation" class="block text-sm font-bold text-slate-700 mb-1.5">Correct
                                 rationale</label>
                             <textarea
                                 class="w-full px-3 py-2 text-sm text-slate-900 bg-white border border-slate-300 rounded-lg placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-brand/20 focus:border-brand"
@@ -169,30 +169,30 @@
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <div>
                                 <label for="editRationaleA"
-                                    class="block text-xs font-semibold text-slate-600 mb-1">Rationale A</label>
+                                    class="block text-sm font-semibold text-slate-600 mb-1">Rationale A</label>
                                 <textarea
-                                    class="w-full px-3 py-1.5 text-xs text-slate-900 bg-white border border-slate-300 rounded-lg placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-brand/20 focus:border-brand"
+                                    class="w-full px-3 py-1.5 text-sm text-slate-900 bg-white border border-slate-300 rounded-lg placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-brand/20 focus:border-brand"
                                     id="editRationaleA" name="rationale_a" rows="1"></textarea>
                             </div>
                             <div>
                                 <label for="editRationaleB"
-                                    class="block text-xs font-semibold text-slate-600 mb-1">Rationale B</label>
+                                    class="block text-sm font-semibold text-slate-600 mb-1">Rationale B</label>
                                 <textarea
-                                    class="w-full px-3 py-1.5 text-xs text-slate-900 bg-white border border-slate-300 rounded-lg placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-brand/20 focus:border-brand"
+                                    class="w-full px-3 py-1.5 text-sm text-slate-900 bg-white border border-slate-300 rounded-lg placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-brand/20 focus:border-brand"
                                     id="editRationaleB" name="rationale_b" rows="1"></textarea>
                             </div>
                             <div>
                                 <label for="editRationaleC"
-                                    class="block text-xs font-semibold text-slate-600 mb-1">Rationale C</label>
+                                    class="block text-sm font-semibold text-slate-600 mb-1">Rationale C</label>
                                 <textarea
-                                    class="w-full px-3 py-1.5 text-xs text-slate-900 bg-white border border-slate-300 rounded-lg placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-brand/20 focus:border-brand"
+                                    class="w-full px-3 py-1.5 text-sm text-slate-900 bg-white border border-slate-300 rounded-lg placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-brand/20 focus:border-brand"
                                     id="editRationaleC" name="rationale_c" rows="1"></textarea>
                             </div>
                             <div>
                                 <label for="editRationaleD"
-                                    class="block text-xs font-semibold text-slate-600 mb-1">Rationale D</label>
+                                    class="block text-sm font-semibold text-slate-600 mb-1">Rationale D</label>
                                 <textarea
-                                    class="w-full px-3 py-1.5 text-xs text-slate-900 bg-white border border-slate-300 rounded-lg placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-brand/20 focus:border-brand"
+                                    class="w-full px-3 py-1.5 text-sm text-slate-900 bg-white border border-slate-300 rounded-lg placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-brand/20 focus:border-brand"
                                     id="editRationaleD" name="rationale_d" rows="1"></textarea>
                             </div>
                         </div>
@@ -204,7 +204,7 @@
                                 <x-ui.icon name="image" class="w-4 h-4 text-brand" /> Media management
                             </h6>
                             <button type="button"
-                                class="px-2.5 py-1 text-xs bg-white border border-slate-300 hover:bg-slate-50 text-slate-700 font-semibold rounded-lg flex items-center gap-1.5 cursor-pointer"
+                                class="px-2.5 py-1 text-sm bg-white border border-slate-300 hover:bg-slate-50 text-slate-700 font-semibold rounded-lg flex items-center gap-1.5 cursor-pointer"
                                 onclick="refreshEditMediaList()" title="Refresh media list from text fields">
                                 <x-ui.icon name="arrow-clockwise" class="w-4 h-4" /> Refresh List
                             </button>
@@ -212,7 +212,7 @@
                         <div id="editMediaList" class="grid grid-cols-2 md:grid-cols-3 gap-3">
                             <!-- Existing media items will be listed here -->
                         </div>
-                        <p class="text-slate-600 text-[11px] flex items-center gap-1.5 mt-2.5 mb-0">
+                        <p class="text-slate-600 text-sm flex items-center gap-1.5 mt-2.5 mb-0">
                             <x-ui.icon name="info-circle" class="w-4 h-4 text-brand" /> Media is managed via
                             Markdown <code>![](...)</code> inside text fields.
                         </p>
@@ -227,7 +227,7 @@
                             <x-ui.icon name="file-earmark-richtext" class="w-4 h-4 text-amber-700" /> Question preview
                         </span>
                         <span
-                            class="px-2 py-0.5 text-[10px] font-bold tracking-wider uppercase bg-slate-100 text-slate-600 border border-slate-200 rounded-md font-mono"
+                            class="px-2 py-0.5 text-sm font-bold tracking-wider uppercase bg-slate-100 text-slate-600 border border-slate-200 rounded-md font-mono"
                             id="editPreviewTypeBadge">MCQ</span>
                     </div>
                     <div class="flex-1 pr-1 passage-preview" id="editQuestionPreviewContent"
@@ -242,7 +242,7 @@
                     class="px-4 py-2 bg-white border border-slate-300 text-slate-700 hover:text-slate-900 font-semibold text-sm rounded-lg hover:bg-slate-50"
                     x-on:click="$dispatch('close-modal', 'editQuestionModal')">Cancel</button>
                 <button type="submit"
-                    class="px-5 py-2 bg-brand hover:bg-brand-hover text-white font-semibold text-sm rounded-lg">Update
+                    class="px-5 py-2 bg-[var(--ui-action-bg)] hover:bg-[var(--ui-action-hover)] text-[var(--ui-action-fg)] font-semibold text-sm rounded-lg">Update
                     Question</button>
             </div>
         </form>

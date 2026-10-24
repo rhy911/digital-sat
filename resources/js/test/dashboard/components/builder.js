@@ -46,16 +46,16 @@ window.addEventListener('beforeunload', (event) => {
 export function updateBuilderGridState() {
     const grid = document.getElementById('builderMainGrid');
     if (!grid) return;
-    
+
     const blockCount = document.querySelectorAll('.builder-block').length;
     const existingCount = (window.__builderExistingQuestions || []).length;
-    
+
     if (blockCount === 0 && existingCount === 0) {
         grid.classList.add('builder-grid-empty');
     } else {
         grid.classList.remove('builder-grid-empty');
     }
-    
+
     const container = document.getElementById('builderBlocksContainer');
     if (container) {
         const placeholder = container.querySelector('.builder-workspace-placeholder');
@@ -65,7 +65,7 @@ export function updateBuilderGridState() {
                 div.className = "text-slate-500 text-center py-12 px-4 border border-dashed border-slate-200 rounded-2xl bg-slate-50 builder-workspace-placeholder";
                 div.innerHTML = `
                     ${icon('arrow-left-circle', 'w-9 h-9 block mb-3 text-brand')}
-                    <p class="text-xs text-slate-500 font-medium leading-relaxed mb-0">
+                    <p class="text-sm text-slate-500 font-medium leading-relaxed mb-0">
                         This module has <strong class="text-brand">${existingCount}</strong> existing question(s).<br>
                         Select a question from the <strong class="text-brand">Workspace Index</strong> on the left to edit it,<br>
                         or click <strong class="text-brand">Add Another Question</strong> below to create a new one.
@@ -77,15 +77,15 @@ export function updateBuilderGridState() {
             placeholder.remove();
         }
     }
-    
+
     // Update the counter badge
     const badge = document.getElementById('builderActiveCountBadge');
     if (badge) {
         badge.textContent = blockCount === 1 ? '1 question' : `${blockCount} questions`;
         if (blockCount === 0) {
-            badge.className = "bg-slate-100 border border-slate-200 text-slate-500 font-bold px-3 py-1 text-xs rounded-full";
+            badge.className = "bg-slate-100 border border-slate-200 text-slate-500 font-bold px-3 py-1 text-sm rounded-full";
         } else {
-            badge.className = "bg-[var(--color-brand-soft)] border border-brand/20 text-brand font-bold px-3 py-1 text-xs rounded-full";
+            badge.className = "bg-[var(--color-brand-soft)] border border-brand/20 text-brand font-bold px-3 py-1 text-sm rounded-full";
         }
     }
 
@@ -120,17 +120,17 @@ export function updateBuilderAdaptiveIrtBadge() {
 
         if (section.adaptive_irt.meets_target) {
             badge.textContent = `M2 IRT Δb: ${prefix}${diff.toFixed(2)}b (Optimal)`;
-            badge.className = 'bg-emerald-50 text-emerald-700 ring-1 ring-inset ring-emerald-600/20 font-bold px-3 py-1 text-xs rounded-full';
+            badge.className = 'bg-emerald-50 text-emerald-700 ring-1 ring-inset ring-emerald-600/20 font-bold px-3 py-1 text-sm rounded-full';
         } else {
             badge.textContent = `M2 IRT Δb: ${prefix}${diff.toFixed(2)}b (<0.50)`;
-            badge.className = 'bg-amber-50 text-amber-700 ring-1 ring-inset ring-amber-600/20 font-bold px-3 py-1 text-xs rounded-full';
+            badge.className = 'bg-amber-50 text-amber-700 ring-1 ring-inset ring-amber-600/20 font-bold px-3 py-1 text-sm rounded-full';
         }
     } else {
         const easyTxt = section.adaptive_irt.easy_mean !== null ? section.adaptive_irt.easy_mean : 'None';
         const hardTxt = section.adaptive_irt.hard_mean !== null ? section.adaptive_irt.hard_mean : 'None';
         badge.title = `Easy: ${easyTxt} | Hard: ${hardTxt}`;
         badge.textContent = 'M2 IRT Δb: Pending items';
-        badge.className = 'bg-slate-100 text-slate-500 ring-1 ring-inset ring-slate-200 font-medium px-3 py-1 text-xs rounded-full';
+        badge.className = 'bg-slate-100 text-slate-500 ring-1 ring-inset ring-slate-200 font-medium px-3 py-1 text-sm rounded-full';
     }
 }
 
@@ -163,7 +163,7 @@ export function setupBlockBindings(block) {
     // Bind other changes
     block.querySelectorAll('input, select, textarea').forEach(el => {
         if (el.classList.contains('builder-stem') || el.classList.contains('builder-passage')) return;
-        
+
         const handleChange = () => {
             debouncedUpdateLivePreview(block);
             triggerBuilderAutoSave();
@@ -171,7 +171,7 @@ export function setupBlockBindings(block) {
                 updateSidebarNavigator();
             }
         };
-        
+
         el.addEventListener('input', handleChange);
         el.addEventListener('change', handleChange);
     });
@@ -275,7 +275,7 @@ export async function renderLivePreviewCard(block) {
         const sprVal = escapeHtml(block.querySelector('.builder-spr-answers').value.trim()) || '______';
         questionBodyHtml = `
             <div class="answer-input-container p-3.5 bg-amber-50/30 rounded-lg mt-3.5 border border-amber-200">
-                <label class="block mb-2 font-bold text-amber-800 text-[10px] uppercase tracking-wider">${icon('pencil-fill', 'w-4 h-4')} Student Produced Response:</label>
+                <label class="block mb-2 font-bold text-amber-800 text-sm uppercase tracking-wider">${icon('pencil-fill', 'w-4 h-4')} Student Produced Response:</label>
                 <div class="w-full max-w-[140px] px-3 py-1.5 rounded-lg border border-amber-200 bg-white font-mono text-center text-base text-amber-700 tracking-wider">
                     ${sprVal}
                 </div>
@@ -287,7 +287,7 @@ export async function renderLivePreviewCard(block) {
     if (explanationValue) {
         explanationHtml = `
             <div class="explanation-preview p-3.5 mt-3 bg-slate-50 rounded-lg border border-slate-200">
-                <strong class="text-slate-700 font-bold uppercase text-[10px] tracking-wider block mb-1">Explanation</strong>
+                <strong class="text-slate-700 font-bold uppercase text-sm tracking-wider block mb-1">Explanation</strong>
                 <div class="question-content">${rendered.explanation || ''}</div>
             </div>
         `;
@@ -295,7 +295,7 @@ export async function renderLivePreviewCard(block) {
 
     previewCard.innerHTML = `
         <div class="bg-slate-50 px-4 py-2.5 border-b border-slate-200 flex justify-between items-center">
-            <span class="font-bold text-xs text-brand">${icon('file-earmark-text', 'w-4 h-4')} Live Preview Q#${qNum}</span>
+            <span class="font-bold text-sm text-brand">${icon('file-earmark-text', 'w-4 h-4')} Live Preview Q#${qNum}</span>
             <span class="bg-slate-200 text-slate-600 font-mono text-[9px] px-2 py-0.5 rounded-md uppercase tracking-wider">${qType === 'multiple_choice' ? 'MCQ' : 'SPR'}</span>
         </div>
         <div class="p-4 space-y-3.5">
@@ -330,21 +330,21 @@ export function syncLivePreviewScroll(block) {
 export function highlightSidebarItem(block) {
     const navigator = document.getElementById('builderSidebarNavigator');
     if (!navigator) return;
-    
+
     navigator.querySelectorAll('.list-group-item').forEach(el => {
         el.classList.remove('border-brand/50', 'bg-[var(--color-brand-soft)]');
     });
 
     const qId = block.dataset.questionId;
     const index = block.dataset.index;
-    
+
     let targetItem = null;
     if (qId) {
         targetItem = navigator.querySelector(`[data-nav-question-id="${qId}"]`);
     } else {
         targetItem = navigator.querySelector(`[data-nav-index="${index}"]`);
     }
-    
+
     if (targetItem) {
         targetItem.classList.add('border-brand/50', 'bg-[var(--color-brand-soft)]');
         targetItem.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
@@ -383,7 +383,7 @@ export function refreshQuestionBlockNumbers() {
         const titleEl = block.querySelector('.text-sm.font-extrabold.text-white') || block.querySelector('.text-secondary') || block.querySelector('.text-sm.font-bold.text-slate-800');
         if (titleEl) {
             if (qId) {
-                titleEl.innerHTML = `${icon('question-circle', 'w-4 h-4 text-brand')} Question #${qNum} <span class="bg-[var(--color-brand-soft)] border border-brand/20 text-brand font-bold px-1.5 py-0.5 text-[10px] rounded uppercase ml-2">Existing ID: ${qId}</span>`;
+                titleEl.innerHTML = `${icon('question-circle', 'w-4 h-4 text-brand')} Question #${qNum} <span class="bg-[var(--color-brand-soft)] border border-brand/20 text-brand font-bold px-1.5 py-0.5 text-sm rounded uppercase ml-2">Existing ID: ${qId}</span>`;
             } else {
                 titleEl.innerHTML = `${icon('question-circle', 'w-4 h-4 text-brand')} Question #${qNum}`;
             }
@@ -468,7 +468,7 @@ export function clearUnchangedQuestions() {
         const drawer = document.getElementById('builderLivePreviewDrawer');
         if (drawer && drawer.querySelectorAll('[data-preview-index]').length === 0) {
             drawer.innerHTML = `
-                <div class="text-slate-400 text-center py-12 text-xs font-medium">
+                <div class="text-slate-500 text-center py-12 text-sm font-medium">
                     ${icon('file-earmark-richtext', 'w-9 h-9 block mb-2 text-slate-350')}
                     Live compilation of STEM and formulas will appear here in real-time
                 </div>
@@ -489,7 +489,7 @@ export function updateSidebarNavigator() {
 
     if (existingQs.length === 0 && blocks.length === 0) {
         navigator.innerHTML = `
-            <div class="text-slate-400 text-center py-8 text-xs font-medium">
+            <div class="text-slate-500 text-center py-8 text-sm font-medium">
                 ${icon('layers', 'w-6 h-6 block mb-2 text-slate-350')}
                 No questions. Add a question to start.
             </div>
@@ -503,7 +503,7 @@ export function updateSidebarNavigator() {
     // Create a container for existing questions
     if (existingQs.length > 0) {
         const existingHeader = document.createElement('div');
-        existingHeader.className = "text-[10px] font-bold text-slate-500 uppercase tracking-wider px-2 py-1 mb-1.5 flex justify-between items-center";
+        existingHeader.className = "text-sm font-bold text-slate-500 uppercase tracking-wider px-2 py-1 mb-1.5 flex justify-between items-center";
         existingHeader.innerHTML = `<span>Module Questions (${existingQs.length})</span>`;
         navigator.appendChild(existingHeader);
 
@@ -516,7 +516,7 @@ export function updateSidebarNavigator() {
     const newBlocks = [...blocks].filter(b => !b.dataset.questionId);
     if (newBlocks.length > 0) {
         const draftHeader = document.createElement('div');
-        draftHeader.className = "text-[10px] font-bold text-slate-500 uppercase tracking-wider px-2 py-1 mt-3 mb-1.5";
+        draftHeader.className = "text-sm font-bold text-slate-500 uppercase tracking-wider px-2 py-1 mt-3 mb-1.5";
         draftHeader.textContent = `New Drafts (${newBlocks.length})`;
         navigator.appendChild(draftHeader);
 
@@ -560,15 +560,15 @@ function buildExistingQuestionNavItem(q, i, navigator) {
 
     item.innerHTML = `
         <div class="flex items-center justify-between gap-2">
-            <span class="font-bold text-xs ${isLoaded ? 'text-brand' : 'text-slate-700'}">
+            <span class="font-bold text-sm ${isLoaded ? 'text-brand' : 'text-slate-700'}">
                 Q#${q.question_number || (i + 1)}
                 <span class="font-bold px-1 py-0.5 text-[8px] rounded uppercase ${badgeBg} ${badgeText}">
                     ${isLoaded ? 'Editing' : 'Stored'}
                 </span>
             </span>
-            <span class="text-[9px] font-mono text-slate-400">ID: ${q.id}</span>
+            <span class="text-[9px] font-mono text-slate-500">ID: ${q.id}</span>
         </div>
-        <div class="text-[10px] ${isLoaded ? 'text-brand/80' : 'text-slate-500'} truncate mt-0.5" title="${escapeHtml(stemText || '(Empty stem)')}">
+        <div class="text-sm ${isLoaded ? 'text-brand/80' : 'text-slate-500'} truncate mt-0.5" title="${escapeHtml(stemText || '(Empty stem)')}">
             ${snippet || '(Empty stem)'}
         </div>
         <div class="flex items-center justify-between gap-1 mt-1">
@@ -587,7 +587,7 @@ function buildExistingQuestionNavItem(q, i, navigator) {
             item.classList.add('border-brand/50', 'bg-[var(--color-brand-soft)]');
         } else {
             item.innerHTML = `
-                <div class="text-slate-500 text-center py-2 text-xs font-medium">
+                <div class="text-slate-500 text-center py-2 text-sm font-medium">
                     <div class="animate-spin inline-block w-4 h-4 border-2 border-brand border-t-transparent rounded-full mr-2 align-middle"></div>
                     <span class="align-middle">Loading details...</span>
                 </div>
@@ -623,13 +623,13 @@ function buildDraftNavItem(block, i, existingCount, navigator) {
 
     item.innerHTML = `
         <div class="flex items-center justify-between gap-2">
-            <span class="font-bold text-xs text-brand text-brand">
+            <span class="font-bold text-sm text-brand text-brand">
                 Q#${existingCount + i + 1}
                 <span class="bg-[var(--color-brand-soft)] border border-brand/20 text-brand font-bold px-1 py-0.5 text-[8px] rounded uppercase">Draft</span>
             </span>
             <span class="badge bg-slate-100 border border-slate-250 text-slate-600 font-mono text-[8px] uppercase">${qType}</span>
         </div>
-        <div class="text-[10px] text-slate-500 truncate mt-0.5" title="${escapeHtml(stemText || '(Empty stem)')}">
+        <div class="text-sm text-slate-500 truncate mt-0.5" title="${escapeHtml(stemText || '(Empty stem)')}">
             ${snippet || '(Empty stem)'}
         </div>
         <div class="flex items-center justify-between gap-1 mt-1">
@@ -657,7 +657,7 @@ export function addBuilderBlock() {
             tsControl.classList.add('ring-2', 'ring-rose-500', 'border-rose-500', 'animate-shake');
             tsControl.style.borderColor = '#ef4444';
             tsControl.style.boxShadow = '0 0 0 2px rgba(239, 68, 68, 0.2)';
-            
+
             setTimeout(() => {
                 tsControl.classList.remove('animate-shake');
             }, 600);
@@ -783,7 +783,7 @@ function bindRemoveBlockButton(block) {
         const drawer = document.getElementById('builderLivePreviewDrawer');
         if (drawer && drawer.querySelectorAll('[data-preview-index]').length === 0) {
             drawer.innerHTML = `
-                <div class="text-slate-400 text-center py-12 text-xs font-medium">
+                <div class="text-slate-500 text-center py-12 text-sm font-medium">
                     ${icon('file-earmark-richtext', 'w-9 h-9 block mb-2 text-slate-350')}
                     Live compilation of STEM and formulas will appear here in real-time
                 </div>
@@ -807,31 +807,31 @@ export function clearBuilderWorkspace() {
             delete builderEditors[key];
         }
     });
-    
+
     // Clear containers
     const container = document.getElementById('builderBlocksContainer');
     if (container) container.innerHTML = '';
-    
+
     const previewDrawer = document.getElementById('builderLivePreviewDrawer');
     if (previewDrawer) {
         previewDrawer.innerHTML = `
-            <div class="text-slate-400 text-center py-12 text-xs font-medium">
+            <div class="text-slate-500 text-center py-12 text-sm font-medium">
                 ${icon('file-earmark-richtext', 'w-9 h-9 block mb-2 text-slate-350')}
                 Live compilation of STEM and formulas will appear here in real-time
             </div>
         `;
     }
-    
+
     // Reset block count
     resetBuilderBlockCount();
-    
+
     // Clear localStorage draft
     localStorage.removeItem('sat_builder_draft');
-    
+
     // Clear existing questions list
     window.__builderExistingQuestions = [];
     window.__builderLoadedQuestionsOriginal = {};
-    
+
     // Update navigator
     updateSidebarNavigator();
     updateBuilderGridState();
@@ -841,13 +841,13 @@ export async function fetchModuleQuestions(moduleId) {
     const navigator = document.getElementById('builderSidebarNavigator');
     if (navigator) {
         navigator.innerHTML = `
-            <div class="text-slate-500 text-center py-8 text-xs font-medium">
+            <div class="text-slate-500 text-center py-8 text-sm font-medium">
                 <div class="animate-spin inline-block w-5 h-5 border-2 border-brand border-t-transparent rounded-full mb-2"></div>
                 <div>Fetching existing questions...</div>
             </div>
         `;
     }
-    
+
     try {
         let url;
         try {
@@ -865,13 +865,13 @@ export async function fetchModuleQuestions(moduleId) {
         if (!response.ok) throw new Error('Failed to fetch module questions');
         const json = await response.json();
         window.__builderExistingQuestions = json.data || [];
-        
+
         // Auto set Start Position to next number
         const startPosInput = document.getElementById('builderStartPosition');
         if (startPosInput) {
             startPosInput.value = (window.__builderExistingQuestions.length + 1);
         }
-        
+
         updateSidebarNavigator();
     } catch (err) {
         console.error(err);
@@ -915,14 +915,14 @@ export async function loadExistingQuestionIntoWorkspace(qId, autoScroll = true) 
         const div = document.createElement('div');
         div.innerHTML = html;
         const block = div.firstElementChild;
-        
+
         // Set the ID attribute so we know it's an existing question
         block.dataset.questionId = question.id;
-        
+
         // Update the display title
         const titleEl = block.querySelector('.text-sm.font-extrabold.text-white');
         if (titleEl) {
-            titleEl.innerHTML = `${icon('question-circle', 'w-4 h-4 text-amber-400')} Question #${builderBlockCount} <span class="bg-brand/20 text-brand font-extrabold px-1.5 py-0.5 text-[10px] rounded uppercase ml-2">Existing ID: ${question.id}</span>`;
+            titleEl.innerHTML = `${icon('question-circle', 'w-4 h-4 text-amber-400')} Question #${builderBlockCount} <span class="bg-brand/20 text-brand font-extrabold px-1.5 py-0.5 text-sm rounded uppercase ml-2">Existing ID: ${question.id}</span>`;
         }
 
         container.appendChild(block);
@@ -965,7 +965,7 @@ export async function loadExistingQuestionIntoWorkspace(qId, autoScroll = true) 
         if (type === 'reading_writing') {
             passageContainer.classList.remove('hidden');
             const pContent = question.passage_content || (question.passage ? (typeof question.passage === 'string' ? question.passage : question.passage.content) : '');
-            
+
             builderEditors[`passage_${builderBlockCount}`] = new EasyMDE({
                 element: passageTextarea,
                 placeholder: "Enter passage content...",
@@ -991,7 +991,7 @@ export async function loadExistingQuestionIntoWorkspace(qId, autoScroll = true) 
         if (question.question_type === 'multiple_choice') {
             mcqRadio.checked = true;
             sprRadio.checked = false;
-            
+
             const rawChoices = question.answer_choices || question.answerChoices || [];
             rawChoices.forEach(choice => {
                 const contentInput = block.querySelector(`.builder-choice-content[data-label="${choice.label}"]`);
@@ -1004,7 +1004,7 @@ export async function loadExistingQuestionIntoWorkspace(qId, autoScroll = true) 
         } else {
             mcqRadio.checked = false;
             sprRadio.checked = true;
-            
+
             const answers = (question.spr_correct_answers || question.sprCorrectAnswers || []).map(a => a.answer).join(', ');
             block.querySelector('.builder-spr-answers').value = answers || '';
         }
@@ -1276,7 +1276,7 @@ export function saveBuilderDraft() {
     const moduleId = getTomSelectValue('builderModuleId');
     const startPos = document.getElementById('builderStartPosition')?.value || '1';
     const blocks = document.querySelectorAll('.builder-block');
-    
+
     // If no module is selected and no blocks, just remove draft
     if (!moduleId && blocks.length === 0) {
         localStorage.removeItem('sat_builder_draft');
@@ -1343,7 +1343,7 @@ export function saveBuilderDraft() {
             timeEl.textContent = timeStr;
         }
         indicator.classList.remove('opacity-0');
-        
+
         // Fade out after 3 seconds
         if (window.__autoSaveFadeTimeout) clearTimeout(window.__autoSaveFadeTimeout);
         window.__autoSaveFadeTimeout = setTimeout(() => {
@@ -1404,7 +1404,7 @@ export async function restoreBuilderDraft() {
                 block.dataset.questionId = bData.id;
                 const titleEl = block.querySelector('.text-sm.font-extrabold.text-white');
                 if (titleEl) {
-                    titleEl.innerHTML = `${icon('question-circle', 'w-4 h-4 text-amber-400')} Question #${builderBlockCount} <span class="bg-brand/20 text-brand font-extrabold px-1.5 py-0.5 text-[10px] rounded uppercase ml-2">Existing ID: ${bData.id}</span>`;
+                    titleEl.innerHTML = `${icon('question-circle', 'w-4 h-4 text-amber-400')} Question #${builderBlockCount} <span class="bg-brand/20 text-brand font-extrabold px-1.5 py-0.5 text-sm rounded uppercase ml-2">Existing ID: ${bData.id}</span>`;
                 }
             }
 
@@ -1468,13 +1468,13 @@ export async function restoreBuilderDraft() {
             if (bData.question_type === 'multiple_choice') {
                 mcqRadio.checked = true;
                 sprRadio.checked = false;
-                
+
                 const rawChoices = bData.choices || [];
                 rawChoices.forEach(choice => {
                     const contentInput = block.querySelector(`.builder-choice-content[data-label="${choice.label}"]`);
                     if (contentInput) contentInput.value = choice.content || '';
                 });
-                
+
                 if (bData.correct_choice) {
                     const correctRadio = block.querySelector(`.builder-correct-radio[value="${bData.correct_choice}"]`);
                     if (correctRadio) correctRadio.checked = true;
@@ -1500,7 +1500,7 @@ export async function restoreBuilderDraft() {
                 const drawer = document.getElementById('builderLivePreviewDrawer');
                 if (drawer && drawer.querySelectorAll('[data-preview-index]').length === 0) {
                     drawer.innerHTML = `
-                        <div class="text-slate-500 text-center py-12 text-xs font-medium">
+                        <div class="text-slate-500 text-center py-12 text-sm font-medium">
                             ${icon('file-earmark-richtext', 'w-9 h-9 block mb-2 text-slate-655')}
                             Live compilation of STEM and formulas will appear here in real-time
                         </div>

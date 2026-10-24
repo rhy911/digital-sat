@@ -113,7 +113,7 @@ class NavRail
     /**
      * Icon-rail items for the student shell.
      *
-     * @return array<int, array{key: string, route: string, label: string, icon: string, active?: bool}>
+     * @return array<int, array{key: string, route: string, label: string, icon: string, group?: string, active?: bool}>
      */
     public static function student(?string $activeKey = null): array
     {
@@ -121,38 +121,58 @@ class NavRail
             [
                 'key' => 'home',
                 'route' => route('home'),
-                'label' => __('classroom.nav_dashboard'),
+                'label' => 'Home',
+                'group' => 'Home',
                 'icon' => '<svg viewBox=\'0 0 24 24\' fill=\'none\' stroke=\'currentColor\' stroke-width=\'1.8\'><path d=\'m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z\'/><polyline points=\'9 22 9 12 15 12 15 22\'/></svg>',
+            ],
+            [
+                'key' => 'practice',
+                'route' => route('home.practice'),
+                'label' => 'Test Library',
+                'group' => 'Study',
+                'icon' => '<svg viewBox=\'0 0 24 24\' fill=\'none\' stroke=\'currentColor\' stroke-width=\'1.8\'><path d=\'M12 6.5c-1.6-1.2-3.7-1.8-6-1.8-.7 0-1.4.05-2 .15v13.5c.6-.1 1.3-.15 2-.15 2.3 0 4.4.6 6 1.8m0-13.5c1.6-1.2 3.7-1.8 6-1.8.7 0 1.4.05 2 .15v13.5c-.6-.1-1.3-.15-2-.15-2.3 0-4.4.6-6 1.8m0-13.5v13.5\' stroke-linecap=\'round\' stroke-linejoin=\'round\' /></svg>',
             ],
             [
                 'key' => 'classes',
                 'route' => route('student.classes.index'),
-                'label' => __('classroom.nav_my_classes'),
+                'label' => 'Classes',
+                'group' => 'Study',
                 'icon' => '<svg viewBox=\'0 0 24 24\' fill=\'none\' stroke=\'currentColor\' stroke-width=\'1.8\'><rect x=\'3.5\' y=\'5\' width=\'17\' height=\'14\' rx=\'2\' /><path d=\'M3.5 9.5h17M8 5v-1M16 5v-1\' stroke-linecap=\'round\' /></svg>',
             ],
             [
                 'key' => 'assignments',
                 'route' => route('student.assignments.index'),
                 'label' => 'Assignments',
+                'group' => 'Study',
                 'icon' => '<svg viewBox=\'0 0 24 24\' fill=\'none\' stroke=\'currentColor\' stroke-width=\'1.8\'><rect x=\'3\' y=\'4\' width=\'18\' height=\'16\' rx=\'2\' /><path d=\'M7 8h10M7 12h10M7 16h6\' stroke-linecap=\'round\' /></svg>',
-            ],
-            [
-                'key' => 'progress',
-                'route' => route('student.progress'),
-                'label' => __('classroom.nav_progress'),
-                'icon' => '<svg viewBox=\'0 0 24 24\' fill=\'none\' stroke=\'currentColor\' stroke-width=\'1.8\'><path d=\'M4 19V5M4 19h16M8 15l3-4 3 3 5-7\' stroke-linecap=\'round\' stroke-linejoin=\'round\' /></svg>',
-            ],
-            [
-                'key' => 'practice',
-                'route' => route('home.practice'),
-                'label' => __('classroom.nav_practice'),
-                'icon' => '<svg viewBox=\'0 0 24 24\' fill=\'none\' stroke=\'currentColor\' stroke-width=\'1.8\'><path d=\'M12 6.5c-1.6-1.2-3.7-1.8-6-1.8-.7 0-1.4.05-2 .15v13.5c.6-.1 1.3-.15 2-.15 2.3 0 4.4.6 6 1.8m0-13.5c1.6-1.2 3.7-1.8 6-1.8.7 0 1.4.05 2 .15v13.5c-.6-.1-1.3-.15-2-.15-2.3 0-4.4.6-6 1.8m0-13.5v13.5\' stroke-linecap=\'round\' stroke-linejoin=\'round\' /></svg>',
             ],
             [
                 'key' => 'scores',
                 'route' => route('student.scores.index'),
-                'label' => __('classroom.nav_scores'),
+                'label' => 'Scores',
+                'group' => 'Progress',
                 'icon' => '<svg viewBox=\'0 0 24 24\' fill=\'none\' stroke=\'currentColor\' stroke-width=\'1.8\'><line x1=\'18\' y1=\'20\' x2=\'18\' y2=\'10\'/><line x1=\'12\' y1=\'20\' x2=\'12\' y2=\'4\'/><line x1=\'6\' y1=\'20\' x2=\'6\' y2=\'14\'/></svg>',
+            ],
+            [
+                'key' => 'progress',
+                'route' => route('student.progress'),
+                'label' => 'Progress',
+                'group' => 'Progress',
+                'icon' => '<svg viewBox=\'0 0 24 24\' fill=\'none\' stroke=\'currentColor\' stroke-width=\'1.8\'><path d=\'M4 19V5M4 19h16M8 15l3-4 3 3 5-7\' stroke-linecap=\'round\' stroke-linejoin=\'round\' /></svg>',
+            ],
+            [
+                'key' => 'blog',
+                'route' => route('blog.index'),
+                'label' => 'Blog',
+                'group' => 'Community',
+                'icon' => '<svg viewBox=\'0 0 24 24\' fill=\'none\' stroke=\'currentColor\' stroke-width=\'1.8\'><path d=\'M4 19.5A2.5 2.5 0 0 1 6.5 17H20\' stroke-linecap=\'round\' stroke-linejoin=\'round\'/><path d=\'M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z\' stroke-linejoin=\'round\'/></svg>',
+            ],
+            [
+                'key' => 'forum',
+                'route' => route('forum.index'),
+                'label' => 'Forum',
+                'group' => 'Community',
+                'icon' => '<svg viewBox=\'0 0 24 24\' fill=\'none\' stroke=\'currentColor\' stroke-width=\'1.8\'><path d=\'M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z\' stroke-linecap=\'round\' stroke-linejoin=\'round\'/></svg>',
             ],
         ], $activeKey);
     }

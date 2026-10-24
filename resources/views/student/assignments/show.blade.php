@@ -1,4 +1,4 @@
-<x-layouts.student :user="auth()->user()" :title="$assignment ? $assignment->title : 'Assignments'" header-type="none">
+<x-layouts.student :user="auth()->user()" :title="$assignment ? $assignment->title : 'Assignments'" header-type="none" ui="product">
     @push('styles')
         @vite(['resources/css/classroom-workspace.css'])
     @endpush
@@ -152,10 +152,10 @@
                                 </a>
                             @endif
                             <div class="flex items-center gap-3 flex-wrap">
-                                <h2 class="text-2xl font-extrabold text-slate-900 m-0">{{ $assignment->title }}</h2>
+                                <h2 class="font-extrabold text-slate-900 m-0">{{ $assignment->title }}</h2>
                                 <span class="status-pill {{ $pillClass }}"><span class="d"></span>{{ $state }}</span>
                             </div>
-                            <div class="dh-desc text-slate-500 text-xs sm:text-sm mt-1">
+                            <div class="dh-desc mt-1">
                                 {{ $assignment->test->title }}{{ $assignment->sectionSuffix() }} &middot; Classroom: <strong>{{ $assignment->classroom->name }}</strong>
                             </div>
                         </div>
@@ -163,27 +163,27 @@
 
                     <!-- OVERVIEW DETAILS CARD -->
                     <div class="bg-slate-50/70 border border-slate-200 rounded-xl p-4 sm:p-5 mb-5">
-                        <div class="grid grid-cols-2 sm:grid-cols-4 gap-4 text-xs">
+                        <div class="grid grid-cols-2 sm:grid-cols-4 gap-4">
                             <div>
-                                <div class="text-3xs uppercase font-bold text-slate-500 tracking-wider mb-1">Available</div>
+                                <div class="uppercase font-bold text-slate-500 tracking-wider mb-1">Available</div>
                                 <div class="font-semibold text-slate-800">
                                     {{ $assignment->available_at ? $assignment->available_at->format('M j, Y g:i A') : 'Immediately' }}
                                 </div>
                             </div>
                             <div>
-                                <div class="text-3xs uppercase font-bold text-slate-500 tracking-wider mb-1">Due Date</div>
+                                <div class="uppercase font-bold text-slate-500 tracking-wider mb-1">Due Date</div>
                                 <div class="font-semibold text-slate-800">
                                     {{ $assignment->due_at ? $assignment->due_at->format('M j, Y g:i A') : 'No deadline' }}
                                 </div>
                             </div>
                             <div>
-                                <div class="text-3xs uppercase font-bold text-slate-500 tracking-wider mb-1">Test Scope</div>
+                                <div class="uppercase font-bold text-slate-500 tracking-wider mb-1">Test Scope</div>
                                 <div class="font-semibold text-slate-800">
                                     {{ $assignment->isSectionAssignment() ? $assignment->sectionLabel() . ' Only' : 'Full Test' }}
                                 </div>
                             </div>
                             <div>
-                                <div class="text-3xs uppercase font-bold text-slate-500 tracking-wider mb-1">Clock Mode</div>
+                                <div class="uppercase font-bold text-slate-500 tracking-wider mb-1">Clock Mode</div>
                                 <div class="font-semibold text-slate-800">
                                     {{ $assignment->isTimedExam() ? 'Standard Timed' : 'Flexible Clock' }}
                                 </div>
@@ -210,8 +210,8 @@
 
                     <!-- ACTIONS SECTION -->
                     <div class="settings-card my-5 flex flex-col gap-3">
-                        <h3 class="settings-title text-sm font-bold text-slate-900">Start Practice</h3>
-                        <p class="text-xs sm:text-sm text-slate-600">Ensure you have a stable internet connection before launching the test. The test will open in our adaptive browser engine.</p>
+                        <h3 class="settings-title font-bold text-slate-900">Start Practice</h3>
+                        <p class="text-slate-600">Ensure you have a stable internet connection before launching the test. The test will open in our adaptive browser engine.</p>
 
                         @if ($canStart)
                             <div>
@@ -222,7 +222,7 @@
                                     actionRoute: '{{ route('student.assignments.start', $assignment) }}',
                                     inProgress: {{ $inProgress ? 'true' : 'false' }},
                                     attemptInfo: 'Attempt {{ $inProgress ? $used : ($used + 1) }} of {{ $maxAllowed }}'
-                                })" class="btn-sm-primary btn-px-16 px-4 py-2 text-xs sm:text-sm font-semibold rounded-lg bg-blue-700 hover:bg-blue-800 text-white cursor-pointer transition shadow-xs">
+                                })" class="btn-sm-primary btn-px-16 font-semibold cursor-pointer transition">
                                     {{ $inProgress ? 'Resume attempt' : 'Start attempt ' . ($used + 1) }}
                                 </button>
                             </div>
@@ -237,8 +237,8 @@
                     <!-- INSTRUCTIONS SECTION -->
                     @if ($assignment->instructions)
                         <div class="settings-card mb-5">
-                            <h3 class="settings-title text-sm font-bold text-slate-900 mb-1.5">Instructions from teacher</h3>
-                            <p class="text-xs sm:text-sm text-slate-700 leading-relaxed whitespace-pre-line">{{ $assignment->instructions }}</p>
+                            <h3 class="settings-title font-bold text-slate-900 mb-1.5">Instructions from teacher</h3>
+                            <p class="text-slate-700 leading-relaxed whitespace-pre-line">{{ $assignment->instructions }}</p>
                         </div>
                     @endif
 

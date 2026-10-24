@@ -49,6 +49,7 @@ class TeacherScoreAccessTest extends TestCase
         // Teacher accesses score show page directly
         $response = $this->actingAs($teacher)->get(route('student.scores.show', $userTest));
         $response->assertOk()
+            ->assertSee('product-ui')
             ->assertSee($student->name)
             ->assertSee('Sample SAT');
 

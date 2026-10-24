@@ -51,35 +51,35 @@ export function renderQuestionsTable(questions) {
     if (!tbody) {
         return;
     }
-    
+
     currentQuestionsRenderId++;
     const renderId = currentQuestionsRenderId;
-    
+
     if (!questions.length) {
         tbody.innerHTML = '<tr>'
             + '<td colspan="8" class="px-5 py-12 text-center text-slate-500">'
             + '<div class="flex flex-col items-center justify-center">'
             + '<div class="w-12 h-12 rounded-full bg-slate-900/40 border border-slate-800/80 flex items-center justify-center mb-3">'
-            + icon('database-fill-x', 'w-6 h-6 text-slate-400')
+            + icon('database-fill-x', 'w-6 h-6 text-slate-500')
             + '</div>'
-            + '<p class="text-sm font-semibold text-slate-400">No questions found</p>'
-            + '<p class="text-xs text-slate-500 mt-1">Populate your bank by importing items above!</p>'
+            + '<p class="text-sm font-semibold text-slate-500">No questions found</p>'
+            + '<p class="text-sm text-slate-500 mt-1">Populate your bank by importing items above!</p>'
             + '</div>'
             + '</td>'
             + '</tr>';
         return;
     }
-    
+
     tbody.innerHTML = '';
     let index = 0;
     const chunkSize = 20;
-    
+
     function renderChunk() {
         if (renderId !== currentQuestionsRenderId) return;
-        
+
         const chunk = questions.slice(index, index + chunkSize);
         if (!chunk.length) return;
-        
+
         const html = chunk.map(function (q) {
             const secBadge = q.section_type === 'reading_writing'
                 ? '<span class="status-chip status-chip-shared">R&amp;W</span>'
@@ -111,7 +111,7 @@ export function renderQuestionsTable(questions) {
             let actionButtons = '';
             if (isOwner) {
                 actionButtons = '<div class="actions-dropdown">'
-                    + '<button type="button" class="px-2.5 py-1.5 text-xs font-bold rounded-lg border border-slate-200 bg-white text-slate-700 cursor-pointer hover:bg-slate-50 flex items-center gap-1" data-dropdown-trigger="true" aria-expanded="false" aria-label="Toggle actions menu">'
+                    + '<button type="button" class="px-2.5 py-1.5 text-sm font-bold rounded-lg border border-slate-200 bg-white text-slate-700 cursor-pointer hover:bg-slate-50 flex items-center gap-1" data-dropdown-trigger="true" aria-expanded="false" aria-label="Toggle actions menu">'
                     + 'Actions ' + icon('chevron-down', 'w-2.5 h-2.5')
                     + '</button>'
                     + '<div class="dropdown-menu hidden">'
@@ -120,7 +120,7 @@ export function renderQuestionsTable(questions) {
                     + '</div>'
                     + '</div>';
             } else {
-                actionButtons = '<button type="button" class="px-2.5 py-1.5 border border-slate-200 text-slate-600 bg-white hover:bg-slate-50 rounded-lg text-xs font-bold flex items-center gap-1 edit-question-btn cursor-pointer" data-id="' + escapeHtml(q.id) + '" aria-label="View question details">'
+                actionButtons = '<button type="button" class="px-2.5 py-1.5 border border-slate-200 text-slate-600 bg-white hover:bg-slate-50 rounded-lg text-sm font-bold flex items-center gap-1 edit-question-btn cursor-pointer" data-id="' + escapeHtml(q.id) + '" aria-label="View question details">'
                     + icon('eye', 'w-3 h-3 leading-none') + ' View'
                     + '</button>';
             }
@@ -128,7 +128,7 @@ export function renderQuestionsTable(questions) {
             const rowClass = isOwner ? '' : 'row-shared';
 
             return '<tr class="' + rowClass + '">'
-                + '<td class="px-5 py-3.5 font-mono font-bold text-slate-400 text-center">' + escapeHtml(q.id) + '</td>'
+                + '<td class="px-5 py-3.5 font-mono font-bold text-slate-500 text-center">' + escapeHtml(q.id) + '</td>'
                 + '<td class="px-5 py-3.5 text-center">'
                 + '<div class="flex items-center justify-center gap-2">'
                 + '<span class="font-bold text-slate-700">' + qNum + '</span>'
@@ -138,7 +138,7 @@ export function renderQuestionsTable(questions) {
                 + '<td class="px-5 py-3.5 text-center">' + secBadge + '</td>'
                 + '<td class="px-5 py-3.5 text-slate-500 font-medium stem-column" title="' + escapeHtml(stem) + '">' + escapeHtml(snippet) + '</td>'
                 + '<td class="px-5 py-3.5 text-center">' + usageBadge + '</td>'
-                + '<td class="px-5 py-3.5"><span class="text-slate-600 font-semibold text-[11px] block truncate" title="' + escapeHtml(humanizeUnderscores(q.skill_domain || '')) + '">' + escapeHtml(humanizeUnderscores(q.skill_domain || '')) + '</span></td>'
+                + '<td class="px-5 py-3.5"><span class="text-slate-600 font-semibold text-sm block truncate" title="' + escapeHtml(humanizeUnderscores(q.skill_domain || '')) + '">' + escapeHtml(humanizeUnderscores(q.skill_domain || '')) + '</span></td>'
                 + '<td class="px-5 py-3.5 text-center">' + diffBadge + '</td>'
                 + '<td class="px-5 py-3.5 text-center">'
                 + '<div class="flex justify-center gap-1.5">'
@@ -147,15 +147,15 @@ export function renderQuestionsTable(questions) {
                 + '</td>'
                 + '</tr>';
         }).join('');
-        
+
         tbody.insertAdjacentHTML('beforeend', html);
         index += chunkSize;
-        
+
         if (index < questions.length) {
             requestAnimationFrame(() => setTimeout(renderChunk, 0));
         }
     }
-    
+
     renderChunk();
 }
 
@@ -172,10 +172,10 @@ export function renderQuestionsPagination(meta, refreshCallback) {
     const last = meta.last_page || 1;
     const total = meta.total || 0;
     let html = '<div class="flex flex-wrap justify-between items-center w-full gap-3 px-2">';
-    html += '<span class="text-xs font-bold text-slate-500">Page ' + cur + ' of ' + last + ' <span class="mx-1 text-slate-300">•</span> ' + total + ' questions</span>';
+    html += '<span class="text-sm font-bold text-slate-500">Page ' + cur + ' of ' + last + ' <span class="mx-1 text-slate-300">•</span> ' + total + ' questions</span>';
     html += '<div class="flex gap-2">';
-    html += '<button type="button" class="px-3 py-1.5 text-xs font-bold rounded-lg border border-slate-200 bg-white text-slate-700 hover:bg-slate-50 transition-all duration-150 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer" data-q-page="prev"' + (cur <= 1 ? ' disabled' : '') + '>Previous</button>';
-    html += '<button type="button" class="px-3 py-1.5 text-xs font-bold rounded-lg border border-slate-200 bg-white text-slate-700 hover:bg-slate-50 transition-all duration-150 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer" data-q-page="next"' + (cur >= last ? ' disabled' : '') + '>Next</button>';
+    html += '<button type="button" class="px-3 py-1.5 text-sm font-bold rounded-lg border border-slate-200 bg-white text-slate-700 hover:bg-slate-50 transition-all duration-150 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer" data-q-page="prev"' + (cur <= 1 ? ' disabled' : '') + '>Previous</button>';
+    html += '<button type="button" class="px-3 py-1.5 text-sm font-bold rounded-lg border border-slate-200 bg-white text-slate-700 hover:bg-slate-50 transition-all duration-150 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer" data-q-page="next"' + (cur >= last ? ' disabled' : '') + '>Next</button>';
     html += '</div></div>';
     wrap.innerHTML = html;
 

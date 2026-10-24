@@ -3,7 +3,7 @@
     $candidateName = $attempt->guest_name ?: $attempt->user->name;
 @endphp
 
-<x-layouts.student :user="$user" title="{{ $candidateName }}" header-type="none">
+<x-layouts.student ui="product" body-class="antialiased teacher-workspace" :user="$user" title="{{ $candidateName }}" header-type="none">
     @push('styles')
         @vite([
             'resources/css/classroom-workspace.css',

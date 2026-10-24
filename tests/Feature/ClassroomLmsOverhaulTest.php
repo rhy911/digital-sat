@@ -157,6 +157,11 @@ class ClassroomLmsOverhaulTest extends TestCase
         $teacher = $this->teacher();
         $student = $this->student();
         $classroom = $this->classroom($teacher);
+        ClassroomMembership::create([
+            'classroom_id' => $classroom->id,
+            'student_id' => $student->id,
+            'status' => 'active',
+        ]);
         $test = $this->activeTest($teacher);
 
         $attempt = UserTest::create([
@@ -178,6 +183,30 @@ class ClassroomLmsOverhaulTest extends TestCase
             $attempt->fresh()->teacher_feedback
         );
         $this->assertEquals($teacher->id, $attempt->fresh()->feedback_by);
+    }
+
+    public function test_teacher_cannot_submit_feedback_on_student_outside_classroom(): void
+    {
+        $teacher = $this->teacher();
+        $otherStudent = $this->student();
+        $classroom = $this->classroom($teacher);
+        $test = $this->activeTest($teacher);
+
+        $attempt = UserTest::create([
+            'user_id' => $otherStudent->id,
+            'test_id' => $test->id,
+            'status' => 'completed',
+            'total_score' => 1100,
+            'attempt_number' => 1,
+        ]);
+
+        $this->actingAs($teacher)
+            ->post(route('teacher.classes.attempts.feedback', [$classroom, $attempt]), [
+                'teacher_feedback' => 'Unauthorized feedback attempt.',
+            ])
+            ->assertNotFound();
+
+        $this->assertNull($attempt->fresh()->teacher_feedback);
     }
 
     public function test_cohort_analytics_computes_empty_stats_gracefully(): void

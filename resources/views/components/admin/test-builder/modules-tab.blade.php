@@ -11,13 +11,13 @@
             <h5 class="font-bold text-slate-800 mb-0 text-sm">All modules</h5>
             <div class="flex items-center gap-4 flex-wrap md:flex-nowrap">
                 <button
-                    class="inline-flex min-h-10 items-center gap-2 rounded-lg bg-brand px-3 py-2 text-xs font-bold text-white hover:bg-brand-hover"
+                    class="inline-flex min-h-10 items-center gap-2 rounded-lg bg-[var(--ui-action-bg)] px-3 py-2 text-sm font-bold text-[var(--ui-action-fg)] hover:bg-[var(--ui-action-hover)]"
                     x-on:click="$dispatch('open-offcanvas', 'createModuleOffcanvas')"><x-ui.icon name="plus-lg"
                         class="w-4 h-4" aria-hidden="true" />Create module</button>
                 @if (auth()->user()->role === 'teacher')
                     <div class="flex items-center gap-2 bg-white px-3 py-1.5 rounded-lg border border-slate-200">
                         <label for="modulesShowSharedToggle"
-                            class="text-xs font-bold text-slate-600 cursor-pointer select-none">Show shared</label>
+                            class="text-sm font-bold text-slate-600 cursor-pointer select-none">Show shared</label>
                         <input type="checkbox" id="modulesShowSharedToggle"
                             class="w-4 h-4 text-brand border-slate-300 bg-white rounded cursor-pointer modules-show-shared-toggle">
                     </div>
@@ -32,8 +32,9 @@
                 </div>
             </div>
         </div>
-        <div class="overflow-x-auto">
-            <table class="teacher-data-table teacher-modules-table w-full text-left text-xs text-slate-600">
+        <p class="lg:hidden px-4 py-2 text-sm text-slate-600">Scroll horizontally to view all columns.</p>
+            <div class="overflow-x-auto" tabindex="0" role="region" aria-label="Modules table">
+            <table class="teacher-data-table teacher-modules-table w-full text-left text-sm text-slate-600">
                 <colgroup>
                     <col class="col-id">
 
@@ -113,7 +114,7 @@
                                 </span>
                             </td>
                             <td class="px-6 py-4">
-                                <span class="text-xs font-medium text-slate-600 truncate max-w-[110px] block"
+                                <span class="text-sm font-medium text-slate-600 truncate max-w-[110px] block"
                                     title="{{ $creatorName }}">{{ $creatorName }}</span>
                             </td>
                             <td class="px-6 py-4 text-center">
@@ -137,8 +138,8 @@
                             </td>
                             <td class="px-6 py-4 font-semibold text-slate-700 text-center">
                                 {{ $module->duration_minutes }}<span
-                                    class="text-[10px] ml-0.5 opacity-50 uppercase tracking-tighter">min</span></td>
-                            <td class="px-6 py-4 font-bold text-slate-750 text-xs text-center">
+                                    class="text-sm ml-0.5 opacity-50 uppercase tracking-tighter">min</span></td>
+                            <td class="px-6 py-4 font-bold text-slate-750 text-sm text-center">
                                 <span class="text-slate-900 font-extrabold">{{ $module->questions_count ?? 0 }}</span>
                                 <span class="text-slate-400 font-normal">/ {{ $module->total_questions }}</span>
                             </td>
@@ -146,7 +147,7 @@
                                 @if ($isOwner)
                                     <div class="actions-dropdown">
                                         <button type="button"
-                                            class="px-2.5 py-1.5 text-xs font-bold rounded-lg border border-slate-200 bg-white text-slate-700 cursor-pointer hover:bg-slate-50 flex items-center gap-1"
+                                            class="px-2.5 py-1.5 text-sm font-bold rounded-lg border border-slate-200 bg-white text-slate-700 cursor-pointer hover:bg-slate-50 flex items-center gap-1"
                                             data-dropdown-trigger="true" aria-expanded="false"
                                             aria-label="Toggle actions menu">
                                             Actions <x-ui.icon name="chevron-down" class="w-2.5 h-2.5" />
@@ -174,10 +175,10 @@
                                         <x-ui.icon name="inbox" class="w-8 h-8 text-slate-400" />
                                     </div>
                                     <h4 class="text-base font-extrabold text-slate-800">No modules found</h4>
-                                    <p class="text-xs text-slate-500 mt-1 max-w-xs mx-auto leading-relaxed">Create one
+                                    <p class="text-sm text-slate-500 mt-1 max-w-xs mx-auto leading-relaxed">Create one
                                         module, then link it to any section that should use it.</p>
                                     <button
-                                        class="mt-6 px-5 py-3 bg-brand hover:bg-brand-hover text-white font-semibold text-sm rounded-lg shadow-sm cursor-pointer"
+                                        class="mt-6 px-5 py-3 bg-[var(--ui-action-bg)] hover:bg-[var(--ui-action-hover)] text-[var(--ui-action-fg)] font-semibold text-sm rounded-lg shadow-sm cursor-pointer"
                                         x-on:click="$dispatch('open-offcanvas', 'createModuleOffcanvas')">
                                         Create module
                                     </button>
@@ -200,7 +201,7 @@
             @csrf
             <div>
                 <label for="moduleTest"
-                    class="text-xs font-extrabold text-slate-500 tracking-wider uppercase mb-2 block">Target Test <span
+                    class="text-sm font-extrabold text-slate-500 tracking-wider uppercase mb-2 block">Target Test <span
                         class="text-slate-500 font-normal normal-case">(Optional)</span></label>
                 <select
                     class="form-select tom-select w-full bg-white border border-slate-200 text-slate-800 text-sm placeholder-slate-400 hover:border-brand/40 focus:border-brand focus:ring-4 focus:ring-brand/10 focus:outline-hidden transition-all duration-200 rounded-xl"
@@ -210,14 +211,14 @@
                         <option value="{{ $test->id }}">{{ $test->title }}</option>
                     @endforeach
                 </select>
-                <p class="text-[10px] text-slate-550 mt-2 italic flex items-center gap-1.5 font-medium">
+                <p class="text-sm text-slate-550 mt-2 italic flex items-center gap-1.5 font-medium">
                     <x-ui.icon name="info-circle" class="w-4 h-4 text-brand" /> Section will be auto-generated inside the test
                 </p>
             </div>
 
             <div>
                 <label for="moduleSectionType"
-                    class="text-xs font-extrabold text-slate-500 tracking-wider uppercase mb-2 block">Section Type
+                    class="text-sm font-extrabold text-slate-500 tracking-wider uppercase mb-2 block">Section Type
                     <span class="text-rose-500">*</span></label>
                 <select
                     class="w-full px-4 py-2.5 rounded-xl border border-slate-200 bg-white text-slate-800 text-sm hover:border-brand/40 focus:border-brand focus:ring-4 focus:ring-brand/10 focus:outline-hidden transition-all duration-200 appearance-none bg-no-repeat bg-position-[right_1rem_center] bg-size-[1em_1em]"
@@ -230,7 +231,7 @@
 
             <div>
                 <label for="moduleKey"
-                    class="text-xs font-extrabold text-slate-500 tracking-wider uppercase mb-2 block">Module Key /
+                    class="text-sm font-extrabold text-slate-500 tracking-wider uppercase mb-2 block">Module Key /
                     Unique Code <span class="text-slate-500 font-normal normal-case">(Optional)</span></label>
                 <input type="text"
                     class="w-full px-4 py-2.5 rounded-xl border border-slate-200 bg-white text-slate-800 text-sm placeholder-slate-400 hover:border-brand/40 focus:border-brand focus:ring-4 focus:ring-brand/10 focus:outline-hidden transition-all duration-200 font-mono font-bold"
@@ -240,7 +241,7 @@
             <div class="grid grid-cols-2 gap-6">
                 <div>
                     <label for="moduleNumber"
-                        class="text-xs font-extrabold text-slate-500 tracking-wider uppercase mb-2 block">Module Type #
+                        class="text-sm font-extrabold text-slate-500 tracking-wider uppercase mb-2 block">Module Type #
                         <span class="text-rose-500">*</span></label>
                     <select
                         class="w-full px-4 py-2.5 rounded-xl border border-slate-200 bg-white text-slate-800 text-sm hover:border-brand/40 focus:border-brand focus:ring-4 focus:ring-brand/10 focus:outline-hidden transition-all duration-200 appearance-none bg-no-repeat bg-position-[right_1rem_center] bg-size-[1em_1em]"
@@ -252,7 +253,7 @@
                 </div>
                 <div>
                     <label for="difficultyLevel"
-                        class="text-xs font-extrabold text-slate-500 tracking-wider uppercase mb-2 block">Difficulty
+                        class="text-sm font-extrabold text-slate-500 tracking-wider uppercase mb-2 block">Difficulty
                         <span class="text-rose-500">*</span></label>
                     <select
                         class="w-full px-4 py-2.5 rounded-xl border border-slate-200 bg-white text-slate-800 text-sm hover:border-brand/40 focus:border-brand focus:ring-4 focus:ring-brand/10 focus:outline-hidden transition-all duration-200 appearance-none bg-no-repeat bg-position-[right_1rem_center] bg-size-[1em_1em]"
@@ -268,7 +269,7 @@
             <div class="grid grid-cols-2 gap-6">
                 <div>
                     <label for="moduleDuration"
-                        class="text-xs font-extrabold text-slate-500 tracking-wider uppercase mb-2 block">Duration
+                        class="text-sm font-extrabold text-slate-500 tracking-wider uppercase mb-2 block">Duration
                         (min) <span class="text-rose-500">*</span></label>
                     <input type="number"
                         class="w-full px-4 py-2.5 rounded-xl border border-slate-200 bg-white text-slate-800 text-sm placeholder-slate-400 hover:border-brand/40 focus:border-brand focus:ring-4 focus:ring-brand/10 focus:outline-hidden transition-all duration-200"
@@ -276,7 +277,7 @@
                 </div>
                 <div>
                     <label for="totalQuestions"
-                        class="text-xs font-extrabold text-slate-500 tracking-wider uppercase mb-2 block">Questions
+                        class="text-sm font-extrabold text-slate-500 tracking-wider uppercase mb-2 block">Questions
                         <span class="text-rose-500">*</span></label>
                     <input type="number"
                         class="w-full px-4 py-2.5 rounded-xl border border-slate-200 bg-white text-slate-800 text-sm placeholder-slate-400 hover:border-brand/40 focus:border-brand focus:ring-4 focus:ring-brand/10 focus:outline-hidden transition-all duration-200"
@@ -289,20 +290,20 @@
                     <input type="checkbox" name="is_public" value="1"
                         class="w-4 h-4 text-brand border-slate-300 bg-white rounded-md cursor-pointer">
                     <span
-                        class="ml-2.5 text-xs font-extrabold text-slate-500 group-hover:text-brand uppercase tracking-wider">Public
+                        class="ml-2.5 text-sm font-extrabold text-slate-500 group-hover:text-brand uppercase tracking-wider">Public
                         visibility</span>
                 </label>
             </div>
 
             <div class="bg-[var(--color-brand-soft)] border border-brand/20 rounded-xl p-4 flex gap-3 shadow-xs">
                 <x-ui.icon name="info-circle-fill" class="w-4 h-4 text-brand shrink-0 mt-0.5" />
-                <p class="text-[11px] text-brand leading-relaxed mb-0 font-medium">Standalone modules are reusable
+                <p class="text-sm text-brand leading-relaxed mb-0 font-medium">Standalone modules are reusable
                     and can be associated with multiple test sections later.</p>
             </div>
 
             <div class="pt-4">
                 <button type="submit"
-                    class="w-full py-3.5 bg-brand hover:bg-brand-hover text-white font-extrabold rounded-xl text-xs uppercase tracking-wider cursor-pointer">
+                    class="w-full py-3.5 bg-[var(--ui-action-bg)] hover:bg-[var(--ui-action-hover)] text-[var(--ui-action-fg)] font-extrabold rounded-xl text-sm uppercase tracking-wider cursor-pointer">
                     Create module
                 </button>
             </div>

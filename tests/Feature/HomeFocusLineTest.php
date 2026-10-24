@@ -122,12 +122,34 @@ class HomeFocusLineTest extends TestCase
         $teacher = User::factory()->teacher()->create();
         $student = User::factory()->student()->create();
 
+        $overdue = $this->assignTo($student, $teacher, ['due_at' => now()->subDays(2)]);
+        $this->assignTo($student, $teacher);
+
+        UserTest::create([
+            'user_id' => $student->id,
+            'test_id' => $overdue->test_id,
+            'assignment_id' => $overdue->id,
+            'status' => 'in_progress',
+            'started_at' => now()->subDays(3),
+        ]);
+
+        $this->actingAs($student)->get('/home')
+            ->assertOk()
+            ->assertSee('1 class assignment past due.');
+    }
+
+    public function test_expired_overdue_work_without_attempt_does_not_falsely_count_as_actionable_open_work(): void
+    {
+        $teacher = User::factory()->teacher()->create();
+        $student = User::factory()->student()->create();
+
         $this->assignTo($student, $teacher, ['due_at' => now()->subDays(2)]);
         $this->assignTo($student, $teacher);
 
         $this->actingAs($student)->get('/home')
             ->assertOk()
-            ->assertSee('1 class assignment past due.');
+            ->assertSee('1 class assignment left to finish.')
+            ->assertDontSee('past due');
     }
 
     public function test_work_due_within_two_days_is_surfaced_before_undated_work(): void

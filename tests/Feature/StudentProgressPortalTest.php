@@ -61,10 +61,10 @@ class StudentProgressPortalTest extends TestCase
 
         $response->assertOk()
             ->assertSee('Progress at a glance')
-            ->assertSee('Latest score')
+            ->assertSee('Latest full test')
             ->assertSee('1380')
             ->assertSee('Personal best')
-            ->assertSee('Target goal')
+            ->assertSee('Target score')
             ->assertSee('1450')
             ->assertSee('View full progress')
             ->assertSee('home-sparkline');
@@ -86,9 +86,9 @@ class StudentProgressPortalTest extends TestCase
         $response = $this->actingAs($student)->get('/home');
 
         $response->assertOk()
-            ->assertSee('Progress at a glance')
-            ->assertSee('No score trend yet')
-            ->assertSee('Explore the test library');
+            ->assertSee('Find your starting point')
+            ->assertDontSee('data-home-score-history')
+            ->assertSee('Explore test library');
 
         /** @var array $homeScoreTrend */
         $homeScoreTrend = $response->viewData('homeScoreTrend');

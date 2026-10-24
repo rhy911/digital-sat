@@ -38,6 +38,8 @@ class TeacherStudentProgressTest extends TestCase
             ->get(route('teacher.classes.students.progress', [$classroom, $student]));
 
         $response->assertOk();
+        $response->assertSee('product-ui');
+        $response->assertSee('icon-rail--product');
         $response->assertSee('Algebra');
         $response->assertDontSee('Geometry');
     }

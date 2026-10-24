@@ -6,7 +6,7 @@
     $candidateTotal = $sessions->sum('candidate_count');
 @endphp
 
-<x-layouts.student :user="$user" title="Exam Sessions" header-type="none">
+<x-layouts.student ui="product" body-class="antialiased teacher-workspace" :user="$user" title="Exam Sessions" header-type="none">
     @push('styles')
         {{-- Same trio /home loads: classroom-workspace.css owns the app shell
              (.app-shell/.shell-content), analytics.css the shared `.home*`

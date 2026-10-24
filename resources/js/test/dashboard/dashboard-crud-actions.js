@@ -129,7 +129,7 @@ export function initTestDashboardDelegatedActions() {
                         <p class="text-sm text-slate-600 mb-3"><strong>Warning:</strong> This test has <strong>${test.user_tests_count} student attempts</strong>. Hard-deleting will permanently remove all student answers and test history.</p>
                         <label class="flex items-center gap-2 cursor-pointer mt-3 p-2.5 bg-slate-50 border border-slate-200 rounded-lg select-none">
                             <input type="checkbox" id="forceDeleteIrreversibleCheckbox" class="w-4 h-4 text-rose-600 border-slate-300 rounded focus:ring-rose-500 cursor-pointer">
-                            <span class="text-xs font-bold text-rose-700">I understand this action is irreversible — delete all student data</span>
+                            <span class="text-sm font-bold text-rose-700">I understand this action is irreversible — delete all student data</span>
                         </label>
                     </div>`;
                     if (!await showCustomConfirm(confirmHtml, 'warning', 'Force Delete Cascade')) {

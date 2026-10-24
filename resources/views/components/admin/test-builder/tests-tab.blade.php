@@ -16,7 +16,7 @@
                 <h3 class="text-xl font-extrabold text-slate-900 mb-2">No practice tests yet</h3>
                 <p class="text-slate-600 mb-8 max-w-sm mx-auto text-sm leading-relaxed">Start with a draft test, then
                     add sections and modules when you are ready.</p>
-                <p class="text-xs font-semibold text-slate-500">Use Create test in the page header to begin.</p>
+                <p class="text-sm font-semibold text-slate-500">Use Create test in the page header to begin.</p>
             </div>
         </div>
 
@@ -30,7 +30,7 @@
                     @if (auth()->user()->role === 'teacher')
                         <div class="flex items-center gap-2 bg-white px-3 py-1.5 rounded-lg border border-slate-200">
                             <label for="testsShowSharedToggle"
-                                class="text-xs font-bold text-slate-600 cursor-pointer select-none">Show shared</label>
+                                class="text-sm font-bold text-slate-600 cursor-pointer select-none">Show shared</label>
                             <input type="checkbox" id="testsShowSharedToggle"
                                 class="w-4 h-4 text-brand border-slate-300 bg-white rounded cursor-pointer tests-show-shared-toggle">
                         </div>
@@ -44,8 +44,9 @@
                     </div>
                 </div>
             </div>
-            <div class="overflow-x-auto">
-                <table class="teacher-data-table teacher-tests-table w-full text-left text-xs text-slate-600">
+            <p class="lg:hidden px-4 py-2 text-sm text-slate-600">Scroll horizontally to view all columns.</p>
+            <div class="overflow-x-auto" tabindex="0" role="region" aria-label="Tests table">
+                <table class="teacher-data-table teacher-tests-table w-full text-left text-sm text-slate-600">
                     <colgroup>
                         <col class="col-id">
                         <col class="col-title">
@@ -136,12 +137,12 @@
                     </label>
                 </div>
                 <label class="grid gap-1.5 text-sm font-bold text-slate-700">Conversion rows (JSON)
-                    <textarea id="scoreConversionRows" required rows="9" spellcheck="false" class="rounded-lg border border-slate-300 px-3 py-2 font-mono text-xs leading-5 text-slate-900 focus:border-brand focus:ring-2 focus:ring-brand/20" placeholder='[{"section_type":"math","raw_score":0,"scaled_score":200}]'></textarea>
+                    <textarea id="scoreConversionRows" required rows="9" spellcheck="false" class="rounded-lg border border-slate-300 px-3 py-2 font-mono text-sm leading-5 text-slate-900 focus:border-brand focus:ring-2 focus:ring-brand/20" placeholder='[{"section_type":"math","raw_score":0,"scaled_score":200}]'></textarea>
                 </label>
                 <div id="scoreConversionStatus" class="hidden rounded-lg bg-slate-100 px-4 py-3 text-sm font-semibold text-slate-700" role="status"></div>
                 <div class="flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
                     <button type="submit" id="scoreConversionImport" class="min-h-11 rounded-lg border border-brand bg-white px-4 text-sm font-extrabold text-brand hover:bg-brand-soft focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand disabled:cursor-not-allowed disabled:opacity-50">Import draft</button>
-                    <button type="button" id="scoreConversionApprove" disabled class="min-h-11 rounded-lg bg-brand px-4 text-sm font-extrabold text-white hover:bg-brand-hover focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand disabled:cursor-not-allowed disabled:opacity-50">Approve conversion</button>
+                    <button type="button" id="scoreConversionApprove" disabled class="min-h-11 rounded-lg bg-[var(--ui-action-bg)] px-4 text-sm font-extrabold text-[var(--ui-action-fg)] hover:bg-[var(--ui-action-hover)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand disabled:cursor-not-allowed disabled:opacity-50">Approve conversion</button>
                 </div>
             </form>
         </section>

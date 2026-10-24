@@ -8,7 +8,7 @@
             <h3 id="heatmap-title" class="p-card-title">Difficulty & Domain Cross-Matrix</h3>
             <p class="p-card-subtitle">Accuracy matrix broken down by content domain across official difficulty tiers.</p>
         </div>
-        <div class="flex flex-wrap items-center gap-3 text-xs text-slate-600">
+        <div class="flex flex-wrap items-center gap-3 text-sm text-slate-600">
             <span class="inline-flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full bg-emerald-500"></span> &ge; 75% High</span>
             <span class="inline-flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full bg-amber-500"></span> 50–74% Med</span>
             <span class="inline-flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full bg-rose-500"></span> &lt; 50% Low</span>
@@ -16,8 +16,8 @@
     </div>
 
     @if(!empty($matrix))
-        <div class="overflow-x-auto rounded-lg border border-slate-200">
-            <table class="w-full text-left text-xs border-collapse">
+        <div class="overflow-x-auto rounded-lg border border-slate-200" tabindex="0" role="region" aria-label="Performance data table">
+            <table class="w-full text-left text-sm border-collapse">
                 <thead>
                     <tr class="bg-slate-50/90 border-b border-slate-200 text-slate-700 uppercase tracking-wider font-bold">
                         <th class="py-3 px-4">Content Domain</th>
@@ -30,7 +30,7 @@
                 <tbody class="divide-y divide-slate-100">
                     @foreach($matrix as $sectionName => $domains)
                         <tr class="bg-slate-100/75">
-                            <td colspan="5" class="py-2 px-4 font-bold text-[11px] uppercase tracking-wider text-slate-600">
+                            <td colspan="5" class="py-2 px-4 font-bold text-sm uppercase tracking-wider text-slate-600">
                                 {{ $sectionName }}
                             </td>
                         </tr>
@@ -47,7 +47,7 @@
                                         $total = $tData['total'];
                                         $correct = $tData['correct'];
                                         
-                                        $bgClass = 'bg-slate-50 text-slate-400';
+                                        $bgClass = 'bg-slate-50 text-slate-500';
                                         if ($total > 0) {
                                             if ($pct >= 75) $bgClass = 'bg-emerald-50 text-emerald-900 border border-emerald-300';
                                             elseif ($pct >= 50) $bgClass = 'bg-amber-50 text-amber-900 border border-amber-300';
@@ -56,7 +56,7 @@
                                     @endphp
                                     <td class="py-2.5 px-3 text-center">
                                         @if($total > 0)
-                                            <div class="inline-flex flex-col items-center justify-center min-w-[4.5rem] px-2 py-1 rounded-md {{ $bgClass }} font-bold text-xs">
+                                            <div class="inline-flex flex-col items-center justify-center min-w-[4.5rem] px-2 py-1 rounded-md {{ $bgClass }} font-bold text-sm">
                                                 <span>{{ $pct }}%</span>
                                                 <span class="text-[10px] font-medium opacity-80">({{ $correct }}/{{ $total }})</span>
                                             </div>
@@ -91,7 +91,7 @@
         <div class="p-empty-state">
             <x-ui.icon name="layers" class="w-10 h-10 text-slate-300 mb-2" aria-hidden="true" />
             <p class="font-semibold text-slate-700">No cross-matrix data available</p>
-            <p class="text-xs text-slate-500 max-w-sm mt-1">Complete practice tests with varied difficulties to generate this heatmap.</p>
+            <p class="text-sm text-slate-500 max-w-sm mt-1">Complete practice tests with varied difficulties to generate this heatmap.</p>
         </div>
     @endif
 </article>

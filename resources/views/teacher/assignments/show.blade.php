@@ -1,4 +1,4 @@
-<x-layouts.student :user="auth()->user()" :title="$assignment ? $assignment->title : 'Assignments'" header-type="none">
+<x-layouts.student ui="product" body-class="antialiased teacher-workspace" :user="auth()->user()" :title="$assignment ? $assignment->title : 'Assignments'" header-type="none">
     @push('styles')
         @vite(['resources/css/classroom-workspace.css', 'resources/css/student/scores.css', 'resources/js/question-renderer.js'])
     @endpush
@@ -67,11 +67,11 @@
                     @endphp
 
                     <!-- MOBILE CONTEXT BAR -->
-                    <div class="sm:hidden mb-4 p-3 bg-slate-50 border border-slate-200 rounded-xl flex items-center justify-between gap-3 text-xs">
+                    <div class="sm:hidden mb-4 p-3 bg-slate-50 border border-slate-200 rounded-xl flex items-center justify-between gap-3 text-sm">
                         <div class="flex items-center gap-2 truncate">
                             <x-ui.icon name="file-earmark-text" class="w-4 h-4 text-blue-700 shrink-0" />
                             <span class="font-bold text-slate-900 truncate">{{ $assignment->title }}</span>
-                            <span class="status-pill {{ $pillClass }} text-3xs shrink-0"><span class="d"></span>{{ ucfirst($assignment->status) }}</span>
+                            <span class="status-pill {{ $pillClass }} text-sm shrink-0"><span class="d"></span>{{ ucfirst($assignment->status) }}</span>
                         </div>
                         @if ($assignment->classroom)
                             <a href="{{ route('teacher.classes.show', $assignment->classroom) }}" class="text-blue-700 hover:text-blue-800 font-semibold shrink-0 flex items-center gap-1">
@@ -83,7 +83,7 @@
                     <div class="ledger-header mb-5">
                         <div class="dh-left">
                             @if ($origin === 'workspace')
-                                <a class="back-link text-xs font-semibold text-blue-700 hover:text-blue-800 transition-colors mb-1.5 inline-block no-underline" href="{{ route('teacher.assignments.index') }}">Back to assignments &amp; reports</a>
+                                <a class="back-link text-sm font-semibold text-blue-700 hover:text-blue-800 transition-colors mb-1.5 inline-block no-underline" href="{{ route('teacher.assignments.index') }}">Back to assignments &amp; reports</a>
                             @endif
                             <div class="flex items-center gap-3 flex-wrap">
                                 <h2>{{ $assignment->title }}</h2>
@@ -125,27 +125,27 @@
 
                     <!-- OVERVIEW DETAILS CARD -->
                     <div class="bg-slate-50/70 border border-slate-200 rounded-xl p-4 sm:p-5 mb-5">
-                        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 text-xs">
+                        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 text-sm">
                             <div>
-                                <div class="text-3xs uppercase font-bold text-slate-500 tracking-wider mb-1">Available</div>
+                                <div class="text-sm uppercase font-bold text-slate-500 tracking-wider mb-1">Available</div>
                                 <div class="font-semibold text-slate-800">
                                     {{ $assignment->available_at ? $assignment->available_at->format('M j, Y g:i A') : 'Immediately' }}
                                 </div>
                             </div>
                             <div>
-                                <div class="text-3xs uppercase font-bold text-slate-500 tracking-wider mb-1">Due Date</div>
+                                <div class="text-sm uppercase font-bold text-slate-500 tracking-wider mb-1">Due Date</div>
                                 <div class="font-semibold text-slate-800">
                                     {{ $assignment->due_at ? $assignment->due_at->format('M j, Y g:i A') : 'No deadline' }}
                                 </div>
                             </div>
                             <div>
-                                <div class="text-3xs uppercase font-bold text-slate-500 tracking-wider mb-1">Scope</div>
+                                <div class="text-sm uppercase font-bold text-slate-500 tracking-wider mb-1">Scope</div>
                                 <div class="font-semibold text-slate-800">
                                     {{ $assignment->isSectionAssignment() ? $assignment->sectionLabel() . ' Only' : 'Full Test' }}
                                 </div>
                             </div>
                             <div>
-                                <div class="text-3xs uppercase font-bold text-slate-500 tracking-wider mb-1">Clock Mode</div>
+                                <div class="text-sm uppercase font-bold text-slate-500 tracking-wider mb-1">Clock Mode</div>
                                 <div class="font-semibold text-slate-800">
                                     {{ $assignment->isTimedExam() ? 'Standard Timed' : 'Flexible Clock' }}
                                 </div>
@@ -462,15 +462,15 @@
                     }">
 
                         <!-- Loading Indicator -->
-                        <div x-show="loadingAnalysis" class="py-8 text-center text-xs text-slate-500 font-medium">
+                        <div x-show="loadingAnalysis" class="py-8 text-center text-sm text-slate-500 font-medium">
                             <svg class="animate-spin h-5 w-5 mx-auto mb-2 text-blue-600" viewBox="0 0 24 24" fill="none"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path></svg>
                             <span>Loading question analysis...</span>
                         </div>
 
                         <!-- Analysis Error State -->
                         <div x-show="analysisError && !loadingAnalysis" x-cloak class="p-6 mb-6 text-center rounded-xl border border-rose-200 bg-rose-50/80">
-                            <p class="text-xs font-semibold text-rose-800 mb-3" x-text="analysisError"></p>
-                            <button type="button" @click="loadAnalysis()" class="px-3.5 py-1.5 text-xs font-semibold rounded-lg bg-rose-700 hover:bg-rose-800 text-white transition shadow-2xs cursor-pointer">
+                            <p class="text-sm font-semibold text-rose-800 mb-3" x-text="analysisError"></p>
+                            <button type="button" @click="loadAnalysis()" class="px-3.5 py-1.5 text-sm font-semibold rounded-lg bg-rose-700 hover:bg-rose-800 text-white transition shadow-2xs cursor-pointer">
                                 Retry
                             </button>
                         </div>
@@ -481,24 +481,24 @@
                             <div class="analysis-stat-card">
                                 <div class="analysis-stat-card__badge accent" x-text="stats.total"></div>
                                 <div>
-                                    <div class="text-2xs font-bold uppercase tracking-wider text-muted">Questions Analyzed</div>
-                                    <div class="text-xs font-semibold text-main" x-text="'Across ' + stats.unique_modules.length + ' ' + (stats.unique_modules.length === 1 ? 'module' : 'modules')"></div>
+                                    <div class="text-sm font-bold uppercase tracking-wider text-muted">Questions Analyzed</div>
+                                    <div class="text-sm font-semibold text-main" x-text="'Across ' + stats.unique_modules.length + ' ' + (stats.unique_modules.length === 1 ? 'module' : 'modules')"></div>
                                 </div>
                             </div>
 
                             <div class="analysis-stat-card">
                                 <div class="analysis-stat-card__badge amber" x-text="stats.avg_error_rate + '%'"></div>
                                 <div>
-                                    <div class="text-2xs font-bold uppercase tracking-wider text-muted">Average Error Rate</div>
-                                    <div class="text-xs font-semibold text-main">Overall class difficulty</div>
+                                    <div class="text-sm font-bold uppercase tracking-wider text-muted">Average Error Rate</div>
+                                    <div class="text-sm font-semibold text-main">Overall class difficulty</div>
                                 </div>
                             </div>
 
                             <div class="analysis-stat-card">
                                 <div class="analysis-stat-card__badge red" x-text="stats.most_challenging ? stats.most_challenging.incorrect_rate + '%' : '—'"></div>
                                 <div>
-                                    <div class="text-2xs font-bold uppercase tracking-wider text-muted">Most Challenging Item</div>
-                                    <div class="text-xs font-semibold text-main truncate max-w-[180px]" x-text="stats.most_challenging ? stats.most_challenging.module_label + ' · Q' + stats.most_challenging.position : 'None'"></div>
+                                    <div class="text-sm font-bold uppercase tracking-wider text-muted">Most Challenging Item</div>
+                                    <div class="text-sm font-semibold text-main truncate max-w-[180px]" x-text="stats.most_challenging ? stats.most_challenging.module_label + ' · Q' + stats.most_challenging.position : 'None'"></div>
                                 </div>
                             </div>
                         </div>
@@ -533,7 +533,7 @@
                                 </select>
                             </div>
 
-                            <div class="text-xs text-muted font-medium" aria-live="polite" aria-atomic="true">
+                            <div class="text-sm text-muted font-medium" aria-live="polite" aria-atomic="true">
                                 Showing <strong class="text-main" x-text="filteredQuestions.length"></strong> of <span x-text="questions.length"></span> questions
                             </div>
                         </div>
@@ -546,10 +546,10 @@
                                     <div class="bg-slate-50/90 px-4 py-3 border-b border-slate-200 flex flex-wrap items-center justify-between gap-2">
                                         <div class="flex items-center gap-2.5">
                                             <span class="w-2.5 h-2.5 rounded-full shrink-0" :class="group.section === 'Math' ? 'bg-indigo-600' : 'bg-blue-600'"></span>
-                                            <h3 class="font-bold text-xs sm:text-sm text-slate-800 tracking-tight" x-text="group.title"></h3>
-                                            <span class="text-3xs font-semibold px-2 py-0.5 rounded-full bg-white text-slate-600 border border-slate-200" x-text="group.questions.length + (group.questions.length === 1 ? ' question' : ' questions')"></span>
+                                            <h3 class="font-bold text-sm sm:text-sm text-slate-800 tracking-tight" x-text="group.title"></h3>
+                                            <span class="text-sm font-semibold px-2 py-0.5 rounded-full bg-white text-slate-600 border border-slate-200" x-text="group.questions.length + (group.questions.length === 1 ? ' question' : ' questions')"></span>
                                         </div>
-                                        <div class="text-xs text-slate-500 font-medium flex items-center gap-3">
+                                        <div class="text-sm text-slate-500 font-medium flex items-center gap-3">
                                             <span>Avg error rate: <strong :class="group.avgIncorrectRate >= 50 ? 'text-rose-700' : (group.avgIncorrectRate >= 25 ? 'text-amber-800' : 'text-emerald-800')" x-text="group.avgIncorrectRate + '%'"></strong></span>
                                         </div>
                                     </div>
@@ -560,7 +560,7 @@
                                             <thead>
                                                 <tr>
                                                     <th style="width: 22%;">
-                                                        <button type="button" @click="sortBy('position')" class="inline-flex items-center gap-1 font-semibold text-xs text-slate-700 hover:text-slate-900 cursor-pointer">
+                                                        <button type="button" @click="sortBy('position')" class="inline-flex items-center gap-1 font-semibold text-sm text-slate-700 hover:text-slate-900 cursor-pointer">
                                                             <span>Item &amp; Attributes</span>
                                                             <svg x-show="sortCol === 'position'" class="w-3.5 h-3.5 transition-transform" :class="sortAsc ? '' : 'rotate-180'" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7"/></svg>
                                                         </button>
@@ -568,7 +568,7 @@
                                                     <th style="width: 38%;">Stem Preview</th>
                                                     <th style="width: 10%;">Answer</th>
                                                     <th style="width: 18%;">
-                                                        <button type="button" @click="sortBy('incorrect_rate')" class="inline-flex items-center gap-1 font-semibold text-xs text-slate-700 hover:text-slate-900 cursor-pointer">
+                                                        <button type="button" @click="sortBy('incorrect_rate')" class="inline-flex items-center gap-1 font-semibold text-sm text-slate-700 hover:text-slate-900 cursor-pointer">
                                                             <span>Incorrect Rate</span>
                                                             <svg x-show="sortCol === 'incorrect_rate'" class="w-3.5 h-3.5 transition-transform" :class="sortAsc ? '' : 'rotate-180'" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7"/></svg>
                                                         </button>
@@ -581,35 +581,35 @@
                                                     <tr @click="openInspection(q)" class="cursor-pointer hover:bg-slate-50/80 transition-colors">
                                                         <td class="name-cell" style="vertical-align: top; padding: 12px 10px;">
                                                             <div class="flex items-center gap-1.5 mb-1.5 flex-wrap">
-                                                                <span class="inline-flex items-center px-2 py-0.5 rounded font-mono font-bold text-xs bg-slate-800 text-white" x-text="'Q' + q.position"></span>
+                                                                <span class="inline-flex items-center px-2 py-0.5 rounded font-mono font-bold text-sm bg-slate-800 text-white" x-text="'Q' + q.position"></span>
                                                                 <span class="type-tag" x-text="q.module_label"></span>
                                                             </div>
                                                             <div class="flex items-center gap-1.5 flex-wrap">
-                                                                <span class="status-pill text-3xs font-bold uppercase tracking-wider"
+                                                                <span class="status-pill text-sm font-bold uppercase tracking-wider"
                                                                     :class="{
                                                                         'ok': q.difficulty === 'easy',
                                                                         'pending': q.difficulty === 'medium' || q.difficulty === 'standard',
                                                                         'danger': q.difficulty === 'hard'
                                                                     }"
                                                                     x-text="q.difficulty"></span>
-                                                                <span class="text-3xs font-medium text-muted truncate max-w-[130px]" :title="q.domain" x-text="q.domain"></span>
+                                                                <span class="text-sm font-medium text-muted truncate max-w-[130px]" :title="q.domain" x-text="q.domain"></span>
                                                             </div>
                                                         </td>
                                                         <td style="vertical-align: top; padding: 12px 10px;">
-                                                            <div class="text-xs text-main font-medium leading-relaxed" style="display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;" x-html="q.stem"></div>
+                                                            <div class="text-sm text-main font-medium leading-relaxed" style="display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;" x-html="q.stem"></div>
                                                         </td>
                                                         <td style="vertical-align: top; padding: 12px 10px;">
-                                                            <span class="font-mono font-bold text-xs px-2.5 py-1 rounded bg-emerald-50 text-emerald-800 border border-emerald-300" x-text="q.correct_answer"></span>
+                                                            <span class="font-mono font-bold text-sm px-2.5 py-1 rounded bg-emerald-50 text-emerald-800 border border-emerald-300" x-text="q.correct_answer"></span>
                                                         </td>
                                                         <td style="vertical-align: top; padding: 12px 10px;">
                                                             <div class="space-y-1.5">
-                                                                <div class="flex items-center justify-between text-xs gap-1">
-                                                                    <strong class="font-bold whitespace-nowrap text-xs" :class="{
+                                                                <div class="flex items-center justify-between text-sm gap-1">
+                                                                    <strong class="font-bold whitespace-nowrap text-sm" :class="{
                                                                         'text-rose-700': q.incorrect_rate >= 50,
                                                                         'text-amber-800': q.incorrect_rate >= 25 && q.incorrect_rate < 50,
                                                                         'text-emerald-800': q.incorrect_rate < 25
                                                                     }" x-text="q.incorrect_rate + '% incorrect'"></strong>
-                                                                    <span class="text-2xs text-muted font-medium whitespace-nowrap" x-text="q.incorrect_count + '/' + q.total_presented + ' students'"></span>
+                                                                    <span class="text-sm text-muted font-medium whitespace-nowrap" x-text="q.incorrect_count + '/' + q.total_presented + ' students'"></span>
                                                                 </div>
                                                                 <div class="w-full bg-slate-200/80 h-2 rounded-full overflow-hidden flex">
                                                                     <div class="h-full transition-all duration-300"
@@ -623,7 +623,7 @@
                                                             </div>
                                                         </td>
                                                         <td class="text-right whitespace-nowrap" style="vertical-align: top; padding: 12px 10px;">
-                                                            <button type="button" @click.stop="openInspection(q)" class="inline-flex items-center gap-1 text-xs font-semibold text-blue-700 hover:text-blue-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/40 rounded px-1.5 py-0.5 cursor-pointer" :aria-label="'Inspect question ' + q.position">
+                                                            <button type="button" @click.stop="openInspection(q)" class="inline-flex items-center gap-1 text-sm font-semibold text-blue-700 hover:text-blue-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/40 rounded px-1.5 py-0.5 cursor-pointer" :aria-label="'Inspect question ' + q.position">
                                                                 <span>Inspect</span> <span aria-hidden="true">&rarr;</span>
                                                             </button>
                                                         </td>
@@ -651,14 +651,14 @@
                                     <div class="bg-slate-50/95 -mx-5 -mt-5 sm:-mx-6 sm:-mt-6 p-4 sm:px-6 sm:py-3.5 border-b border-slate-200 flex flex-wrap items-center justify-between gap-3">
                                         <div class="flex items-center gap-2.5 flex-wrap">
                                             <!-- Question Badge -->
-                                            <span class="px-2.5 py-1 rounded-md font-mono font-bold text-xs bg-slate-800 text-white shadow-2xs"
+                                            <span class="px-2.5 py-1 rounded-md font-mono font-bold text-sm bg-slate-800 text-white shadow-2xs"
                                                   x-text="'Q' + activeQuestion.position"></span>
 
                                             <!-- Direct Question Jump Select -->
                                             <div class="relative inline-flex items-center">
                                                 <select @change="jumpToQuestion($event.target.value)"
                                                         aria-label="Jump to question"
-                                                        class="text-xs font-semibold text-slate-700 bg-white border border-slate-200 rounded-lg px-2.5 py-1 hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-blue-500/20 shadow-2xs cursor-pointer">
+                                                        class="text-sm font-semibold text-slate-700 bg-white border border-slate-200 rounded-lg px-2.5 py-1 hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-blue-500/20 shadow-2xs cursor-pointer">
                                                     <template x-for="q in filteredQuestions" :key="q.id">
                                                         <option :value="q.id" :selected="q.id === activeQuestion.id"
                                                                 x-text="'Q' + q.position + ' (' + q.module_label + ' · ' + q.incorrect_rate + '% err)'"></option>
@@ -667,29 +667,29 @@
                                             </div>
 
                                             <span class="type-tag" x-text="activeQuestion.module_label"></span>
-                                            <span class="status-pill text-3xs font-bold uppercase tracking-wider"
+                                            <span class="status-pill text-sm font-bold uppercase tracking-wider"
                                                   :class="{
                                                       'ok': activeQuestion.difficulty === 'easy',
                                                       'pending': activeQuestion.difficulty === 'medium' || activeQuestion.difficulty === 'standard',
                                                       'danger': activeQuestion.difficulty === 'hard'
                                                   }"
                                                   x-text="activeQuestion.difficulty"></span>
-                                            <span class="text-3xs font-medium text-slate-500 truncate max-w-[170px]" :title="activeQuestion.domain" x-text="activeQuestion.domain"></span>
+                                            <span class="text-sm font-medium text-slate-500 truncate max-w-[170px]" :title="activeQuestion.domain" x-text="activeQuestion.domain"></span>
                                             <template x-if="activeQuestion.is_pretest">
-                                                <span class="status-pill draft text-3xs font-bold uppercase tracking-wider" title="Pretest items do not count toward the score">Unscored pretest</span>
+                                                <span class="status-pill draft text-sm font-bold uppercase tracking-wider" title="Pretest items do not count toward the score">Unscored pretest</span>
                                             </template>
                                         </div>
 
                                         <!-- Navigation Controls and Close Button -->
                                         <div class="flex items-center gap-2">
-                                            <span class="text-xs font-semibold px-2.5 py-1 rounded-lg bg-white text-slate-600 border border-slate-200 shadow-2xs hidden sm:inline-block"
+                                            <span class="text-sm font-semibold px-2.5 py-1 rounded-lg bg-white text-slate-600 border border-slate-200 shadow-2xs hidden sm:inline-block"
                                                   x-text="'Item ' + (currentQuestionIndex + 1) + ' of ' + filteredQuestions.length"></span>
 
                                             <!-- Previous Button -->
                                             <button type="button"
                                                     @click="prevQuestion()"
                                                     :disabled="!hasPrevQuestion"
-                                                    class="px-2.5 py-1 text-xs font-semibold rounded-lg border border-slate-200 bg-white text-slate-700 hover:bg-slate-50 disabled:opacity-35 disabled:cursor-not-allowed transition-colors flex items-center gap-1 shadow-2xs cursor-pointer"
+                                                    class="px-2.5 py-1 text-sm font-semibold rounded-lg border border-slate-200 bg-white text-slate-700 hover:bg-slate-50 disabled:opacity-35 disabled:cursor-not-allowed transition-colors flex items-center gap-1 shadow-2xs cursor-pointer"
                                                     title="Previous question (Left Arrow)">
                                                 <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
@@ -701,7 +701,7 @@
                                             <button type="button"
                                                     @click="nextQuestion()"
                                                     :disabled="!hasNextQuestion"
-                                                    class="px-2.5 py-1 text-xs font-semibold rounded-lg border border-slate-200 bg-white text-slate-700 hover:bg-slate-50 disabled:opacity-35 disabled:cursor-not-allowed transition-colors flex items-center gap-1 shadow-2xs cursor-pointer"
+                                                    class="px-2.5 py-1 text-sm font-semibold rounded-lg border border-slate-200 bg-white text-slate-700 hover:bg-slate-50 disabled:opacity-35 disabled:cursor-not-allowed transition-colors flex items-center gap-1 shadow-2xs cursor-pointer"
                                                     title="Next question (Right Arrow)">
                                                 <span class="hidden md:inline">Next</span>
                                                 <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -723,7 +723,7 @@
 
                                     <!-- Modal Loading Indicator -->
                                     <template x-if="activeQuestion && activeQuestion.loading_details">
-                                        <div class="py-20 text-center text-xs text-slate-500 font-medium">
+                                        <div class="py-20 text-center text-sm text-slate-500 font-medium">
                                             <svg class="animate-spin h-6 w-6 mx-auto mb-2 text-blue-600" viewBox="0 0 24 24" fill="none"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path></svg>
                                             <span>Loading question content and student responses...</span>
                                         </div>
@@ -733,9 +733,9 @@
                                     <template x-if="activeQuestion && activeQuestion.load_error && !activeQuestion.loading_details">
                                         <div class="py-16 text-center p-6">
                                             <div class="p-4 max-w-md mx-auto rounded-xl border border-rose-200 bg-rose-50/80 text-rose-800">
-                                                <p class="text-xs font-semibold mb-3" x-text="activeQuestion.load_error"></p>
+                                                <p class="text-sm font-semibold mb-3" x-text="activeQuestion.load_error"></p>
                                                 <button type="button" @click="activeQuestion.details_loaded = false; openInspection(activeQuestion)"
-                                                        class="px-3.5 py-1.5 text-xs font-semibold rounded-lg bg-rose-700 hover:bg-rose-800 text-white transition shadow-2xs cursor-pointer">
+                                                        class="px-3.5 py-1.5 text-sm font-semibold rounded-lg bg-rose-700 hover:bg-rose-800 text-white transition shadow-2xs cursor-pointer">
                                                     Retry loading details
                                                 </button>
                                             </div>
@@ -754,9 +754,9 @@
                                                             <svg class="w-3.5 h-3.5 text-amber-700 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
                                                             </svg>
-                                                            <span class="text-xs font-bold uppercase tracking-wider text-amber-900" x-text="activeQuestion.passage_title || 'Reading Passage'"></span>
+                                                            <span class="text-sm font-bold uppercase tracking-wider text-amber-900" x-text="activeQuestion.passage_title || 'Reading Passage'"></span>
                                                         </div>
-                                                        <button type="button" @click="passageCollapsed = !passageCollapsed" class="text-xs font-semibold text-amber-800 hover:text-amber-950 flex items-center gap-1 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-amber-500 rounded px-1.5 py-0.5 cursor-pointer">
+                                                        <button type="button" @click="passageCollapsed = !passageCollapsed" class="text-sm font-semibold text-amber-800 hover:text-amber-950 flex items-center gap-1 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-amber-500 rounded px-1.5 py-0.5 cursor-pointer">
                                                             <span x-text="passageCollapsed ? 'Expand' : 'Collapse'"></span>
                                                             <svg class="w-3.5 h-3.5 transition-transform" :class="passageCollapsed ? '-rotate-90' : ''" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
@@ -769,7 +769,7 @@
 
                                             <!-- Question Stem -->
                                             <div class="bg-white border border-slate-200 rounded-xl p-4 shadow-2xs">
-                                                <div class="text-2xs font-bold text-slate-500 uppercase tracking-wider mb-2">Question Prompt</div>
+                                                <div class="text-sm font-bold text-slate-500 uppercase tracking-wider mb-2">Question Prompt</div>
                                                 <div class="text-sm font-medium text-slate-900 leading-relaxed math-content" x-html="activeQuestion.stem"></div>
                                             </div>
 
@@ -777,8 +777,8 @@
                                             <template x-if="activeQuestion.question_type === 'multiple_choice'">
                                                 <div class="space-y-2">
                                                     <div class="flex items-center justify-between">
-                                                        <span class="text-2xs font-bold text-slate-500 uppercase tracking-wider">Answer Options</span>
-                                                        <span class="text-3xs text-slate-600">Click option to filter responses</span>
+                                                        <span class="text-sm font-bold text-slate-500 uppercase tracking-wider">Answer Options</span>
+                                                        <span class="text-sm text-slate-600">Click option to filter responses</span>
                                                     </div>
                                                     <div class="space-y-2">
                                                         <template x-for="c in activeChoiceBreakdown.choices" :key="c.label">
@@ -799,18 +799,18 @@
                                                                      :style="'width: ' + c.pct + '%'"></div>
 
                                                                 <div class="relative flex items-start gap-3">
-                                                                    <span class="w-6 h-6 rounded-full flex items-center justify-center font-mono font-bold text-xs shrink-0 shadow-2xs"
+                                                                    <span class="w-6 h-6 rounded-full flex items-center justify-center font-mono font-bold text-sm shrink-0 shadow-2xs"
                                                                           :class="c.is_correct ? 'bg-emerald-800 text-white' : 'bg-slate-100 text-slate-700 border border-slate-300'"
                                                                           x-text="c.label"></span>
-                                                                    <div class="text-xs pt-0.5 leading-relaxed flex-1 math-content"
+                                                                    <div class="text-sm pt-0.5 leading-relaxed flex-1 math-content"
                                                                          :class="c.is_correct ? 'text-emerald-950 font-medium' : 'text-slate-800'"
                                                                          x-html="c.content"></div>
                                                                     <div class="flex items-center gap-2 shrink-0 ml-2">
-                                                                        <span class="font-mono text-2xs font-semibold px-2 py-0.5 rounded border"
+                                                                        <span class="font-mono text-sm font-semibold px-2 py-0.5 rounded border"
                                                                               :class="c.is_correct ? 'bg-emerald-100 text-emerald-800 border-emerald-200' : 'bg-slate-100 text-slate-600 border-slate-200'"
                                                                               x-text="c.count + ' (' + c.pct + '%)'"></span>
                                                                         <template x-if="c.is_correct">
-                                                                            <span class="text-2xs font-bold px-2 py-0.5 rounded bg-emerald-800 text-white shadow-2xs">Correct</span>
+                                                                            <span class="text-sm font-bold px-2 py-0.5 rounded bg-emerald-800 text-white shadow-2xs">Correct</span>
                                                                         </template>
                                                                     </div>
                                                                 </div>
@@ -822,11 +822,11 @@
 
                                             <template x-if="activeQuestion.question_type === 'student_produced_response'">
                                                 <div class="bg-emerald-50/60 border border-emerald-300 rounded-xl p-4 space-y-2">
-                                                    <div class="text-2xs font-bold uppercase tracking-wider text-emerald-800">Accepted Correct Answers (SPR)</div>
+                                                    <div class="text-sm font-bold uppercase tracking-wider text-emerald-800">Accepted Correct Answers (SPR)</div>
                                                     <div class="flex flex-wrap gap-2">
                                                         <template x-if="activeQuestion.spr_answers && activeQuestion.spr_answers.length > 0">
                                                             <template x-for="ans in activeQuestion.spr_answers" :key="ans">
-                                                                <span class="px-2.5 py-1 bg-white border border-emerald-300 text-emerald-800 font-mono font-bold text-xs rounded-lg shadow-2xs" x-text="ans"></span>
+                                                                <span class="px-2.5 py-1 bg-white border border-emerald-300 text-emerald-800 font-mono font-bold text-sm rounded-lg shadow-2xs" x-text="ans"></span>
                                                             </template>
                                                         </template>
                                                         <template x-if="!activeQuestion.spr_answers || activeQuestion.spr_answers.length === 0">
@@ -843,14 +843,14 @@
                                                         <svg class="w-4 h-4 text-indigo-700 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
                                                         </svg>
-                                                        <span class="text-xs font-bold text-indigo-900 uppercase tracking-wider">Answer Explanation &amp; Rationale</span>
+                                                        <span class="text-sm font-bold text-indigo-900 uppercase tracking-wider">Answer Explanation &amp; Rationale</span>
                                                     </div>
                                                     <template x-if="activeQuestion.explanation.text">
-                                                        <div class="text-xs leading-relaxed text-slate-800 prose prose-sm max-w-none math-content" x-html="activeQuestion.explanation.text"></div>
+                                                        <div class="text-sm leading-relaxed text-slate-800 prose prose-sm max-w-none math-content" x-html="activeQuestion.explanation.text"></div>
                                                     </template>
                                                     <template x-if="activeQuestion.explanation.strategy_tip">
-                                                        <div class="p-3.5 rounded-lg border border-amber-200 bg-amber-50/80 text-xs text-amber-950 space-y-1">
-                                                            <div class="font-bold text-2xs uppercase tracking-wider text-amber-800 flex items-center gap-1.5">
+                                                        <div class="p-3.5 rounded-lg border border-amber-200 bg-amber-50/80 text-sm text-amber-950 space-y-1">
+                                                            <div class="font-bold text-sm uppercase tracking-wider text-amber-800 flex items-center gap-1.5">
                                                                 <svg class="w-3.5 h-3.5 text-amber-600 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                                                                 </svg>
@@ -869,11 +869,11 @@
                                                 <!-- Header of breakdown -->
                                                 <div class="flex items-center justify-between pb-3 border-b border-slate-100">
                                                     <div>
-                                                        <h4 class="text-xs font-bold uppercase tracking-wider text-slate-800 m-0">Student Responses</h4>
-                                                        <div class="text-3xs text-slate-500 mt-0.5" x-text="((activeQuestion.students || []).length) + ' total student responses'"></div>
+                                                        <h4 class="text-sm font-bold uppercase tracking-wider text-slate-800 m-0">Student Responses</h4>
+                                                        <div class="text-sm text-slate-500 mt-0.5" x-text="((activeQuestion.students || []).length) + ' total student responses'"></div>
                                                     </div>
                                                     <div class="flex items-center gap-1.5">
-                                                        <span class="text-3xs font-bold px-2 py-0.5 rounded-full"
+                                                        <span class="text-sm font-bold px-2 py-0.5 rounded-full"
                                                               :class="activeQuestion.incorrect_rate >= 50 ? 'bg-rose-50 text-rose-800 border border-rose-300' : 'bg-emerald-50 text-emerald-800 border border-emerald-300'"
                                                               x-text="activeQuestion.incorrect_rate + '% Missed'"></span>
                                                     </div>
@@ -882,9 +882,9 @@
                                                 <!-- Segmented Distribution Bar (for MCQ) -->
                                                 <template x-if="activeQuestion.question_type === 'multiple_choice' && activeChoiceBreakdown.choices">
                                                     <div class="space-y-1.5">
-                                                        <div class="text-2xs font-semibold text-slate-600 flex justify-between">
+                                                        <div class="text-sm font-semibold text-slate-600 flex justify-between">
                                                             <span>Choice Distribution</span>
-                                                            <span class="text-3xs text-slate-600" x-text="activeQuestion.correct_count + ' correct · ' + activeQuestion.incorrect_count + ' missed'"></span>
+                                                            <span class="text-sm text-slate-600" x-text="activeQuestion.correct_count + ' correct · ' + activeQuestion.incorrect_count + ' missed'"></span>
                                                         </div>
                                                         <div class="h-3 w-full bg-slate-100 rounded-full overflow-hidden flex shadow-inner">
                                                             <template x-for="c in activeChoiceBreakdown.choices" :key="c.label">
@@ -917,23 +917,23 @@
                                                 </template>
 
                                                 <!-- Filter Pills -->
-                                                <div class="flex flex-wrap items-center gap-1.5 text-xs font-semibold">
+                                                <div class="flex flex-wrap items-center gap-1.5 text-sm font-semibold">
                                                     <button type="button" @click="inspectStudentFilter = 'all'"
                                                             :aria-pressed="inspectStudentFilter === 'all' ? 'true' : 'false'"
                                                             :class="inspectStudentFilter === 'all' ? 'bg-slate-800 text-white shadow-2xs' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'"
-                                                            class="px-2.5 py-1 rounded-lg text-2xs transition-colors cursor-pointer">
+                                                            class="px-2.5 py-1 rounded-lg text-sm transition-colors cursor-pointer">
                                                         All (<span x-text="(activeQuestion.students || []).length"></span>)
                                                     </button>
                                                     <button type="button" @click="inspectStudentFilter = 'correct'"
                                                             :aria-pressed="inspectStudentFilter === 'correct' ? 'true' : 'false'"
                                                             :class="inspectStudentFilter === 'correct' ? 'bg-emerald-800 text-white shadow-2xs' : 'bg-emerald-50 text-emerald-800 border border-emerald-300 hover:bg-emerald-100'"
-                                                            class="px-2.5 py-1 rounded-lg text-2xs transition-colors cursor-pointer">
+                                                            class="px-2.5 py-1 rounded-lg text-sm transition-colors cursor-pointer">
                                                         Correct (<span x-text="activeQuestion.correct_count"></span>)
                                                     </button>
                                                     <button type="button" @click="inspectStudentFilter = 'missed'"
                                                             :aria-pressed="inspectStudentFilter === 'missed' ? 'true' : 'false'"
                                                             :class="inspectStudentFilter === 'missed' ? 'bg-rose-700 text-white shadow-2xs' : 'bg-rose-50 text-rose-800 border border-rose-300 hover:bg-rose-100'"
-                                                            class="px-2.5 py-1 rounded-lg text-2xs transition-colors cursor-pointer">
+                                                            class="px-2.5 py-1 rounded-lg text-sm transition-colors cursor-pointer">
                                                         Missed (<span x-text="activeQuestion.incorrect_count"></span>)
                                                     </button>
                                                     <template x-if="activeQuestion.question_type === 'multiple_choice'">
@@ -942,7 +942,7 @@
                                                                 <button type="button" @click="inspectStudentFilter = (inspectStudentFilter === c.label ? 'all' : c.label)"
                                                                         :aria-pressed="inspectStudentFilter === c.label ? 'true' : 'false'"
                                                                         :class="inspectStudentFilter === c.label ? 'bg-blue-600 text-white shadow-2xs' : 'bg-white text-slate-700 border border-slate-200 hover:bg-slate-50'"
-                                                                        class="px-2 py-0.5 rounded text-2xs font-mono transition-colors cursor-pointer"
+                                                                        class="px-2 py-0.5 rounded text-sm font-mono transition-colors cursor-pointer"
                                                                         :title="'Filter by Choice ' + c.label">
                                                                     <span x-text="c.label + ' (' + c.count + ')'"></span>
                                                                 </button>
@@ -951,7 +951,7 @@
                                                                 <button type="button" @click="inspectStudentFilter = (inspectStudentFilter === 'omitted' ? 'all' : 'omitted')"
                                                                         :aria-pressed="inspectStudentFilter === 'omitted' ? 'true' : 'false'"
                                                                         :class="inspectStudentFilter === 'omitted' ? 'bg-slate-700 text-white shadow-2xs' : 'bg-white text-slate-700 border border-slate-200 hover:bg-slate-50'"
-                                                                        class="px-2 py-0.5 rounded text-2xs font-mono transition-colors cursor-pointer"
+                                                                        class="px-2 py-0.5 rounded text-sm font-mono transition-colors cursor-pointer"
                                                                         :title="'Filter by Omitted (' + activeChoiceBreakdown.omitted.count + ')'">
                                                                     <span x-text="'Omitted (' + activeChoiceBreakdown.omitted.count + ')'"></span>
                                                                 </button>
@@ -963,7 +963,7 @@
                                                 <!-- Student search bar -->
                                                 <div class="relative">
                                                     <input type="text" x-model="inspectStudentSearch" placeholder="Filter by student name, email, or answer..."
-                                                           class="w-full text-xs pl-8 pr-3 py-1.5 border border-slate-200 rounded-lg bg-slate-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/20 transition-all">
+                                                           class="w-full text-sm pl-8 pr-3 py-1.5 border border-slate-200 rounded-lg bg-slate-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/20 transition-all">
                                                     <svg class="w-3.5 h-3.5 absolute left-2.5 top-2.5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
                                                     </svg>
@@ -972,29 +972,29 @@
                                                 <!-- Student List (Scrollable) -->
                                                 <div class="flex-1 overflow-y-auto max-h-[400px] space-y-2 pr-1">
                                                     <template x-for="st in filteredInspectStudents" :key="st.id">
-                                                        <div class="p-2.5 rounded-lg border border-slate-200 bg-slate-50/70 hover:bg-white hover:border-slate-300 transition-colors flex items-center justify-between text-xs">
+                                                        <div class="p-2.5 rounded-lg border border-slate-200 bg-slate-50/70 hover:bg-white hover:border-slate-300 transition-colors flex items-center justify-between text-sm">
                                                             <div class="flex items-center gap-2.5 min-w-0">
-                                                                <div class="w-7 h-7 rounded-full text-white bg-blue-700 flex items-center justify-center font-bold text-2xs shrink-0 shadow-2xs" x-text="st.initials"></div>
+                                                                <div class="w-7 h-7 rounded-full text-white bg-blue-700 flex items-center justify-center font-bold text-sm shrink-0 shadow-2xs" x-text="st.initials"></div>
                                                                 <div class="min-w-0">
                                                                     <div class="font-semibold text-slate-800 truncate" x-text="st.name"></div>
-                                                                    <div class="text-3xs text-slate-500 truncate" x-text="st.email"></div>
+                                                                    <div class="text-sm text-slate-500 truncate" x-text="st.email"></div>
                                                                 </div>
                                                             </div>
                                                             <div class="shrink-0 ml-2">
                                                                 <template x-if="st.status === 'correct'">
-                                                                    <span class="inline-flex items-center gap-1 text-2xs font-bold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 border border-emerald-200">
+                                                                    <span class="inline-flex items-center gap-1 text-sm font-bold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 border border-emerald-200">
                                                                         <span>✓</span>
                                                                         <span x-text="st.selected === 'Omitted' ? 'Correct' : st.selected"></span>
                                                                     </span>
                                                                 </template>
                                                                 <template x-if="st.status === 'incorrect'">
-                                                                    <span class="inline-flex items-center gap-1 text-2xs font-bold px-2 py-0.5 rounded-full bg-rose-100 text-rose-800 border border-rose-200">
+                                                                    <span class="inline-flex items-center gap-1 text-sm font-bold px-2 py-0.5 rounded-full bg-rose-100 text-rose-800 border border-rose-200">
                                                                         <span>✗</span>
                                                                         <span x-text="st.selected"></span>
                                                                     </span>
                                                                 </template>
                                                                 <template x-if="st.status === 'omitted'">
-                                                                    <span class="text-2xs font-bold px-2 py-0.5 rounded-full bg-slate-100 text-slate-600 border border-slate-200">
+                                                                    <span class="text-sm font-bold px-2 py-0.5 rounded-full bg-slate-100 text-slate-600 border border-slate-200">
                                                                         Omitted
                                                                     </span>
                                                                 </template>
@@ -1003,9 +1003,9 @@
                                                     </template>
 
                                                     <template x-if="filteredInspectStudents.length === 0">
-                                                        <div class="text-center py-8 text-xs text-slate-500 bg-slate-50/50 rounded-xl border border-dashed border-slate-200">
+                                                        <div class="text-center py-8 text-sm text-slate-500 bg-slate-50/50 rounded-xl border border-dashed border-slate-200">
                                                             <p class="font-semibold m-0">No matching students found</p>
-                                                            <p class="text-3xs text-slate-600 mt-1 m-0">Try changing your filter or search query</p>
+                                                            <p class="text-sm text-slate-600 mt-1 m-0">Try changing your filter or search query</p>
                                                         </div>
                                                     </template>
                                                 </div>
@@ -1015,13 +1015,13 @@
 
                                     <!-- Modal Footer Bar -->
                                     <div class="bg-slate-50/95 -mx-5 -mb-5 sm:-mx-6 sm:-mb-6 px-5 sm:px-6 py-3 border-t border-slate-200 flex items-center justify-between">
-                                        <div class="text-2xs text-slate-500 font-medium hidden sm:block">
-                                            Navigate with <kbd class="px-1.5 py-0.5 rounded border border-slate-300 bg-white font-mono text-3xs font-semibold text-slate-700">←</kbd> and <kbd class="px-1.5 py-0.5 rounded border border-slate-300 bg-white font-mono text-3xs font-semibold text-slate-700">→</kbd>, close with <kbd class="px-1.5 py-0.5 rounded border border-slate-300 bg-white font-mono text-3xs font-semibold text-slate-700">ESC</kbd>
+                                        <div class="text-sm text-slate-500 font-medium hidden sm:block">
+                                            Navigate with <kbd class="px-1.5 py-0.5 rounded border border-slate-300 bg-white font-mono text-sm font-semibold text-slate-700">←</kbd> and <kbd class="px-1.5 py-0.5 rounded border border-slate-300 bg-white font-mono text-sm font-semibold text-slate-700">→</kbd>, close with <kbd class="px-1.5 py-0.5 rounded border border-slate-300 bg-white font-mono text-sm font-semibold text-slate-700">ESC</kbd>
                                         </div>
                                         <div class="flex items-center gap-2 ml-auto">
                                             <button type="button"
                                                     @click="closeInspection()"
-                                                    class="px-4 py-1.5 text-xs font-semibold text-slate-700 bg-white border border-slate-200 rounded-lg hover:bg-slate-50 transition-colors shadow-2xs cursor-pointer">
+                                                    class="px-4 py-1.5 text-sm font-semibold text-slate-700 bg-white border border-slate-200 rounded-lg hover:bg-slate-50 transition-colors shadow-2xs cursor-pointer">
                                                 Close
                                             </button>
                                         </div>
@@ -1053,11 +1053,11 @@
                                     </label>
                                     <div class="space-y-3 pt-3 border-t border-slate-200/70">
                                         <div class="flex items-center justify-between">
-                                            <div class="flex items-center gap-1.5 font-bold text-2xs uppercase tracking-wider text-slate-700">
+                                            <div class="flex items-center gap-1.5 font-bold text-sm uppercase tracking-wider text-slate-700">
                                                 <x-ui.icon name="calendar" class="w-3.5 h-3.5 text-slate-500" />
                                                 <span>Schedule &amp; Availability</span>
                                             </div>
-                                            <span class="inline-flex items-center gap-1 text-3xs font-semibold text-slate-700 bg-slate-100 border border-slate-300 rounded-md px-1.5 py-0.5" title="All schedule dates and deadlines use this timezone">
+                                            <span class="inline-flex items-center gap-1 text-sm font-semibold text-slate-700 bg-slate-100 border border-slate-300 rounded-md px-1.5 py-0.5" title="All schedule dates and deadlines use this timezone">
                                                 <x-ui.icon name="clock" class="w-3 h-3 text-slate-500" />
                                                 <span>Asia/Ho_Chi_Minh</span>
                                             </span>
@@ -1066,11 +1066,11 @@
                                         <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                                             <div>
                                                 <div class="flex items-center justify-between mb-1">
-                                                    <label id="label_settings_available_at" for="settings_available_at" class="font-semibold text-3xs uppercase tracking-wider text-slate-700">{{ __('classroom.available_from') }}</label>
+                                                    <label id="label_settings_available_at" for="settings_available_at" class="font-semibold text-sm uppercase tracking-wider text-slate-700">{{ __('classroom.available_from') }}</label>
                                                     <button type="button"
                                                         onclick="window.clearDatePicker?.('settings_available_at')"
                                                         aria-label="Clear available from date"
-                                                        class="min-h-[28px] min-w-[36px] inline-flex items-center justify-end px-1.5 py-0.5 rounded text-3xs text-slate-600 hover:text-slate-900 font-medium transition cursor-pointer hover:bg-slate-100">
+                                                        class="min-h-[28px] min-w-[36px] inline-flex items-center justify-end px-1.5 py-0.5 rounded text-sm text-slate-600 hover:text-slate-900 font-medium transition cursor-pointer hover:bg-slate-100">
                                                         Clear
                                                     </button>
                                                 </div>
@@ -1078,7 +1078,7 @@
                                                     <input id="settings_available_at" type="text"
                                                         name="available_at"
                                                         value="{{ $assignment->available_at?->format('Y-m-d\\TH:i') }}"
-                                                        class="datetime-picker w-full text-xs bg-white border border-slate-300 rounded-lg px-2.5 py-1.5"
+                                                        class="datetime-picker w-full text-sm bg-white border border-slate-300 rounded-lg px-2.5 py-1.5"
                                                         placeholder="{{ __('classroom.open_immediately') }}"
                                                         autocomplete="off"
                                                         aria-labelledby="label_settings_available_at"
@@ -1087,16 +1087,16 @@
                                                         data-window-role="start"
                                                         data-window-pair="settings_due_at">
                                                 </div>
-                                                <p id="desc_settings_available_at" class="text-3xs text-slate-600 mt-1">Students can start after this time. Leave empty to open immediately.</p>
+                                                <p id="desc_settings_available_at" class="text-sm text-slate-600 mt-1">Students can start after this time. Leave empty to open immediately.</p>
                                             </div>
 
                                             <div>
                                                 <div class="flex items-center justify-between mb-1">
-                                                    <label id="label_settings_due_at" for="settings_due_at" class="font-semibold text-3xs uppercase tracking-wider text-slate-700">{{ __('classroom.due_at') }}</label>
+                                                    <label id="label_settings_due_at" for="settings_due_at" class="font-semibold text-sm uppercase tracking-wider text-slate-700">{{ __('classroom.due_at') }}</label>
                                                     <button type="button"
                                                         onclick="window.clearDatePicker?.('settings_due_at')"
                                                         aria-label="Clear due at date"
-                                                        class="min-h-[28px] min-w-[36px] inline-flex items-center justify-end px-1.5 py-0.5 rounded text-3xs text-slate-600 hover:text-slate-900 font-medium transition cursor-pointer hover:bg-slate-100">
+                                                        class="min-h-[28px] min-w-[36px] inline-flex items-center justify-end px-1.5 py-0.5 rounded text-sm text-slate-600 hover:text-slate-900 font-medium transition cursor-pointer hover:bg-slate-100">
                                                         Clear
                                                     </button>
                                                 </div>
@@ -1104,7 +1104,7 @@
                                                     <input id="settings_due_at" type="text"
                                                         name="due_at"
                                                         value="{{ $assignment->due_at?->format('Y-m-d\\TH:i') }}"
-                                                        class="datetime-picker w-full text-xs bg-white border border-slate-300 rounded-lg px-2.5 py-1.5"
+                                                        class="datetime-picker w-full text-sm bg-white border border-slate-300 rounded-lg px-2.5 py-1.5"
                                                         placeholder="{{ __('classroom.no_deadline') }}"
                                                         autocomplete="off"
                                                         aria-labelledby="label_settings_due_at"
@@ -1113,7 +1113,7 @@
                                                         data-window-role="end"
                                                         data-window-pair="settings_available_at">
                                                 </div>
-                                                <p id="desc_settings_due_at" class="text-3xs text-slate-600 mt-1">Submissions lock or mark late after this time. Leave empty for no deadline.</p>
+                                                <p id="desc_settings_due_at" class="text-sm text-slate-600 mt-1">Submissions lock or mark late after this time. Leave empty for no deadline.</p>
                                             </div>
                                         </div>
                                     </div>
@@ -1123,12 +1123,12 @@
 
                             <div class="settings-card border border-rose-200 bg-rose-50/20 rounded-xl p-5">
                                 <h3 class="settings-title lg text-rose-700 mb-1">Danger Zone</h3>
-                                <p class="text-xs text-slate-600 mb-4">Once deleted, student results remain in the database but are detached from this classroom assignment.</p>
+                                <p class="text-sm text-slate-600 mb-4">Once deleted, student results remain in the database but are detached from this classroom assignment.</p>
                                 <form method="POST" action="{{ route('teacher.assignments.destroy', $assignment) }}"
                                     onsubmit="return confirm('Delete this assignment? Student attempt records will be detached.');">
                                     @csrf
                                     @method('DELETE')
-                                    <button type="submit" class="px-4 py-2 text-xs font-bold rounded-lg bg-rose-700 hover:bg-rose-800 text-white cursor-pointer transition shadow-xs">Delete assignment</button>
+                                    <button type="submit" class="px-4 py-2 text-sm font-bold rounded-lg bg-rose-700 hover:bg-rose-800 text-white cursor-pointer transition shadow-xs">Delete assignment</button>
                                 </form>
                             </div>
                         @else
@@ -1151,11 +1151,11 @@
                             @endif
                         </p>
                         <div class="flex items-center justify-center gap-3 flex-wrap">
-                            <a href="{{ route('teacher.classes.index') }}" class="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-blue-700 hover:bg-blue-800 text-white text-xs sm:text-sm font-bold transition shadow-xs">
+                            <a href="{{ route('teacher.classes.index') }}" class="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-blue-700 hover:bg-blue-800 text-white text-sm sm:text-sm font-bold transition shadow-xs">
                                 <x-ui.icon name="people" class="w-4 h-4" />
                                 <span>My Classes</span>
                             </a>
-                            <a href="{{ route('teacher.workspace') }}" class="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-white hover:bg-slate-50 text-slate-700 text-xs sm:text-sm font-bold transition border border-slate-300 shadow-2xs">
+                            <a href="{{ route('teacher.workspace') }}" class="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-white hover:bg-slate-50 text-slate-700 text-sm sm:text-sm font-bold transition border border-slate-300 shadow-2xs">
                                 <x-ui.icon name="layout-sidebar-inset" class="w-4 h-4" />
                                 <span>Class Workspace</span>
                             </a>

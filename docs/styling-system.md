@@ -1,105 +1,26 @@
-# Digital SAT Platform — UX-Centered Design System Specification
+# Styling system
 
-Tài liệu kỹ thuật và quy chuẩn trải nghiệm người dùng (UX Design System) cho hệ thống **Digital SAT Platform**.
+This file documents implementation boundaries for the approved shared product direction in [`DESIGN.md`](../DESIGN.md). The student and teacher migration uses a `.product-ui` scope, semantic `--ds-*` roles, and the existing Blade UI and shell components. See [`docs/warm-product-ui-implementation-plan.md`](warm-product-ui-implementation-plan.md) for rollout order and acceptance criteria.
 
----
+## Active migration rules
 
-## 1. Kiến trúc Boundary 3 Tầng (3-Layer Boundary Architecture)
+- `components/layouts/student.blade.php` accepts `ui="product"`; the default stays on the legacy presentation. Explicitly migrated student and teacher views opt in. The Content Suite opts in through `components/layouts/admin.blade.php` for both author roles.
+- `resources/css/product-ui.css` is imported once by `resources/css/app.css`. Page-surface selectors are scoped under `.product-ui`; shared authenticated navigation uses `.icon-rail--product` across student, teacher, and admin roles. The product surface must not alter the test engine or marketing pages.
+- `resources/css/design-tokens.css` remains the token source. Product scope maps the existing semantic roles to the approved navy, canvas, blue, gold and neutral palette. Brand/link blue and action gold are separate roles.
+- `x-ui.button` and `x-ui.card` keep their current public API. Product scope changes appearance through scoped roles; unopted consumers retain the legacy result.
+- Use 16px body/control text, 14px supporting/compact text, Jakarta Sans, tabular numerals, and task-specific guided/workspace/reading widths.
+- Classroom decoration is removed from opted-in student and teacher views. Preserve all functional LMS information and behavior.
+- `components/layouts/test.blade.php`, `resources/views/engine/**`, engine CSS/JS, question rendering, exam timing and score calculation remain protected.
 
-Hệ thống phân tách tuyệt đối giữa **Global UI Primitives**, **Product Experience Layouts** và các **Experience-Specific Visual Languages**:
+## Historical notes
 
-```mermaid
-flowchart TD
-    Layer1["Layer 1: Global Primitives & Tokens (design-tokens.css, <x-ui.*>)"]
-    Layer2["Layer 2: Product Experience Layouts (App shell, tables, modals, cards)"]
-    Layer3["Layer 3: Experience-Specific Visual Languages"]
+Earlier sections of this document described a global Roboto-first presentation, a Home-only exception, and a Manila/paper classroom visual language. Those visual decisions are superseded for migrated student and teacher workflows by `DESIGN.md`. Historical feature contracts, icon and math-renderer notes, accessibility rules, and route behavior remain useful unless they conflict with the active migration rules above.
 
-    Layer1 --> Layer2
-    Layer2 --> Layer3
+## Teacher workspace adoption
 
-    Layer3 --> ThemeA["Classroom Manila & Corkboard Skeuomorphism"]
-    Layer3 --> ThemeB["Test Engine Bluebook Exam Clone (Isolated)"]
-    Layer3 --> ThemeC["Marketing Landing Page"]
-```
-
-1. **Layer 1 — Global Primitives & Design Tokens (`design-tokens.css`)**:
-   - Chứa 18 OKLCH semantic UX color roles, typography scale, motion durations, density variables và các UI primitives (`<x-ui.button>`, `<x-ui.card>`, `<x-ui.status-badge>`).
-2. **Layer 2 — Product Experience Layouts**:
-   - Khung ứng dụng chung (App shell, navigation bar, data tables, modals, settings forms).
-3. **Layer 3 — Experience-Specific Visual Languages**:
-   - **Classroom Workspace**: Bìa sổ Manila, đinh ghim corkboard, tem thư, handwriting accents. (Không được xuất ngược các phần tử trang trí này sang Admin hay Student Dashboard thông thường).
-   - **Test Engine**: **Đóng băng tuyệt đối** theo chuẩn thi thật Bluebook (Inter + Noto Serif).
-   - **Marketing Landing**: Typography Geist nhã nhặn.
-
----
-
-## 2. Hệ thống Color Tokens Semantic (18 OKLCH Roles)
-
-Màu sắc mô tả **vai trò UX** thay vì tên màu nguyên bản:
-
-| Category | Token Name | OKLCH Value / Role |
-|---|---|---|
-| **Canvas** | `--ds-bg` | `oklch(98.5% 0.005 255)` — Nền ứng dụng chính |
-| **Surfaces** | `--ds-surface` | `oklch(100% 0 0)` — Nền Card / Panel |
-| | `--ds-surface-elevated` | `oklch(99.2% 0.005 255)` — Card nổi / Dropdown |
-| | `--ds-surface-muted` | `oklch(96.5% 0.01 255)` — Nền phụ / Table header |
-| **Typography** | `--ds-text-primary` | `oklch(20% 0.045 255)` — Văn bản chính (WCAG AAA) |
-| | `--ds-text-secondary` | `oklch(40% 0.035 255)` — Văn bản phụ / Subtitle |
-| | `--ds-text-tertiary` | `oklch(55% 0.03 255)` — Caption / Helper text |
-| | `--ds-text-disabled` | `oklch(72% 0.02 255)` — Trạng thái vô hiệu hóa |
-| | `--ds-text-inverse` | `oklch(99% 0 0)` — Chữ trên nền tối/brand |
-| **Borders** | `--ds-border-subtle` | `oklch(93% 0.015 255)` — Viền phân cách nhẹ |
-| | `--ds-border-default` | `oklch(88% 0.025 255)` — Viền Card tiêu chuẩn |
-| | `--ds-border-strong` | `oklch(76% 0.045 255)` — Viền Input active / Hover |
-| **Brand Scale** | `--ds-brand` | `oklch(38% 0.13 258)` — Nút bấm chính / Link |
-| | `--ds-brand-hover` | `oklch(32% 0.13 258)` — State Hover |
-| | `--ds-brand-soft` | `oklch(94.5% 0.035 258)` — Soft Badge background |
-| **Interaction** | `--ds-focus` | `oklch(42% 0.15 258)` — High-contrast Focus Ring |
-| | `--ds-overlay` | `oklch(15% 0.05 255 / 0.65)` — Modal backdrop |
-
----
-
-## 3. Focus System & Accessible Navigation (WCAG 2.1 AA)
-
-- **Focus Ring Rule**: Focus state là **navigation affordance** tối quan trọng cho người dùng bàn phím.
-- **Công thức Focus Ring chuẩn**:
-  ```css
-  button:focus-visible, a:focus-visible, input:focus-visible {
-      outline: none !important;
-      box-shadow: 0 0 0 2px #ffffff, 0 0 0 4px var(--ds-focus) !important;
-  }
-  ```
-  -> Đảm bảo tương phản rõ ràng 100% opacity trên nền sáng, nền tối lẫn nền giấy Manila.
-
----
-
-## 4. Density Modes & Mobile Spatial Budget
-
-- **Density Modes**:
-  - **Compact** (`--density-compact-padding: 0.5rem`): Áp dụng cho Admin Dashboard, Test Builder, Data Tables.
-  - **Comfortable** (`--density-comfortable-padding: 1rem`): Áp dụng cho Student Portal, Classroom workspace.
-  - **Spacious** (`--density-spacious-padding: 2rem`): Áp dụng cho Landing Page.
-- **Mobile Spatial Budget (<640px)**:
-  - Ẩn hoàn toàn các lớp trang trí không phục vụ chức năng (`.cork-note__pin`, `.ds-tape-strip`, `.ds-decorative-stamp`) trên thiết bị di động để dành tối đa diện tích hiển thị nội dung chính.
-
----
-
-## 5. Motion System & Reduced Motion
-
-- **Scale Thời Gian Transition**:
-  - `motion-fast`: `150ms cubic-bezier(0, 0, 0.2, 1)` (Button press, tooltip).
-  - `motion-normal`: `200ms cubic-bezier(0, 0, 0.2, 1)` (Card hover, dropdown open).
-  - `motion-slow`: `300ms cubic-bezier(0, 0, 0.2, 1)` (Modal backdrop, drawer slide).
-- **Reduced Motion Overrides**:
-  - Tự động tắt toàn bộ hiệu ứng chuyển động khi người dùng bật `prefers-reduced-motion: reduce`.
-
----
-
-## 6. Hiến pháp UX (UX Constitution & Invariants)
-
-1. **Single Primary Action Rule**: Mỗi view hoặc card chỉ được có **tối đa một nút Primary Action** (`variant="primary"`). Các hành động phụ dùng `secondary` hoặc `ghost`.
-2. **Multi-Modal Status Signals (WCAG 1.4.1)**: Không dùng màu sắc làm tín hiệu duy nhất. Badge trạng thái bắt buộc chứa **Icon + Text + Color**.
-3. **Lora Restrictions**: Font `Lora` italic chỉ dùng cho lớp cảm xúc/contextual (nhãn viết tay, quote, con dấu). **Cấm dùng Lora cho nút bấm, số liệu hay dữ liệu quan trọng**.
-4. **Cấm Side-Stripe Decorative Accent**: Không dùng `border-left: 4px/5px solid` làm trang trí ngẫu nhiên cho card. Dùng viền mỏng toàn phần (`border border-slate-200`) + background tint.
-5. **Cấm Z-Index Tùy tiện**: Luôn tuân thủ thang z-index chuẩn: `dropdown: 30` → `sticky: 35` → `backdrop: 40` → `modal: 50` → `toast: 60` → `tooltip: 10000`.
-
+- Teacher Home/practice, Classes, Assignments and inspection dialogs, student diagnostics, shared score reports and exam management use the same `.product-ui` foundation as student pages. `.teacher-workspace` adapts analytical width and responsive arrangement; it is not a separate theme.
+- Content Suite retains its authoring navigation and existing tab IDs, modal hooks, libraries, editor behavior and question rendering. Its stylesheet maps local structural aliases to product tokens instead of defining a competing global palette or Roboto body font.
+- The progress stylesheet and chart renderer have one shared theme. Remove duplicate legacy/product declarations rather than adding another teacher override layer.
+- Standard controls/body use 16px; tables and supporting labels use 14px. Preserve real notes and all classroom content while removing notebook/dashed-paper decoration from inspection surfaces.
+- Keep existing access rules, ownership checks, polling, exports, timing and scoring behavior. Print/PDF remain export-specific; the engine is isolated.
+- Active legacy classroom consumers still include Blog, Forum, Profile, Notifications and Teacher Applications. Retain their shared rules until reviewed; remove only confirmed-unused styling and replaced teacher-specific presentation.

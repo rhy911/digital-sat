@@ -3,6 +3,7 @@
     'title' => 'Digital SAT',
     'headerType' => 'none', // 'progress' or 'none'
     'bodyClass' => null,
+    'ui' => 'legacy', // 'product' applies the shared authenticated product presentation
     'cancelRoute' => null,
 ])
 
@@ -27,7 +28,7 @@
     {{ $head ?? '' }}
 </head>
 
-<body class="{{ $bodyClass }}">
+<body @class([$bodyClass, 'product-ui' => $ui === 'product'])>
     <x-ui.loading-screen :cancel-route="$cancelRoute" />
 
     @if ($headerType === 'progress')

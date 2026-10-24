@@ -13,7 +13,7 @@
             <canvas id="chart-radar-rw"></canvas>
         </div>
 
-        <div class="mt-3 pt-3 border-t border-slate-100 flex items-center justify-between text-xs text-slate-500">
+        <div class="mt-3 pt-3 border-t border-slate-100 flex items-center justify-between text-sm text-slate-500">
             <span>Scale: 0% to 100% accuracy</span>
             <span class="font-semibold text-teal-700">Balanced coverage</span>
         </div>
@@ -33,7 +33,7 @@
             <canvas id="chart-radar-math"></canvas>
         </div>
 
-        <div class="mt-3 pt-3 border-t border-slate-100 flex items-center justify-between text-xs text-slate-500">
+        <div class="mt-3 pt-3 border-t border-slate-100 flex items-center justify-between text-sm text-slate-500">
             <span>Scale: 0% to 100% accuracy</span>
             <span class="font-semibold text-orange-700">Pinpoints focus areas</span>
         </div>

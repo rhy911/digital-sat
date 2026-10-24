@@ -24,6 +24,17 @@ class ClassroomController extends Controller
         $visible = fn () => Classroom::query()
             ->when($user->role !== 'admin', fn ($query) => $this->scopeToTeacher($query, $user));
 
+        if (! $request->boolean('all')) {
+            $classroom = $visible()->where('status', 'active')->latest('updated_at')->first()
+                ?? $visible()->latest('updated_at')->first();
+
+            if ($classroom) {
+                return redirect()->route('teacher.classes.show', array_filter([
+                    'classroom' => $classroom,
+                    'new' => $request->boolean('new') ? 1 : null,
+                ]));
+            }
+        }
         $classrooms = $visible()
             ->withCount([
                 'activeMemberships',
@@ -188,7 +199,10 @@ class ClassroomController extends Controller
     public function submitFeedback(Request $request, Classroom $classroom, \App\Models\UserTest $attempt)
     {
         $this->authorize('manage', $classroom);
-        abort_unless($attempt->assignment()->where('classroom_id', $classroom->id)->exists(), 404);
+        $isClassAssignmentAttempt = $attempt->assignment_id && $attempt->assignment()->where('classroom_id', $classroom->id)->exists();
+        $isClassStudentIndependentAttempt = ! $attempt->assignment_id && $classroom->memberships()->where('student_id', $attempt->user_id)->where('status', 'active')->exists();
+
+        abort_unless($isClassAssignmentAttempt || $isClassStudentIndependentAttempt, 404);
 
         $validated = $request->validate([
             'teacher_feedback' => 'required|string|max:2000',

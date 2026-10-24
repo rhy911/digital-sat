@@ -16,7 +16,7 @@
                         <x-ui.icon name="search" class="w-3.5 h-3.5" />
                     </span>
                     <input type="text"
-                        class="w-full pl-9 pr-3 py-2 text-xs rounded-lg border border-slate-200 bg-white text-slate-800 placeholder-slate-500 focus:border-brand focus:ring-2 focus:ring-brand/20 outline-none transition-all duration-150"
+                        class="w-full pl-9 pr-3 py-2 text-sm rounded-lg border border-slate-200 bg-white text-slate-800 placeholder-slate-500 focus:border-brand focus:ring-2 focus:ring-brand/20 outline-none transition-all duration-150"
                         id="questionsTableFilter" placeholder="Search question text..."
                         aria-label="Search question text">
                 </div>
@@ -24,14 +24,14 @@
                 @if (auth()->user()->role === 'teacher')
                     <div class="flex items-center gap-2 bg-white px-3 py-2 rounded-lg border border-slate-200">
                         <label for="questionsShowSharedToggle"
-                            class="text-xs font-bold text-slate-600 cursor-pointer select-none">Show shared</label>
+                            class="text-sm font-bold text-slate-600 cursor-pointer select-none">Show shared</label>
                         <input type="checkbox" id="questionsShowSharedToggle"
                             class="w-4 h-4 text-brand border-slate-300 bg-white rounded cursor-pointer questions-show-shared-toggle">
                     </div>
                 @endif
 
                 <select
-                    class="px-3 py-2 text-xs rounded-lg border border-slate-200 bg-white text-slate-800 focus:border-brand focus-visible:ring-2 focus-visible:ring-brand/20 outline-none w-full max-w-[130px]"
+                    class="px-3 py-2 text-sm rounded-lg border border-slate-200 bg-white text-slate-800 focus:border-brand focus-visible:ring-2 focus-visible:ring-brand/20 outline-none w-full max-w-[130px]"
                     id="questionsTableSectionFilter"
                     aria-label="Filter by section">
                     <option value="">All sections</option>
@@ -40,7 +40,7 @@
                 </select>
 
                 <select
-                    class="px-3 py-2 text-xs rounded-lg border border-slate-200 bg-white text-slate-800 focus:border-brand focus-visible:ring-2 focus-visible:ring-brand/20 outline-none w-full max-w-[130px]"
+                    class="px-3 py-2 text-sm rounded-lg border border-slate-200 bg-white text-slate-800 focus:border-brand focus-visible:ring-2 focus-visible:ring-brand/20 outline-none w-full max-w-[130px]"
                     id="questionsTableStatusFilter"
                     aria-label="Filter by status">
                     <option value="">All status</option>
@@ -49,7 +49,7 @@
                 </select>
 
                 <select
-                    class="text-xs rounded-lg border border-slate-200 bg-white text-slate-800 focus:border-brand focus-visible:ring-2 focus-visible:ring-brand/20 outline-none w-full max-w-xs tom-select tom-select-filter"
+                    class="text-sm rounded-lg border border-slate-200 bg-white text-slate-800 focus:border-brand focus-visible:ring-2 focus-visible:ring-brand/20 outline-none w-full max-w-xs tom-select tom-select-filter"
                     id="questionsTableModuleFilter"
                     aria-label="Filter by module">
                     <option value="">All modules</option>
@@ -86,12 +86,12 @@
             </div>
             <div class="questions-filter-actions flex gap-2">
                 <button type="button"
-                    class="min-h-10 px-4 py-2 bg-brand hover:bg-brand-hover text-white rounded-lg text-xs font-bold flex items-center gap-1.5 cursor-pointer transition-colors duration-150"
+                    class="min-h-10 px-4 py-2 bg-[var(--ui-action-bg)] hover:bg-[var(--ui-action-hover)] text-[var(--ui-action-fg)] rounded-lg text-sm font-bold flex items-center gap-1.5 cursor-pointer transition-colors duration-150"
                     id="questionsTableFilterBtn">
                     <x-ui.icon name="filter" class="w-3.5 h-3.5" /> Apply filters
                 </button>
                 <button type="button"
-                    class="min-h-10 px-4 py-2 bg-white border border-slate-200 text-slate-600 rounded-lg hover:bg-slate-50 text-xs font-bold flex items-center gap-1.5 cursor-pointer transition-colors duration-150"
+                    class="min-h-10 px-4 py-2 bg-white border border-slate-200 text-slate-600 rounded-lg hover:bg-slate-50 text-sm font-bold flex items-center gap-1.5 cursor-pointer transition-colors duration-150"
                     id="questionsTableFilterClearBtn">
                     <x-ui.icon name="x-circle" class="w-3.5 h-3.5" /> Clear
                 </button>
@@ -99,24 +99,24 @@
         </div>
 
         <div class="overflow-x-auto rounded-lg border border-slate-200 shadow-sm bg-white">
-            <table class="teacher-data-table teacher-questions-table w-full text-left text-xs text-slate-600">
+            <table class="teacher-data-table teacher-questions-table w-full text-left text-sm text-slate-600">
                 <thead
-                    class="bg-slate-50 text-slate-400 border-b border-slate-200 font-semibold uppercase tracking-wider text-[10px]">
+                    class="bg-slate-50 text-slate-400 border-b border-slate-200 font-semibold uppercase tracking-wider text-sm">
                     <tr>
-                        <th class="py-2.5 font-semibold text-[10px] text-slate-400 w-16 text-center tracking-wider">Id
+                        <th class="py-2.5 font-semibold text-sm text-slate-400 w-16 text-center tracking-wider">Id
                         </th>
-                        <th class="py-2.5 font-semibold text-[10px] text-slate-400 w-24 text-center tracking-wider">Q.
+                        <th class="py-2.5 font-semibold text-sm text-slate-400 w-24 text-center tracking-wider">Q.
                             Number</th>
-                        <th class="py-2.5 font-semibold text-[10px] text-slate-400 w-20 text-center tracking-wider">
+                        <th class="py-2.5 font-semibold text-sm text-slate-400 w-20 text-center tracking-wider">
                             Section</th>
-                        <th class="px-5 py-2.5 font-semibold text-[10px] text-slate-400 stem-column tracking-wider"
+                        <th class="px-5 py-2.5 font-semibold text-sm text-slate-400 stem-column tracking-wider"
                             title="Stem Snippet">Stem Snippet</th>
-                        <th class="py-2.5 font-semibold text-[10px] text-slate-400 w-24 text-center tracking-wider">
+                        <th class="py-2.5 font-semibold text-sm text-slate-400 w-24 text-center tracking-wider">
                             Usage</th>
-                        <th class="px-5 py-2.5 font-semibold text-[10px] text-slate-400 w-44 tracking-wider">Domain</th>
-                        <th class="py-2.5 font-semibold text-[10px] text-slate-400 w-28 text-center tracking-wider">
+                        <th class="px-5 py-2.5 font-semibold text-sm text-slate-400 w-44 tracking-wider">Domain</th>
+                        <th class="py-2.5 font-semibold text-sm text-slate-400 w-28 text-center tracking-wider">
                             Difficulty</th>
-                        <th class="py-2.5 font-semibold text-[10px] text-slate-400 text-center w-36 tracking-wider">
+                        <th class="py-2.5 font-semibold text-sm text-slate-400 text-center w-36 tracking-wider">
                             Actions</th>
                     </tr>
                 </thead>
@@ -161,7 +161,7 @@
                                     <span class="status-chip status-chip-readonly">Active</span>
                                 @endif
                             </td>
-                            <td class="px-5 py-3.5"><span class="text-slate-600 font-medium text-[11px] block truncate"
+                            <td class="px-5 py-3.5"><span class="text-slate-600 font-medium text-sm block truncate"
                                     title="{{ ucwords(str_replace('_', ' ', $question->skill_domain)) }}">{{ ucwords(str_replace('_', ' ', $question->skill_domain)) }}</span>
                             </td>
                             <td class="px-5 py-3.5 text-center">
@@ -181,7 +181,7 @@
                                     @if ($isOwner)
                                         <div class="actions-dropdown">
                                             <button type="button"
-                                                class="px-2.5 py-1.5 text-xs font-bold rounded-lg border border-slate-200 bg-white text-slate-700 cursor-pointer hover:bg-slate-50 flex items-center gap-1"
+                                                class="px-2.5 py-1.5 text-sm font-bold rounded-lg border border-slate-200 bg-white text-slate-700 cursor-pointer hover:bg-slate-50 flex items-center gap-1"
                                                 data-dropdown-trigger="true" aria-expanded="false"
                                                 aria-label="Toggle actions menu">
                                                 Actions <x-ui.icon name="chevron-down" class="w-2.5 h-2.5" />
@@ -198,7 +198,7 @@
                                         </div>
                                     @else
                                         <button
-                                            class="px-2.5 py-1.5 border border-slate-200 text-slate-600 bg-white hover:bg-slate-50 rounded-lg text-xs font-bold flex items-center gap-1 edit-question-btn cursor-pointer"
+                                            class="px-2.5 py-1.5 border border-slate-200 text-slate-600 bg-white hover:bg-slate-50 rounded-lg text-sm font-bold flex items-center gap-1 edit-question-btn cursor-pointer"
                                             data-id="{{ $question->id }}" aria-label="View question details">
                                             <x-ui.icon name="eye" class="w-3 h-3 leading-none" /> View
                                         </button>
@@ -215,7 +215,7 @@
                                         <x-ui.icon name="database-fill-x" class="w-6 h-6 text-slate-400" />
                                     </div>
                                     <p class="text-sm font-semibold text-slate-600">No questions found</p>
-                                    <p class="text-xs text-slate-400 mt-1">Populate your bank by importing items above!
+                                    <p class="text-sm text-slate-400 mt-1">Populate your bank by importing items above!
                                     </p>
                                 </div>
                             </td>

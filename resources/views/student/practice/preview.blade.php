@@ -1,4 +1,4 @@
-<x-layouts.student :user="$user" header-type="none" title="Test Preview" :cancel-route="route('home')">
+<x-layouts.student :user="$user" header-type="none" title="Test Preview" ui="product" :cancel-route="route('home')">
     @push('styles')
         @vite(['resources/css/classroom-workspace.css', 'resources/css/student/analytics.css'])
     @endpush

@@ -1,5 +1,7 @@
 # Đề xuất thiết kế: Student Classroom View
 
+> **Visual direction superseded.** This student page now follows the shared warm product language in [`../DESIGN.md`](../DESIGN.md). Preserve the functional classroom information architecture and controls described below; retire the Manila, binder, corkboard, pins, tape, and handwritten styling when this page opts into `.product-ui`.
+
 Đề xuất này mô tả cấu trúc giao diện và trải nghiệm người dùng (UX/UI) cho trang chi tiết lớp học phía học sinh (**Student View Classroom**), được kế thừa và đồng bộ hóa với thiết kế kẹp hồ sơ Manila & bảng ghim gỗ của trang giáo viên.
 
 ---

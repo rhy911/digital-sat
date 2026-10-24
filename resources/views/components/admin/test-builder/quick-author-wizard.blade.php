@@ -2,7 +2,7 @@
     <x-slot:title>
         <div>
             <h4 class="text-base font-extrabold leading-tight text-slate-900">Create test</h4>
-            <p class="mt-1 text-xs font-medium text-slate-600">Start from a trusted SAT structure, then adjust only what
+            <p class="mt-1 text-sm font-medium text-slate-600">Start from a trusted SAT structure, then adjust only what
                 you need.</p>
         </div>
     </x-slot:title>
@@ -24,8 +24,8 @@
                     <span class="min-w-0 flex-1">
                         <span class="flex items-center gap-2"><strong class="text-sm text-slate-900">Normal Full
                                 Test</strong><span
-                                class="rounded-full bg-white px-2 py-0.5 text-[11px] font-bold text-brand ring-1 ring-inset ring-brand/30">Recommended</span></span>
-                        <span class="mt-1 block text-xs font-medium leading-relaxed text-slate-600">Four fixed modules with calculator-style raw conversion. No adaptive route bonus.</span>
+                                class="rounded-full bg-white px-2 py-0.5 text-sm font-bold text-brand ring-1 ring-inset ring-brand/30">Recommended</span></span>
+                        <span class="mt-1 block text-sm font-medium leading-relaxed text-slate-600">Four fixed modules with calculator-style raw conversion. No adaptive route bonus.</span>
                     </span>
                     <x-ui.icon name="arrow-right" class="w-4 h-4 text-slate-400 transition-transform group-hover:translate-x-0.5"
                         aria-hidden="true" />
@@ -36,7 +36,7 @@
                     <span class="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg bg-slate-100 text-brand">
                             <x-ui.icon name="diagram-3" class="w-5 h-5" aria-hidden="true" /></span>
                     <span class="min-w-0 flex-1"><strong class="text-sm text-slate-900">Adaptive Full Test</strong><span
-                            class="mt-1 block text-xs font-medium leading-relaxed text-slate-600">Six modules with EAP IRT routing, provisional scaled estimate, and uncertainty range.</span></span>
+                            class="mt-1 block text-sm font-medium leading-relaxed text-slate-600">Six modules with EAP IRT routing, provisional scaled estimate, and uncertainty range.</span></span>
                     <x-ui.icon name="arrow-right" class="w-4 h-4 text-slate-400 transition-transform group-hover:translate-x-0.5"
                         aria-hidden="true" />
                 </button>
@@ -47,7 +47,7 @@
                         class="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg bg-slate-100 text-slate-700">
                             <x-ui.icon name="lightning-charge" class="w-5 h-5" aria-hidden="true" /></span>
                     <span class="min-w-0 flex-1"><strong class="text-sm text-slate-900">Short test</strong><span
-                            class="mt-1 block text-xs font-medium leading-relaxed text-slate-600">One Reading &amp;
+                            class="mt-1 block text-sm font-medium leading-relaxed text-slate-600">One Reading &amp;
                             Writing and one Math module.</span></span>
                     <x-ui.icon name="arrow-right" class="w-4 h-4 text-slate-400 transition-transform group-hover:translate-x-0.5"
                         aria-hidden="true" />
@@ -59,7 +59,7 @@
                         class="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg bg-slate-100 text-slate-700">
                             <x-ui.icon name="box-seam" class="w-5 h-5" aria-hidden="true" /></span>
                     <span class="min-w-0 flex-1"><strong class="text-sm text-slate-900">Single module</strong><span
-                            class="mt-1 block text-xs font-medium leading-relaxed text-slate-600">Start with one
+                            class="mt-1 block text-sm font-medium leading-relaxed text-slate-600">Start with one
                             reusable Reading &amp; Writing module.</span></span>
                     <x-ui.icon name="arrow-right" class="w-4 h-4 text-slate-400 transition-transform group-hover:translate-x-0.5"
                         aria-hidden="true" />
@@ -71,7 +71,7 @@
                         class="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg bg-slate-100 text-slate-700">
                             <x-ui.icon name="sliders" class="w-5 h-5" aria-hidden="true" /></span>
                     <span class="min-w-0 flex-1"><strong class="text-sm text-slate-900">Custom structure</strong><span
-                            class="mt-1 block text-xs font-medium leading-relaxed text-slate-600">Begin with one module
+                            class="mt-1 block text-sm font-medium leading-relaxed text-slate-600">Begin with one module
                             and define your own blueprint.</span></span>
                     <x-ui.icon name="arrow-right" class="w-4 h-4 text-slate-400 transition-transform group-hover:translate-x-0.5"
                         aria-hidden="true" />
@@ -83,7 +83,7 @@
                     <div>
                         <h5 id="wizard-reuse-heading" class="text-sm font-extrabold text-slate-900">Build from trusted
                             content</h5>
-                        <p class="mt-1 max-w-2xl text-xs font-medium leading-relaxed text-slate-600">Copy an existing
+                        <p class="mt-1 max-w-2xl text-sm font-medium leading-relaxed text-slate-600">Copy an existing
                             section or module into an independent private draft. Questions stay linked to your item
                             bank.</p>
                     </div>
@@ -108,7 +108,7 @@
                         select content to copy.</p>
                 </div>
                 <span id="wizard-reuse-kind"
-                    class="rounded-full bg-[var(--color-brand-soft)] px-2.5 py-1 text-xs font-bold text-brand ring-1 ring-inset ring-brand/30">Section</span>
+                    class="rounded-full bg-[var(--color-brand-soft)] px-2.5 py-1 text-sm font-bold text-brand ring-1 ring-inset ring-brand/30">Section</span>
             </div>
 
             <div id="wizard-reuse-skeleton" class="space-y-3" role="status"><span class="sr-only">Loading reusable
@@ -151,7 +151,7 @@
                     class="inline-flex min-h-11 items-center justify-center gap-2 rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-bold text-slate-700 hover:bg-slate-50">
                         <x-ui.icon name="arrow-left" class="w-4 h-4" aria-hidden="true" />Back</button>
                 <button type="button" id="wizard-reuse-submit"
-                    class="inline-flex min-h-11 items-center justify-center gap-2 rounded-lg bg-brand px-5 py-2 text-sm font-bold text-white hover:bg-brand-hover disabled:cursor-not-allowed disabled:opacity-60">Create
+                    class="inline-flex min-h-11 items-center justify-center gap-2 rounded-lg bg-[var(--ui-action-bg)] px-5 py-2 text-sm font-bold text-[var(--ui-action-fg)] hover:bg-[var(--ui-action-hover)] disabled:cursor-not-allowed disabled:opacity-60">Create
                     independent copy <x-ui.icon name="copy" class="w-4 h-4" aria-hidden="true" /></button>
             </div>
         </div>
@@ -165,16 +165,16 @@
                             <h5 id="wizard-title-heading" class="text-sm font-extrabold text-slate-900">Name your test
                             </h5>
                             <span
-                                class="rounded-full bg-white px-2 py-0.5 text-[11px] font-bold text-slate-600 ring-1 ring-inset ring-brand/30">Draft</span>
+                                class="rounded-full bg-white px-2 py-0.5 text-sm font-bold text-slate-600 ring-1 ring-inset ring-brand/30">Draft</span>
                         </div>
-                        <p id="wizard-title-help" class="mt-1 text-xs font-medium leading-relaxed text-slate-600">
+                        <p id="wizard-title-help" class="mt-1 text-sm font-medium leading-relaxed text-slate-600">
                             Leave blank to use the suggested title. Drafts are not visible to students.</p>
                     </div>
                     <span id="wizard-config-label"
-                        class="self-start rounded-full bg-white px-2.5 py-1 text-xs font-bold text-brand ring-1 ring-inset ring-brand/30">Full
+                        class="self-start rounded-full bg-white px-2.5 py-1 text-sm font-bold text-brand ring-1 ring-inset ring-brand/30">Full
                         SAT</span>
                 </div>
-                <label for="wizard-config-title" class="mt-4 block text-xs font-bold text-slate-700">Test title <span
+                <label for="wizard-config-title" class="mt-4 block text-sm font-bold text-slate-700">Test title <span
                         class="font-medium text-slate-500">(optional)</span></label>
                 <input type="text" id="wizard-config-title" maxlength="255" autocomplete="off"
                     aria-describedby="wizard-title-help"
@@ -186,10 +186,10 @@
                     <div>
                         <h5 id="wizard-structure-heading" class="text-sm font-extrabold text-slate-900">Structure
                             summary</h5>
-                        <p class="mt-1 text-xs font-medium text-slate-600">Review the blueprint now. Detailed controls
+                        <p class="mt-1 text-sm font-medium text-slate-600">Review the blueprint now. Detailed controls
                             stay out of the way until requested.</p>
                     </div>
-                    <div id="wizard-summary-totals" class="flex flex-wrap gap-2 text-xs font-bold text-slate-600"
+                    <div id="wizard-summary-totals" class="flex flex-wrap gap-2 text-sm font-bold text-slate-600"
                         aria-live="polite"></div>
                 </div>
 
@@ -217,7 +217,7 @@
                     <div>
                         <h5 id="wizard-customize-heading" class="text-sm font-extrabold text-slate-900">Module
                             settings</h5>
-                        <p class="mt-1 text-xs text-slate-600">Duration is in minutes. Question count must match
+                        <p class="mt-1 text-sm text-slate-600">Duration is in minutes. Question count must match
                             available content when filling from the bank.</p>
                     </div>
                     <button type="button" id="wizard-btn-add-row"
@@ -226,7 +226,7 @@
                 </div>
                 <div class="overflow-x-auto rounded-xl border border-slate-200">
                     <table class="w-full min-w-[760px] text-left text-sm">
-                        <thead class="border-b border-slate-200 bg-slate-50 text-xs font-bold text-slate-600">
+                        <thead class="border-b border-slate-200 bg-slate-50 text-sm font-bold text-slate-600">
                             <tr>
                                 <th class="px-3 py-3">Section</th>
                                 <th class="px-3 py-3">Module</th>
@@ -240,7 +240,7 @@
                     </table>
                 </div>
                 <div id="wizard-row-feedback"
-                    class="hidden items-center justify-between gap-3 rounded-lg bg-slate-100 px-3 py-2 text-xs font-semibold text-slate-700"
+                    class="hidden items-center justify-between gap-3 rounded-lg bg-slate-100 px-3 py-2 text-sm font-semibold text-slate-700"
                     role="status">
                     <span>Module removed.</span><button type="button" id="wizard-undo-remove"
                         class="min-h-9 rounded-md px-3 font-bold text-brand hover:bg-white">Undo</button>
@@ -261,7 +261,7 @@
                         x-on:click="$dispatch('close-modal', 'createTestWizardModal')"
                         class="min-h-11 rounded-lg px-4 py-2 text-sm font-bold text-slate-600 hover:bg-slate-100">Cancel</button>
                     <button type="button" id="wizard-btn-create-configured"
-                        class="inline-flex min-h-11 items-center justify-center gap-2 rounded-lg bg-brand px-5 py-2 text-sm font-bold text-white transition-colors hover:bg-brand-hover disabled:cursor-not-allowed disabled:opacity-60">Create
+                        class="inline-flex min-h-11 items-center justify-center gap-2 rounded-lg bg-[var(--ui-action-bg)] px-5 py-2 text-sm font-bold text-[var(--ui-action-fg)] transition-colors hover:bg-[var(--ui-action-hover)] disabled:cursor-not-allowed disabled:opacity-60">Create
                         draft <x-ui.icon name="arrow-right" class="w-4 h-4" aria-hidden="true" /></button>
                 </div>
             </div>
@@ -275,7 +275,7 @@
                 <div class="h-11 animate-pulse rounded-lg bg-slate-100"></div>
             </div>
             <h4 class="mt-5 text-sm font-extrabold text-slate-900">Creating your draft</h4>
-            <p class="mt-2 text-xs font-medium text-slate-600">Building sections and modules, then opening the first
+            <p class="mt-2 text-sm font-medium text-slate-600">Building sections and modules, then opening the first
                 module.</p>
         </div>
     </div>

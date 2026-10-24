@@ -1,4 +1,4 @@
-<x-layouts.student :user="$user" :title="$classroom->name" header-type="none">
+<x-layouts.student :user="$user" :title="$classroom->name" header-type="none" ui="product">
     @push('styles')
         @vite(['resources/css/classroom-workspace.css'])
     @endpush

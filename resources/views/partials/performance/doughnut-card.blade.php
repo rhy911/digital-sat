@@ -19,9 +19,9 @@
         <div class="sm:col-span-5 flex items-center justify-center relative">
             <div style="width: 180px; height: 180px; position: relative;">
                 <canvas id="chart-doughnut-split"></canvas>
-                <div class="absolute inset-0 flex flex-col items-center justify-center pointer-events-none text-center">
+                <div data-doughnut-center-label class="absolute flex flex-col pointer-events-none text-center" style="left: 50%; top: 50%; transform: translate(-50%, -50%);">
                     <span class="text-2xl font-black text-slate-800 tabular-nums">{{ $counts['overall']['pct'] }}%</span>
-                    <span class="text-[10px] uppercase font-bold text-slate-400">Total Acc</span>
+                    <span class="text-[10px] uppercase font-bold text-slate-500">Total Acc</span>
                 </div>
             </div>
         </div>
@@ -33,7 +33,7 @@
                     <span class="font-semibold text-teal-700 flex items-center gap-2">
                         <span class="w-2.5 h-2.5 rounded-full bg-teal-600"></span> Reading & Writing
                     </span>
-                    <span class="font-bold text-slate-800 tabular-nums">{{ $counts['rw']['pct'] }}% <span class="text-xs text-slate-400 font-normal">({{ $counts['rw']['correct'] }}/{{ $counts['rw']['total'] }})</span></span>
+                    <span class="font-bold text-slate-800 tabular-nums">{{ $counts['rw']['pct'] }}% <span class="text-sm text-slate-500 font-normal">({{ $counts['rw']['correct'] }}/{{ $counts['rw']['total'] }})</span></span>
                 </div>
                 <div class="p-mini-bar" role="progressbar" aria-valuenow="{{ $counts['rw']['pct'] }}" aria-valuemin="0" aria-valuemax="100">
                     <div class="p-mini-bar__fill bg-teal-600" style="transform: scaleX({{ $counts['rw']['pct'] / 100 }});"></div>
@@ -45,14 +45,14 @@
                     <span class="font-semibold text-orange-700 flex items-center gap-2">
                         <span class="w-2.5 h-2.5 rounded-full bg-orange-500"></span> Math
                     </span>
-                    <span class="font-bold text-slate-800 tabular-nums">{{ $counts['math']['pct'] }}% <span class="text-xs text-slate-400 font-normal">({{ $counts['math']['correct'] }}/{{ $counts['math']['total'] }})</span></span>
+                    <span class="font-bold text-slate-800 tabular-nums">{{ $counts['math']['pct'] }}% <span class="text-sm text-slate-500 font-normal">({{ $counts['math']['correct'] }}/{{ $counts['math']['total'] }})</span></span>
                 </div>
                 <div class="p-mini-bar" role="progressbar" aria-valuenow="{{ $counts['math']['pct'] }}" aria-valuemin="0" aria-valuemax="100">
                     <div class="p-mini-bar__fill bg-orange-500" style="transform: scaleX({{ $counts['math']['pct'] / 100 }});"></div>
                 </div>
             </div>
 
-            <div class="pt-2 text-xs text-slate-500 border-t border-slate-100 flex items-center justify-between">
+            <div class="pt-2 text-sm text-slate-500 border-t border-slate-100 flex items-center justify-between">
                 <span>Total evaluated questions:</span>
                 <span class="font-bold text-slate-700 tabular-nums">{{ $counts['overall']['total'] }} questions</span>
             </div>

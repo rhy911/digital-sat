@@ -40,6 +40,9 @@
     --ds-primary-hover: var(--ds-brand-hover);
     --ds-primary-soft: var(--ds-brand-soft);
     --ds-primary-line: var(--ds-brand-line);
+    --ui-action-bg: var(--ds-brand);
+    --ui-action-hover: var(--ds-brand-hover);
+    --ui-action-fg: #ffffff;
 
     /* --- Status Tokens --- */
     --ds-progress: oklch(63% 0.125 183);

@@ -18,11 +18,11 @@
         'secondary' => 'border border-slate-300 bg-white text-slate-800 hover:border-brand hover:bg-[var(--color-brand-soft)]',
         'danger' => 'bg-danger text-white hover:bg-rose-700',
         'ghost-on-dark' => 'border border-white/55 bg-white/10 text-white backdrop-blur-sm hover:bg-white/20 hover:border-white',
-        default => 'bg-brand text-white hover:bg-brand-hover',
+        default => 'bg-[var(--ui-action-bg)] text-[var(--ui-action-fg)] hover:bg-[var(--ui-action-hover)]',
     };
 
     $classes = $attributes->class([
-        'inline-flex items-center justify-center rounded-lg font-bold transition-colors',
+        'ui-button ui-button--' . $variant . ' inline-flex items-center justify-center rounded-lg font-bold transition-colors',
         'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--ds-focus)] focus-visible:ring-offset-2',
         'active:translate-y-px',
         'disabled:cursor-not-allowed disabled:opacity-50 aria-disabled:cursor-not-allowed aria-disabled:opacity-50',
@@ -32,7 +32,7 @@
 @endphp
 
 @if ($href)
-    <a href="{{ $isDisabled ? '#' : $href }}" @if ($isDisabled) aria-disabled="true" tabindex="-1" @endif {{ $classes }}>
+    <a @if (!$isDisabled) href="{{ $href }}" @else aria-disabled="true" aria-busy="true" tabindex="-1" role="link" @endif {{ $classes }}>
         @if ($loading)
             <svg class="h-4 w-4 animate-spin" fill="none" viewBox="0 0 24 24" aria-hidden="true">
                 <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>

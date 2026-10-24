@@ -2,7 +2,7 @@
     <x-slot:title>
         <div>
             <h4 class="text-base font-extrabold leading-tight text-slate-900">Manage sharing</h4>
-            <p id="testSharingSubtitle" class="mt-1 text-xs font-medium text-slate-600">Give approved teachers access to view, clone, and assign this test.</p>
+            <p id="testSharingSubtitle" class="mt-1 text-sm font-medium text-slate-600">Give approved teachers access to view, clone, and assign this test.</p>
         </div>
     </x-slot:title>
 
@@ -24,12 +24,12 @@
                     <div id="shareTeacherResults" class="test-sharing-results hidden" role="listbox"></div>
                 </div>
                 <button type="button" id="shareTeacherAdd"
-                    class="inline-flex min-h-11 items-center justify-center gap-2 rounded-lg bg-brand px-4 py-2 text-sm font-bold text-white hover:bg-brand-hover disabled:cursor-not-allowed disabled:opacity-60"
+                    class="inline-flex min-h-11 items-center justify-center gap-2 rounded-lg bg-[var(--ui-action-bg)] px-4 py-2 text-sm font-bold text-[var(--ui-action-fg)] hover:bg-[var(--ui-action-hover)] disabled:cursor-not-allowed disabled:opacity-60"
                     disabled>
                     <x-ui.icon name="person-plus" class="w-4 h-4" aria-hidden="true" />Add
                 </button>
             </div>
-            <p id="shareTeacherHint" class="mt-2 text-xs font-medium text-slate-600">Shared teachers cannot edit the original or change status.</p>
+            <p id="shareTeacherHint" class="mt-2 text-sm font-medium text-slate-600">Shared teachers cannot edit the original or change status.</p>
         </div>
 
         <div class="rounded-xl border border-slate-200 bg-slate-50 p-4">
@@ -39,18 +39,18 @@
                     <option value="">Select a classroom...</option>
                 </select>
                 <button type="button" id="shareClassAdd"
-                    class="inline-flex min-h-11 items-center justify-center gap-2 rounded-lg bg-brand px-4 py-2 text-sm font-bold text-white hover:bg-brand-hover disabled:cursor-not-allowed disabled:opacity-60"
+                    class="inline-flex min-h-11 items-center justify-center gap-2 rounded-lg bg-[var(--ui-action-bg)] px-4 py-2 text-sm font-bold text-[var(--ui-action-fg)] hover:bg-[var(--ui-action-hover)] disabled:cursor-not-allowed disabled:opacity-60"
                     disabled>
                     <x-ui.icon name="people" class="w-4 h-4" aria-hidden="true" />Share
                 </button>
             </div>
-            <p class="mt-2 text-xs font-medium text-slate-600">This will share the test with all co-teachers and the owner of the selected class.</p>
+            <p class="mt-2 text-sm font-medium text-slate-600">This will share the test with all co-teachers and the owner of the selected class.</p>
         </div>
 
         <section>
             <div class="mb-3 flex items-center justify-between gap-3">
                 <h5 class="text-sm font-extrabold text-slate-900">People with access</h5>
-                <span id="shareCountBadge" class="rounded-full bg-slate-100 px-2.5 py-1 text-xs font-bold text-slate-600">0 teachers</span>
+                <span id="shareCountBadge" class="rounded-full bg-slate-100 px-2.5 py-1 text-sm font-bold text-slate-600">0 teachers</span>
             </div>
             <div id="shareList" class="divide-y divide-slate-100 overflow-hidden rounded-xl border border-slate-200 bg-white"></div>
             <div id="shareEmptyState" class="hidden rounded-xl border border-dashed border-slate-300 bg-white p-6 text-center">

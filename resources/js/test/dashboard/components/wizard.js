@@ -229,7 +229,7 @@ export function initQuickAuthorWizard({ onCreated } = {}) {
         const questions = modules.reduce((total, module) => total + Number(module.questions_count || 0), 0);
         const minutes = modules.reduce((total, module) => total + Number(module.duration_minutes || 0), 0);
         const adaptive = modules.some(module => module.difficulty_level === 'easy') && modules.some(module => module.difficulty_level === 'hard');
-        summary.innerHTML = `<strong class="text-slate-900">${escapeOption(source.label)}</strong><dl class="mt-3 flex flex-wrap gap-x-6 gap-y-2 text-xs"><div><dt class="text-slate-500">Flow</dt><dd class="font-bold text-slate-800">${adaptive ? 'Adaptive' : 'Linear'}</dd></div><div><dt class="text-slate-500">Modules</dt><dd class="font-bold text-slate-800">${modules.length}</dd></div><div><dt class="text-slate-500">Questions</dt><dd class="font-bold text-slate-800">${questions}</dd></div><div><dt class="text-slate-500">Duration</dt><dd class="font-bold text-slate-800">${minutes} min</dd></div></dl><p class="mt-3 text-xs text-slate-600">Section and module settings become independent. Question-bank items remain shared.</p>`;
+        summary.innerHTML = `<strong class="text-slate-900">${escapeOption(source.label)}</strong><dl class="mt-3 flex flex-wrap gap-x-6 gap-y-2 text-sm"><div><dt class="text-slate-500">Flow</dt><dd class="font-bold text-slate-800">${adaptive ? 'Adaptive' : 'Linear'}</dd></div><div><dt class="text-slate-500">Modules</dt><dd class="font-bold text-slate-800">${modules.length}</dd></div><div><dt class="text-slate-500">Questions</dt><dd class="font-bold text-slate-800">${questions}</dd></div><div><dt class="text-slate-500">Duration</dt><dd class="font-bold text-slate-800">${minutes} min</dd></div></dl><p class="mt-3 text-sm text-slate-600">Section and module settings become independent. Question-bank items remain shared.</p>`;
         if (reuseMode === 'derive' && !derivedTitle.value) derivedTitle.value = `${source.label} Practice`;
         updateReuseSubmitState();
     }
@@ -482,7 +482,7 @@ export function initQuickAuthorWizard({ onCreated } = {}) {
             name.className = 'text-slate-800';
             name.textContent = `${row.section_type === 'math' ? 'Math' : 'Reading & Writing'} · Module ${row.module_number} · ${capitalize(row.difficulty_level)}`;
             const meta = document.createElement('span');
-            meta.className = 'text-xs font-semibold text-slate-600';
+            meta.className = 'text-sm font-semibold text-slate-600';
             meta.textContent = `${row.duration_minutes} min · ${row.total_questions} questions`;
             item.append(name, meta);
             summary.appendChild(item);

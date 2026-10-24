@@ -155,11 +155,11 @@ $difficultyBadgeClasses = fn (?string $difficulty) => match ($difficulty) {
                             </h4>
                         </div>
                         <div class="flex items-center gap-3 flex-wrap">
-                            <span class="text-xs text-slate-500 font-medium">
+                            <span class="text-sm text-slate-500 font-medium">
                                 Last activity {{ $attempt->updated_at->diffForHumans() }}
                             </span>
                             @if ($attempt->status === 'completed' || $attempt->total_score !== null)
-                                <a href="{{ route('student.scores.show', $attempt) }}" target="_blank" rel="noopener noreferrer" class="btn-sm-primary flex items-center gap-1.5 no-underline text-xs shrink-0 font-semibold px-3 py-1.5 rounded-lg shadow-2xs">
+                                <a href="{{ route('student.scores.show', $attempt) }}" target="_blank" rel="noopener noreferrer" class="btn-sm-primary flex items-center gap-1.5 no-underline text-sm shrink-0 font-semibold px-3 py-1.5 rounded-lg shadow-2xs">
                                     <span>Score Report</span>
                                     <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/></svg>
                                 </a>
@@ -180,74 +180,74 @@ $difficultyBadgeClasses = fn (?string $difficulty) => match ($difficulty) {
                         $accuracyPct = $savedResponses > 0 ? (int) round(($totalCorrect / $savedResponses) * 100) : 0;
                     @endphp
 
-                    <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 text-xs">
+                    <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 text-sm">
                         <!-- Tile 1: Total Score -->
                         <div class="bg-white border border-slate-200 rounded-xl p-3 shadow-2xs">
-                            <div class="text-3xs uppercase font-bold text-slate-500 tracking-wider mb-1">Score</div>
-                            <div class="text-lg font-mono font-bold text-slate-900 leading-tight">
+                            <div class="text-sm uppercase font-bold text-slate-500 tracking-wider mb-1">Score</div>
+                            <div class="text-lg tabular-nums font-bold text-slate-900 leading-tight">
                                 {{ $attempt->total_score ?? '—' }}
-                                <span class="text-2xs font-sans font-medium text-slate-500">{{ $assignment->isSectionAssignment() ? '/ 800' : '/ 1600' }}</span>
+                                <span class="text-sm font-sans font-medium text-slate-500">{{ $assignment->isSectionAssignment() ? '/ 800' : '/ 1600' }}</span>
                             </div>
-                            <div class="text-3xs text-slate-500 mt-1 truncate">{{ $assignment->isSectionAssignment() ? $assignment->sectionLabel() : 'Full Exam' }}</div>
+                            <div class="text-sm text-slate-500 mt-1 truncate">{{ $assignment->isSectionAssignment() ? $assignment->sectionLabel() : 'Full Exam' }}</div>
                         </div>
 
                         <!-- Tile 2: Accuracy -->
                         <div class="bg-white border border-slate-200 rounded-xl p-3 shadow-2xs">
-                            <div class="text-3xs uppercase font-bold text-slate-500 tracking-wider mb-1">Accuracy</div>
-                            <div class="text-lg font-mono font-bold text-slate-900 leading-tight">
+                            <div class="text-sm uppercase font-bold text-slate-500 tracking-wider mb-1">Accuracy</div>
+                            <div class="text-lg tabular-nums font-bold text-slate-900 leading-tight">
                                 {{ $accuracyPct }}%
                             </div>
-                            <div class="text-3xs text-slate-500 mt-1">{{ $totalCorrect }} / {{ $savedResponses }} correct</div>
+                            <div class="text-sm text-slate-500 mt-1">{{ $totalCorrect }} / {{ $savedResponses }} correct</div>
                         </div>
 
                         <!-- Tile 3: Reading & Writing Score -->
                         <div class="bg-white border border-slate-200 rounded-xl p-3 shadow-2xs">
-                            <div class="text-3xs uppercase font-bold text-slate-500 tracking-wider mb-1">R&amp;W Score</div>
-                            <div class="text-lg font-mono font-bold text-blue-700 leading-tight">
+                            <div class="text-sm uppercase font-bold text-slate-500 tracking-wider mb-1">R&amp;W Score</div>
+                            <div class="text-lg tabular-nums font-bold text-blue-700 leading-tight">
                                 {{ $attempt->score_reading_writing ?? '—' }}
-                                <span class="text-2xs font-sans font-medium text-slate-500">/ 800</span>
+                                <span class="text-sm font-sans font-medium text-slate-500">/ 800</span>
                             </div>
-                            <div class="text-3xs text-slate-500 mt-1">Reading &amp; Writing</div>
+                            <div class="text-sm text-slate-500 mt-1">Reading &amp; Writing</div>
                         </div>
 
                         <!-- Tile 4: Math Score -->
                         <div class="bg-white border border-slate-200 rounded-xl p-3 shadow-2xs">
-                            <div class="text-3xs uppercase font-bold text-slate-500 tracking-wider mb-1">Math Score</div>
-                            <div class="text-lg font-mono font-bold text-indigo-700 leading-tight">
+                            <div class="text-sm uppercase font-bold text-slate-500 tracking-wider mb-1">Math Score</div>
+                            <div class="text-lg tabular-nums font-bold text-indigo-700 leading-tight">
                                 {{ $attempt->score_math ?? '—' }}
-                                <span class="text-2xs font-sans font-medium text-slate-500">/ 800</span>
+                                <span class="text-sm font-sans font-medium text-slate-500">/ 800</span>
                             </div>
-                            <div class="text-3xs text-slate-500 mt-1">Math Section</div>
+                            <div class="text-sm text-slate-500 mt-1">Math Section</div>
                         </div>
 
                         <!-- Tile 5: Time Spent -->
                         <div class="bg-white border border-slate-200 rounded-xl p-3 shadow-2xs">
-                            <div class="text-3xs uppercase font-bold text-slate-500 tracking-wider mb-1">Total Time</div>
-                            <div class="text-lg font-mono font-bold text-slate-900 leading-tight">
+                            <div class="text-sm uppercase font-bold text-slate-500 tracking-wider mb-1">Total Time</div>
+                            <div class="text-lg tabular-nums font-bold text-slate-900 leading-tight">
                                 {{ $formattedTotalTime }}
                             </div>
-                            <div class="text-3xs text-slate-500 mt-1">Across all modules</div>
+                            <div class="text-sm text-slate-500 mt-1">Across all modules</div>
                         </div>
 
                         <!-- Tile 6: Adaptive Path -->
                         <div class="bg-white border border-slate-200 rounded-xl p-3 shadow-2xs">
-                            <div class="text-3xs uppercase font-bold text-slate-500 tracking-wider mb-1">Stage 2 Paths</div>
+                            <div class="text-sm uppercase font-bold text-slate-500 tracking-wider mb-1">Stage 2 Paths</div>
                             <div class="flex items-center gap-1.5 flex-wrap mt-0.5">
                                 @if($attempt->rw_m2_path)
-                                    <span class="text-3xs font-bold px-1.5 py-0.5 rounded bg-blue-50 text-blue-800 border border-blue-200" title="Reading & Writing Module 2 Path">
+                                    <span class="text-sm font-bold px-1.5 py-0.5 rounded bg-blue-50 text-blue-800 border border-blue-200" title="Reading & Writing Module 2 Path">
                                         RW: {{ ucfirst($attempt->rw_m2_path) }}
                                     </span>
                                 @endif
                                 @if($attempt->math_m2_path)
-                                    <span class="text-3xs font-bold px-1.5 py-0.5 rounded bg-indigo-50 text-indigo-800 border border-indigo-200" title="Math Module 2 Path">
+                                    <span class="text-sm font-bold px-1.5 py-0.5 rounded bg-indigo-50 text-indigo-800 border border-indigo-200" title="Math Module 2 Path">
                                         M: {{ ucfirst($attempt->math_m2_path) }}
                                     </span>
                                 @endif
                                 @if(!$attempt->rw_m2_path && !$attempt->math_m2_path)
-                                    <span class="text-xs text-slate-500 font-semibold">—</span>
+                                    <span class="text-sm text-slate-500 font-semibold">—</span>
                                 @endif
                             </div>
-                            <div class="text-3xs text-slate-500 mt-1">Adaptive routing</div>
+                            <div class="text-sm text-slate-500 mt-1">Adaptive routing</div>
                         </div>
                     </div>
 
@@ -268,7 +268,7 @@ $difficultyBadgeClasses = fn (?string $difficulty) => match ($difficulty) {
                     <div class="flex flex-wrap items-center justify-between gap-3 mb-4">
                         <div class="flex items-center gap-2">
                             <h4 class="text-sm sm:text-base font-bold text-slate-900 m-0">{{ $isInProgress ? 'Saved Responses' : 'Response Review' }}</h4>
-                            <span class="text-xs font-semibold px-2 py-0.5 rounded-full bg-slate-100 text-slate-600 border border-slate-200">
+                            <span class="text-sm font-semibold px-2 py-0.5 rounded-full bg-slate-100 text-slate-600 border border-slate-200">
                                 {{ $savedResponses }} {{ \Illuminate\Support\Str::plural('question', $savedResponses) }}
                             </span>
                         </div>
@@ -279,8 +279,8 @@ $difficultyBadgeClasses = fn (?string $difficulty) => match ($difficulty) {
                                 $totalWrong = $attempt->userAnswers->filter(fn($a) => $a->is_correct === false && filled($a->selected_answer))->count();
                                 $totalOmitted = $attempt->userAnswers->filter(fn($a) => !filled($a->selected_answer))->count();
                             @endphp
-                            <div class="flex items-center gap-1.5 text-xs font-semibold">
-                                <span class="text-slate-400 mr-1 text-2xs uppercase tracking-wider font-bold">Filter:</span>
+                            <div class="flex items-center gap-1.5 text-sm font-semibold">
+                                <span class="text-slate-500 mr-1 text-sm uppercase tracking-wider font-bold">Filter:</span>
                                 <button type="button" @click="filterStatus = 'all'"
                                     :class="filterStatus === 'all' ? 'bg-slate-900 text-white shadow-2xs' : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-50'"
                                     class="px-2.5 py-1 rounded-lg transition-colors cursor-pointer">
@@ -336,16 +336,16 @@ $difficultyBadgeClasses = fn (?string $difficulty) => match ($difficulty) {
                                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
                                             </svg>
                                             <span class="w-2.5 h-2.5 rounded-full shrink-0 {{ $isMath ? 'bg-indigo-600' : 'bg-blue-600' }}"></span>
-                                            <h5 class="text-xs sm:text-sm font-bold text-slate-800 m-0 text-left tracking-tight">
+                                            <h5 class="text-sm sm:text-sm font-bold text-slate-800 m-0 text-left tracking-tight">
                                                 {{ $module?->section?->name ?? 'Section' }} &middot; Module {{ $module?->module_number ?? '?' }}
                                             </h5>
                                             @if($module?->difficulty)
-                                                <span class="text-3xs uppercase tracking-wider font-bold px-2 py-0.5 rounded {{ $difficultyBadgeClasses($module->difficulty) }}">
+                                                <span class="text-sm uppercase tracking-wider font-bold px-2 py-0.5 rounded {{ $difficultyBadgeClasses($module->difficulty) }}">
                                                     {{ ucfirst($module->difficulty) }} Stage
                                                 </span>
                                             @endif
                                             @if($isSubmitted)
-                                                <span class="text-3xs font-semibold px-2 py-0.5 rounded bg-emerald-50 text-emerald-700 border border-emerald-200 flex items-center gap-1 shadow-2xs">
+                                                <span class="text-sm font-semibold px-2 py-0.5 rounded bg-emerald-50 text-emerald-700 border border-emerald-200 flex items-center gap-1 shadow-2xs">
                                                     <svg class="w-2.5 h-2.5 text-emerald-600" fill="currentColor" viewBox="0 0 20 20">
                                                         <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
                                                     </svg>
@@ -354,7 +354,7 @@ $difficultyBadgeClasses = fn (?string $difficulty) => match ($difficulty) {
                                             @endif
                                         </div>
 
-                                        <div class="flex items-center gap-3 text-xs font-semibold">
+                                        <div class="flex items-center gap-3 text-sm font-semibold">
                                             @if(!$isInProgress)
                                                 <span class="{{ $mAccuracy >= 80 ? 'text-emerald-700' : ($mAccuracy >= 60 ? 'text-amber-700' : 'text-rose-700') }}">
                                                     {{ $mCorrect }}/{{ $mTotal }} correct ({{ $mAccuracy }}%)
@@ -398,7 +398,7 @@ $difficultyBadgeClasses = fn (?string $difficulty) => match ($difficulty) {
                                                     }"
                                                     class="w-10 h-10 sm:w-11 sm:h-11 rounded-lg flex flex-col items-center justify-center font-mono font-bold border transition-all cursor-pointer relative shadow-2xs {{ $statusClasses }}"
                                                     title="Q{{ $loop->iteration }} &middot; {{ ucfirst($statusKey) }}&#10;Student answer: {{ $answer->selected_answer ?: 'Omitted' }} | Correct: {{ $correct ?: '—' }}&#10;Time: {{ $timeString }}&#10;Domain: {{ $domainLabel }}&#10;Click to inspect question">
-                                                    <span class="leading-none text-xs">{{ $loop->iteration }}</span>
+                                                    <span class="leading-none text-sm">{{ $loop->iteration }}</span>
                                                     <span class="sr-only">{{ filled($answer->selected_answer) ? 'Answered: ' . $answer->selected_answer : 'Omitted' }}</span>
                                                     @if($isInProgress)
                                                         <span class="text-[9px] leading-none opacity-80 mt-0.5">{{ filled($answer->selected_answer) ? '●' : '○' }}</span>
@@ -419,7 +419,7 @@ $difficultyBadgeClasses = fn (?string $difficulty) => match ($difficulty) {
                     @else
                         <div class="attempt-monitor__empty p-8 text-center bg-slate-50 border border-slate-200 rounded-xl">
                             <strong class="block text-sm font-bold text-slate-700 mb-1">No responses saved yet</strong>
-                            <span class="text-xs text-slate-500">Activity will appear after student saves an answer.</span>
+                            <span class="text-sm text-slate-500">Activity will appear after student saves an answer.</span>
                         </div>
                     @endif
                 </div>
@@ -457,13 +457,13 @@ $difficultyBadgeClasses = fn (?string $difficulty) => match ($difficulty) {
                         <div class="px-6 py-3.5 border-b border-slate-200 flex items-center justify-between bg-slate-50/90">
                             <div class="flex items-center gap-3">
                                 <h3 class="text-base font-bold text-slate-900 m-0">Question Detail</h3>
-                                <span class="text-xs font-semibold px-2 py-0.5 rounded bg-white text-slate-600 border border-slate-200 shadow-2xs"
+                                <span class="text-sm font-semibold px-2 py-0.5 rounded bg-white text-slate-600 border border-slate-200 shadow-2xs"
                                       x-show="currentIndex >= 0"
                                       x-text="'Item ' + (currentIndex + 1) + ' of ' + allAnswerIds.length"></span>
                             </div>
                             <div class="flex items-center gap-2">
                                 <button type="button"
-                                    class="px-2.5 py-1 text-xs font-semibold rounded-lg border border-slate-200 bg-white text-slate-700 hover:bg-slate-50 disabled:opacity-35 disabled:cursor-not-allowed transition-colors flex items-center gap-1 shadow-2xs cursor-pointer"
+                                    class="px-2.5 py-1 text-sm font-semibold rounded-lg border border-slate-200 bg-white text-slate-700 hover:bg-slate-50 disabled:opacity-35 disabled:cursor-not-allowed transition-colors flex items-center gap-1 shadow-2xs cursor-pointer"
                                     :disabled="!hasPrev"
                                     @click="prevQuestion()"
                                     title="Previous question (Left Arrow)">
@@ -471,7 +471,7 @@ $difficultyBadgeClasses = fn (?string $difficulty) => match ($difficulty) {
                                     <span class="hidden sm:inline">Prev</span>
                                 </button>
                                 <button type="button"
-                                    class="px-2.5 py-1 text-xs font-semibold rounded-lg border border-slate-200 bg-white text-slate-700 hover:bg-slate-50 disabled:opacity-35 disabled:cursor-not-allowed transition-colors flex items-center gap-1 shadow-2xs cursor-pointer"
+                                    class="px-2.5 py-1 text-sm font-semibold rounded-lg border border-slate-200 bg-white text-slate-700 hover:bg-slate-50 disabled:opacity-35 disabled:cursor-not-allowed transition-colors flex items-center gap-1 shadow-2xs cursor-pointer"
                                     :disabled="!hasNext"
                                     @click="nextQuestion()"
                                     title="Next question (Right Arrow)">
@@ -519,12 +519,12 @@ $difficultyBadgeClasses = fn (?string $difficulty) => match ($difficulty) {
 
                         <!-- Modal Footer -->
                         <div class="px-6 py-3 border-t border-slate-200 bg-slate-50/80 flex items-center justify-between">
-                            <div class="text-2xs text-slate-500 font-medium hidden sm:block">
-                                Use <kbd class="px-1.5 py-0.5 rounded border border-slate-300 bg-white font-mono text-3xs font-semibold text-slate-700">←</kbd> and <kbd class="px-1.5 py-0.5 rounded border border-slate-300 bg-white font-mono text-3xs font-semibold text-slate-700">→</kbd> to navigate, <kbd class="px-1.5 py-0.5 rounded border border-slate-300 bg-white font-mono text-3xs font-semibold text-slate-700">ESC</kbd> to close
+                            <div class="text-sm text-slate-500 font-medium hidden sm:block">
+                                Use <kbd class="px-1.5 py-0.5 rounded border border-slate-300 bg-white font-mono text-sm font-semibold text-slate-700">←</kbd> and <kbd class="px-1.5 py-0.5 rounded border border-slate-300 bg-white font-mono text-sm font-semibold text-slate-700">→</kbd> to navigate, <kbd class="px-1.5 py-0.5 rounded border border-slate-300 bg-white font-mono text-sm font-semibold text-slate-700">ESC</kbd> to close
                             </div>
                             <div class="flex items-center gap-2 ml-auto">
                                 <button type="button"
-                                    class="px-4 py-1.5 text-xs font-semibold text-slate-700 bg-white border border-slate-200 rounded-lg hover:bg-slate-50 transition-colors shadow-2xs cursor-pointer"
+                                    class="px-4 py-1.5 text-sm font-semibold text-slate-700 bg-white border border-slate-200 rounded-lg hover:bg-slate-50 transition-colors shadow-2xs cursor-pointer"
                                     @click="selectedAnswerId = null; previewHtml = ''">
                                     Close
                                 </button>

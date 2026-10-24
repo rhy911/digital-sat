@@ -68,6 +68,8 @@ class User extends Authenticatable implements MustVerifyEmail
             'two_factor_expired_at' => 'datetime',
             'teacher_reviewed_at' => 'datetime',
             'target_score' => 'integer',
+            'home_preview_opened_at' => 'datetime',
+            'home_report_opened_at' => 'datetime',
         ];
     }
 

@@ -1,6 +1,7 @@
 @import "tailwindcss" important;
 @import "./design-tokens.css";
 @import "./shell.css";
+@import "./product-ui.css";
 @import "@fontsource/roboto/400.css";
 @import "@fontsource/roboto/500.css";
 @import "@fontsource/roboto/700.css";

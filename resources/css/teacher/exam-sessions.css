@@ -28,7 +28,7 @@
 
 .exam-hero__label {
     margin: 0;
-    font-size: 0.75rem;
+    font-size: 0.875rem;
     font-weight: 600;
     letter-spacing: 0.02em;
     text-transform: uppercase;
@@ -52,7 +52,7 @@
     margin: 0.625rem 0 0;
     overflow: hidden;
     max-width: 46ch;
-    font-size: 0.8125rem;
+    font-size: 0.875rem;
     color: var(--ds-text-secondary);
     text-overflow: ellipsis;
     white-space: nowrap;
@@ -72,7 +72,7 @@
     align-items: center;
     gap: 0.4375rem;
     flex-shrink: 0;
-    font-size: 0.75rem;
+    font-size: 0.875rem;
     font-weight: 650;
     color: var(--ds-text-secondary);
     white-space: nowrap;
@@ -141,7 +141,7 @@
 }
 
 .exam-field__label {
-    font-size: 0.75rem;
+    font-size: 0.875rem;
     font-weight: 650;
     letter-spacing: 0.02em;
     text-transform: uppercase;
@@ -149,7 +149,7 @@
 }
 
 .exam-field__hint {
-    font-size: 0.75rem;
+    font-size: 0.875rem;
     color: var(--ds-text-tertiary);
 }
 
@@ -157,8 +157,8 @@
     width: 100%;
     min-height: 2.5rem;
     padding: 0 0.75rem;
-    border: 1px solid var(--ds-border-default);
-    border-radius: 0.5rem;
+    border: 1px solid var(--ds-border-strong);
+    border-radius: 0.625rem;
     background: var(--ds-surface);
     font-family: inherit;
     font-size: 0.875rem;
@@ -248,7 +248,7 @@ select.exam-input {
     flex-wrap: wrap;
     align-items: center;
     gap: 0.5rem;
-    font-size: 0.8125rem;
+    font-size: 0.875rem;
     color: var(--ds-text-secondary);
 }
 
@@ -276,8 +276,8 @@ select.exam-input {
     gap: 0.375rem;
     min-height: 2.25rem;
     padding: 0 0.75rem;
-    border: 1px solid var(--ds-border-default);
-    border-radius: 0.5rem;
+    border: 1px solid var(--ds-border-strong);
+    border-radius: 0.625rem;
     background: var(--ds-surface);
     font-family: inherit;
     font-size: 0.875rem;
@@ -319,7 +319,7 @@ select.exam-input {
     border: 0;
     background: transparent;
     font-family: inherit;
-    font-size: 0.8125rem;
+    font-size: 0.875rem;
     font-weight: 600;
     color: var(--ds-text-primary);
     text-align: left;
@@ -473,7 +473,7 @@ select.exam-input {
     flex-wrap: wrap;
     align-items: center;
     gap: 0.875rem;
-    font-size: 0.75rem;
+    font-size: 0.875rem;
     color: var(--ds-text-secondary);
 }
 
@@ -528,13 +528,13 @@ select.exam-input {
 
 .qmap-module__title {
     margin: 0;
-    font-size: 0.8125rem;
+    font-size: 0.875rem;
     font-weight: 700;
     color: var(--ds-text-primary);
 }
 
 .qmap-module__meta {
-    font-size: 0.75rem;
+    font-size: 0.875rem;
     font-weight: 650;
     color: var(--ds-text-secondary);
 }
@@ -561,7 +561,7 @@ select.exam-input {
     border-radius: 0.375rem;
     font-family: var(--font-mono);
     font-variant-numeric: tabular-nums;
-    font-size: 0.75rem;
+    font-size: 0.875rem;
     font-weight: 650;
     line-height: 1;
     cursor: pointer;

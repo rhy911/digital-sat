@@ -37,7 +37,7 @@ class ClassroomDocumentController extends Controller
             'classroom_id' => $classroom->id,
             'created_by' => $request->user()->id,
             'title' => $validated['title'],
-            'unit_name' => $validated['unit_name'] ? trim($validated['unit_name']) : null,
+            'unit_name' => !empty($validated['unit_name']) ? trim($validated['unit_name']) : null,
             'description' => $validated['description'] ?? null,
             'source_type' => $validated['source_type'],
         ];

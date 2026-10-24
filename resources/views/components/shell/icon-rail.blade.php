@@ -10,6 +10,31 @@
 @php
     $profileHref = $profileHref ?? route('profile');
     $logoutHref = $logoutHref ?? route('logout');
+    $isStudent = collect($items)->contains(fn ($i) => !empty($i['group'])) || (auth()->check() && auth()->user()->role === 'student');
+    $groupedItems = $isStudent ? collect($items)->groupBy(fn ($i) => $i['group'] ?? 'Main') : null;
+    $navSections = $isStudent && $groupedItems
+        ? $groupedItems->map(fn ($groupItems, $groupName) => ['title' => $groupName, 'items' => $groupItems])->values()
+        : collect([['title' => null, 'items' => $items]]);
+
+    $getShortLabel = function (array $item): string {
+        $key = $item['key'] ?? '';
+        $rawLabel = $item['label'] ?? '';
+        return match (true) {
+            $key === 'practice' || $rawLabel === 'Test Library' => 'Library',
+            $key === 'exam-sessions' || $rawLabel === 'Exam Sessions' => 'Sessions',
+            $key === 'test-builder' || $rawLabel === 'Test Builder' => 'Builder',
+            $key === 'assignments' || $rawLabel === 'Assignments' => 'Tasks',
+            $key === 'scores' || $rawLabel === 'My Scores' || $rawLabel === 'Scores' => 'Scores',
+            $key === 'classes' || $rawLabel === 'My Classes' || $rawLabel === 'Classes' => 'Classes',
+            $key === 'reports' || $rawLabel === 'Reports' => 'Reports',
+            $key === 'home' || $rawLabel === 'Home' || $rawLabel === 'Dashboard' => 'Home',
+            $key === 'progress' || $rawLabel === 'Progress' => 'Progress',
+            $key === 'blog' || $rawLabel === 'Blog' => 'Blog',
+            $key === 'forum' || $rawLabel === 'Forum' => 'Forum',
+            $key === 'applications' || str_contains(strtolower($rawLabel), 'application') => 'Review',
+            default => $rawLabel,
+        };
+    };
 @endphp
 
 <button type="button" class="mobile-nav-toggle" data-mobile-nav-toggle aria-label="Open menu" aria-expanded="false">
@@ -25,46 +50,54 @@
 </button>
 <div class="mobile-nav-scrim" data-mobile-nav-scrim></div>
 
-<aside class="icon-rail" aria-label="Sidebar navigation">
+@if ($isStudent)
+    <div class="mobile-drawer-switcher" data-drawer-switcher hidden>
+        <button type="button" class="mobile-drawer-tab active" data-drawer-tab="nav" aria-selected="true">Navigation</button>
+        <button type="button" class="mobile-drawer-tab" data-drawer-tab="list" aria-selected="false">List</button>
+    </div>
+@endif
+
+<aside class="icon-rail icon-rail--product {{ $isStudent ? 'icon-rail--student' : '' }}" aria-label="Sidebar navigation">
     <a href="{{ $logoHref }}" class="rail-logo" aria-label="{{ in_array($logoLabel, ['D', 'DFET'], true) ? 'DigiSAT home' : $logoLabel }}">
         <img src="/brand/icon-light.svg" alt="" aria-hidden="true" class="rail-logo__img">
+        <span class="rail-logo__text">DigiSAT</span>
     </a>
 
     <nav class="rail-nav" aria-label="Primary navigation">
-        @foreach ($items as $item)
-            @if (!empty($item['divider']) || (!empty($item['target']) && $item['target'] === '_blank' && !$loop->first))
-                <div class="rail-divider" role="separator" aria-hidden="true"></div>
+        @foreach ($navSections as $section)
+            @if (!empty($section['title']))
+                <div class="rail-group">
+                    <div class="rail-group__title">{{ $section['title'] }}</div>
             @endif
 
-            @php
-                $key = $item['key'] ?? '';
-                $rawLabel = $item['label'] ?? '';
-                $shortLabel = match (true) {
-                    $key === 'practice' || $rawLabel === 'Test Library' => 'Library',
-                    $key === 'exam-sessions' || $rawLabel === 'Exam Sessions' => 'Sessions',
-                    $key === 'test-builder' || $rawLabel === 'Test Builder' => 'Builder',
-                    $key === 'assignments' || $rawLabel === 'Assignments' => 'Tasks',
-                    $key === 'scores' || $rawLabel === 'My Scores' || $rawLabel === 'Scores' => 'Scores',
-                    $key === 'classes' || $rawLabel === 'My Classes' || $rawLabel === 'Classes' => 'Classes',
-                    $key === 'reports' || $rawLabel === 'Reports' => 'Reports',
-                    $key === 'home' || $rawLabel === 'Home' || $rawLabel === 'Dashboard' => 'Home',
-                    $key === 'progress' || $rawLabel === 'Progress' => 'Progress',
-                    $key === 'applications' || str_contains(strtolower($rawLabel), 'application') => 'Review',
-                    default => $rawLabel,
-                };
-            @endphp
-
-            <a href="{{ $item['route'] }}" class="rail-item {{ !empty($item['active']) ? 'active' : '' }}"
-                aria-label="{{ $item['label'] }}"
-                title="{{ $item['label'] }}"
-                @if (!empty($item['active'])) aria-current="page" @endif
-                @if (!empty($item['target'])) target="{{ $item['target'] }}" rel="noopener noreferrer" @endif>
-                <span class="rail-item__icon">{!! $item['icon'] !!}</span>
-                <span class="rail-item__label">{{ $shortLabel }}</span>
-                @if (!empty($item['target']) && $item['target'] === '_blank')
-                    <span class="sr-only"> (opens in new tab)</span>
+            @foreach ($section['items'] as $item)
+                @if (empty($section['title']) && (!empty($item['divider']) || (!empty($item['target']) && $item['target'] === '_blank' && !$loop->first)))
+                    <div class="rail-divider" role="separator" aria-hidden="true"></div>
                 @endif
-            </a>
+
+                @php $shortLabel = $getShortLabel($item); @endphp
+
+                <a href="{{ $item['route'] }}" class="rail-item {{ !empty($item['active']) ? 'active' : '' }}"
+                    title="{{ $item['label'] }}"
+                    @if (!empty($item['active'])) aria-current="page" @endif
+                    @if (!empty($item['target'])) target="{{ $item['target'] }}" rel="noopener noreferrer" @endif>
+                    <span class="rail-item__icon" aria-hidden="true">{!! $item['icon'] !!}</span>
+                    <span class="rail-item__label rail-item__label--desktop">{{ $item['label'] }}</span>
+                    <span class="rail-item__label rail-item__label--compact">{{ $shortLabel }}</span>
+                    @if (!$isStudent)
+                        @if (!empty($item['target']) && $item['target'] === '_blank')
+                            <span class="sr-only"> (opens in new tab)</span>
+                        @endif
+                    @endif
+                </a>
+            @endforeach
+
+            @if (!empty($section['title']))
+                </div>
+                @if (!$loop->last)
+                    <div class="rail-divider" role="separator" aria-hidden="true"></div>
+                @endif
+            @endif
         @endforeach
     </nav>
 
@@ -78,7 +111,7 @@
             data-read-url-template="{{ route('notifications.read', ['id' => '__ID__']) }}"
             data-index-url="{{ route('notifications.index') }}">
             <button type="button" class="rail-item rail-bell__btn" @click="open = !open"
-                :aria-expanded="open ? 'true' : 'false'" aria-haspopup="dialog" aria-label="Notifications">
+                :aria-expanded="open ? 'true' : 'false'" aria-haspopup="dialog">
                 <span class="rail-item__icon">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
                         <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
@@ -86,7 +119,8 @@
                     </svg>
                     <span class="rail-bell__badge" data-notif-badge aria-live="polite" hidden>0</span>
                 </span>
-                <span class="rail-item__label">Alerts</span>
+                <span class="rail-item__label rail-item__label--desktop">Notifications</span>
+                <span class="rail-item__label rail-item__label--compact">Alerts</span>
             </button>
 
             <div class="rail-account__menu rail-bell__menu" role="dialog" aria-label="Notifications" x-show="open" x-cloak
@@ -110,12 +144,13 @@
 
         <div class="rail-account" x-data="{ open: false }" @keydown.escape.window="open = false" @click.outside="open = false">
             <button type="button" class="rail-item rail-avatar__btn" @click="open = !open"
-                :aria-expanded="open ? 'true' : 'false'" aria-haspopup="dialog" aria-label="Account menu">
-                <span class="rail-avatar">
+                :aria-expanded="open ? 'true' : 'false'" aria-haspopup="dialog">
+                <span class="rail-avatar" aria-hidden="true">
                     {{ $avatarLabel }}
                     <span class="rail-avatar__status" aria-hidden="true"></span>
                 </span>
-                <span class="rail-item__label">Account</span>
+                <span class="rail-item__label rail-item__label--desktop">{{ auth()->check() ? auth()->user()->name : 'Account' }}</span>
+                <span class="rail-item__label rail-item__label--compact">Account</span>
             </button>
 
             <div class="rail-account__menu" role="dialog" aria-label="Account menu" x-show="open" x-cloak

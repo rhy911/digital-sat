@@ -1,55 +1,49 @@
-# DESIGN.md
+# DigiSAT Product Interface Direction
 
-Token quyết định cho redesign (xem `docs/redesign-roadmap.md` Phase 1). Dùng file này làm nguồn tham chiếu cho `/impeccable` các lần sau và cho Phase 2+ khi build component library.
+Status: approved visual authority for the migrated student journey and teacher workspaces, including the teacher/admin Content Suite. This replaces the prior Roboto-first and paper/binder visual directives on those surfaces. Functional requirements in older page briefs remain in force unless this document explicitly supersedes their visual treatment.
 
-## Accent color
+## Product register
 
-- Nguồn duy nhất: `--color-brand: #2D439A` (`resources/css/app.css` `@theme`) — đổi từ `#324dc7` ở Phase 2 sau khi đánh giá: hue cũ (~229°, cobalt) đúng hướng nhưng saturation/lightness (~60%/49%) rơi vào vùng "xanh vivid trung bình" phổ biến ở hàng loạt SaaS/ed-tech khác, dễ đọc thành "generic LMS look". `#2D439A` giữ cùng họ hue (~228°), giảm saturation/lightness (~55%/39%) → cảm giác institutional/premium hơn, contrast trên nền trắng ~8.8:1 (AAA). Vì Phase 1 đã tokenize hết qua `var(--color-brand)`/`bg-brand`/`text-brand`, đổi giá trị chỉ cần sửa 1 dòng token, không cần sửa lại 41 file đã dùng.
-- Hover variant: `--color-brand-hover: #24367B`.
-- Soft tint (badge/background nhạt): `--color-brand-soft: color-mix(in oklab, var(--color-brand) 12%, white)`.
-- Đã gộp vào brand: `indigo-600` (qua override token ở admin, qua rename `text-brand`/`bg-brand` ở nơi khác), `#4f46e5`, `#4361EE`/`#4361ee`, `#3347b9` (admin/test-builder cục bộ cũ).
-- **Ngoại lệ (không đụng)**: landing page (`components/layouts/landing.blade.php`, `.landing-*` trong `app.css`) — marketing register, ngoài scope "product". Test Engine (`resources/css/engine/**`, `resources/views/engine/**`, và layout dùng riêng `components/layouts/test.blade.php`) — giữ nguyên tuyệt đối, giống thi thật Bluebook. Classroom workspace (`resources/css/classroom-workspace.css`, `teacher/classes/show.blade.php`, `student/classes/show.blade.php`, `components/classroom/**`) — theme "manila folder / paper ledger / corkboard" dùng accent riêng (`--accent: #2A4D8F`) thay vì `--color-brand`, quyết định có chủ đích cho identity riêng của classroom feature, không phải nợ kỹ thuật.
+The authenticated student and teacher product uses Plus Jakarta Sans, navy `#10234A`, canvas `#F6F8FC`, blue `#2F5BEA`, gold `#F6B93B`, secondary text `#566175`, and white surfaces. Gold marks the main active action with navy text. Blue is for links, focus, and selected controls. Destructive and warning states keep their distinct semantic colors and labels. The shared authenticated navigation rail uses this navy/blue treatment for student, teacher, and admin roles.
 
-## Semantic color
+The warmer Home is the visual reference. Other pages share its type, palette, navigation, control states, and surface language while adapting layout to the user’s task. The rollout is scoped with `.product-ui` through `x-layouts.student ui="product"` and `x-layouts.admin ui="product"`; legacy pages retain the existing presentation until migrated. Do not switch this scope into a user setting or general theme service.
 
-- Danger = `rose` (Tailwind), alias `--color-danger: var(--color-rose-600)`.
-- Success = `emerald` (Tailwind), alias `--color-success: var(--color-emerald-600)`.
-- Warning = `amber` (Tailwind), alias `--color-warning: var(--color-amber-600)`.
-- Neutral = `slate` (Tailwind), alias `--color-neutral: var(--color-slate-500)` — thêm ở Phase 2 cho badge/button "archived/readonly/secondary" (không có token trước đó, hardcode hex rời rạc).
-- Minority `red`/`green`/`yellow` đã gộp về rose/emerald/amber (9 chỗ, ngoài Test Engine layout).
-- Token `--color-danger/success/warning/neutral` dùng trong `<x-ui.status-badge>` (Phase 2), **chưa** rename toàn bộ 136 chỗ rose/emerald/amber hiện có sang class `danger-*`/`success-*`/`warning-*` — việc đó để Phase 3+ làm cùng lúc migrate view, tránh sửa 2 lần.
+## Typography and content
 
-## Component API (`resources/views/components/ui/`, Phase 2)
+Use installed Plus Jakarta Sans weights 400–800 for product UI. Page titles are 30–32px, guided task headings 26px, section headings 18–20px, body and standard controls 16px, and supporting or compact table text 14px. Use rem sizes, unitless line heights, clear weight steps, and tabular numerals for scores and measurements. Use monospace only for codes or technical strings.
 
-- `<x-ui.button variant="primary|secondary|danger|ghost-on-dark" size="sm|md" loading href type>` — đủ state default/hover/focus-visible/active/disabled/loading. `href` → render `<a>`, không thì `<button>`. `ghost-on-dark` dành cho nền tối (thay `.sd-hero-pill` scores hero khi migrate).
-- `<x-ui.status-badge status="success|danger|warning|brand|neutral">` — slot mặc định = label, slot `icon` tùy chọn.
-- `<x-ui.card padded shadow="sm|none">` — slot `header`/mặc định/`footer`, đều tùy chọn trừ mặc định.
-- `<x-ui.dropdown align="left|right|top" width trigger content>` — đã có sẵn từ trước, Phase 2 chỉ vá (bỏ tàn dư `dark:` mode, thêm `aria-haspopup`/`aria-expanded`/Escape-to-close). Chưa gắn vào header thật nào (Phase 3).
-- `<x-ui.alert type="success|danger|warning" :messages="$errors->all()" dismissible>` — `messages` là mảng thì hiện list nếu >1 phần tử; không truyền `messages` thì dùng slot mặc định (custom message đơn). Không tự render nếu rỗng cả hai.
-- `<x-ui.skeleton count class>` — `class` truyền width/height (vd `h-4 w-1/3`), `count` > 1 lặp nhiều dòng.
-- Dev preview: `/dev/ui-kit` (route guard `app()->environment('local')`, `routes/web.php`) — show hết variant/state, dùng để test trước khi migrate view thật ở Phase 3+.
+Keep question passages, answer choices, mathematical content, and the exam’s reading typography on their existing dedicated faces. Reading explanations should stay near 65–75 characters per line; analytical layouts may use more width.
 
-## Font
+## Layout and density
 
-- Family: **Roboto** (`--font-sans`, `@fontsource/roboto`), áp dụng cho product surfaces (student/teacher/admin/auth) và sidebar danh sách (`sidebar-col`). Tối giản, đồng bộ và hỗ trợ trọn vẹn dấu tiếng Việt.
-- **Ngoại lệ (không đụng)**: landing page dùng **Geist** riêng (`--font-geist`, marketing register). Test Engine dùng **Inter** (UI chrome) + **Noto Serif** (reading passages) riêng — giữ nguyên tuyệt đối, không phải nợ kỹ thuật, là quyết định đọc-hiểu cho bài thi. Classroom workspace binder giữ **Plus Jakarta Sans** (body), mã lớp/số liệu chi tiết dùng **IBM Plex Mono** (`--font-mono`), điểm nhấn viết tay dùng **Lora** (`--font-hand`).
-- `public/css/auth.css` (font Inter, `--primary-hover: #4f46e5`) xác nhận là **file mồ côi** — không nằm trong `vite.config.js`, không blade nào load. Không sửa vì không ảnh hưởng runtime; cân nhắc xóa ở lần dọn dẹp sau (ngoài scope Phase 1 — xóa file cần quyết định riêng).
+Choose composition from available content width after navigation and any contextual list:
 
-## Icon set
+- Guided pages use a leading-aligned column capped near 1120px; supporting content joins only above 960px available width.
+- Working pages use the available workspace with bounded gutters and collapse local side panels before task content becomes cramped.
+- Reading content uses a 65–75ch measure, with charts and analysis allowed wider sibling regions.
 
-- Chọn: **Lucide** (SVG path copy trực tiếp, MIT license, không cần thêm npm package).
-- **Đã áp dụng ở Phase 6**: `<x-ui.icon name="...">` (`resources/views/components/ui/icon.blade.php`, 85 icon), Bootstrap Icons CDN (`admin/test-builder/index.blade.php:3`) đã gỡ hoàn toàn.
-- JS-rendered markup (Tabulator rows, dropdown menu, alert trong `resources/js/test/dashboard/**`) dùng bản mirror `resources/js/shared/icons.js` (hàm `icon(name, className)`) — cùng bộ path với Blade, giữ đồng bộ khi thêm icon mới.
-- **Ngoại lệ đã biết**: toolbar EasyMDE (rich-text editor cho question stem/passage/explanation) tự render `<i class="bi bi-*">` nội bộ, không nhận SVG/innerHTML tùy chỉnh qua config. Thay vì giữ CDN chỉ cho việc này, đã thêm `resources/css/admin/easymde-toolbar-icons.css` (import vào `test-builder.css`) — CSS mask-image trỏ tới cùng path Lucide, style theo đúng class name `bi-type-bold` v.v. mà EasyMDE tự gắn, không cần font/CDN nào. 87 inline SVG tự vẽ rải rác ở các surface khác (student/teacher) chưa đổi — ngoài phạm vi Phase 6 (chỉ admin/test-builder).
+Preserve DOM order on narrow screens. Let titles wrap, use `min-width: 0` and `minmax(0, 1fr)`, and keep primary controls discoverable without horizontal page scrolling. Phone inputs remain at least 16px. Preserve local overflow only for genuinely two-dimensional tables, with a visible cue and keyboard access.
 
-## Math renderer
+## Components and states
 
-- Chọn: **KaTeX** (đang chạy thật ở `components/layouts/test.blade.php`, `student/scores/index.blade.php`, admin builder `helpers.js`).
-- **Consolidation**: Ngoại lệ tải KaTeX qua CDN (`jsdelivr`) đã được thu hồi. Tất cả question surfaces (Test Engine `components/layouts/test.blade.php`, student score review, teacher assignment monitor/report, và admin test builder) nay dùng chung runtime module `resources/js/question-renderer.js`, bundle KaTeX 0.16.47 chính xác qua Vite (kèm CSS và font nội bộ). Module quản lý một cấu hình delimiter duy nhất, cache loading promise qua `ensureMathRuntime()`, và cung cấp alias `window.smartRenderMath` cho tương thích ngược.
-- Geist font (`components/layouts/landing.blade.php:8`, CDN riêng) — landing là marketing register, ngoài phạm vi "product" — giữ nguyên, không đổi.
+Use the existing `<x-ui.button>`, `<x-ui.card>`, status, alert, modal, dropdown, and shell components. Primary is gold with navy foreground in the product scope; secondary is outlined and quiet; destructive actions remain distinct. Repeated row actions are secondary. Keep existing component props and native link/button semantics.
 
-## Nợ kỹ thuật đã biết (không xử lý ở Phase 1)
+Surfaces use white, a subtle structural border, 12–16px corner radii, and minimal offset shadows. Do not nest decorative card shells. Focus indicators must work on light and navy surfaces. Forms show labels, connected hints, inline errors, and stable success/failure feedback. Loading and disabled controls retain their accessible names and prevent duplicate activation. Status must remain understandable without color.
 
-- `--ds-*`/`--cw-*` (oklch, `resources/css/student/analytics.css`, `classroom.css`, `practice.css`) — hệ token semantic riêng (ink/surface/border/primary/danger/warning/progress, có soft/strong/hover variant), chỉ scope trong `.ds-home-shell`/`.classroom-body` (student dashboard/analytics/practice, phần teacher dùng chung classroom.css). Không mở rộng, không xóa ở Phase 1. Kế hoạch: hợp nhất hoặc retire khi có `<x-ui.*>` component thật (Phase 2/3).
-- 260+ chỗ class `bg-indigo-600`/`text-indigo-650`/`border-indigo-100`/`border-indigo-200`/`bg-indigo-50`/`hover:bg-indigo-700` trong 21 file blade + 7 file JS admin/test-builder — **màu hiển thị đã đúng brand** (nhờ override `--primary`/`--primary-hover` trong `resources/css/admin/test-builder.css:8-9` trỏ về `var(--color-brand)`/`var(--color-brand-hover)`), chỉ còn *tên class* chưa khớp nghĩa. Rename thật sự dời sang Phase 2/3 khi các nút này được bọc vào `<x-ui.button>` — tránh sửa 2 lần.
-- Bootstrap Icons CDN — xem mục Icon set ở trên.
+Use short transitions for purposeful state changes, guard hover styling by pointer capability where appropriate, and honor `prefers-reduced-motion`. Browser selection, caret, scrollbars, focus, and numeric alignment are part of the product presentation.
+
+## Boundaries and invariants
+
+The classroom paper, binder, corkboard, pin, tape, and handwritten decoration is retired on migrated student and teacher pages. Preserve the classroom’s actual notes, materials, announcements, classmates, settings, assignment eligibility, deadlines, and navigation. Do not remove functional content with decorative wrappers.
+
+The exam engine remains isolated: no engine view/CSS/JS, timing, submission, mobile gate, renderer, passage typography, or scoring behavior is changed by this product scope. The Content Suite uses the product presentation for both teachers and admins while retaining its authoring navigation. Other admin-only, authentication and marketing surfaces remain outside this rollout. Shared reports use the same presentation across roles; viewer permissions and teacher/student actions remain distinct. Print/PDF layouts retain their export-specific typography and geometry.
+
+Preserve Home’s authoritative next-action priorities, guide and goal behavior, score basis/disclosures, history data, assignment constraints, ownership checks, and existing readiness flows. Styling must not invent scores, eligibility, personalization, mastery, or duration claims.
+
+## Rollout
+
+Student delivery: Home → Test Library and Preview information → Classes and Assignments → Score Report → Progress analytics.
+
+Teacher delivery: Home and personal practice → Classes and classroom management → Assignments/results/analysis/settings → student progress and shared score reports → live exam management → Content Suite for teachers and admins. All use the same tokens and component states. Teacher tables and metadata use 14px text; standard controls/body use 16px. Workspace density changes spacing and arrangement, never the visual identity.
+
+Keep the default legacy layout only for remaining unreviewed consumers: Blog, Forum, Profile, Notifications, admin Teacher Applications and authentication/marketing. Remove unused teacher-specific legacy rules and duplicated chart theme branches now. Shared legacy classroom rules stay until their remaining consumers migrate; protect the exam engine and shared question-content typography throughout.

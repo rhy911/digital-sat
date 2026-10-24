@@ -21,7 +21,7 @@
                 <p class="text-slate-600 mb-8 max-w-sm mx-auto text-sm leading-relaxed">Add a section to a test, then
                     attach the modules students will take.</p>
                 <button type="button"
-                    class="px-5 py-3 bg-brand hover:bg-brand-hover text-white font-semibold rounded-lg shadow-sm text-sm transition-colors duration-150"
+                    class="px-5 py-3 bg-[var(--ui-action-bg)] hover:bg-[var(--ui-action-hover)] text-[var(--ui-action-fg)] font-semibold rounded-lg shadow-sm text-sm transition-colors duration-150"
                     x-on:click="$dispatch('open-offcanvas', 'createSectionOffcanvas')">
                     Create section
                 </button>
@@ -36,13 +36,13 @@
                 <h5 class="font-bold text-slate-800 mb-0 text-sm">All sections</h5>
                 <div class="flex items-center gap-4 flex-wrap md:flex-nowrap">
                     <button
-                        class="inline-flex min-h-10 items-center gap-2 rounded-lg bg-brand px-3 py-2 text-xs font-bold text-white hover:bg-brand-hover"
+                        class="inline-flex min-h-10 items-center gap-2 rounded-lg bg-[var(--ui-action-bg)] px-3 py-2 text-sm font-bold text-[var(--ui-action-fg)] hover:bg-[var(--ui-action-hover)]"
                         x-on:click="$dispatch('open-offcanvas', 'createSectionOffcanvas')"><x-ui.icon name="plus-lg"
                             class="w-4 h-4" aria-hidden="true" />Create section</button>
                     @if (auth()->user()->role === 'teacher')
                         <div class="flex items-center gap-2 bg-white px-3 py-1.5 rounded-lg border border-slate-200">
                             <label for="sectionsShowSharedToggle"
-                                class="text-xs font-bold text-slate-600 cursor-pointer select-none">Show shared</label>
+                                class="text-sm font-bold text-slate-600 cursor-pointer select-none">Show shared</label>
                             <input type="checkbox" id="sectionsShowSharedToggle"
                                 class="w-4 h-4 text-brand border-slate-300 bg-white rounded cursor-pointer sections-show-shared-toggle">
                         </div>
@@ -57,8 +57,9 @@
                     </div>
                 </div>
             </div>
-            <div class="overflow-x-auto">
-                <table class="teacher-data-table teacher-sections-table w-full text-left text-xs text-slate-600">
+            <p class="lg:hidden px-4 py-2 text-sm text-slate-600">Scroll horizontally to view all columns.</p>
+            <div class="overflow-x-auto" tabindex="0" role="region" aria-label="Sections table">
+                <table class="teacher-data-table teacher-sections-table w-full text-left text-sm text-slate-600">
                     <colgroup>
                         <col class="col-id">
                         <col class="col-test">
@@ -128,7 +129,7 @@
             @csrf
             <div>
                 <label for="sectionTest"
-                    class="text-xs font-extrabold text-slate-500 tracking-wider uppercase mb-2 block">Parent test <span
+                    class="text-sm font-extrabold text-slate-500 tracking-wider uppercase mb-2 block">Parent test <span
                         class="text-rose-500">*</span></label>
                 <select
                     class="form-select tom-select w-full bg-white border border-slate-200 text-slate-800 text-sm placeholder-slate-400 hover:border-brand/40 focus:border-brand focus:ring-4 focus:ring-brand/10 focus:outline-hidden transition-all duration-200 rounded-xl"
@@ -142,7 +143,7 @@
 
             <div>
                 <label for="sectionType"
-                    class="text-xs font-extrabold text-slate-500 tracking-wider uppercase mb-2 block">Section type <span
+                    class="text-sm font-extrabold text-slate-500 tracking-wider uppercase mb-2 block">Section type <span
                         class="text-rose-500">*</span></label>
                 <select
                     class="w-full px-4 py-2.5 rounded-xl border border-slate-200 bg-white text-slate-800 text-sm hover:border-brand/40 focus:border-brand focus:ring-4 focus:ring-brand/10 focus:outline-hidden transition-all duration-200 appearance-none bg-no-repeat bg-position-[right_1rem_center] bg-size-[1em_1em]"
@@ -159,7 +160,7 @@
                     <input type="checkbox" name="is_public" value="1"
                         class="w-4 h-4 text-emerald-600 border-slate-300 bg-white rounded-md cursor-pointer">
                     <span
-                        class="ml-2.5 text-xs font-extrabold text-slate-500 group-hover:text-emerald-600 uppercase tracking-wider">Public
+                        class="ml-2.5 text-sm font-extrabold text-slate-500 group-hover:text-emerald-600 uppercase tracking-wider">Public
                         visibility</span>
                 </label>
             </div>
@@ -170,9 +171,9 @@
                     <x-ui.icon name="info-circle-fill" class="w-5 h-5 text-amber-600" />
                 </div>
                 <div>
-                    <h6 class="text-xs font-extrabold text-amber-800 uppercase tracking-wider mb-1">Standardized SAT
+                    <h6 class="text-sm font-extrabold text-amber-800 uppercase tracking-wider mb-1">Standardized SAT
                         Structure</h6>
-                    <p class="text-xs text-amber-700 leading-relaxed mb-0 font-medium">
+                    <p class="text-sm text-amber-700 leading-relaxed mb-0 font-medium">
                         Section order is fixed for Digital SAT: <strong class="text-amber-800 font-bold">Reading &
                             Writing</strong> (order 1), <strong class="text-amber-800 font-bold">Math</strong> (order
                         2). You can only add one section of each type per test.
@@ -183,7 +184,7 @@
             <div class="pt-4">
                 <input type="hidden" id="sectionName" name="name" value="">
                 <button type="submit"
-                    class="w-full py-3.5 bg-emerald-700 hover:bg-emerald-800 text-white font-extrabold rounded-xl text-xs uppercase tracking-wider cursor-pointer">
+                    class="w-full py-3.5 bg-emerald-700 hover:bg-emerald-800 text-white font-extrabold rounded-xl text-sm uppercase tracking-wider cursor-pointer">
                     Create section
                 </button>
             </div>

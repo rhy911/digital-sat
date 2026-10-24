@@ -5,6 +5,9 @@ import { initDialogManager } from './ui/dialog-manager.js';
 import { initAttemptMonitorPolling } from './teacher/attempt-monitor.js';
 import { initNotificationBell } from './notifications.js';
 import { initMobileClassroomNav } from './classroom-nav.js';
+import { studentHome } from './student/home.js';
+
+(window.Alpine || Alpine).data('studentHome', studentHome);
 
 if (!window.Alpine) {
     window.Alpine = Alpine;

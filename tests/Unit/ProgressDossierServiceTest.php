@@ -67,6 +67,20 @@ class ProgressDossierServiceTest extends TestCase
         $this->assertStringContainsString('Inferences', $tip);
     }
 
+    public function test_home_suggestion_reports_evidence_without_changing_legacy_tip_consumers(): void
+    {
+        $service = app(ProgressDossierService::class);
+        $attempts = collect([$this->attempt(1100, 500, 600, 1, [true, false])]);
+        $suggestion = $service->studySuggestion($attempts);
+
+        $this->assertSame('Inferences', $suggestion['skill']);
+        $this->assertSame(1, $suggestion['correct']);
+        $this->assertSame(2, $suggestion['total']);
+        $this->assertStringContainsString('Inferences', $service->studyTip($attempts));
+        $this->assertNull($service->studySuggestion(collect()));
+        $this->assertNull($service->studySuggestion(collect([$this->attempt(1400, 700, 700, 1, [true, true])])));
+    }
+
     private function attempt(int $total, int $rw, int $math, int $daysAgo, array $correctness): UserTest
     {
         $attempt = new UserTest([

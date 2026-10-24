@@ -34,7 +34,7 @@
 
                 <div class="card-meta">
                     <span>{{ trans_choice('classroom.attempts_count', $assignment->attempt_limit, ['count' => $assignment->attempt_limit]) }}</span>
-                    <span class="font-bold text-xs text-blue-700">View Submissions →</span>
+                    <span class="font-bold text-sm text-blue-700">View Submissions →</span>
                 </div>
             </a>
         @empty

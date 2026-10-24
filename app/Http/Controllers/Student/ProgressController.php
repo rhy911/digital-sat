@@ -51,7 +51,7 @@ class ProgressController extends Controller
             'target_score' => ['nullable', 'integer', 'min:400', 'max:1600'],
         ]);
 
-        $target = $validated['target_score'] ? (int) $validated['target_score'] : null;
+        $target = ($validated['target_score'] ?? null) !== null ? (int) $validated['target_score'] : null;
         if ($target !== null) {
             // Round to nearest 10
             $target = (int) (round($target / 10) * 10);

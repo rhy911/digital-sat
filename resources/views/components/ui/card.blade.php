@@ -18,7 +18,7 @@
 @endphp
 
 <div {{ $attributes->class([
-        'rounded-xl border border-slate-200 bg-white overflow-hidden',
+        'ui-card rounded-xl border border-slate-200 bg-white overflow-hidden',
         $shadowClasses,
         $stretchClasses,
     ]) }}>

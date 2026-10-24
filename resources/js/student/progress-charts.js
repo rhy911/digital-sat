@@ -7,22 +7,22 @@ const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)
 
 // Theme tokens aligned with DESIGN.md & home page
 const THEME = {
-    brand: '#3A52EE',
-    brandHover: '#24367B',
-    brandSoft: 'rgba(58, 82, 238, 0.12)',
+    brand: '#2f5bea',
+    brandHover: '#244bd0',
+    brandSoft: 'rgba(47, 91, 234, 0.12)',
     teal: '#0d9488',
     tealSoft: 'rgba(13, 148, 136, 0.16)',
     orange: '#ea580c',
     orangeSoft: 'rgba(234, 88, 12, 0.16)',
     emerald: '#059669',
     rose: '#e11d48',
-    grid: 'rgba(226, 232, 240, 0.8)',
-    textPrimary: '#0f172a',
-    textMuted: '#64748b',
-    tooltipBg: '#0f172a',
+    grid: 'rgba(220, 227, 239, 0.8)',
+    textPrimary: '#10234a',
+    textMuted: '#566175',
+    tooltipBg: '#10234a',
 };
 
-Chart.defaults.font.family = 'Roboto, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif';
+Chart.defaults.font.family = getComputedStyle(document.body).fontFamily;
 Chart.defaults.color = THEME.textMuted;
 Chart.defaults.scale.grid.color = THEME.grid;
 Chart.defaults.animation = prefersReducedMotion ? false : { duration: 350, easing: 'easeOutQuart' };
@@ -30,6 +30,20 @@ Chart.defaults.animation = prefersReducedMotion ? false : { duration: 350, easin
 let trendChartInstance = null;
 let doughnutInstance = null;
 let histogramInstance = null;
+
+const doughnutCenterLabelPlugin = {
+    id: 'doughnutCenterLabel',
+    afterDraw(chart) {
+        const arc = chart.getDatasetMeta(0)?.data?.[0];
+        const label = chart.canvas.parentElement?.querySelector('[data-doughnut-center-label]');
+        if (!arc || !label) return;
+
+        const canvasRect = chart.canvas.getBoundingClientRect();
+        const parentRect = label.parentElement.getBoundingClientRect();
+        label.style.left = `${canvasRect.left - parentRect.left + arc.x * (canvasRect.width / chart.width)}px`;
+        label.style.top = `${canvasRect.top - parentRect.top + arc.y * (canvasRect.height / chart.height)}px`;
+    },
+};
 
 // Custom Chart.js Plugin: Draw vertical crosshair guide line on hover
 const verticalGuidelinePlugin = {
@@ -47,7 +61,7 @@ const verticalGuidelinePlugin = {
             ctx.moveTo(x, top);
             ctx.lineTo(x, bottom);
             ctx.lineWidth = 1.5;
-            ctx.strokeStyle = 'rgba(58, 82, 238, 0.3)';
+            ctx.strokeStyle = 'rgba(47, 91, 234, 0.3)';
             ctx.stroke();
             ctx.restore();
         }
@@ -92,8 +106,8 @@ const scoreDataLabelsPlugin = {
             const badgeY = element.y - (isHovered ? 26 : 22);
 
             // Pill Background
-            ctx.fillStyle = isHovered ? '#0f172a' : 'rgba(255, 255, 255, 0.95)';
-            ctx.strokeStyle = isHovered ? THEME.brand : '#cbd5e1';
+            ctx.fillStyle = isHovered ? THEME.tooltipBg : 'rgba(255, 255, 255, 0.95)';
+            ctx.strokeStyle = isHovered ? THEME.brand : '#dce3ef';
             ctx.lineWidth = isHovered ? 2 : 1;
 
             ctx.beginPath();
@@ -106,7 +120,7 @@ const scoreDataLabelsPlugin = {
             ctx.stroke();
 
             // Text
-            ctx.fillStyle = isHovered ? '#ffffff' : '#0f172a';
+            ctx.fillStyle = isHovered ? '#ffffff' : THEME.textPrimary;
             ctx.fillText(text, element.x, badgeY + badgeH / 2);
         });
 
@@ -170,8 +184,8 @@ function initScoreTrendChart(trend) {
 
     const ctx = canvas.getContext('2d');
     const gradient = ctx.createLinearGradient(0, 0, 0, 300);
-    gradient.addColorStop(0, 'rgba(58, 82, 238, 0.16)');
-    gradient.addColorStop(1, 'rgba(58, 82, 238, 0.0)');
+    gradient.addColorStop(0, 'rgba(47, 91, 234, 0.16)');
+    gradient.addColorStop(1, 'rgba(47, 91, 234, 0)');
 
     trendChartInstance = new Chart(canvas, {
         type: 'line',
@@ -524,6 +538,7 @@ function initDoughnutChart(doughnut) {
                 },
             },
         },
+        plugins: [doughnutCenterLabelPlugin],
     });
 }
 

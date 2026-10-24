@@ -177,7 +177,7 @@ export async function updateEditQuestionPreview() {
     if (explanationValue.trim()) {
         explanationHtml = `
             <div class="explanation-preview p-3 mt-3 bg-slate-50 rounded-lg border border-slate-200">
-                <strong class="text-xs font-bold uppercase tracking-wider text-slate-500 block mb-1">Explanation</strong>
+                <strong class="text-sm font-bold uppercase tracking-wider text-slate-500 block mb-1">Explanation</strong>
                 <div class="question-content">${rendered.explanation || ''}</div>
             </div>
         `;
@@ -239,7 +239,7 @@ export function refreshEditMediaList() {
     }
 
     if (foundUrls.size === 0 && foundPlaceholders.size === 0) {
-        mediaList.innerHTML = '<div class="text-slate-500 text-xs font-semibold py-4">No media found in this question.</div>';
+        mediaList.innerHTML = '<div class="text-slate-500 text-sm font-semibold py-4">No media found in this question.</div>';
     } else {
         foundUrls.forEach(url => {
             const col = document.createElement('div');
@@ -247,7 +247,7 @@ export function refreshEditMediaList() {
             col.className = 'relative group border border-slate-200 rounded-lg p-2 bg-white flex items-center justify-center h-28 transition-all hover:border-brand';
             col.innerHTML = `
                 <img src="${escapeHtml(previewUrl)}" class="max-h-24 rounded-lg object-contain w-full h-full" onerror="this.src='https://placehold.co/100x100?text=Error'">
-                <button type="button" class="absolute -top-2 -right-2 w-6 h-6 bg-rose-600 hover:bg-rose-700 text-white rounded-full shadow-sm flex items-center justify-center text-xs font-black transition-all cursor-pointer" 
+                <button type="button" class="absolute -top-2 -right-2 w-6 h-6 bg-rose-600 hover:bg-rose-700 text-white rounded-full shadow-sm flex items-center justify-center text-sm font-black transition-all cursor-pointer"
                         data-action="remove-media" data-url="${escapeHtml(url)}" data-is-url="true" title="Remove from all fields" aria-label="Remove media from all fields">
                     &times;
                 </button>
@@ -263,10 +263,10 @@ export function refreshEditMediaList() {
                 <img src="${escapeHtml(predictedUrl)}" class="max-h-16 rounded-lg object-contain w-full mb-1" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex'">
                 <div class="flex flex-col items-center justify-center" style="display:none;">
                     ${icon('file-earmark-image', 'w-6 h-6 text-slate-500')}
-                    <div class="text-[9px] text-slate-400 text-truncate px-1 max-w-[80px] font-mono" title="${escapeHtml(filename)}">${filename}</div>
+                    <div class="text-[9px] text-slate-500 text-truncate px-1 max-w-[80px] font-mono" title="${escapeHtml(filename)}">${filename}</div>
                 </div>
                 <div class="text-[9px] text-slate-500 font-extrabold uppercase tracking-wider mt-1">Placeholder</div>
-                <button type="button" class="absolute -top-2 -right-2 w-6 h-6 bg-rose-600 hover:bg-rose-700 text-white rounded-full shadow-sm flex items-center justify-center text-xs font-black transition-all cursor-pointer" 
+                <button type="button" class="absolute -top-2 -right-2 w-6 h-6 bg-rose-600 hover:bg-rose-700 text-white rounded-full shadow-sm flex items-center justify-center text-sm font-black transition-all cursor-pointer"
                         data-action="remove-media" data-url="${filename}" data-is-url="false" title="Remove from all fields" aria-label="Remove media from all fields">
                     &times;
                 </button>
