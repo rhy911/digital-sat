@@ -15,9 +15,9 @@ class AdaptiveScoreConversionService
      * section-specific curve. The lower/upper band is the same curve applied to
      * theta ± SE, so the band is always centred on the reported score.
      *
-     * @return array{scaled_score:int,lower:int,upper:int,scaled_se:int,conversion_version:string,estimate_kind:string}
+     * @return array{scaled_score:int,lower:int,upper:int,conversion_version:string,estimate_kind:string}
      */
-    public function convert(float $theta, float $standardError, string $sectionType, ?string $path = null): array
+    public function convert(float $theta, float $standardError, string $sectionType, ?string $path = null, ?int $rawScore = null, ?int $scoredQuestions = null): array
     {
         $path = $path === Module::DIFFICULTY_EASY ? Module::DIFFICULTY_EASY : Module::DIFFICULTY_HARD;
         $se = max(0.0, $standardError);
@@ -25,28 +25,57 @@ class AdaptiveScoreConversionService
         $score = $this->mapTheta($theta, $sectionType, $path);
         $lower = $this->mapTheta($theta - $se, $sectionType, $path);
         $upper = $this->mapTheta($theta + $se, $sectionType, $path);
-        $scaledSe = $this->roundTen($se * (float) config('sat_scoring.adaptive_conversion.points_per_theta', 100));
+        $boundaryScore = $this->applyObservedResponseBoundary($score, $rawScore, $scoredQuestions, $path);
+        if ($boundaryScore !== $score) {
+            if ($rawScore === 0) {
+                $lower = $boundaryScore;
+            } else {
+                $upper = $boundaryScore;
+            }
+            $score = $boundaryScore;
+        }
 
         return [
             'scaled_score' => $score,
             'lower' => min($score, $lower),
             'upper' => max($score, $upper),
-            'scaled_se' => $scaledSe,
             'conversion_version' => (string) config('sat_scoring.adaptive_conversion.version'),
             'estimate_kind' => self::ESTIMATE_KIND,
         ];
     }
 
+    public function applyObservedResponseBoundary(int $score, ?int $rawScore, ?int $scoredQuestions, ?string $path): int
+    {
+        if ($rawScore === null || $scoredQuestions === null || $scoredQuestions <= 0) {
+            return $score;
+        }
+        if ($rawScore === 0) {
+            return (int) config('sat_scoring.adaptive_conversion.minimum', 200);
+        }
+        if ($rawScore === $scoredQuestions && $path !== Module::DIFFICULTY_EASY) {
+            return (int) config('sat_scoring.adaptive_conversion.maximum', 800);
+        }
+
+        return $score;
+    }
+
+    /**
+     * @param  array<string, mixed>  $readingWriting
+     * @param  array<string, mixed>  $math
+     * @return array{score: int, lower: int, upper: int}
+     */
     public function totalRange(array $readingWriting, array $math): array
     {
         $total = $readingWriting['scaled_score'] + $math['scaled_score'];
-        $combinedSe = sqrt(($readingWriting['scaled_se'] ** 2) + ($math['scaled_se'] ** 2));
-        $margin = $this->roundTen($combinedSe);
+        $lowerMargin = (int) round(sqrt((($readingWriting['scaled_score'] - $readingWriting['lower']) ** 2)
+            + (($math['scaled_score'] - $math['lower']) ** 2)) / 10) * 10;
+        $upperMargin = (int) round(sqrt((($readingWriting['upper'] - $readingWriting['scaled_score']) ** 2)
+            + (($math['upper'] - $math['scaled_score']) ** 2)) / 10) * 10;
 
         return [
             'score' => $total,
-            'lower' => max(400, $total - $margin),
-            'upper' => min(1600, $total + $margin),
+            'lower' => max(400, $total - $lowerMargin),
+            'upper' => min(1600, $total + $upperMargin),
         ];
     }
 

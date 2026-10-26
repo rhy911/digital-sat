@@ -6,6 +6,7 @@ use App\Models\Module;
 use App\Models\Question;
 use App\Models\Section;
 use App\Models\Test;
+use App\Models\User;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
@@ -33,10 +34,13 @@ class TestManagementService
         ], null, $userId);
     }
 
-    public function createConfiguredTestFromBlueprint(array $blueprint, $user = null, ?int $userId = null): Test
+    /**
+     * @param  array<string, mixed>  $blueprint
+     */
+    public function createConfiguredTestFromBlueprint(array $blueprint, ?User $user = null, ?int $userId = null): Test
     {
         $this->structures->validateBlueprint($blueprint);
-        $modules = collect($blueprint['modules'] ?? [])->values();
+        $modules = collect((array) ($blueprint['modules'] ?? []))->values();
 
         if ($modules->isEmpty()) {
             throw ValidationException::withMessages([
@@ -117,6 +121,9 @@ class TestManagementService
         });
     }
 
+    /**
+     * @return list<array<string, mixed>>
+     */
     private function defaultBlueprintModules(string $testType): array
     {
         if ($testType === 'module_only') {
@@ -151,6 +158,9 @@ class TestManagementService
         ];
     }
 
+    /**
+     * @return array<string, mixed>
+     */
     private function moduleRow(string $sectionType, int $moduleNumber, string $difficultyLevel, int $durationMinutes, int $totalQuestions): array
     {
         return [
@@ -162,7 +172,11 @@ class TestManagementService
         ];
     }
 
-    private function selectQuestionsForModule(string $sectionType, int $limit, array $excludedIds, $user)
+    /**
+     * @param  array<int, int|string>  $excludedIds
+     * @return \Illuminate\Database\Eloquent\Collection<int, Question>
+     */
+    private function selectQuestionsForModule(string $sectionType, int $limit, array $excludedIds, ?User $user): \Illuminate\Database\Eloquent\Collection
     {
         return Question::visibleTo($user)
             ->where('section_type', $sectionType)
@@ -419,6 +433,8 @@ class TestManagementService
     /**
      * Delete question rows only when the modules being deleted are their sole
      * owners. Test/module clones intentionally share question-bank rows.
+     *
+     * @param  iterable<int, Module>  $modules
      */
     private function deleteQuestionsOwnedByModules(iterable $modules, bool $force): void
     {

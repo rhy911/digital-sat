@@ -11,6 +11,7 @@ class NoteUpdateRequest extends FormRequest
         return true; // ClassroomController::noteUpdate() calls $this->authorize('manage', $classroom) separately
     }
 
+    /** @return array<string, mixed> */
     public function rules(): array
     {
         return [

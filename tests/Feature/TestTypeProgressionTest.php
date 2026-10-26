@@ -33,6 +33,10 @@ class TestTypeProgressionTest extends TestCase
 
         $this->assertSame($rw2->ulid, $this->submit($student, $attempt, $rw1, $rw1Question)->assertOk()->json('next_module_id'));
         $this->assertSame($math1->ulid, $this->submit($student, $attempt, $rw2, $rw2Question)->assertOk()->json('next_module_id'));
+        $this->actingAs($student)
+            ->get(route('engine.session', ['ulid' => $rw1->ulid, 'attempt' => $attempt->ulid]))
+            ->assertRedirect(route('engine.session', ['ulid' => $math1->ulid, 'attempt' => $attempt->ulid]));
+        $this->resumeBreak($student, $attempt, $math1);
         $this->assertSame($math2->ulid, $this->submit($student, $attempt, $math1, $math1Question)->assertOk()->json('next_module_id'));
         $this->submit($student, $attempt, $math2, $math2Question)->assertOk()->assertJsonPath('test_completed', true);
 
@@ -42,7 +46,7 @@ class TestTypeProgressionTest extends TestCase
         $this->assertNotNull($attempt->score_math);
         $this->assertNull($attempt->score_conversion_set_id);
         // Normal is now IRT-scored (difficulty-aware), not the route-neutral raw table.
-        $this->assertSame('irt_curve_v1', $attempt->score_conversion_version);
+        $this->assertSame('irt_curve_v2', $attempt->score_conversion_version);
         $this->assertSame('adaptive_irt_provisional', $attempt->score_estimate_kind);
         $this->assertNotNull($attempt->rw_theta);
         $this->assertNotNull($attempt->math_theta);
@@ -61,13 +65,14 @@ class TestTypeProgressionTest extends TestCase
         $rwNext = $this->submit($student, $attempt, $rwModules['standard'][0], $rwModules['standard'][1])->assertOk();
         $rwIssued = Module::where('ulid', $rwNext->json('next_module_id'))->firstOrFail();
         $this->submit($student, $attempt, $rwIssued, $rwIssued->questions()->firstOrFail())->assertOk();
+        $this->resumeBreak($student, $attempt, $mathModules['standard'][0]);
         $mathNext = $this->submit($student, $attempt, $mathModules['standard'][0], $mathModules['standard'][1])->assertOk();
         $mathIssued = Module::where('ulid', $mathNext->json('next_module_id'))->firstOrFail();
         $this->submit($student, $attempt, $mathIssued, $mathIssued->questions()->firstOrFail())->assertOk();
 
         $attempt->refresh();
         $this->assertSame('adaptive_irt_provisional', $attempt->score_estimate_kind);
-        $this->assertSame('irt_curve_v1', $attempt->score_conversion_version);
+        $this->assertSame('irt_curve_v2', $attempt->score_conversion_version);
         $this->assertNotNull($attempt->rw_theta);
         $this->assertNotNull($attempt->total_score_lower);
         $this->assertGreaterThanOrEqual($attempt->total_score_lower, $attempt->total_score);
@@ -150,9 +155,38 @@ class TestTypeProgressionTest extends TestCase
 
         $first = $this->submit($student, $attempt, $rwModule, $rwQuestion)->assertOk();
         $this->assertSame($mathModule->ulid, $first->json('next_module_id'));
+        $this->resumeBreak($student, $attempt, $mathModule);
         $this->submit($student, $attempt, $mathModule, $mathQuestion)
             ->assertOk()->assertJsonPath('test_completed', true);
         $this->assertNull($attempt->fresh()->total_score);
+    }
+
+    public function test_resume_break_accepts_module_attached_to_attempt_test_through_pivot(): void
+    {
+        [$student, $sourceTest] = $this->base('custom_test');
+        $sourceSection = $this->section($sourceTest, Section::TYPE_MATH, 1);
+        $module = $this->module($sourceSection, 1, Module::DIFFICULTY_STANDARD, 1);
+
+        $attemptTest = Test::create([
+            'title' => 'Attempt test',
+            'test_type' => 'custom_test',
+            'status' => 'active',
+            'is_public' => true,
+        ]);
+        $attemptSection = $this->section($attemptTest, Section::TYPE_MATH, 1);
+        $attemptSection->modules()->attach($module->id);
+        $attempt = UserTest::create([
+            'user_id' => $student->id,
+            'test_id' => $attemptTest->id,
+            'status' => 'in_progress',
+            'current_module_id' => $module->id,
+            'current_module_started_at' => null,
+        ]);
+
+        $this->actingAs($student)->postJson(route('engine.test.resume-break'), [
+            'user_test_id' => $attempt->id,
+            'module_id' => $module->id,
+        ])->assertOk()->assertJsonPath('status', 'active');
     }
 
     public function test_custom_test_advances_through_linear_modules(): void
@@ -277,5 +311,13 @@ class TestTypeProgressionTest extends TestCase
     private function submit(User $student, UserTest $attempt, Module $module, Question $question)
     {
         return $this->actingAs($student)->postJson(route('engine.test.submit-module'), ['user_test_id' => $attempt->id, 'module_id' => $module->id, 'answers' => [(string) $question->id => 'A']]);
+    }
+
+    private function resumeBreak(User $student, UserTest $attempt, Module $module): void
+    {
+        $this->actingAs($student)->postJson(route('engine.test.resume-break'), [
+            'user_test_id' => $attempt->id,
+            'module_id' => $module->id,
+        ])->assertOk();
     }
 }

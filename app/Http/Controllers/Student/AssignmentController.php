@@ -8,11 +8,13 @@ use App\Models\Classroom;
 use App\Models\UserTest;
 use App\Services\AssignmentService;
 use App\Services\AttemptEngine;
+use Illuminate\Contracts\View\View;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 
 class AssignmentController extends Controller
 {
-    public function index(Request $request)
+    public function index(Request $request): View
     {
         $user = $request->user();
         $classroom = null;
@@ -44,11 +46,11 @@ class AssignmentController extends Controller
             $assignment->load($this->assignmentRelations($user->id, deepTest: true));
         }
 
-        $recipient = $assignment?->recipients?->first();
+        $recipient = $assignment->recipients->first();
 
         return view('student.assignments.show', compact('user', 'assignment', 'assignments', 'classroom', 'classrooms', 'recipient'));
     }
-    public function show(Request $request, Assignment $assignment)
+    public function show(Request $request, Assignment $assignment): View
     {
         $this->authorize('view', $assignment);
 
@@ -79,11 +81,12 @@ class AssignmentController extends Controller
 
         $assignment->load($this->assignmentRelations($user->id, deepTest: true));
 
-        $recipient = $assignment?->recipients?->first();
+        $recipient = $assignment->recipients->first();
 
         return view('student.assignments.show', compact('user', 'assignment', 'assignments', 'classroom', 'classrooms', 'recipient'));
     }
-    public function start(Assignment $assignment, AssignmentService $service, AttemptEngine $engine)
+
+    public function start(Assignment $assignment, AssignmentService $service, AttemptEngine $engine): RedirectResponse
     {
         $this->authorize('view', $assignment);
 
@@ -107,14 +110,14 @@ class AssignmentController extends Controller
 
         $attempt = $service->startOrResume($assignment, auth()->user());
         $module = $attempt->currentModule;
-        abort_unless($module, 422, 'Assigned test has no module.');
+        abort_unless((bool) $module, 422, 'Assigned test has no module.');
         return redirect()->route('engine.session', ['ulid' => $module->ulid, 'attempt' => $attempt->ulid]);
     }
 
     /**
      * @return \Illuminate\Database\Eloquent\Collection<int, UserTest>
      */
-    private function runningAttempts(Assignment $assignment)
+    private function runningAttempts(Assignment $assignment): \Illuminate\Database\Eloquent\Collection
     {
         return UserTest::where('assignment_id', $assignment->id)
             ->where('user_id', auth()->id())
@@ -122,6 +125,7 @@ class AssignmentController extends Controller
             ->get();
     }
 
+    /** @return array<int|string, mixed> */
     private function assignmentRelations(int $userId, bool $deepTest = false): array
     {
         return [

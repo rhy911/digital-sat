@@ -76,6 +76,17 @@ class AssignmentModuleTimingTest extends TestCase
         $this->assertSame(120, $attempt->fresh()->current_module_elapsed_seconds);
     }
 
+    public function test_private_paused_clock_assignment_can_open_its_issued_module(): void
+    {
+        [$student, $module, $attempt] = $this->assignmentAttempt(20);
+        $attempt->assignment->update(['clock_mode' => 'paused']);
+
+        $this->actingAs($student)
+            ->get(route('engine.session', $module->ulid).'?attempt='.$attempt->ulid)
+            ->assertOk()
+            ->assertSee('window.currentModuleId = '.$module->id, false);
+    }
+
     public function test_assignment_autosave_uses_server_elapsed_and_rejects_late_answers(): void
     {
         Carbon::setTestNow('2026-06-22 12:00:00');

@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Models\Module;
+use App\Models\Question;
 use App\Models\ScoreConversionSet;
 use App\Models\Section;
 use App\Models\Test;
@@ -69,26 +70,35 @@ class FormScoringAuditService
     public function formChecksum(Test $test): string
     {
         $test->loadMissing('sections.modules.questions');
-        $payload = $test->sections->sortBy('order')->map(fn ($section) => [
-            'type' => $section->type,
-            'order' => (int) $section->order,
-            'modules' => $section->modules->sortBy([['module_number', 'asc'], ['difficulty_level', 'asc']])->map(fn ($module) => [
-                'number' => (int) $module->module_number,
-                'difficulty' => $module->difficulty_level,
-                'duration' => (int) $module->duration_minutes,
-                'questions' => $module->questions->sortBy('pivot.position')->map(fn ($question) => [
-                    'id' => (int) $question->id,
-                    'pretest' => (bool) $question->is_pretest,
-                    'a' => (float) $question->irt_a,
-                    'b' => (float) $question->irt_b,
-                    'c' => (float) $question->irt_c,
-                ])->values()->all(),
-            ])->values()->all(),
-        ])->values()->all();
+        $payload = $test->sections->sortBy('order')->map(function (Section $section): array {
+            return [
+                'type' => $section->type,
+                'order' => (int) $section->order,
+                'modules' => $section->modules->sortBy([['module_number', 'asc'], ['difficulty_level', 'asc']])->map(function (Module $module): array {
+                    return [
+                        'number' => (int) $module->module_number,
+                        'difficulty' => $module->difficulty_level,
+                        'duration' => (int) $module->duration_minutes,
+                        'questions' => $module->questions->sortBy('pivot.position')->map(function (Question $question): array {
+                            return [
+                                'id' => (int) $question->id,
+                                'pretest' => (bool) $question->is_pretest,
+                                'a' => (float) $question->irt_a,
+                                'b' => (float) $question->irt_b,
+                                'c' => (float) $question->irt_c,
+                            ];
+                        })->values()->all(),
+                    ];
+                })->values()->all(),
+            ];
+        })->values()->all();
 
         return hash('sha256', json_encode($payload, JSON_PRESERVE_ZERO_FRACTION | JSON_THROW_ON_ERROR));
     }
 
+    /**
+     * @return array<int, string>
+     */
     private function conversionErrors(Test $test, ScoreConversionSet $set): array
     {
         $errors = [];
@@ -101,7 +111,8 @@ class FormScoringAuditService
             $m1 = $section->modules->first(fn ($module) => (int) $module->module_number === 1);
             $m2 = $section->modules->first(fn ($module) => (int) $module->module_number === 2);
             if ($m1 && $m2) {
-                $scoredTotal = $m1->questions->count() + $m2->questions->count();
+                $scoredTotal = $m1->questions->where('is_pretest', false)->count()
+                    + $m2->questions->where('is_pretest', false)->count();
                 $rows = $set->rows
                     ->where('section_type', $section->type)
                     ->where('m2_difficulty', 'standard')
@@ -120,6 +131,9 @@ class FormScoringAuditService
                         break;
                     }
                     $previous = $scaled;
+                }
+                if ($rows->isNotEmpty() && ((int) $rows->first()->scaled_score !== 200 || (int) $rows->last()->scaled_score !== 800)) {
+                    $errors[] = "{$section->name} conversion must map zero correct to 200 and a perfect score to 800.";
                 }
             }
         }

@@ -1075,11 +1075,10 @@
                                                     </button>
                                                 </div>
                                                 <div class="relative">
-                                                    <input id="settings_available_at" type="text"
+                                                    <input id="settings_available_at" type="datetime-local" step="300"
                                                         name="available_at"
                                                         value="{{ $assignment->available_at?->format('Y-m-d\\TH:i') }}"
                                                         class="datetime-picker w-full text-sm bg-white border border-slate-300 rounded-lg px-2.5 py-1.5"
-                                                        placeholder="{{ __('classroom.open_immediately') }}"
                                                         autocomplete="off"
                                                         aria-labelledby="label_settings_available_at"
                                                         aria-describedby="desc_settings_available_at"
@@ -1101,11 +1100,10 @@
                                                     </button>
                                                 </div>
                                                 <div class="relative">
-                                                    <input id="settings_due_at" type="text"
+                                                    <input id="settings_due_at" type="datetime-local" step="300"
                                                         name="due_at"
                                                         value="{{ $assignment->due_at?->format('Y-m-d\\TH:i') }}"
                                                         class="datetime-picker w-full text-sm bg-white border border-slate-300 rounded-lg px-2.5 py-1.5"
-                                                        placeholder="{{ __('classroom.no_deadline') }}"
                                                         autocomplete="off"
                                                         aria-labelledby="label_settings_due_at"
                                                         aria-describedby="desc_settings_due_at"

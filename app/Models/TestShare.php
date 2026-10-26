@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class TestShare extends Model
 {
@@ -12,17 +13,20 @@ class TestShare extends Model
         'shared_by',
     ];
 
-    public function test()
+    /** @return BelongsTo<Test, $this> */
+    public function test(): BelongsTo
     {
         return $this->belongsTo(Test::class);
     }
 
-    public function teacher()
+    /** @return BelongsTo<User, $this> */
+    public function teacher(): BelongsTo
     {
         return $this->belongsTo(User::class, 'user_id');
     }
 
-    public function sharer()
+    /** @return BelongsTo<User, $this> */
+    public function sharer(): BelongsTo
     {
         return $this->belongsTo(User::class, 'shared_by');
     }

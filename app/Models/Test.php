@@ -2,13 +2,17 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Test extends Model
 {
-    use HasFactory, SoftDeletes;
+    use SoftDeletes;
 
     public const TYPE_FULL = 'full_length';
 
@@ -44,12 +48,18 @@ class Test extends Model
         });
     }
 
-    public function creator()
+    /** @return BelongsTo<User, $this> */
+    public function creator(): BelongsTo
     {
         return $this->belongsTo(User::class, 'created_by');
     }
 
-    public function scopeVisibleTo($query, $user)
+    /**
+     * @param Builder<Test> $query
+     * @param ?User $user
+     * @return Builder<Test>
+     */
+    public function scopeVisibleTo(Builder $query, ?User $user): Builder
     {
         if (! $user) {
             return $query->where('is_public', true);
@@ -70,7 +80,12 @@ class Test extends Model
         });
     }
 
-    public function scopeAssignableTo($query, User $user)
+    /**
+     * @param Builder<Test> $query
+     * @param User $user
+     * @return Builder<Test>
+     */
+    public function scopeAssignableTo(Builder $query, User $user): Builder
     {
         return $query->where('status', 'active')
             ->where(function ($q) use ($user) {
@@ -79,22 +94,26 @@ class Test extends Model
             });
     }
 
-    public function sections()
+    /** @return HasMany<Section, $this> */
+    public function sections(): HasMany
     {
         return $this->hasMany(Section::class)->orderBy('order');
     }
 
-    public function userTests()
+    /** @return HasMany<UserTest, $this> */
+    public function userTests(): HasMany
     {
         return $this->hasMany(UserTest::class);
     }
 
-    public function assignments()
+    /** @return HasMany<Assignment, $this> */
+    public function assignments(): HasMany
     {
         return $this->hasMany(Assignment::class);
     }
 
-    public function classrooms()
+    /** @return BelongsToMany<Classroom, $this> */
+    public function classrooms(): BelongsToMany
     {
         return $this->belongsToMany(Classroom::class, 'classroom_tests');
     }
@@ -114,12 +133,14 @@ class Test extends Model
             ->count('module_questions.question_id');
     }
 
-    public function shares()
+    /** @return HasMany<TestShare, $this> */
+    public function shares(): HasMany
     {
         return $this->hasMany(TestShare::class);
     }
 
-    public function sharedTeachers()
+    /** @return BelongsToMany<User, $this> */
+    public function sharedTeachers(): BelongsToMany
     {
         return $this->belongsToMany(User::class, 'test_shares')
             ->withPivot('shared_by')
@@ -163,7 +184,7 @@ class Test extends Model
     /**
      * Recalculate and save the total duration based on modules' durations.
      */
-    public function refreshTotalDuration()
+    public function refreshTotalDuration(): int
     {
         $total = 0;
 
@@ -188,17 +209,20 @@ class Test extends Model
         return $total;
     }
 
-    public function scoreConversions()
+    /** @return HasMany<ScoreConversion, $this> */
+    public function scoreConversions(): HasMany
     {
         return $this->hasMany(ScoreConversion::class);
     }
 
-    public function scoreConversionSets()
+    /** @return HasMany<ScoreConversionSet, $this> */
+    public function scoreConversionSets(): HasMany
     {
         return $this->hasMany(ScoreConversionSet::class);
     }
 
-    public function approvedScoreConversionSet()
+    /** @return HasOne<ScoreConversionSet, $this> */
+    public function approvedScoreConversionSet(): HasOne
     {
         return $this->hasOne(ScoreConversionSet::class)
             ->where('status', ScoreConversionSet::STATUS_APPROVED)

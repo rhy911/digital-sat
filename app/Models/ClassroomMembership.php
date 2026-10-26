@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class ClassroomMembership extends Model
 {
@@ -13,7 +14,12 @@ class ClassroomMembership extends Model
         return ['requested_at' => 'datetime', 'decided_at' => 'datetime', 'ended_at' => 'datetime'];
     }
 
-    public function classroom() { return $this->belongsTo(Classroom::class); }
-    public function student() { return $this->belongsTo(User::class, 'student_id'); }
-    public function decider() { return $this->belongsTo(User::class, 'decided_by'); }
+    /** @return BelongsTo<Classroom, $this> */
+    public function classroom(): BelongsTo { return $this->belongsTo(Classroom::class); }
+
+    /** @return BelongsTo<User, $this> */
+    public function student(): BelongsTo { return $this->belongsTo(User::class, 'student_id'); }
+
+    /** @return BelongsTo<User, $this> */
+    public function decider(): BelongsTo { return $this->belongsTo(User::class, 'decided_by'); }
 }

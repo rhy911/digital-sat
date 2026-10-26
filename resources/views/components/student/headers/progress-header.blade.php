@@ -13,7 +13,7 @@
     if ($hasTeacherHomeTabs) {
         $navItems = [
             ['label' => 'Overview', 'tab' => 'overview', 'href' => route('home'), 'active' => false],
-            ['label' => 'Classes', 'href' => route('teacher.classes.index'), 'active' => request()->routeIs('teacher.classes.*'), 'current' => request()->routeIs('teacher.classes.show')],
+            ['label' => 'Classes', 'href' => route('teacher.classes.index'), 'active' => request()->routeIs('teacher.classes.*'), 'current' => request()->routeIs('teacher.classes.index')],
             ['label' => 'Reports', 'href' => route('teacher.assignments.index'), 'active' => request()->routeIs('teacher.assignments.*'), 'current' => request()->routeIs('teacher.assignments.show')],
             ['label' => 'Test Library', 'href' => route('home.practice'), 'active' => request()->routeIs('home.practice', 'test.preview', 'engine.session', 'engine.test.attempt-options')],
             ['label' => 'Test Builder', 'href' => route('home-dashboard.index'), 'active' => request()->routeIs('home-dashboard.*'), 'external' => true],

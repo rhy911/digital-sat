@@ -165,6 +165,7 @@ class AttemptEngineTest extends TestCase
             'assignment_id' => 123, // runsOnChainedClock() returns true
             'current_module_started_at' => Carbon::parse('2026-09-20 10:00:00'),
         ]);
+        $attempt->setRelation('assignment', new \App\Models\Assignment(['clock_mode' => 'chained']));
 
         // Freeze time at 15 minutes in
         Carbon::setTestNow(Carbon::parse('2026-09-20 10:15:00'));
@@ -266,6 +267,7 @@ class AttemptEngineTest extends TestCase
             'status' => 'completed',
             'assignment_id' => 1,
         ]);
+        $attempt->setRelation('assignment', new \App\Models\Assignment(['clock_mode' => 'chained']));
 
         $this->assertSame(0, $this->engine->cascadeExpire($attempt));
 
@@ -273,6 +275,7 @@ class AttemptEngineTest extends TestCase
             'status' => 'in_progress',
             'assignment_id' => 1,
         ]);
+        $runningAttempt->setRelation('assignment', new \App\Models\Assignment(['clock_mode' => 'chained']));
 
         // Future deadline
         $this->assertSame(0, $this->engine->cascadeExpire($runningAttempt, Carbon::now()->addHour()));
@@ -317,18 +320,6 @@ class AttemptEngineTest extends TestCase
         $this->assertFalse($regular->isPreview());
     }
 
-    public function test_autosave_throws_validation_exception_on_invalid_question_id(): void
-    {
-        $this->expectException(\Illuminate\Validation\ValidationException::class);
-
-        $attempt = new UserTest(['status' => 'in_progress', 'test_id' => 1, 'current_module_id' => 1]);
-        $attempt->id = 1;
-        $module = new Module();
-        $module->id = 1;
-
-        $this->engine->autosave($attempt, $module, ['not_a_number' => 'A']);
-    }
-
     public function test_paused_clock_resumption_accumulates_prior_elapsed_time(): void
     {
         $module = new Module(['duration_minutes' => 30]);
@@ -348,56 +339,6 @@ class AttemptEngineTest extends TestCase
         $this->assertFalse($timing['expired']);
 
         Carbon::setTestNow();
-    }
-
-    public function test_autosave_returns_submitting_when_marker_set(): void
-    {
-        $attempt = new UserTest();
-        $attempt->id = 55;
-        $module = new Module();
-        $module->id = 66;
-
-        \Illuminate\Support\Facades\Cache::put(AttemptEngine::submitMarkerKey(55, 66), 1, 60);
-
-        $result = $this->engine->autosave($attempt, $module, []);
-
-        $this->assertSame('submitting', $result['status']);
-        $this->assertFalse($result['expired']);
-    }
-
-    public function test_autosave_returns_expired_when_chained_clock_past_deadline(): void
-    {
-        $attempt = new UserTest([
-            'assignment_id' => 1,
-            'current_module_started_at' => Carbon::now()->subMinutes(40),
-        ]);
-        $attempt->id = 55;
-        $module = new Module(['duration_minutes' => 30]);
-        $module->id = 66;
-
-        $result = $this->engine->autosave($attempt, $module, []);
-
-        $this->assertSame('expired', $result['status']);
-        $this->assertTrue($result['expired']);
-    }
-
-    public function test_autosave_paused_clock_records_client_elapsed_and_resets_started_at(): void
-    {
-        $past = Carbon::now()->subMinutes(10);
-        $attempt = new UserTest([
-            'assignment_id' => null, // paused clock
-            'current_module_started_at' => $past,
-            'current_module_elapsed_seconds' => 0,
-        ]);
-        $attempt->id = 77;
-        $module = new Module(['duration_minutes' => 30]);
-        $module->id = 88;
-
-        $result = $this->engine->autosave($attempt, $module, [], [], 120);
-
-        $this->assertSame('success', $result['status']);
-        $this->assertSame(120, $attempt->current_module_elapsed_seconds);
-        $this->assertTrue($attempt->current_module_started_at->greaterThan($past));
     }
 }
 

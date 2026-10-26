@@ -6,6 +6,7 @@ use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Contracts\Filesystem\Filesystem;
 use Tests\TestCase;
 
 class MediaUploadTest extends TestCase
@@ -75,6 +76,33 @@ class MediaUploadTest extends TestCase
             ]);
 
         $response->assertStatus(422); // Validation error
+    }
+
+    public function test_upload_reports_storage_write_failure(): void
+    {
+        $disk = \Mockery::mock(Filesystem::class);
+        $disk->shouldReceive('exists')->with('media')->once()->andReturn(true);
+        $disk->shouldReceive('put')->once()->andReturn(false);
+        Storage::shouldReceive('disk')->with('public')->andReturn($disk);
+
+        $this->actingAs($this->user)
+            ->postJson(route('home-dashboard.media.upload'), [
+                'image' => UploadedFile::fake()->image('test_image.png', 100, 100),
+            ])
+            ->assertStatus(500)
+            ->assertJsonPath('success', false);
+    }
+
+    public function test_svg_response_requires_revalidation(): void
+    {
+        Storage::fake('public');
+        Storage::disk('public')->put('media/abcdefghijklmnopqrst.svg', '<svg xmlns="http://www.w3.org/2000/svg"></svg>');
+
+        $this->get('/media/abcdefghijklmnopqrst.svg')
+            ->assertOk()
+            ->assertHeader('Content-Security-Policy', "sandbox; default-src 'none'; style-src 'unsafe-inline'")
+            ->assertHeader('X-Content-Type-Options', 'nosniff')
+            ->assertHeader('Cache-Control', 'max-age=0, must-revalidate, public');
     }
 
     public function test_media_show_returns_not_found_for_missing_file(): void

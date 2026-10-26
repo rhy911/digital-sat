@@ -39,7 +39,7 @@ class AssignmentStudentResults extends Component
         $this->assignment = $assignment;
     }
 
-    public function render(AssignmentReportService $reports)
+    public function render(AssignmentReportService $reports): \Illuminate\Contracts\View\View
     {
         $report = $reports->build(
             $this->assignment,

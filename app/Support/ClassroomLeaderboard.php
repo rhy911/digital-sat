@@ -7,6 +7,9 @@ use App\Models\UserTest;
 
 class ClassroomLeaderboard
 {
+    /**
+     * @return array<int, array{student_id: int|string, name: string, score: int}>
+     */
     public static function topScores(Classroom $classroom, int $days = 7, int $limit = 3): array
     {
         $studentIds = $classroom->memberships->where('status', 'active')->pluck('student_id');
@@ -31,7 +34,7 @@ class ClassroomLeaderboard
             ->take($limit)
             ->map(fn ($score, $studentId) => [
                 'student_id' => $studentId,
-                'name' => $students->get($studentId)?->student?->name ?? 'Unknown',
+                'name' => $students->get($studentId)?->student->name ?? 'Unknown',
                 'score' => $score,
             ])
             ->values()

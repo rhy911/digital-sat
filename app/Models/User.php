@@ -4,6 +4,8 @@ namespace App\Models;
 
 use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
@@ -81,7 +83,8 @@ class User extends Authenticatable implements MustVerifyEmail
         $this->notify(new ResetPasswordNotification($token));
     }
 
-    public function userTests()
+    /** @return HasMany<UserTest, $this> */
+    public function userTests(): HasMany
     {
         return $this->hasMany(UserTest::class);
     }
@@ -97,11 +100,23 @@ class User extends Authenticatable implements MustVerifyEmail
         return $initials !== '' ? $initials : 'U';
     }
 
-    public function ownedClassrooms() { return $this->hasMany(Classroom::class, 'owner_id'); }
-    public function coTaughtClassrooms() { return $this->belongsToMany(Classroom::class, 'classroom_teachers', 'teacher_id', 'classroom_id')->withPivot('added_by')->withTimestamps(); }
-    public function classroomMemberships() { return $this->hasMany(ClassroomMembership::class, 'student_id'); }
-    public function assignmentRecipients() { return $this->hasMany(AssignmentRecipient::class, 'student_id'); }
-    public function sharedTests() { return $this->belongsToMany(Test::class, 'test_shares')->withTimestamps(); }
+    /** @return HasMany<Classroom, $this> */
+    public function ownedClassrooms(): HasMany { return $this->hasMany(Classroom::class, 'owner_id'); }
+
+    /** @return BelongsToMany<Classroom, $this> */
+    public function coTaughtClassrooms(): BelongsToMany { return $this->belongsToMany(Classroom::class, 'classroom_teachers', 'teacher_id', 'classroom_id')->withPivot('added_by')->withTimestamps(); }
+
+    /** @return HasMany<ClassroomMembership, $this> */
+    public function classroomMemberships(): HasMany { return $this->hasMany(ClassroomMembership::class, 'student_id'); }
+
+    /** @return HasMany<AssignmentRecipient, $this> */
+    public function assignmentRecipients(): HasMany { return $this->hasMany(AssignmentRecipient::class, 'student_id'); }
+
+    /** @return BelongsToMany<Test, $this> */
+    public function sharedTests(): BelongsToMany { return $this->belongsToMany(Test::class, 'test_shares')->withTimestamps(); }
+
     public function isApprovedTeacher(): bool { return $this->role === 'teacher' && $this->teacher_approval_status === 'approved'; }
-    public function examSessions() { return $this->hasMany(ExamSession::class, 'teacher_id'); }
+
+    /** @return HasMany<ExamSession, $this> */
+    public function examSessions(): HasMany { return $this->hasMany(ExamSession::class, 'teacher_id'); }
 }

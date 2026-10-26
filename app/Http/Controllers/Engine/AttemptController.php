@@ -7,6 +7,7 @@ use App\Models\Test;
 use App\Models\UserTest;
 use App\Services\AttemptEngine;
 use App\Services\TestStructureService;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
@@ -17,7 +18,7 @@ class AttemptController extends Controller
         private TestStructureService $structures,
     ) {}
 
-    public function attemptOptions($testId)
+    public function attemptOptions(int|string $testId): JsonResponse
     {
         $user = Auth::user();
         $test = Test::visibleTo($user)->where('id', $testId)->where('status', 'active')->firstOrFail();
@@ -35,21 +36,21 @@ class AttemptController extends Controller
         return response()->json([
             'has_in_progress' => ! empty($latestInProgress),
             'latest_in_progress_ulid' => $latestInProgress?->ulid,
-            'latest_in_progress_current_module_ulid' => $latestInProgress?->currentModule?->ulid ?? $firstModuleUlid,
+            'latest_in_progress_current_module_ulid' => $latestInProgress?->currentModule->ulid ?? $firstModuleUlid,
             'first_module_ulid' => $firstModuleUlid,
             'can_continue' => ! empty($latestInProgress),
             'can_start_fresh' => true,
         ]);
     }
 
-    public function startTest(Request $request, $testId)
+    public function startTest(Request $request, int|string $testId): JsonResponse
     {
         $user = Auth::user();
         $test = Test::visibleTo($user)->where('id', $testId)->where('status', 'active')->firstOrFail();
 
         $mode = $request->input('mode', 'fresh');
 
-        return \Illuminate\Support\Facades\DB::transaction(function () use ($request, $user, $test, $mode) {
+        return \Illuminate\Support\Facades\DB::transaction(function () use ($user, $test, $mode) {
             // Lock the user record to serialize attempt starts/modifications
             \App\Models\User::where('id', $user->id)->lockForUpdate()->first();
 
@@ -101,7 +102,7 @@ class AttemptController extends Controller
             }
 
             $firstModule = $this->engine->issueInitialModule($userTest, $test);
-            $firstModuleUlid = $firstModule ? $firstModule->ulid : null;
+            $firstModuleUlid = $firstModule->ulid;
 
             return response()->json([
                 'user_test_id' => $userTest->id,

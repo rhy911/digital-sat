@@ -9,7 +9,11 @@
     message: 'Are you sure you want to delete this item? This action cannot be undone.',
     actionUrl: '',
     confirmButtonText: 'Delete Permanently',
-    method: 'DELETE'
+    method: 'DELETE',
+    closeModal() {
+        this.show = false;
+        this.$dispatch('close-modal', '{{ $id }}');
+    }
 }"
 x-on:open-confirm-delete.window="
     title = $event.detail.title || 'Delete Item?';
@@ -19,8 +23,9 @@ x-on:open-confirm-delete.window="
     confirmButtonText = $event.detail.confirmButtonText || 'Delete Permanently';
     method = ($event.detail.method || 'DELETE').toUpperCase();
     show = true;
+    $nextTick(() => $dispatch('open-modal', '{{ $id }}'));
 "
-x-on:keydown.escape.window="show = false"
+x-on:close-modal.window="if ($event.detail === '{{ $id }}') show = false;"
 x-cloak>
     <template x-teleport="body">
         <div id="{{ $id }}" x-show="show" class="fixed inset-0 z-50 overflow-y-auto" role="dialog" aria-modal="true" :aria-hidden="show ? 'false' : 'true'">
@@ -33,7 +38,7 @@ x-cloak>
                 x-transition:leave-start="opacity-100"
                 x-transition:leave-end="opacity-0"
                 class="fixed inset-0 bg-slate-950/60"
-                x-on:click="show = false" aria-hidden="true"></div>
+                x-on:click="closeModal()" aria-hidden="true"></div>
 
             <!-- Modal Panel -->
             <div class="flex min-h-full items-end sm:items-center justify-center p-0 sm:p-4 text-center">
@@ -51,7 +56,7 @@ x-cloak>
                     <!-- Header -->
                     <div class="bg-slate-50/95 px-5 py-3.5 border-b border-slate-200/80 flex justify-between items-center shrink-0">
                         <h3 class="text-base font-semibold text-rose-700 flex items-center gap-2 m-0" x-text="title"></h3>
-                        <button type="button" x-on:click="show = false" class="text-slate-400 hover:text-slate-700 hover:bg-slate-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500/20 rounded-lg p-1.5 transition-colors cursor-pointer" aria-label="Close modal">
+                        <button type="button" x-on:click="closeModal()" class="text-slate-400 hover:text-slate-700 hover:bg-slate-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500/20 rounded-lg p-1.5 transition-colors cursor-pointer" aria-label="Close modal">
                             <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
                                 <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
                             </svg>
@@ -82,7 +87,7 @@ x-cloak>
                                 <span x-text="confirmButtonText">Delete Permanently</span>
                             </button>
                         </form>
-                        <button type="button" class="w-full sm:w-auto justify-center px-4 py-2.5 rounded-lg border border-slate-300 bg-white hover:bg-slate-50 text-slate-700 font-medium text-sm transition-colors cursor-pointer mt-2 sm:mt-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-400 focus-visible:ring-offset-2" x-on:click="show = false">
+                        <button type="button" data-dialog-initial-focus class="w-full sm:w-auto justify-center px-4 py-2.5 rounded-lg border border-slate-300 bg-white hover:bg-slate-50 text-slate-700 font-medium text-sm transition-colors cursor-pointer mt-2 sm:mt-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-400 focus-visible:ring-offset-2" x-on:click="closeModal()">
                             Cancel
                         </button>
                     </div>

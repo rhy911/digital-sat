@@ -175,6 +175,8 @@
         window.isPreview = @json($testData->is_preview ?? false);
         window.isTeacherPreview = @json($isTeacherPreview ?? false);
         window.isAssignmentAttempt = @json($isAssignmentAttempt ?? false);
+        window.assignmentTimerSynced = false;
+        window.timingUrl = @json(route('engine.test.timing'));
         window.isFinalModule = @json($isFinalModule ?? false);
         window.serverRemainingSeconds = @json($serverRemainingSeconds ?? null);
         window.canTakeBreak = @json(!($testData->is_preview ?? false) && !empty($userTestId));

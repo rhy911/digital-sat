@@ -11,6 +11,7 @@ class SubmitModuleRequest extends FormRequest
         return auth()->check();
     }
 
+    /** @return array<string, mixed> */
     public function rules(): array
     {
         return [
@@ -20,6 +21,7 @@ class SubmitModuleRequest extends FormRequest
             'answers.*' => 'nullable|string|max:100',
             'question_times' => 'nullable|array|max:100',
             'question_times.*' => 'nullable|integer|min:0',
+            'timed_out' => 'sometimes|boolean',
         ];
     }
 }

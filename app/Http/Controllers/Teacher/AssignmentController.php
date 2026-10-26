@@ -12,13 +12,20 @@ use App\Notifications\AssignmentPublishedNotification;
 use App\Services\AssignmentReportService;
 use App\Services\AssignmentService;
 use App\Services\AttemptEngine;
+use Illuminate\Contracts\View\View;
+use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Http\JsonResponse;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Http\Response;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class AssignmentController extends Controller
 {
-    private function getTeacherAssignmentsQuery(User $user)
+    /** @return Builder<Assignment> */
+    private function getTeacherAssignmentsQuery(User $user): Builder
     {
         return Assignment::query()
             ->whereHas('classroom', function ($query) use ($user) {
@@ -28,7 +35,7 @@ class AssignmentController extends Controller
             });
     }
 
-    public function index()
+    public function index(): View|RedirectResponse
     {
         $user = auth()->user();
         $assignment = $this->getTeacherAssignmentsQuery($user)->latest('updated_at')->first();
@@ -44,7 +51,7 @@ class AssignmentController extends Controller
         return view('teacher.assignments.show', compact('assignment', 'assignments', 'report', 'origin'));
     }
 
-    public function store(StoreAssignmentRequest $request, Classroom $classroom, AssignmentService $service)
+    public function store(StoreAssignmentRequest $request, Classroom $classroom, AssignmentService $service): RedirectResponse
     {
         $this->authorize('manage', $classroom);
         abort_if($classroom->status === 'archived', 409, 'Archived classes are read-only.');
@@ -76,7 +83,7 @@ class AssignmentController extends Controller
         return back()->with('success', 'Assignment created. Students were notified.');
     }
 
-    public function show(Assignment $assignment, AssignmentReportService $reports, AttemptEngine $engine)
+    public function show(Assignment $assignment, AssignmentReportService $reports, AttemptEngine $engine): View
     {
         $this->authorize('view', $assignment);
 
@@ -99,7 +106,7 @@ class AssignmentController extends Controller
         return view('teacher.assignments.show', compact('assignment', 'assignments', 'report', 'origin'));
     }
 
-    public function exportCsv(Assignment $assignment, AssignmentReportService $reports)
+    public function exportCsv(Assignment $assignment, AssignmentReportService $reports): StreamedResponse
     {
         $this->authorize('view', $assignment);
         $report = $reports->build($assignment, perPage: null, includeAnalysis: false);
@@ -134,8 +141,8 @@ class AssignmentController extends Controller
                     $bestScore ?? '—',
                 ];
                 if ($assignment->assign_type !== 'section') {
-                    $line[] = $best?->score_reading_writing ?? '—';
-                    $line[] = $best?->score_math ?? '—';
+                    $line[] = $best ? ($best->score_reading_writing ?? '—') : '—';
+                    $line[] = $best ? ($best->score_math ?? '—') : '—';
                 }
                 fputcsv($handle, $line);
             }
@@ -144,7 +151,7 @@ class AssignmentController extends Controller
         }, $filename, ['Content-Type' => 'text/csv']);
     }
 
-    public function exportPrint(Assignment $assignment, AssignmentReportService $reports)
+    public function exportPrint(Assignment $assignment, AssignmentReportService $reports): Response
     {
         $this->authorize('view', $assignment);
         $report = $reports->build($assignment, perPage: null);
@@ -167,7 +174,7 @@ class AssignmentController extends Controller
         return $pdf->stream($filename);
     }
 
-    public function attemptMonitor(Request $request, Assignment $assignment, User $student, AssignmentReportService $reports)
+    public function attemptMonitor(Request $request, Assignment $assignment, User $student, AssignmentReportService $reports): JsonResponse
     {
         $this->authorize('view', $assignment);
         $recipient = $assignment->recipients()->where('student_id', $student->id)->firstOrFail();
@@ -188,7 +195,7 @@ class AssignmentController extends Controller
         ]);
     }
 
-    public function studentAttempt(Request $request, Assignment $assignment, User $student, AssignmentReportService $reports)
+    public function studentAttempt(Request $request, Assignment $assignment, User $student, AssignmentReportService $reports): View
     {
         $this->authorize('view', $assignment);
         $recipient = $assignment->recipients()->where('student_id', $student->id)->firstOrFail();
@@ -221,7 +228,7 @@ class AssignmentController extends Controller
         ));
     }
 
-    public function questionPreview(Request $request, Assignment $assignment, \App\Models\UserTestAnswer $userAnswer)
+    public function questionPreview(Request $request, Assignment $assignment, \App\Models\UserTestAnswer $userAnswer): View
     {
         $this->authorize('view', $assignment);
         abort_unless($userAnswer->userTest->assignment_id === $assignment->id, 403);
@@ -240,7 +247,7 @@ class AssignmentController extends Controller
             ?: $userAnswer->question?->answerChoices->firstWhere('is_correct', true)?->label;
 
         $context = [
-            'sectionName' => $userAnswer->module?->section?->name ?? 'Question',
+            'sectionName' => $userAnswer->module?->section->name ?? 'Question',
             'moduleNumber' => $userAnswer->module?->module_number,
             'questionNumber' => $userAnswer->question_snapshot['question_number'] ?? null,
         ];
@@ -248,20 +255,28 @@ class AssignmentController extends Controller
         return view('teacher.assignments.partials.question-preview', compact('userAnswer', 'isInProgress', 'correct', 'context'));
     }
 
-    public function update(StoreAssignmentRequest $request, Assignment $assignment)
+    public function update(StoreAssignmentRequest $request, Assignment $assignment): RedirectResponse
     {
         $this->authorize('manage', $assignment);
         abort_if($assignment->classroom->status === 'archived', 409, 'Archived classes are read-only.');
-        $testChanged = $request->integer('test_id') !== (int) $assignment->test_id;
-        $assignableTeacher = $request->user()->role === 'admin' ? $assignment->teacher : $request->user();
-        $test = Test::assignableTo($assignableTeacher)->whereKey($request->integer('test_id'))->first();
-        if ($testChanged && ! $test) throw ValidationException::withMessages(['test_id' => 'Select one of your active or shared active tests.']);
-        if ($assignment->attempts()->exists() && $testChanged) {
-            throw ValidationException::withMessages(['test_id' => 'Test cannot change after an attempt starts.']);
+
+        if ($request->has('test_id') && $request->integer('test_id') !== (int) $assignment->test_id) {
+            throw ValidationException::withMessages(['test_id' => 'The assigned test cannot be changed.']);
         }
+
         $used = (int) $assignment->attempts()->max('attempt_number');
-        if ($request->integer('attempt_limit') < $used) throw ValidationException::withMessages(['attempt_limit' => "Attempt limit cannot be lower than {$used}."]);
-        $assignment->update($request->validated());
+        if ($request->integer('attempt_limit') < $used) {
+            throw ValidationException::withMessages(['attempt_limit' => "Attempt limit cannot be lower than {$used}."]);
+        }
+
+        $assignment->update($request->only([
+            'title',
+            'instructions',
+            'available_at',
+            'due_at',
+            'attempt_limit',
+        ]));
+
         return back()->with('success', 'Assignment updated.');
     }
 
@@ -297,13 +312,13 @@ class AssignmentController extends Controller
         return redirect()->route('teacher.classes.show', $classroom)->with('success', 'Assignment deleted.');
     }
 
-    public function analysisData(Assignment $assignment, AssignmentReportService $reports)
+    public function analysisData(Assignment $assignment, AssignmentReportService $reports): JsonResponse
     {
         $this->authorize('view', $assignment);
         return response()->json($reports->buildAnalysisSummary($assignment));
     }
 
-    public function questionInspection(Assignment $assignment, \App\Models\Question $question, AssignmentReportService $reports)
+    public function questionInspection(Assignment $assignment, \App\Models\Question $question, AssignmentReportService $reports): JsonResponse
     {
         $this->authorize('view', $assignment);
         abort_unless($reports->assignmentContainsQuestion($assignment, $question), 404);

@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class UserTestAnswerReview extends Model
 {
@@ -27,12 +28,14 @@ class UserTestAnswerReview extends Model
         'teacher_id',
     ];
 
-    public function answer()
+    /** @return BelongsTo<UserTestAnswer, $this> */
+    public function answer(): BelongsTo
     {
         return $this->belongsTo(UserTestAnswer::class, 'user_test_answer_id');
     }
 
-    public function teacher()
+    /** @return BelongsTo<User, $this> */
+    public function teacher(): BelongsTo
     {
         return $this->belongsTo(User::class, 'teacher_id');
     }

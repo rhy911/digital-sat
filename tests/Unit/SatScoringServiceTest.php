@@ -41,6 +41,53 @@ class SatScoringServiceTest extends TestCase
         $this->assertLessThan($high, $middle);
     }
 
+    public function test_experimental_mle_candidate_is_finite_and_preserves_extreme_score_boundaries(): void
+    {
+        $perfect = $this->service->estimateAbilityMle($this->responses(array_fill(0, 20, true)));
+        $none = $this->service->estimateAbilityMle($this->responses(array_fill(0, 20, false)));
+
+        $this->assertSame('mle_3pl_candidate_v2', $perfect['method']);
+        $this->assertGreaterThan($none['theta'], $perfect['theta']);
+        $this->assertLessThanOrEqual(8.0, $perfect['theta']);
+        $this->assertGreaterThanOrEqual(-8.0, $none['theta']);
+        $this->assertTrue(is_finite($perfect['se']));
+        $this->assertTrue(is_finite($none['se']));
+    }
+
+    public function test_mle_search_finds_global_peak_for_multimodal_three_pl_likelihood(): void
+    {
+        $items = [
+            [4.0, 4.0, 0.25, false],
+            [4.0, -1.0, 0.25, true],
+            [0.5, 0.0, 0.25, false],
+            [0.5, -1.0, 0.25, false],
+            [2.0, -5.0, 0.25, true],
+        ];
+        $responses = collect($items)->map(fn ($item) => (object) [
+            'is_correct' => $item[3],
+            'question' => (object) ['irt_a' => $item[0], 'irt_b' => $item[1], 'irt_c' => $item[2], 'is_pretest' => false],
+        ]);
+
+        $estimate = $this->service->estimateAbilityMle($responses);
+        $likelihood = static function (float $theta) use ($items): float {
+            $sum = 0.0;
+            foreach ($items as [$a, $b, $c, $correct]) {
+                $probability = $c + (1 - $c) / (1 + exp(-$a * ($theta - $b)));
+                $sum += $correct ? log($probability) : log(1 - $probability);
+            }
+
+            return $sum;
+        };
+        $denseBest = -INF;
+        for ($theta = -8.0; $theta <= 8.000001; $theta += 0.0001) {
+            $denseBest = max($denseBest, $likelihood($theta));
+        }
+
+        $this->assertSame('mle_3pl_candidate_v2', $estimate['method']);
+        $this->assertGreaterThan(-1.5, $estimate['theta'], 'The old golden-section search selected the inferior peak near -3.935508.');
+        $this->assertGreaterThanOrEqual($denseBest - 1e-8, $likelihood($estimate['theta']));
+    }
+
     public function test_posterior_uncertainty_shrinks_with_more_items(): void
     {
         $short = $this->service->estimateAbility($this->responses([true, false]));

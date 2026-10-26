@@ -6,6 +6,8 @@ use App\Http\Controllers\Controller;
 use App\Models\User;
 use App\Notifications\VerifyEmailNotification;
 use App\Services\ExamSessionService;
+use Illuminate\Http\JsonResponse;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
@@ -15,7 +17,7 @@ class RegisterController extends Controller
 {
     public function __construct(private ExamSessionService $examSessions) {}
 
-    public function __invoke(Request $request)
+    public function __invoke(Request $request): JsonResponse|RedirectResponse
     {
         try {
             $request->validate([

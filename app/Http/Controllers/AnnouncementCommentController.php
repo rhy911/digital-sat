@@ -7,6 +7,7 @@ use App\Models\Classroom;
 use App\Models\ClassroomAnnouncement;
 use App\Models\ClassroomAnnouncementComment;
 use App\Services\AnnouncementService;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 
 class AnnouncementCommentController extends Controller
@@ -16,7 +17,7 @@ class AnnouncementCommentController extends Controller
         Classroom $classroom,
         ClassroomAnnouncement $announcement,
         AnnouncementService $service,
-    ) {
+    ): RedirectResponse {
         // Belonging + view authorization are enforced in StoreAnnouncementCommentRequest::authorize().
         abort_if($classroom->status === 'archived', 409, 'Archived classes are read-only.');
 
@@ -31,7 +32,7 @@ class AnnouncementCommentController extends Controller
         ClassroomAnnouncement $announcement,
         ClassroomAnnouncementComment $comment,
         AnnouncementService $service,
-    ) {
+    ): RedirectResponse {
         abort_unless((int) $announcement->classroom_id === (int) $classroom->id, 404);
         abort_unless((int) $comment->announcement_id === (int) $announcement->id, 404);
 

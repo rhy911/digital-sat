@@ -18,6 +18,9 @@ class SatScoringService
      * Score section responses on the internal ability scale.
      * Scaled reporting belongs to ScoreConversionService.
      *
+     * @template T of object
+     * @param Collection<int, T> $module1Responses
+     * @param Collection<int, T> $module2Responses
      * @return array{raw_score:int,scored_questions:int,theta:float,theta_se:float,module2_path:string,method:string}
      */
     public function scoreSection(
@@ -49,6 +52,9 @@ class SatScoringService
 
     /**
      * Compatibility helper for callers that only need theta.
+     *
+     * @template T of object
+     * @param Collection<int, T> $responses
      */
     public function estimateTheta(Collection $responses): float
     {
@@ -58,6 +64,8 @@ class SatScoringService
     /**
      * Estimate ability with a standard-normal-prior EAP over a fixed theta grid.
      *
+     * @template T of object
+     * @param Collection<int, T> $responses
      * @return array{theta:float,se:float,method:string,item_count:int}
      */
     public function estimateAbility(Collection $responses): array
@@ -124,6 +132,98 @@ class SatScoringService
         ];
     }
 
+    /**
+     * Experimental no-prior 3PL MLE for offline score comparison only.
+     *
+     * @template T of object
+     * @param Collection<int, T> $responses
+     * @return array{theta:float,se:float,method:string,item_count:int}
+     */
+    public function estimateAbilityMle(Collection $responses): array
+    {
+        $responses = $this->scoredResponses($responses)->values();
+        if ($responses->isEmpty()) {
+            throw new InvalidArgumentException('Ability estimation requires at least one scored response.');
+        }
+
+        $items = [];
+        foreach ($responses as $response) {
+            [$a, $b, $c] = $this->itemParameters($response);
+            $items[] = [$a, $b, $c, (bool) $response->is_correct];
+        }
+
+        $logLikelihood = static function (float $theta) use ($items): float {
+            $value = 0.0;
+            foreach ($items as [$a, $b, $c, $correct]) {
+                $p = max(1e-12, min(1 - 1e-12, $c + (1 - $c) / (1 + exp(-$a * ($theta - $b)))));
+                $value += $correct ? log($p) : log(1 - $p);
+            }
+
+            return $value;
+        };
+
+        // The 3PL likelihood can have more than one peak. Scan first, then refine
+        // every sampled local maximum instead of assuming one global unimodal peak.
+        $grid = [];
+        for ($theta = -8.0; $theta <= 8.000001; $theta += 0.01) {
+            $grid[] = ['theta' => $theta, 'log_likelihood' => $logLikelihood($theta)];
+        }
+        $candidates = $grid;
+        $ratio = (sqrt(5) - 1) / 2;
+        for ($index = 1, $last = count($grid) - 1; $index < $last; $index++) {
+            if ($grid[$index]['log_likelihood'] < $grid[$index - 1]['log_likelihood']
+                || $grid[$index]['log_likelihood'] < $grid[$index + 1]['log_likelihood']) {
+                continue;
+            }
+
+            $left = $grid[$index - 1]['theta'];
+            $right = $grid[$index + 1]['theta'];
+            $x1 = $right - $ratio * ($right - $left);
+            $x2 = $left + $ratio * ($right - $left);
+            $f1 = $logLikelihood($x1);
+            $f2 = $logLikelihood($x2);
+            for ($iteration = 0; $iteration < 60; $iteration++) {
+                if ($f1 < $f2) {
+                    $left = $x1;
+                    $x1 = $x2;
+                    $f1 = $f2;
+                    $x2 = $left + $ratio * ($right - $left);
+                    $f2 = $logLikelihood($x2);
+                } else {
+                    $right = $x2;
+                    $x2 = $x1;
+                    $f2 = $f1;
+                    $x1 = $right - $ratio * ($right - $left);
+                    $f1 = $logLikelihood($x1);
+                }
+            }
+            $theta = ($left + $right) / 2;
+            $candidates[] = ['theta' => $theta, 'log_likelihood' => $logLikelihood($theta)];
+        }
+        $candidates[] = ['theta' => -8.0, 'log_likelihood' => $logLikelihood(-8.0)];
+        $candidates[] = ['theta' => 8.0, 'log_likelihood' => $logLikelihood(8.0)];
+        usort($candidates, static function (array $left, array $right): int {
+            $difference = $right['log_likelihood'] - $left['log_likelihood'];
+
+            return abs($difference) <= 1e-12 ? ($left['theta'] <=> $right['theta']) : ($difference <=> 0.0);
+        });
+        $theta = $candidates[0]['theta'];
+        $information = 0.0;
+        foreach ($items as [$a, $b, $c]) {
+            $logistic = 1 / (1 + exp(-$a * ($theta - $b)));
+            $p = max(1e-12, min(1 - 1e-12, $c + (1 - $c) * $logistic));
+            $derivative = (1 - $c) * $a * $logistic * (1 - $logistic);
+            $information += ($derivative ** 2) / ($p * (1 - $p));
+        }
+
+        return [
+            'theta' => round($theta, 6),
+            'se' => round(min(4.0, sqrt(1 / max($information, 1e-8))), 6),
+            'method' => 'mle_3pl_candidate_v2',
+            'item_count' => $responses->count(),
+        ];
+    }
+
     public function routeModule2(float $thetaM1, ?string $sectionType = null): string
     {
         return $thetaM1 >= $this->routingCutoff($sectionType)
@@ -145,9 +245,17 @@ class SatScoringService
         return (float) ($cutoffs['default'] ?? 0.0);
     }
 
+    /**
+     * @template T of object
+     * @param Collection<int, T> $responses
+     * @return Collection<int, T>
+     */
     private function scoredResponses(Collection $responses): Collection
     {
-        return $responses->filter(fn ($response) => ! (bool) $response->question?->is_pretest);
+        /** @var Collection<int, T> $filtered */
+        $filtered = $responses->filter(fn ($response) => ! (bool) $response->question?->is_pretest);
+
+        return $filtered;
     }
 
     /**

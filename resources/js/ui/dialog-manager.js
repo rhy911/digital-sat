@@ -2,7 +2,7 @@ const FOCUSABLE_SELECTOR = [
     'a[href]',
     'button:not([disabled])',
     'input:not([disabled]):not([type="hidden"])',
-    'select:not([disabled])',
+    'select:not([disabled]):not([tabindex="-1"]):not([aria-hidden="true"])',
     'textarea:not([disabled])',
     '[tabindex]:not([tabindex="-1"])',
 ].join(',');

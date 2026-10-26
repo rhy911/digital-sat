@@ -21,7 +21,7 @@ class SessionController extends Controller
         private AttemptEngine $engine,
     ) {}
 
-    public function show($ulid = null)
+    public function show(?string $ulid = null): \Illuminate\Contracts\View\View|\Illuminate\Http\RedirectResponse
     {
         if ($ulid === null || $ulid === 'preview-rw') {
             return $this->showStaticPreview('reading_writing');
@@ -57,8 +57,9 @@ class SessionController extends Controller
 
         abort_unless($requestedAttempt->status === 'in_progress', 409, 'This attempt is no longer active.');
 
+        $hasIssuedContentEntitlement = $requestedAttempt->assignment_id || $requestedAttempt->exam_session_id;
         $moduleQuery = Module::query();
-        if (!$requestedAttempt->runsOnChainedClock()) {
+        if (! $hasIssuedContentEntitlement) {
             $moduleQuery->visibleTo($user);
         } else {
             $moduleQuery->whereHas('sections', fn ($query) => $query->where('test_id', $requestedAttempt->test_id));
@@ -66,12 +67,57 @@ class SessionController extends Controller
         $module = $moduleQuery->where('ulid', $ulid)->firstOrFail();
 
         [$section, $test] = $this->resolveModuleContext($module, $user, $requestedAttempt->test_id);
+        if ($requestedAttempt->current_module_id && (int) $requestedAttempt->current_module_id !== (int) $module->id) {
+            $currentModule = Module::find($requestedAttempt->current_module_id);
+            if ($currentModule && $this->engine->pendingBreak($requestedAttempt, $currentModule)) {
+                return redirect()->route('engine.session', [
+                    'ulid' => $currentModule->ulid,
+                    'attempt' => $requestedAttempt->ulid,
+                ]);
+            }
+        }
+        if ($hasIssuedContentEntitlement && ! $requestedAttempt->current_module_id) {
+            abort_unless(
+                (int) $this->engine->firstModule($test, $requestedAttempt)?->id === (int) $module->id,
+                403,
+                'This module has not been issued for the attempt.'
+            );
+        }
+        $this->engine->assertIssued($requestedAttempt, $module);
+
+        $pendingBreak = $this->engine->pendingBreak($requestedAttempt, $module);
+        if ($pendingBreak !== null) {
+            $breakData = (object) [
+                'id' => $test->id,
+                'page_title' => 'Break - Digital SAT',
+                'section_title' => 'Scheduled Break',
+                'section_number' => $section->order,
+                'module_number' => $module->module_number,
+                'module_id' => $module->id,
+                'username' => ($user = Auth::user()) ? ($user->name ?? $user->username ?? 'Student') : 'Student',
+                'is_preview' => false,
+                'duration_minutes' => (int) ceil($pendingBreak['duration_seconds'] / 60),
+            ];
+
+            return view('engine.break', [
+                'testData' => $breakData,
+                'sectionNumber' => $section->order,
+                'moduleNumber' => $module->module_number,
+                'sectionName' => $section->name,
+                'sectionType' => $section->type,
+                'module' => $module,
+                'userTest' => $requestedAttempt,
+                'breakDurationSeconds' => $pendingBreak['duration_seconds'],
+                'remainingBreakSeconds' => $pendingBreak['remaining_seconds'],
+                'nextModuleUrl' => route('engine.session', [
+                    'ulid' => $module->ulid,
+                    'attempt' => $requestedAttempt->ulid,
+                ]),
+            ]);
+        }
+
         $this->engine->assertIssued($requestedAttempt, $module);
         $this->loadCurrentModuleQuestions($module);
-
-        if (! $module) {
-            abort(404, 'No module found. Please add modules first.');
-        }
 
         // Get questions ordered by position (defined in Module::questions relationship)
         $questions = $module->questions;
@@ -131,19 +177,12 @@ class SessionController extends Controller
             'section_number' => $section->order,
             'module_number' => $module->module_number,
             'module_id' => $module->id,
-            'username' => Auth::user()?->name ?? Auth::user()?->username ?? 'Guest',
+            'username' => ($user = Auth::user()) ? ($user->name ?? $user->username ?? 'Guest') : 'Guest',
             'is_preview' => $isPreview,
             'duration_minutes' => $durationMinutes,
         ];
 
-        $isFinalModule = $requestedAttempt
-            ? $this->engine->isTerminalSubmission($requestedAttempt, $module)
-            : false;
-
-        if ($userTest?->exam_session_id) {
-            $userTest->loadMissing('examSession');
-        }
-        $isSessionPaused = $userTest?->examSession?->status === 'paused';
+        $isFinalModule = $this->engine->isTerminalSubmission($requestedAttempt, $module);
 
         return view($viewName, [
             'testData' => $testData,
@@ -164,10 +203,10 @@ class SessionController extends Controller
             'isAssignmentAttempt' => $runsOnChainedClock,
             'serverRemainingSeconds' => $serverRemainingSeconds,
             'isFinalModule' => $isFinalModule,
-            'isSessionPaused' => $isSessionPaused,
         ]);
     }
 
+    /** @return array{0: Section, 1: Test} */
     private function resolveModuleContext(Module $module, User $user, ?int $attemptTestId = null): array
     {
         $activeVisibleTest = fn($query) => $attemptTestId
@@ -208,7 +247,7 @@ class SessionController extends Controller
         ]);
     }
 
-    public function teacherPreview(\Illuminate\Http\Request $request, string $testUlid)
+    public function teacherPreview(\Illuminate\Http\Request $request, string $testUlid): \Illuminate\Contracts\View\View
     {
         $user = Auth::user();
         abort_unless($user && in_array($user->role, ['admin', 'teacher'], true), 403, 'Unauthorized.');
@@ -297,7 +336,7 @@ class SessionController extends Controller
         ]);
     }
 
-    private function showStaticPreview($type)
+    private function showStaticPreview(string $type): \Illuminate\Contracts\View\View
     {
         $testData = (object) [
             'id' => 99999,
@@ -306,7 +345,7 @@ class SessionController extends Controller
             'section_number' => $type === 'math' ? 2 : 1,
             'module_number' => 1,
             'module_id' => $type === 'math' ? 99992 : 99991,
-            'username' => Auth::user()?->name ?? Auth::user()?->username ?? 'Guest',
+            'username' => ($user = Auth::user()) ? ($user->name ?? $user->username ?? 'Guest') : 'Guest',
             'is_preview' => true,
             'duration_minutes' => 0,
         ];
@@ -328,13 +367,14 @@ class SessionController extends Controller
             'userTestId' => null,
             'userTestUlid' => null,
             'userTest' => null,
-            'savedAnswers' => collect(),
-            'savedQuestionTimes' => collect(),
+            'savedAnswers' => collect([]),
+            'savedQuestionTimes' => collect([]),
             'isAssignmentAttempt' => false,
             'serverRemainingSeconds' => null,
         ]);
     }
 
+    /** @return \Illuminate\Support\Collection<int, \stdClass> */
     private function getStaticPreviewQuestions(string $type): \Illuminate\Support\Collection
     {
         return $type === 'reading_writing'

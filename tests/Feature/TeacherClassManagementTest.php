@@ -107,7 +107,8 @@ class TeacherClassManagementTest extends TestCase
         // Both entry points navigate now; neither reveals an in-page pane.
         $this->actingAs($teacher)
             ->get(route('teacher.classes.index'))
-            ->assertRedirect(route('teacher.classes.show', $activeClass));
+            ->assertOk()
+            ->assertSee($activeClass->name);
 
         $this->actingAs($teacher)
             ->get(route('teacher.assignments.index'))

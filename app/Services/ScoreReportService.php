@@ -16,6 +16,8 @@ class ScoreReportService
 
     /**
      * Build the full report data array for a UserTest (real or merged).
+     *
+     * @return array<string, mixed>
      */
     public function buildReportData(UserTest $userTest): array
     {
@@ -59,7 +61,7 @@ class ScoreReportService
             'domainSummaries'     => $this->domainSummaries($stats),
             'difficultySummaries' => $this->difficultySummaries($stats),
             'difficultyBySection' => $this->difficultySummariesBySection($stats),
-            'questionDataMap'     => collect($answers)->keyBy(fn ($r) => $r['answer']->id)->map(fn ($r) => $r['questionData'])->all(),
+            'questionDataMap'     => collect($answers)->keyBy(fn (array $r): int => (int) $r['answer']->id)->map(fn ($r) => $r['questionData'])->all(),
         ];
     }
 
@@ -67,6 +69,11 @@ class ScoreReportService
     // Internals
     // -------------------------------------------------------------------------
 
+    /**
+     * @param  Collection<int, int|string>  $moduleIds
+     * @param  Collection<int, int|string>  $questionIds
+     * @return Collection<string, int>
+     */
     private function loadQuestionPositions(Collection $moduleIds, Collection $questionIds): Collection
     {
         if ($moduleIds->isEmpty() || $questionIds->isEmpty()) {
@@ -77,9 +84,13 @@ class ScoreReportService
             ->whereIn('module_id', $moduleIds)
             ->whereIn('question_id', $questionIds)
             ->get(['module_id', 'question_id', 'position'])
-            ->mapWithKeys(fn ($row) => ["{$row->module_id}:{$row->question_id}" => $row->position]);
+            ->mapWithKeys(fn ($row) => ["{$row->module_id}:{$row->question_id}" => (int) $row->position]);
     }
 
+    /**
+     * @param  Collection<int, UserTestAnswer>  $userAnswers
+     * @return array<string, mixed>
+     */
     private function computeStats(Collection $userAnswers): array
     {
         $stats = [
@@ -117,7 +128,7 @@ class ScoreReportService
             $section    = in_array($rawSec, ['math', 'Math'], true) ? 'math' : 'reading_and_writing';
             $domain     = $q->skill_domain ?: 'Other';
             $subdomain  = $q->skill_subdomain ?: 'Other';
-            $difficulty = strtolower($q->difficulty ?: 'unknown');
+            $difficulty = strtolower($q->difficulty);
             $isPretest  = (bool) ($q->is_pretest ?? false);
 
             $stats['sections'][$section]['domains'][$domain]                      ??= ['total' => 0, 'correct' => 0, 'skills' => []];
@@ -156,6 +167,10 @@ class ScoreReportService
         return $stats;
     }
 
+    /**
+     * @param  Collection<string, int>  $questionPositions
+     * @return list<array<string, mixed>>
+     */
     public function buildAnswerRows(UserTest $userTest, Collection $questionPositions): array
     {
         $rows       = [];
@@ -195,16 +210,14 @@ class ScoreReportService
 
             // Choices: snapshot choices win, then relation fallback
             $choices = $question->answerChoices
-                ? $question->answerChoices
-                    ->sortBy('order')
-                    ->map(fn ($c) => [
-                        'label'      => $c->label,
-                        'content'    => QuestionContentRenderer::markdown($c->content ?? ''),
-                        'is_correct' => (bool) $c->is_correct,
-                    ])
-                    ->values()
-                    ->toArray()
-                : [];
+                ->sortBy('order')
+                ->map(fn ($c) => [
+                    'label'      => $c->label,
+                    'content'    => QuestionContentRenderer::markdown($c->content ?? ''),
+                    'is_correct' => (bool) $c->is_correct,
+                ])
+                ->values()
+                ->toArray();
 
             // Explanation: snapshot explanation wins, preserving explicit null
             $rawExplanation = $question->explanation?->explanation;
@@ -212,7 +225,7 @@ class ScoreReportService
             $explanationHtml = $hasExplanation ? QuestionContentRenderer::markdown($rawExplanation) : null;
 
             $isPretest = (bool) ($question->is_pretest ?? false);
-            $questionType = $question->question_type ?: 'multiple_choice';
+            $questionType = $question->question_type;
 
             $questionData = [
                 'id'                   => $answer->id,
@@ -236,7 +249,7 @@ class ScoreReportService
                 'section_name'         => $sectionType === 'math' ? 'Math' : 'Reading & Writing',
                 'module_number'        => $answer->module?->module_number,
                 'domain_label'         => $formattedDomain,
-                'difficulty'           => $difficulty ?? 'N/A',
+                'difficulty'           => $difficulty,
                 'pacing'               => $pacing,
                 'time_spent'           => $answer->time_spent,
                 'expected_time'        => $expectedTime,
@@ -253,7 +266,7 @@ class ScoreReportService
                 'moduleNumber'       => $answer->module?->module_number,
                 'correctAnswer'      => $correctAnswer,
                 'domainLabel'        => $formattedDomain,
-                'difficulty'         => $difficulty ?? 'N/A',
+                'difficulty'         => $difficulty,
                 'timeSpent'          => $answer->time_spent,
                 'expectedTime'       => $expectedTime,
                 'isFallbackExpected' => $isFallbackExpected,
@@ -267,6 +280,10 @@ class ScoreReportService
         return $rows;
     }
 
+    /**
+     * @param  array<string, mixed>  $stats
+     * @return array<string, mixed>
+     */
     public function buildScorePresentation(UserTest $userTest, array $stats): array
     {
         $isSectionOnly = $userTest->attempt_type === 'section';
@@ -387,6 +404,11 @@ class ScoreReportService
         return ($lower !== null && $upper !== null) ? "{$lower} – {$upper}" : null;
     }
 
+    /**
+     * @param  array<string, mixed>  $meta
+     * @param  list<string>  $availableSubjects
+     * @return array<string, mixed>
+     */
     private function buildCommonScaledMeta(UserTest $userTest, array $meta, bool $hasRange, ?string $rangeFormatted, array $availableSubjects): array
     {
         return [
@@ -404,6 +426,9 @@ class ScoreReportService
         ];
     }
 
+    /**
+     * @return array<string, mixed>
+     */
     private function resolveScoringPresentation(
         UserTest $userTest,
         bool $isSectionOnly,
@@ -416,11 +441,20 @@ class ScoreReportService
 
         $isOfficial = $kind === 'official_form' || ($hasConversionSet && ! in_array($kind, ['normal_generic', 'generic', 'generic_ds_v1', 'adaptive_irt_provisional'], true));
         $isAdaptive = $kind === 'adaptive_irt_provisional';
+        $routePath = $isSectionOnly
+            ? (in_array($userTest->section_type, ['reading_writing', 'reading_and_writing', 'rw'], true)
+                ? $userTest->rw_m2_path
+                : $userTest->math_m2_path)
+            : null;
+        $hasRecordedAdaptiveRoute = $isSectionOnly
+            ? in_array($routePath, ['easy', 'hard'], true)
+            : in_array($userTest->rw_m2_path, ['easy', 'hard'], true)
+                && in_array($userTest->math_m2_path, ['easy', 'hard'], true);
         $isNormalGeneric = $kind === 'normal_generic';
         $isLegacyGeneric = in_array($kind, ['generic', 'generic_ds_v1'], true) || $conversionVersion === 'generic_ds_v1';
         $scopeSuffix = $isSectionOnly ? ' in this section' : '';
 
-        if ($isAdaptive) {
+        if ($isAdaptive && $hasRecordedAdaptiveRoute) {
             $scopeWord = $isSectionOnly ? 'section' : 'test';
             $rangeText = ($lower !== null && $upper !== null)
                 ? " Your score is likely between {$lower} and {$upper}."
@@ -431,6 +465,19 @@ class ScoreReportService
                 'contextLabel' => 'Estimated practice score',
                 'scoreDisclosure' => "This is an estimate based on the questions you saw.{$rangeText}",
                 'calculationDisclosure' => "This {$scopeWord} used an adaptive route, so question difficulty adjusted based on your answers. We use a statistical model (EAP 3PL) to estimate your ability from the questions you actually saw. The scaled score mapping for this route is still provisional, which is why the result is shown as a range.",
+            ];
+        }
+
+        if ($isAdaptive) {
+            $rangeText = ($lower !== null && $upper !== null)
+                ? " Your score is likely between {$lower} and {$upper}."
+                : '';
+
+            return [
+                'basisLabel' => 'IRT provisional estimate',
+                'contextLabel' => 'Estimated practice score',
+                'scoreDisclosure' => "This is an estimate based on the questions you saw.{$rangeText}",
+                'calculationDisclosure' => 'We use a statistical model (EAP 3PL) to estimate your ability from the questions you saw. The scaled score mapping is provisional, which is why the result is shown as a range.',
             ];
         }
 
@@ -448,7 +495,7 @@ class ScoreReportService
         }
 
         if ($isOfficial) {
-            $setVersion = $userTest->scoreConversionSet?->version ?? '1.0';
+            $setVersion = $userTest->scoreConversionSet->version ?? '1.0';
 
             return [
                 'basisLabel' => "Official form conversion (v{$setVersion})",
@@ -505,12 +552,12 @@ class ScoreReportService
             return 'N/A';
         }
 
-        $spr = $question->sprCorrectAnswers?->pluck('answer')?->implode(', ');
+        $spr = $question->sprCorrectAnswers->pluck('answer')->implode(', ');
         if (! empty($spr)) {
             return $spr;
         }
 
-        return $question->answerChoices?->where('is_correct', true)->first()?->label ?? 'N/A';
+        return $question->answerChoices->where('is_correct', true)->first()->label ?? 'N/A';
     }
 
     public function domainLabel(string $domain): string
@@ -518,6 +565,10 @@ class ScoreReportService
         return \App\Support\SatTaxonomy::domainLabel($domain);
     }
 
+    /**
+     * @param  array<string, mixed>  $stats
+     * @return list<array<string, mixed>>
+     */
     public function domainSummaries(array $stats): array
     {
         $sections = [
@@ -575,11 +626,19 @@ class ScoreReportService
         return $rows;
     }
 
+    /**
+     * @param  array<string, mixed>  $stats
+     * @return list<array<string, mixed>>
+     */
     public function difficultySummaries(array $stats): array
     {
         return $this->difficultySummariesFor($stats['difficulty']);
     }
 
+    /**
+     * @param  array<string, mixed>  $stats
+     * @return array<string, list<array<string, mixed>>>
+     */
     public function difficultySummariesBySection(array $stats): array
     {
         return [
@@ -589,6 +648,10 @@ class ScoreReportService
         ];
     }
 
+    /**
+     * @param  array<string, mixed>  $difficultyData
+     * @return list<array<string, mixed>>
+     */
     public function difficultySummariesFor(array $difficultyData): array
     {
         $order = ['easy' => 0, 'medium' => 1, 'hard' => 2, 'unknown' => 3];

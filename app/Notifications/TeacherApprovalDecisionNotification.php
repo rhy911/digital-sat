@@ -11,7 +11,10 @@ class TeacherApprovalDecisionNotification extends Notification implements Should
 {
     use Queueable;
     public function __construct(public bool $approved, public ?string $reason = null) {}
+    /** @return array<int, string> */
     public function via(object $notifiable): array { return ['mail', 'database']; }
+
+    /** @return array<string, mixed> */
     public function toArray(object $notifiable): array
     {
         return [

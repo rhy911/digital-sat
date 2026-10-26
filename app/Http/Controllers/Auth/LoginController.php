@@ -4,6 +4,8 @@ namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
 use App\Services\ExamSessionService;
+use Illuminate\Http\JsonResponse;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
@@ -13,7 +15,7 @@ class LoginController extends Controller
 {
     public function __construct(private ExamSessionService $examSessions) {}
 
-    public function __invoke(Request $request)
+    public function __invoke(Request $request): RedirectResponse|JsonResponse
     {
         try {
             if ($request->has('remember')) {
@@ -50,7 +52,7 @@ class LoginController extends Controller
                         'admin' => 'Administrator',
                     ];
                     
-                    $actualLabel = $roleLabels[$user->role] ?? ucfirst($user->role);
+                    $actualLabel = $roleLabels[$user->role];
                     $article = ($user->role === 'admin') ? 'an' : 'a';
                     $targetUrl = route('signin.form', ['role' => $user->role]);
 

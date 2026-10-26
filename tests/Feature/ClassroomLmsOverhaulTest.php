@@ -221,5 +221,8 @@ class ClassroomLmsOverhaulTest extends TestCase
         $this->assertNull($stats['rw_avg']);
         $this->assertEquals(0, $stats['completed_tests_count']);
         $this->assertEmpty($stats['domain_proficiencies']);
+        $this->assertArrayNotHasKey('average_score', $stats);
+        $this->assertArrayNotHasKey('highest_score', $stats);
+        $this->assertArrayNotHasKey('domain_accuracies', $stats);
     }
 }

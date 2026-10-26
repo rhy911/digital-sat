@@ -72,6 +72,10 @@ class ClassroomService
         });
     }
 
+    /**
+     * @param  \Illuminate\Support\Collection<int, ClassroomMembership>  $memberships
+     * @return \Illuminate\Support\Collection<int, ClassroomMembership>
+     */
     public function bulkApprove(\Illuminate\Support\Collection $memberships, User $actor): \Illuminate\Support\Collection
     {
         return DB::transaction(fn () => $memberships->map(fn (ClassroomMembership $membership) => $this->decide($membership, $actor, true)));

@@ -102,15 +102,13 @@ class RecycleBinService
 
     public function restoreItem(string $type, int $id, User $user): Model
     {
-        $modelClass = $this->modelClassFor($type);
-        $model = $this->ownedOnlyTrashed($modelClass, $user)->findOrFail($id);
-
-        return DB::transaction(function () use ($type, $model) {
+        return DB::transaction(function () use ($type, $id, $user) {
             return match ($type) {
-                'test' => $this->restoreTest($model),
-                'section' => $this->restoreSection($model),
-                'module' => $this->restoreModule($model),
-                'question' => $this->restoreQuestion($model),
+                'test' => $this->restoreTest($this->ownedOnlyTrashed(Test::class, $user)->findOrFail($id)),
+                'section' => $this->restoreSection($this->ownedOnlyTrashed(Section::class, $user)->findOrFail($id)),
+                'module' => $this->restoreModule($this->ownedOnlyTrashed(Module::class, $user)->findOrFail($id)),
+                'question' => $this->restoreQuestion($this->ownedOnlyTrashed(Question::class, $user)->findOrFail($id)),
+                default => abort(404),
             };
         });
     }
@@ -126,15 +124,13 @@ class RecycleBinService
      */
     public function permanentlyDeleteItem(string $type, int $id, User $user): array
     {
-        $modelClass = $this->modelClassFor($type);
-        $model = $this->ownedOnlyTrashed($modelClass, $user)->findOrFail($id);
-
-        return DB::transaction(function () use ($type, $model) {
+        return DB::transaction(function () use ($type, $id, $user) {
             $purged = match ($type) {
-                'test' => $this->permanentlyDeleteTest($model),
-                'section' => $this->permanentlyDeleteSection($model),
-                'module' => $this->permanentlyDeleteModule($model),
-                'question' => $this->permanentlyDeleteQuestion($model),
+                'test' => $this->permanentlyDeleteTest($this->ownedOnlyTrashed(Test::class, $user)->findOrFail($id)),
+                'section' => $this->permanentlyDeleteSection($this->ownedOnlyTrashed(Section::class, $user)->findOrFail($id)),
+                'module' => $this->permanentlyDeleteModule($this->ownedOnlyTrashed(Module::class, $user)->findOrFail($id)),
+                'question' => $this->permanentlyDeleteQuestion($this->ownedOnlyTrashed(Question::class, $user)->findOrFail($id)),
+                default => abort(404),
             };
 
             return [
@@ -154,7 +150,7 @@ class RecycleBinService
      * unrelated items from being cleared. Remaining items include the reason
      * in the response so the UI can explain why history was preserved.
      *
-     * @return array{purged:int, skipped:int, skipped_items:array<int, array{type:string,id:int,title:string,message:string,references:array}>, message:string}
+     * @return array{purged:int, skipped:int, skipped_items:array<int, array{type:string,id:int,title:string,message:string,references:array<mixed>}>, message:string}
      */
     public function permanentlyDeleteAll(User $user): array
     {
@@ -199,9 +195,14 @@ class RecycleBinService
         return $result;
     }
 
-    /** @param class-string<Model> $modelClass */
-    private function ownedOnlyTrashed(string $modelClass, User $user)
+    /**
+     * @template T of Test|Section|Module|Question
+     * @param  class-string<T>  $modelClass
+     * @return \Illuminate\Database\Eloquent\Builder<T>
+     */
+    private function ownedOnlyTrashed(string $modelClass, User $user): \Illuminate\Database\Eloquent\Builder
     {
+        /** @var \Illuminate\Database\Eloquent\Builder<T> $query */
         $query = $modelClass::onlyTrashed();
 
         if ($user->role !== 'admin') {
@@ -211,22 +212,10 @@ class RecycleBinService
         return $query;
     }
 
-    /** @return class-string<Model> */
-    private function modelClassFor(string $type): string
-    {
-        return match ($type) {
-            'test' => Test::class,
-            'section' => Section::class,
-            'module' => Module::class,
-            'question' => Question::class,
-            default => abort(404),
-        };
-    }
-
     /** @return array<string, mixed> */
     private function itemPayload(string $type, Model $model, string $title, string $subtitle, bool $parentDeleted = false): array
     {
-        $deletedAt = Carbon::parse($model->deleted_at);
+        $deletedAt = Carbon::parse($model->getAttribute('deleted_at'));
         $expiresAt = $deletedAt->copy()->addDays((int) config('recycle_bin.retention_days', 7));
 
         return [
@@ -262,7 +251,8 @@ class RecycleBinService
 
     private function restoreSection(Section $section): Section
     {
-        if ($section->test?->trashed()) {
+        $test = Test::withTrashed()->find($section->test_id);
+        if ($test?->trashed()) {
             throw ValidationException::withMessages(['item' => 'Restore the parent test before restoring this section.']);
         }
 
@@ -274,12 +264,16 @@ class RecycleBinService
         $questionIds = DB::table('module_questions')->whereIn('module_id', $moduleIds)->pluck('question_id');
         $this->restoreMatching(Question::withTrashed()->whereIn('id', $questionIds), $deletedAt);
 
+        Test::find($test?->id)?->refreshTotalDuration();
+
         return $section->fresh('modules.questions');
     }
 
     private function restoreModule(Module $module): Module
     {
-        if ($module->section?->trashed() || $module->section?->test?->trashed()) {
+        $section = $module->section()->withTrashed()->first();
+        $test = $section ? Test::withTrashed()->find($section->test_id) : null;
+        if ($section?->trashed() || $test?->trashed()) {
             throw ValidationException::withMessages(['item' => 'Restore the parent test before restoring this module.']);
         }
 
@@ -287,6 +281,8 @@ class RecycleBinService
         $module->restore();
         $questionIds = DB::table('module_questions')->where('module_id', $module->id)->pluck('question_id');
         $this->restoreMatching(Question::withTrashed()->whereIn('id', $questionIds), $deletedAt);
+
+        Test::find($test?->id)?->refreshTotalDuration();
 
         return $module->fresh('questions');
     }
@@ -314,7 +310,10 @@ class RecycleBinService
         return $question->fresh();
     }
 
-    private function restoreMatching($query, ?Carbon $deletedAt): void
+    /**
+     * @param mixed $query
+     */
+    private function restoreMatching($query, \DateTimeInterface|\Carbon\CarbonInterface|null $deletedAt): void
     {
         if (! $deletedAt) {
             return;

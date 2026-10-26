@@ -13,6 +13,7 @@ use Carbon\CarbonInterface;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Database\UniqueConstraintViolationException;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
@@ -90,6 +91,9 @@ class AttemptEngine
         return max(0, (int) $minutes * 60);
     }
 
+    /**
+     * @return array{duration_seconds: int, elapsed_seconds: int, remaining_seconds: int, expired: bool}
+     */
     public function timing(UserTest $attempt, Module $module, ?Carbon $now = null): array
     {
         $durationSeconds = $this->durationSeconds($module);
@@ -114,6 +118,9 @@ class AttemptEngine
         ];
     }
 
+    /**
+     * @return array<string, mixed>
+     */
     public function startOrResumeModule(UserTest $attempt, Module $module, bool $isPreview = false): array
     {
         if (! $attempt->current_module_started_at || (! $isPreview && ! $attempt->runsOnChainedClock())) {
@@ -125,6 +132,14 @@ class AttemptEngine
         }
 
         return $this->timing($attempt, $module);
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    public function timingSnapshot(UserTest $attempt, Module $module): array
+    {
+        return ['module_id' => (int) $module->id] + $this->timing($attempt, $module);
     }
 
     public function deadline(UserTest $attempt, Module $module): ?CarbonInterface
@@ -141,6 +156,9 @@ class AttemptEngine
         return $attempt->current_module_started_at->copy()->addSeconds($seconds);
     }
 
+    /**
+     * @return array<string, mixed>
+     */
     public function syncElapsed(UserTest $attempt, Module $module): array
     {
         $timing = $this->timing($attempt, $module);
@@ -174,6 +192,111 @@ class AttemptEngine
         }
 
         return now()->greaterThan($deadline->copy()->addSeconds($graceSeconds));
+    }
+
+    /**
+     * @return array{duration_seconds: int, remaining_seconds: int, break_ends_at: string}|null
+     */
+    public function pendingBreak(UserTest $attempt, Module $module): ?array
+    {
+        if ($attempt->status !== 'in_progress' || (int) $attempt->current_module_id !== (int) $module->id) {
+            return null;
+        }
+
+        $receipt = UserTestModuleSubmission::where('user_test_id', $attempt->id)
+            ->where('issued_next_module_id', $module->id)
+            ->latest('id')
+            ->first();
+
+        if (! $receipt || empty($receipt->result['is_section_break'])) {
+            return null;
+        }
+
+        $result = $receipt->result;
+        $durationSeconds = (int) ($result['break_duration_seconds'] ?? 600);
+        if ($durationSeconds <= 0) {
+            return null;
+        }
+
+        $breakEndsAtIso = $result['break_ends_at'] ?? null;
+        $breakEndsAt = $breakEndsAtIso ? Carbon::parse($breakEndsAtIso) : null;
+        $now = now();
+
+        if ($attempt->runsOnChainedClock()) {
+            if ($attempt->current_module_started_at && $attempt->current_module_started_at->isFuture()) {
+                $remainingSeconds = (int) ceil(max(0, $attempt->current_module_started_at->getTimestamp() - $now->getTimestamp()));
+
+                return [
+                    'duration_seconds' => $durationSeconds,
+                    'remaining_seconds' => $remainingSeconds,
+                    'break_ends_at' => $attempt->current_module_started_at->toIso8601String(),
+                ];
+            }
+
+            return null;
+        }
+
+        if ($attempt->current_module_started_at === null && $breakEndsAt && $breakEndsAt->isFuture()) {
+            $remainingSeconds = (int) ceil(max(0, $breakEndsAt->getTimestamp() - $now->getTimestamp()));
+
+            return [
+                'duration_seconds' => $durationSeconds,
+                'remaining_seconds' => $remainingSeconds,
+                'break_ends_at' => $breakEndsAt->toIso8601String(),
+            ];
+        }
+
+        return null;
+    }
+
+    public function isPendingBreak(UserTest $attempt, Module $module): bool
+    {
+        return $this->pendingBreak($attempt, $module) !== null;
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    public function resumeBreak(int $userTestId, int $moduleId, ?int $userId = null): array
+    {
+        return DB::transaction(function () use ($userTestId, $moduleId, $userId) {
+            $query = UserTest::where('id', $userTestId);
+            if ($userId !== null) {
+                $query->where('user_id', $userId);
+            }
+            $attempt = $query->lockForUpdate()->first();
+
+            if (! $attempt || $attempt->status !== 'in_progress') {
+                throw new AuthorizationException('This test attempt is no longer available.');
+            }
+
+            $module = Module::findOrFail($moduleId);
+            $belongsToAttemptTest = $module->sections()->where('sections.test_id', $attempt->test_id)->exists()
+                || ($module->section_id && Section::whereKey($module->section_id)
+                    ->where('test_id', $attempt->test_id)->exists());
+            if (! $belongsToAttemptTest) {
+                throw new AuthorizationException('This module does not belong to the active test attempt.');
+            }
+
+            if ((int) $attempt->current_module_id !== (int) $module->id) {
+                throw new ConflictHttpException('This module is not active for the test attempt.');
+            }
+
+            $pending = $this->pendingBreak($attempt, $module);
+            if ($pending !== null) {
+                $attempt->forceFill([
+                    'current_module_started_at' => now(),
+                    'current_module_elapsed_seconds' => 0,
+                ])->save();
+            } elseif ($attempt->current_module_started_at === null) {
+                $attempt->forceFill([
+                    'current_module_started_at' => now(),
+                    'current_module_elapsed_seconds' => 0,
+                ])->save();
+            }
+
+            return $this->timingSnapshot($attempt, $module) + ['status' => 'active'];
+        });
     }
 
     // ==========================================
@@ -247,6 +370,9 @@ class AttemptEngine
     }
 
 
+    /**
+     * @param  array<string, mixed>  $result
+     */
     public function advance(UserTest $attempt, array $result, ?CarbonInterface $startNextAt = null): ?Module
     {
         if (! empty($result['test_completed'])) {
@@ -285,41 +411,42 @@ class AttemptEngine
     // Answer Grading & Persistence
     // ==========================================
 
-    protected function checkAnswer(Question $question, $userAnswer): bool
+    protected function checkAnswer(Question $question, mixed $userAnswer): bool
     {
-        if ($question->question_type === 'multiple_choice') {
+        $type = (string) $question->question_type;
+        if ($type === 'multiple_choice') {
             $correctChoice = $question->answerChoices->where('is_correct', true)->first();
 
             return $correctChoice && trim($correctChoice->label) === trim((string) $userAnswer);
         }
 
-        if ($question->question_type === 'student_produced_response' || $question->question_type === 'spr') {
-            $submitted = trim((string) $userAnswer);
-            $submittedNumber = $this->parseNumericAnswer($submitted);
-
-            foreach ($question->sprCorrectAnswers as $accepted) {
-                $acceptedText = trim((string) $accepted->answer);
-                $acceptedNumber = $this->parseNumericAnswer($acceptedText);
-
-                if ($submittedNumber !== null && $acceptedNumber !== null) {
-                    $tolerance = max(0.0, (float) ($accepted->tolerance ?? 0.0001));
-
-                    if (abs($submittedNumber - $acceptedNumber) <= $tolerance) {
-                        return true;
-                    }
-
-                    continue;
-                }
-
-                if ($acceptedText === $submitted) {
-                    return true;
-                }
-            }
-
-            return false;
+        if ($type !== 'student_produced_response' && $type !== 'spr') {
+            throw new \InvalidArgumentException("Unsupported question type: {$type}");
         }
 
-        throw new \InvalidArgumentException("Unsupported question type '{$question->question_type}' for question ID {$question->id}");
+        $submitted = trim((string) $userAnswer);
+        $submittedNumber = $this->parseNumericAnswer($submitted);
+
+        foreach ($question->sprCorrectAnswers as $accepted) {
+            $acceptedText = trim((string) $accepted->answer);
+            $acceptedNumber = $this->parseNumericAnswer($acceptedText);
+
+            if ($submittedNumber !== null && $acceptedNumber !== null) {
+                $tolerance = max(0.0, (float) ($accepted->tolerance ?? 0.0001));
+
+                if (abs($submittedNumber - $acceptedNumber) <= $tolerance) {
+                    return true;
+                }
+
+                continue;
+            }
+
+            if ($acceptedText === $submitted) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     protected function parseNumericAnswer(string $value): ?float
@@ -360,6 +487,9 @@ class AttemptEngine
         return is_finite($number) ? $number : null;
     }
 
+    /**
+     * @param  array<string|int, mixed>  $answers
+     */
     private function validateAnswers(Module $module, array $answers): void
     {
         foreach (array_keys($answers) as $id) {
@@ -384,6 +514,9 @@ class AttemptEngine
         }
     }
 
+    /**
+     * @return array{0: UserTest, 1: Module}
+     */
     public function resolveActiveModule(int $userTestId, int $moduleId, ?int $userId = null, bool $allowReceipt = false): array
     {
         $query = UserTest::where('id', $userTestId);
@@ -394,10 +527,6 @@ class AttemptEngine
 
         if (! $attempt || ($attempt->status !== 'in_progress' && ! $allowReceipt)) {
             throw new AuthorizationException('This test attempt is no longer available.');
-        }
-
-        if ($attempt->examSession?->status === 'paused') {
-            throw new ConflictHttpException('session_paused');
         }
 
         $module = Module::with(['section.test', 'questions'])->findOrFail($moduleId);
@@ -434,6 +563,10 @@ class AttemptEngine
         return [$attempt, $module];
     }
 
+    /**
+     * @param  array<string|int, mixed>  $submittedAnswers
+     * @param  array<string|int, mixed>  $submittedTimes
+     */
     private function saveModuleAnswers(
         UserTest $attempt,
         Module $module,
@@ -446,6 +579,7 @@ class AttemptEngine
             : $module->questions()
                 ->with(['answerChoices', 'sprCorrectAnswers', 'passage', 'explanation'])
                 ->get();
+        $questions->loadMissing(['answerChoices', 'sprCorrectAnswers', 'passage', 'explanation']);
         $existingQuestionIds = $onlyMissing
             ? UserTestAnswer::where('user_test_id', $attempt->id)
                 ->where('module_id', $module->id)
@@ -553,6 +687,11 @@ class AttemptEngine
         return "module_submit_active_{$userTestId}_{$moduleId}";
     }
 
+    /**
+     * @param  array<string|int, mixed>  $answers
+     * @param  array<string|int, mixed>  $questionTimes
+     * @return array<string, mixed>
+     */
     public function autosave(
         UserTest $attempt,
         Module $module,
@@ -570,6 +709,10 @@ class AttemptEngine
 
                 if ((int) $lockedAttempt->current_module_id !== (int) $module->id) {
                     throw new ConflictHttpException('This module is not active for the test attempt.');
+                }
+
+                if ($this->isPendingBreak($lockedAttempt, $module)) {
+                    throw new ConflictHttpException('break_pending');
                 }
             }
 
@@ -604,6 +747,9 @@ class AttemptEngine
         });
     }
 
+    /**
+     * @return array<string, mixed>|null
+     */
     public function readyResultFor(int $attemptId, int $wantedModuleId): ?array
     {
         $result = Cache::get("scoring_result_{$attemptId}");
@@ -625,11 +771,17 @@ class AttemptEngine
         return null;
     }
 
+    /**
+     * @param  array<string|int, mixed>  $answers
+     * @param  array<string|int, mixed>  $questionTimes
+     * @return array<string, mixed>
+     */
     public function submitModule(
         UserTest $attempt,
         Module $module,
         array $answers = [],
-        array $questionTimes = []
+        array $questionTimes = [],
+        bool $clientTimedOut = false,
     ): array {
         $attemptId = (int) $attempt->id;
         $moduleId = (int) $module->id;
@@ -662,7 +814,7 @@ class AttemptEngine
                 'module_id' => $moduleId,
             ]);
 
-            $outcome = DB::transaction(function () use ($attempt, $module, $answers, $questionTimes) {
+            $outcome = DB::transaction(function () use ($attempt, $module, $answers, $questionTimes, $clientTimedOut) {
                 $lockedAttempt = $attempt;
                 if ($attempt->exists) {
                     $lockedAttempt = UserTest::where('id', $attempt->id)->lockForUpdate()->first();
@@ -699,6 +851,10 @@ class AttemptEngine
                     throw new AuthorizationException('This test attempt is no longer available.');
                 }
 
+                if ($this->isPendingBreak($lockedAttempt, $module)) {
+                    throw new ConflictHttpException('break_pending');
+                }
+
                 $this->validateAnswers($module, $answers);
 
                 $section = $module->section;
@@ -707,6 +863,9 @@ class AttemptEngine
 
                 if ($lockedAttempt->runsOnChainedClock()) {
                     $timedOut = $this->syncElapsed($lockedAttempt, $module)['expired'];
+                    if ($clientTimedOut && ! $timedOut) {
+                        return ['status' => 'not_expired', 'timing' => $this->timingSnapshot($lockedAttempt, $module)];
+                    }
                     if ($timedOut) {
                         $nextStartsAt = $this->deadline($lockedAttempt, $module);
                     }
@@ -734,7 +893,11 @@ class AttemptEngine
                 ];
             });
 
-            if (in_array($outcome['status'] ?? null, ['completed', 'ready'], true)) {
+            if ($outcome['status'] === 'not_expired') {
+                return $outcome;
+            }
+
+            if (in_array($outcome['status'], ['completed', 'ready'], true)) {
                 return ['status' => $outcome['status'], 'result' => $outcome['result']];
             }
 
@@ -794,6 +957,8 @@ class AttemptEngine
      *
      * Shared between the inline path in submit() and ScoreModuleJob so both
      * write identical receipts and cached outcomes.
+     *
+     * @return array<string, mixed>
      */
     public function scoreAndAdvance(int $userTestId, int $moduleId, bool $timedOut, ?CarbonInterface $startNextAt = null): array
     {
@@ -806,6 +971,16 @@ class AttemptEngine
         $result = $this->submitProgression($userTest, $module);
         $result['timed_out'] = $timedOut;
         $result['scored_module_id'] = $moduleId;
+
+        if (! empty($result['is_section_break'])) {
+            $breakDurationSeconds = (int) ($result['break_duration_seconds'] ?? 600);
+            $breakAnchor = ($timedOut && $startNextAt) ? $startNextAt->copy() : now();
+            $breakEndsAt = $breakAnchor->copy()->addSeconds($breakDurationSeconds);
+            $result['break_ends_at'] = $breakEndsAt->toIso8601String();
+            if ($userTest->runsOnChainedClock()) {
+                $startNextAt = $breakEndsAt;
+            }
+        }
 
         if (! isset($result['error'])) {
             $result = $this->advanceAndRecord($userTestId, $moduleId, $result, $startNextAt);
@@ -821,6 +996,9 @@ class AttemptEngine
      * Persist the routing decision and a submission receipt. If a duplicate
      * request raced this one and already recorded a receipt for this module, fall
      * back to that receipt's result instead of erroring.
+     *
+     * @param  array<string, mixed>  $result
+     * @return array<string, mixed>
      */
     private function advanceAndRecord(int $userTestId, int $moduleId, array $result, ?CarbonInterface $startNextAt = null): array
     {
@@ -863,6 +1041,9 @@ class AttemptEngine
     /**
      * Cache the generic failure payload. Shared so the inline path, the job's
      * catch block and its failed() hook all report the same shape.
+     */
+    /**
+     * @return array<string, mixed>
      */
     public function recordFailure(int $userTestId, int $moduleId, \Throwable $e, string $context): array
     {
@@ -1018,6 +1199,9 @@ class AttemptEngine
     // Progression & Adaptive Routing
     // ==========================================
 
+    /**
+     * @return array<string, mixed>
+     */
     public function submitProgression(UserTest $attempt, Module $submitted): array
     {
         // Only counts and IRT parameters are ever read off this relation:
@@ -1056,6 +1240,9 @@ class AttemptEngine
         return $this->advanceSectionOrComplete($attempt, $test, $section, $shape['sections']);
     }
 
+    /**
+     * @return array<string, mixed>
+     */
     protected function routeAdaptive(UserTest $attempt, Test $test, Section $section, Module $module): array
     {
         $requestedPath = $this->pipeline->routeAdaptiveModule($attempt, $section, $module);
@@ -1083,7 +1270,11 @@ class AttemptEngine
         return $result;
     }
 
-    protected function advanceSectionOrComplete(UserTest $attempt, Test $test, Section $section, $sections): array
+    /**
+     * @param  \Illuminate\Support\Collection<int, Section>  $sections
+     * @return array<string, mixed>
+     */
+    protected function advanceSectionOrComplete(UserTest $attempt, Test $test, Section $section, Collection $sections): array
     {
         if ($attempt->attempt_type === 'section') {
             $this->finalize($attempt, $test);
@@ -1100,13 +1291,14 @@ class AttemptEngine
         if ($nextSection) {
             $next = $this->structures->orderedModules($nextSection)->first();
 
-            $breakMinutes = (int) ($test->break_duration_minutes ?? 10);
+            $breakMinutes = (int) $test->break_duration_minutes;
+            $breakDurationSeconds = max(0, $breakMinutes * 60);
 
             return $this->nextModuleResult(
                 $next,
                 'Section completed. Moving to the next section.',
                 isSectionBreak: true,
-                breakDurationSeconds: $breakMinutes * 60
+                breakDurationSeconds: $breakDurationSeconds
             );
         }
 
@@ -1119,6 +1311,9 @@ class AttemptEngine
         ] + $this->completionDestination($attempt);
     }
 
+    /**
+     * @return array{redirect_url: string, results_url: string}
+     */
     protected function completionDestination(UserTest $attempt): array
     {
         if (optional($attempt->user)->is_guest) {
@@ -1133,9 +1328,17 @@ class AttemptEngine
         ];
     }
 
+    /**
+     * @return array<string, mixed>
+     */
     protected function nextModuleResult(Module $module, string $message, bool $isSectionBreak = false, int $breakDurationSeconds = 600): array
     {
-        $result = ['status' => 'success', 'next_module_id' => $module->ulid, 'message' => $message];
+        $result = [
+            'status' => 'success',
+            'next_module_id' => $module->ulid,
+            'next_module_numeric_id' => (int) $module->id,
+            'message' => $message,
+        ];
         if ($isSectionBreak) {
             $result['is_section_break'] = true;
             $result['break_duration_seconds'] = $breakDurationSeconds;
@@ -1286,6 +1489,9 @@ class AttemptEngine
         $attempt->update($this->completionFields() + ($scores ?? []));
     }
 
+    /**
+     * @return array<string, mixed>
+     */
     protected function completionFields(): array
     {
         return ['status' => 'completed', 'completed_at' => now(), 'current_module_id' => null];

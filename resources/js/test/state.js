@@ -31,6 +31,7 @@ export const state = {
   isUntimed: false,
   isPaused: false,
   isSubmitting: false,
+  isOnSectionBreak: false,
 
   // Submission state. isSubmitting must stay true for the WHOLE time a
   // submission is in flight server-side — releasing it while scoring is still

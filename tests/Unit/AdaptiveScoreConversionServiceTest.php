@@ -15,7 +15,7 @@ class AdaptiveScoreConversionServiceTest extends TestCase
         $this->assertSame(610, $section['scaled_score']);
         $this->assertSame(570, $section['lower']);
         $this->assertSame(650, $section['upper']);
-        $this->assertSame('irt_curve_v1', $section['conversion_version']);
+        $this->assertSame('irt_curve_v2', $section['conversion_version']);
         $this->assertSame('adaptive_irt_provisional', $section['estimate_kind']);
     }
 

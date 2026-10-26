@@ -17,7 +17,7 @@ class ClassroomAssignments extends Component
         $this->classroom = $classroom;
     }
 
-    public function render()
+    public function render(): \Illuminate\Contracts\View\View
     {
         $assignmentsPage = $this->classroom->assignments()
             ->with('test')

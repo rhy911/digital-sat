@@ -26,7 +26,7 @@ import {
   initializeSimpleFullscreen
 } from './test/features.js';
 import { startTimer } from './test/timer.js';
-import { initializeBreakControls } from './test/break.js';
+import { initializeBreakControls, initializeBreakRecoveryView } from './test/break.js';
 import { initializeScreenSizeGuard } from './test/screen-guard.js';
 
 // Expose to global scope for inline onclick handlers and backwards compatibility
@@ -85,6 +85,12 @@ function handleReviewButtonClick(e) {
 // ============================================================================
 
 document.addEventListener("DOMContentLoaded", async () => {
+  if (window.isBreakRecoveryView) {
+    hideLoadingScreen();
+    initializeBreakRecoveryView();
+    return;
+  }
+
   initializeDOMElements();
   generateQuestionButtons();
   initializeQuestionTracking();

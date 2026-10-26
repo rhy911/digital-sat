@@ -16,6 +16,7 @@ class UpdateSectionRequest extends FormRequest
         return ! $section || $this->user()->can('update', $section);
     }
 
+    /** @return array<string, mixed> */
     public function rules(): array
     {
         return [

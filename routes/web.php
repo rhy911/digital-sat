@@ -21,6 +21,9 @@ Route::get('/', LandingController::class)->name('landing');
 Route::get('/media/{filename}', [MediaController::class, 'show'])
     ->where('filename', '[A-Za-z0-9]{20}\.(?:jpe?g|png|gif|webp|svg)')
     ->name('media.show');
+Route::get('/storage/media/{filename}', [MediaController::class, 'show'])
+    ->where('filename', '[A-Za-z0-9]{20}\.(?:jpe?g|png|gif|webp|svg)')
+    ->name('storage.media.show');
 
 // Guest auth routes
 Route::middleware('guest')->group(function () {
@@ -218,9 +221,11 @@ Route::middleware(['auth', 'verified'])->prefix('engine')->group(function () {
 
     Route::get('/test/{test_id}/attempt-options', [AttemptController::class, 'attemptOptions'])->name('engine.test.attempt-options');
     Route::post('/test/start/{test_id}', [AttemptController::class, 'startTest'])->name('engine.test.start');
+    Route::get('/test/timing', [AnswerController::class, 'timing'])->name('engine.test.timing');
     Route::post('/test/autosave-module', [AnswerController::class, 'autosave'])
         ->middleware('throttle:60,1')
         ->name('engine.test.autosave-module');
+    Route::post('/test/resume-break', [AnswerController::class, 'resumeBreak'])->name('engine.test.resume-break');
     Route::post('/test/submit-module', [SubmissionController::class, 'submit'])->name('engine.test.submit-module');
 });
 

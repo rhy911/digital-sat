@@ -26,97 +26,27 @@ initAutoDismissAlerts();
 initNotificationBell();
 initMobileClassroomNav();
 
-import flatpickr from 'flatpickr';
-import 'flatpickr/dist/flatpickr.min.css';
+export function clearDatePicker(id) {
+    const input = typeof id === 'string' ? document.getElementById(id) : id;
+    if (!input) return;
+    input.value = '';
+    input.dispatchEvent(new Event('input', { bubbles: true }));
+    input.dispatchEvent(new Event('change', { bubbles: true }));
+}
+window.clearDatePicker = clearDatePicker;
 
 export function initDatePickers() {
-    // Clean up any orphaned flatpickr calendar containers in body
-    document.querySelectorAll('.flatpickr-calendar').forEach(el => el.remove());
-
-    document.querySelectorAll('.datetime-picker[name]').forEach((input) => {
-        if (input._flatpickr) {
-            input._flatpickr.destroy();
-        }
-
-        // Clean up any orphaned flatpickr altInput elements
-        let sibling = input.nextElementSibling;
-        while (sibling && (sibling.classList.contains('flatpickr-input') || sibling.classList.contains('datetime-picker')) && !sibling.hasAttribute('name')) {
-            const next = sibling.nextElementSibling;
-            sibling.remove();
-            sibling = next;
-        }
-
-        const allowPast = input.dataset.allowPast === 'true';
-        const minDate = input.dataset.minDate !== undefined
-            ? (input.dataset.minDate === '' ? null : input.dataset.minDate)
-            : (allowPast ? null : "today");
-
-        flatpickr(input, {
-            enableTime: true,
-            dateFormat: "Y-m-d\\TH:i",
-            altInput: true,
-            altFormat: "d/m/Y h:i K",
-            time_24hr: false,
-            minDate: minDate,
-            minuteIncrement: 5,
-            allowInput: true,
-            // Appending to body (flatpickr default) makes the calendar a sibling of
-            // any open modal, which dialog-manager.js marks `inert` — clicks pass
-            // through to the backdrop and close the modal. Keep it inside the open
-            // dialog when present so it stays interactive.
-            appendTo: input.closest('[data-modal-dialog]') || undefined,
-            onReady: (selectedDates, dateStr, instance) => {
-                const targetInput = instance.altInput || instance.input;
-                if (targetInput) {
-                    targetInput.addEventListener('keydown', (e) => {
-                        if (e.key === 'Escape' && instance.isOpen) {
-                            e.preventDefault();
-                            e.stopPropagation();
-                            instance.close();
-                        }
-                    });
-                }
-                if (instance.altInput && instance.input) {
-                    const origId = instance.input.id;
-                    if (origId) {
-                        const altId = origId + '_alt';
-                        instance.altInput.id = altId;
-                        const label = document.querySelector(`label[for="${origId}"], label[for="${altId}"]`);
-                        if (label) {
-                            label.setAttribute('for', altId);
-                        }
-                    }
-                    const ariaLabel = instance.input.getAttribute('aria-label');
-                    if (ariaLabel) instance.altInput.setAttribute('aria-label', ariaLabel);
-                    const ariaLabelledby = instance.input.getAttribute('aria-labelledby');
-                    if (ariaLabelledby) instance.altInput.setAttribute('aria-labelledby', ariaLabelledby);
-                    const ariaDescribedby = instance.input.getAttribute('aria-describedby');
-                    if (ariaDescribedby) instance.altInput.setAttribute('aria-describedby', ariaDescribedby);
-                }
-            },
-            onChange: () => syncAssignmentWindow(input),
-            onClose: () => syncAssignmentWindow(input)
-        });
+    document.querySelectorAll('.datetime-picker[data-window-role]').forEach((input) => {
+        input.removeEventListener('change', handleWindowChange);
+        input.addEventListener('change', handleWindowChange);
     });
-
     syncAssignmentWindows();
 }
 window.initDatePickers = initDatePickers;
 
-export function clearDatePicker(id) {
-    const input = typeof id === 'string'
-        ? (document.getElementById(id) || document.getElementById(id.replace('_alt', '')))
-        : id;
-    if (!input) return;
-    if (input._flatpickr) {
-        input._flatpickr.clear();
-        syncAssignmentWindow(input);
-    } else {
-        input.value = '';
-        input.dispatchEvent(new Event('change'));
-    }
+function handleWindowChange(e) {
+    syncAssignmentWindow(e.target);
 }
-window.clearDatePicker = clearDatePicker;
 
 function syncAssignmentWindows() {
     document.querySelectorAll('.datetime-picker[data-window-role]').forEach((input) => {
@@ -126,44 +56,41 @@ function syncAssignmentWindows() {
 
 function syncAssignmentWindow(input) {
     const pairId = input.dataset.windowPair;
-    if (!pairId || !input._flatpickr) {
-        return;
-    }
+    if (!pairId) return;
 
     const pairInput = document.getElementById(pairId);
-    if (!pairInput?._flatpickr) {
-        return;
-    }
+    if (!pairInput) return;
 
     const startInput = input.dataset.windowRole === 'start' ? input : pairInput;
     const endInput = input.dataset.windowRole === 'end' ? input : pairInput;
-    const startDate = startInput._flatpickr.selectedDates[0] ?? null;
-    const endDate = endInput._flatpickr.selectedDates[0] ?? null;
 
-    const defaultMinDate = endInput.dataset.allowPast === 'true' ? null : 'today';
-    endInput._flatpickr.set('minDate', startDate || defaultMinDate);
-
-    const hasInvalidWindow = Boolean(startDate && endDate && endDate <= startDate);
-
-    if (hasInvalidWindow) {
-        endInput._flatpickr.clear();
+    const startVal = startInput.value;
+    const endVal = endInput.value;
+    if (endInput.dataset.windowBaseMin === undefined) {
+        endInput.dataset.windowBaseMin = endInput.getAttribute('min') || '';
     }
 
+    const minimum = [endInput.dataset.windowBaseMin, endInput.dataset.allowPast === 'true' ? '' : startVal]
+        .filter(Boolean)
+        .sort()
+        .at(-1);
+    if (minimum) endInput.min = minimum;
+    else endInput.removeAttribute('min');
+
+    const hasInvalidWindow = Boolean(startVal && endVal && endVal <= startVal);
     setWindowError(endInput, hasInvalidWindow);
 }
 
 function setWindowError(input, hasError) {
     input.closest('.time-field')?.classList.toggle('has-window-error', hasError);
 
-    [input, input._flatpickr?.altInput].filter(Boolean).forEach((field) => {
-        if (hasError) {
-            field.setAttribute('aria-invalid', 'true');
-            field.classList.add('!border-rose-500', 'focus:!border-rose-500', 'focus:!ring-rose-500');
-        } else {
-            field.removeAttribute('aria-invalid');
-            field.classList.remove('!border-rose-500', 'focus:!border-rose-500', 'focus:!ring-rose-500');
-        }
-    });
+    if (hasError) {
+        input.setAttribute('aria-invalid', 'true');
+        input.classList.add('!border-rose-500', 'focus:!border-rose-500', 'focus:!ring-rose-500');
+    } else {
+        input.removeAttribute('aria-invalid');
+        input.classList.remove('!border-rose-500', 'focus:!border-rose-500', 'focus:!ring-rose-500');
+    }
 }
 
 // Auto-initialize on load and Livewire navigation

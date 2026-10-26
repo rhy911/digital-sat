@@ -2,13 +2,26 @@ name: CI
 
 on:
   push:
-    branches: [ main ]
+    branches: [main]
   pull_request:
-    branches: [ main ]
+    branches: [main]
 
 jobs:
-  audit:
+  verify:
     runs-on: ubuntu-latest
+    services:
+      mysql:
+        image: mysql:8.0
+        env:
+          MYSQL_ROOT_PASSWORD: root
+          MYSQL_DATABASE: sat_app_testing
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping -proot"
+          --health-interval=5s
+          --health-timeout=5s
+          --health-retries=20
     steps:
       - uses: actions/checkout@v4
 
@@ -16,20 +29,43 @@ jobs:
         uses: shivammathur/setup-php@v2
         with:
           php-version: '8.2'
-      
-      - name: Install Composer dependencies
-        run: composer install --prefer-dist --no-progress --no-suggest
+          extensions: bcmath, gd, intl, mbstring, pdo_mysql, zip
+          coverage: none
 
-      - name: Run Composer Audit
+      - name: Install Composer dependencies
+        run: composer install --prefer-dist --no-progress --no-interaction
+
+      - name: Composer audit
         run: composer audit --locked
 
-      - name: Setup Node
-        uses: actions/setup-node@v4
+      - uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: '22'
+          cache: npm
 
-      - name: Install NPM dependencies
+      - name: Install Node dependencies
         run: npm ci
 
-      - name: Run NPM Audit
+      - name: NPM audit
         run: npm audit --audit-level=high
+
+      - name: JavaScript tests
+        run: node --test tests/JavaScript/*.test.js tests/JavaScript/*.test.mjs
+
+      - name: Frontend build
+        run: npm run build
+
+      - name: PHPStan
+        run: vendor/bin/phpstan analyse --no-progress --memory-limit=2G
+
+      - name: PHPUnit
+        env:
+          APP_ENV: testing
+          APP_KEY: base64:AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=
+          DB_CONNECTION: mysql
+          DB_HOST: 127.0.0.1
+          DB_PORT: 3306
+          DB_DATABASE: sat_app_testing
+          DB_USERNAME: root
+          DB_PASSWORD: root
+        run: vendor/bin/phpunit --colors=never

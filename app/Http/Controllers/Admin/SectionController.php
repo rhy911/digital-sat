@@ -9,6 +9,7 @@ use App\Services\TestManagementService;
 use App\Http\Requests\Admin\StoreSectionRequest;
 use App\Http\Requests\Admin\UpdateSectionRequest;
 use App\Models\Module;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Validation\ValidationException;
@@ -22,7 +23,7 @@ class SectionController extends Controller
         $this->testManagement = $testManagement;
     }
 
-    public function store(StoreSectionRequest $request)
+    public function store(StoreSectionRequest $request): JsonResponse
     {
         $validated = $request->validated();
 
@@ -51,7 +52,7 @@ class SectionController extends Controller
         ], 201);
     }
 
-    public function update(UpdateSectionRequest $request, $id)
+    public function update(UpdateSectionRequest $request, int|string $id): JsonResponse
     {
         $section = Section::findOrFail($id);
         $this->authorize('update', $section);
@@ -70,7 +71,7 @@ class SectionController extends Controller
     }
 
 
-    public function destroy(Request $request, $id)
+    public function destroy(Request $request, int|string $id): JsonResponse
     {
         $section = Section::findOrFail($id);
         $this->authorize('delete', $section);

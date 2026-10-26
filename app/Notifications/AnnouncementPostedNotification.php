@@ -15,6 +15,7 @@ class AnnouncementPostedNotification extends Notification implements ShouldQueue
 
     public function __construct(public ClassroomAnnouncement $announcement) {}
 
+    /** @return array<int, string> */
     public function via(object $notifiable): array { return ['mail', 'database']; }
 
     public function toMail(object $notifiable): MailMessage
@@ -30,6 +31,7 @@ class AnnouncementPostedNotification extends Notification implements ShouldQueue
             ->action('View class', route('student.classes.show', $this->announcement->classroom));
     }
 
+    /** @return array<string, mixed> */
     public function toArray(object $notifiable): array
     {
         return [

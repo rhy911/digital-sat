@@ -16,8 +16,11 @@ class SatTaxonomy
     public const DOMAIN_LABELS = [
         // Reading and Writing
         'craft_and_structure' => 'Craft and Structure',
+        'craft_structure' => 'Craft and Structure',
         'information_and_ideas' => 'Information and Ideas',
+        'information_ideas' => 'Information and Ideas',
         'standard_english_conventions' => 'Standard English Conventions',
+        'standard_english' => 'Standard English Conventions',
         'expression_of_ideas' => 'Expression of Ideas',
 
         // Math

@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Str;
 
@@ -36,12 +37,14 @@ class ClassroomDocument extends Model
         return 'ulid';
     }
 
-    public function classroom()
+    /** @return BelongsTo<Classroom, $this> */
+    public function classroom(): BelongsTo
     {
         return $this->belongsTo(Classroom::class);
     }
 
-    public function creator()
+    /** @return BelongsTo<User, $this> */
+    public function creator(): BelongsTo
     {
         return $this->belongsTo(User::class, 'created_by');
     }

@@ -10,13 +10,18 @@ use App\Models\Test;
 use App\Models\UserTest;
 use App\Models\UserTestAnswer;
 use App\Services\ExamSessionService;
+use Illuminate\Contracts\View\View;
+use Illuminate\Database\Eloquent\Collection;
+use Illuminate\Http\JsonResponse;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Str;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class ExamSessionController extends Controller
 {
     public function __construct(private ExamSessionService $service) {}
 
-    public function index()
+    public function index(): View
     {
         $user = auth()->user();
 
@@ -31,7 +36,7 @@ class ExamSessionController extends Controller
         return view('teacher.exam-sessions.index', compact('sessions', 'tests'));
     }
 
-    public function store(StoreExamSessionRequest $request)
+    public function store(StoreExamSessionRequest $request): RedirectResponse
     {
         $session = $this->service->create($request->user(), $request->validated());
 
@@ -39,7 +44,7 @@ class ExamSessionController extends Controller
             ->with('success', 'Exam session created. Share the code with candidates.');
     }
 
-    public function show(ExamSession $examSession)
+    public function show(ExamSession $examSession): View
     {
         $this->authorize('view', $examSession);
 
@@ -79,8 +84,10 @@ class ExamSessionController extends Controller
      * The roster query, shared by the page and the live poll so the two can
      * never diverge in what they load (an eager-load missing from one of them
      * is an N+1 that only appears on that path).
+     *
+     * @return Collection<int, UserTest>
      */
-    private function rosterFor(ExamSession $examSession)
+    private function rosterFor(ExamSession $examSession): Collection
     {
         return $examSession->userTests()
             ->with(['user', 'currentModule.section', 'currentModule.sections'])
@@ -94,7 +101,7 @@ class ExamSessionController extends Controller
             ->get();
     }
 
-    public function updateStatus(UpdateExamSessionStatusRequest $request, ExamSession $examSession)
+    public function updateStatus(UpdateExamSessionStatusRequest $request, ExamSession $examSession): RedirectResponse
     {
         $this->authorize('manage', $examSession);
         $this->service->updateStatus($examSession, $request->validated()['status']);
@@ -102,7 +109,7 @@ class ExamSessionController extends Controller
         return back()->with('success', 'Session status updated.');
     }
 
-    public function resetAttempt(ExamSession $examSession, UserTest $userTest)
+    public function resetAttempt(ExamSession $examSession, UserTest $userTest): RedirectResponse
     {
         $this->authorize('manage', $examSession);
         abort_unless((int) $userTest->exam_session_id === (int) $examSession->id, 404);
@@ -112,7 +119,7 @@ class ExamSessionController extends Controller
         return back()->with('success', 'Attempt reset. The candidate can retake the exam.');
     }
 
-    public function forceSubmit(ExamSession $examSession, UserTest $userTest)
+    public function forceSubmit(ExamSession $examSession, UserTest $userTest): RedirectResponse
     {
         $this->authorize('manage', $examSession);
         abort_unless((int) $userTest->exam_session_id === (int) $examSession->id, 404);
@@ -131,7 +138,7 @@ class ExamSessionController extends Controller
      * and multiple numbered attempts, neither of which exists here — an exam
      * session gives each candidate exactly one attempt.
      */
-    public function showAttempt(ExamSession $examSession, UserTest $userTest)
+    public function showAttempt(ExamSession $examSession, UserTest $userTest): View
     {
         $this->authorize('view', $examSession);
         abort_unless((int) $userTest->exam_session_id === (int) $examSession->id, 404);
@@ -152,7 +159,7 @@ class ExamSessionController extends Controller
         ]);
     }
 
-    public function questionPreview(ExamSession $examSession, UserTestAnswer $userAnswer)
+    public function questionPreview(ExamSession $examSession, UserTestAnswer $userAnswer): View
     {
         $this->authorize('view', $examSession);
         // Ownership is checked through the answer's own attempt rather than
@@ -193,7 +200,7 @@ class ExamSessionController extends Controller
         ]);
     }
 
-    public function exportCsv(ExamSession $examSession)
+    public function exportCsv(ExamSession $examSession): StreamedResponse
     {
         $this->authorize('view', $examSession);
 
@@ -227,7 +234,7 @@ class ExamSessionController extends Controller
      * drift only showed up four seconds after load, when the poll silently
      * replaced the styled rows.
      */
-    public function liveStatus(ExamSession $examSession)
+    public function liveStatus(ExamSession $examSession): JsonResponse
     {
         $this->authorize('view', $examSession);
 

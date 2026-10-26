@@ -4,6 +4,8 @@ namespace Tests\Feature;
 
 use App\Jobs\ScoreModuleJob;
 use App\Models\AnswerChoice;
+use App\Models\Assignment;
+use App\Models\Classroom;
 use App\Models\Module;
 use App\Models\Question;
 use App\Models\Section;
@@ -11,9 +13,12 @@ use App\Models\SprCorrectAnswer;
 use App\Models\Test;
 use App\Models\User;
 use App\Models\UserTest;
+use App\Models\UserTestAnswer;
 use App\Services\AttemptEngine;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Queue;
 use Tests\TestCase;
 
@@ -128,6 +133,30 @@ class EngineAutosaveSubmitRaceTest extends TestCase
         $this->assertStoredAnswer($attempt, '1/2', true);
     }
 
+    public function test_autosave_eager_loads_question_relations_for_a_preloaded_module_collection(): void
+    {
+        for ($index = 0; $index < 24; $index++) {
+            $this->attachMcqQuestion($this->moduleOne);
+        }
+        $attempt = $this->attempt();
+        $module = Module::with('questions')->findOrFail($this->moduleOne->id);
+        $answerChoicesQueries = 0;
+        DB::listen(function ($query) use (&$answerChoicesQueries) {
+            if (str_contains(strtolower($query->sql), 'answer_choices')) {
+                $answerChoicesQueries++;
+            }
+        });
+        $answers = $module->questions->mapWithKeys(fn ($question) => [(string) $question->id => 'A'])->all();
+
+        $result = app(AttemptEngine::class)->autosave($attempt, $module, $answers);
+
+        $this->assertSame(25, $result['saved_count']);
+        $this->assertLessThanOrEqual(1, $answerChoicesQueries);
+        $saved = UserTestAnswer::where('user_test_id', $attempt->id)->where('module_id', $module->id)->get();
+        $this->assertCount(25, $saved);
+        $this->assertNotEmpty($saved->firstWhere('question_id', $this->sprQuestion->id)->question_snapshot['spr_answers']);
+    }
+
     public function test_marker_is_released_once_scoring_finishes_and_autosave_stays_blocked(): void
     {
         $attempt = $this->attempt();
@@ -151,6 +180,77 @@ class EngineAutosaveSubmitRaceTest extends TestCase
             ->assertJsonPath('error', 'module_progression_conflict');
 
         $this->assertStoredAnswer($attempt, '1/2', true);
+    }
+
+    public function test_autosave_throws_validation_exception_on_invalid_question_id(): void
+    {
+        $this->expectException(\Illuminate\Validation\ValidationException::class);
+
+        $attempt = $this->attempt();
+
+        app(AttemptEngine::class)->autosave($attempt, $this->moduleOne, ['not_a_number' => 'A']);
+    }
+
+    public function test_autosave_returns_submitting_when_marker_set(): void
+    {
+        $attempt = $this->attempt();
+
+        Cache::put(AttemptEngine::submitMarkerKey($attempt->id, $this->moduleOne->id), 1, 60);
+
+        $result = app(AttemptEngine::class)->autosave($attempt, $this->moduleOne, []);
+
+        $this->assertSame('submitting', $result['status']);
+        $this->assertFalse($result['expired']);
+    }
+
+    public function test_autosave_returns_expired_when_chained_clock_past_deadline(): void
+    {
+        $teacher = User::factory()->teacher()->create();
+        $classroom = Classroom::create([
+            'owner_id' => $teacher->id,
+            'name' => 'Race Test Class',
+            'status' => 'active',
+        ]);
+        $assignment = Assignment::create([
+            'classroom_id' => $classroom->id,
+            'teacher_id' => $teacher->id,
+            'test_id' => $this->test->id,
+            'title' => 'Chained Work',
+            'status' => 'published',
+            'clock_mode' => 'chained',
+            'attempt_limit' => 1,
+        ]);
+
+        $attempt = $this->attempt();
+        $attempt->update([
+            'assignment_id' => $assignment->id,
+            'current_module_started_at' => Carbon::now()->subMinutes(40),
+        ]);
+        $this->moduleOne->update(['duration_minutes' => 30]);
+
+        $result = app(AttemptEngine::class)->autosave($attempt, $this->moduleOne, []);
+
+        $this->assertSame('expired', $result['status']);
+        $this->assertTrue($result['expired']);
+    }
+
+    public function test_autosave_paused_clock_records_client_elapsed_and_resets_started_at(): void
+    {
+        $past = Carbon::now()->subMinutes(10);
+        $attempt = $this->attempt();
+        $attempt->update([
+            'assignment_id' => null, // paused clock
+            'current_module_started_at' => $past,
+            'current_module_elapsed_seconds' => 0,
+        ]);
+        $this->moduleOne->update(['duration_minutes' => 30]);
+
+        $result = app(AttemptEngine::class)->autosave($attempt, $this->moduleOne, [], [], 120);
+
+        $attempt->refresh();
+        $this->assertSame('success', $result['status']);
+        $this->assertSame(120, $attempt->current_module_elapsed_seconds);
+        $this->assertTrue($attempt->current_module_started_at->greaterThan($past));
     }
 
     private function autosave(UserTest $attempt, string $answer)
@@ -216,7 +316,8 @@ class EngineAutosaveSubmitRaceTest extends TestCase
                 'order' => $index + 1,
             ]);
         }
-        $module->questions()->attach($question->id, ['position' => 1]);
+        $position = $module->questions()->count() + 1;
+        $module->questions()->attach($question->id, ['position' => $position]);
 
         return $question;
     }

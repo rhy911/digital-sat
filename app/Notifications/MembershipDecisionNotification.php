@@ -12,7 +12,11 @@ class MembershipDecisionNotification extends Notification implements ShouldQueue
 {
     use Queueable;
     public function __construct(public Classroom $classroom, public bool $approved) {}
+
+    /** @return array<int, string> */
     public function via(object $notifiable): array { return ['mail', 'database']; }
+
+    /** @return array<string, mixed> */
     public function toArray(object $notifiable): array
     {
         return [

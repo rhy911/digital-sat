@@ -2,10 +2,18 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Str;
 
+/**
+ * @property ?\Illuminate\Support\Carbon $expires_at
+ * @property-read ?Test $test
+ * @property-read ?User $teacher
+ */
 class ExamSession extends Model
 {
     use SoftDeletes;
@@ -55,27 +63,38 @@ class ExamSession extends Model
         return 'ulid';
     }
 
-    public function teacher()
+    /** @return BelongsTo<User, $this> */
+    public function teacher(): BelongsTo
     {
         return $this->belongsTo(User::class, 'teacher_id');
     }
 
-    public function test()
+    /** @return BelongsTo<Test, $this> */
+    public function test(): BelongsTo
     {
         return $this->belongsTo(Test::class);
     }
 
-    public function userTests()
+    /** @return HasMany<UserTest, $this> */
+    public function userTests(): HasMany
     {
         return $this->hasMany(UserTest::class);
     }
 
-    public function scopeActive($query)
+    /**
+     * @param Builder<ExamSession> $query
+     * @return Builder<ExamSession>
+     */
+    public function scopeActive(Builder $query): Builder
     {
         return $query->where('status', self::STATUS_ACTIVE);
     }
 
-    public function scopeByCode($query, string $code)
+    /**
+     * @param Builder<ExamSession> $query
+     * @return Builder<ExamSession>
+     */
+    public function scopeByCode(Builder $query, string $code): Builder
     {
         return $query->where('code', Str::upper($code));
     }

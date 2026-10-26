@@ -5,12 +5,13 @@ namespace App\Http\Controllers\Teacher;
 use App\Http\Controllers\Controller;
 use App\Models\Classroom;
 use App\Models\User;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\ValidationException;
 
 class CoTeacherController extends Controller
 {
-    public function store(Request $request, Classroom $classroom)
+    public function store(Request $request, Classroom $classroom): RedirectResponse
     {
         $this->authorize('manageTeam', $classroom);
         abort_if($classroom->status === 'archived', 409, 'Archived classes are read-only. Restore this class first.');
@@ -37,7 +38,7 @@ class CoTeacherController extends Controller
         return back()->with('success', 'Co-teacher added.');
     }
 
-    public function destroy(Classroom $classroom, User $teacher)
+    public function destroy(Classroom $classroom, User $teacher): RedirectResponse
     {
         $this->authorize('manageTeam', $classroom);
         abort_if($classroom->status === 'archived', 409, 'Archived classes are read-only. Restore this class first.');
@@ -47,6 +48,7 @@ class CoTeacherController extends Controller
         return back()->with('success', 'Co-teacher removed.');
     }
 
+    /** @param array<string, mixed> $validated */
     private function resolveTeacher(array $validated): ?User
     {
         if (! empty($validated['teacher_id'])) {

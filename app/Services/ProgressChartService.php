@@ -8,6 +8,9 @@ class ProgressChartService
 {
     /**
      * Build all Chart.js view payloads from the canonical dossier contract.
+     *
+     * @param  array<string, mixed>  $dossier
+     * @return array<string, mixed>
      */
     public function buildWebCharts(array $dossier): array
     {
@@ -26,6 +29,7 @@ class ProgressChartService
      * Build Chart.js line dataset for score trend (Total, RW, Math) from dossier history.
      *
      * @param list<array<string, mixed>> $history
+     * @return array<string, mixed>
      */
     public function trendData(array $history, ?int $targetScore = null): array
     {
@@ -65,6 +69,7 @@ class ProgressChartService
      * Build radar chart datasets for RW and Math domains from weakAreaSummaries.
      *
      * @param list<array<string, mixed>> $weakAreaSummaries
+     * @return array<string, mixed>
      */
     public function radarData(array $weakAreaSummaries): array
     {
@@ -123,6 +128,9 @@ class ProgressChartService
 
     /**
      * Adapt domain difficulty statistics into a presentation matrix for views.
+     *
+     * @param  array<string, mixed>  $domainDifficultyStats
+     * @return array<string, mixed>
      */
     public function heatmapData(array $domainDifficultyStats): array
     {
@@ -169,6 +177,9 @@ class ProgressChartService
 
     /**
      * Adapt dossier time distribution buckets for Chart.js.
+     *
+     * @param  array<string, mixed>  $timeBuckets
+     * @return array<string, mixed>
      */
     public function histogramData(array $timeBuckets): array
     {

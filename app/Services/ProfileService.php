@@ -7,6 +7,9 @@ use Illuminate\Support\Facades\Hash;
 
 class ProfileService
 {
+    /**
+     * @param  array<string, mixed>  $data
+     */
     public function updateProfile(User $user, array $data): User
     {
         $user->fill([

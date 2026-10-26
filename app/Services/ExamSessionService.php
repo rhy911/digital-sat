@@ -7,6 +7,7 @@ use App\Models\Module;
 use App\Models\Test;
 use App\Models\User;
 use App\Models\UserTest;
+use App\Models\UserTestAnswer;
 use App\Models\UserTestModuleSubmission;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Cache;
@@ -27,6 +28,9 @@ class ExamSessionService
         private AttemptEngine $engine,
     ) {}
 
+    /**
+     * @param  array<string, mixed>  $data
+     */
     public function create(User $teacher, array $data): ExamSession
     {
         $test = Test::assignableTo($teacher)->findOrFail($data['test_id']);
@@ -207,7 +211,7 @@ class ExamSessionService
      * saved work, plus whichever they are sitting now); on an adaptive test the
      * Module 2 path they were not routed to must never appear.
      *
-     * @return \Illuminate\Support\Collection<int, array<string, mixed>>
+     * @return Collection<int, array<string, mixed>>
      */
     public function questionGrid(UserTest $attempt): Collection
     {
@@ -225,22 +229,44 @@ class ExamSessionService
         $answersByQuestion = $attempt->userAnswers->keyBy(
             fn ($answer) => $answer->module_id.':'.$answer->question_id
         );
-
-        return Module::with(['section', 'questions:id'])
+        $modules = Module::with(['section', 'questions:id'])
             ->whereIn('id', $moduleIds)
             ->get()
-            ->sortBy(fn ($module) => ($module->section?->order ?? 0) * 100 + $module->module_number)
-            ->map(fn ($module) => [
+            ->sortBy(fn ($module) => ($module->section->order ?? 0) * 100 + $module->module_number)
+            ->values();
+
+        /** @var list<array<string, mixed>> $grid */
+        $grid = [];
+        foreach ($modules as $module) {
+            /** @var list<array<string, mixed>> $questions */
+            $questions = [];
+            foreach ($module->questions->values() as $index => $question) {
+                $answer = $answersByQuestion->get($module->id.':'.$question->id);
+                if (! $answer instanceof UserTestAnswer) {
+                    $answer = null;
+                }
+                $questions[] = [
+                    'number' => $index + 1,
+                    'answer' => $answer,
+                ];
+            }
+
+            /** @var Collection<int, array<string, mixed>> $questionsCollection */
+            $questionsCollection = collect($questions);
+
+            $grid[] = [
                 'module' => $module,
                 'isCurrent' => (int) $module->id === (int) $attempt->current_module_id,
                 'isSubmitted' => $attempt->status === 'completed'
                     || $attempt->moduleSubmissions->contains('module_id', $module->id),
-                'questions' => $module->questions->values()->map(fn ($question, $index) => [
-                    'number' => $index + 1,
-                    'answer' => $answersByQuestion->get($module->id.':'.$question->id),
-                ]),
-            ])
-            ->values();
+                'questions' => $questionsCollection,
+            ];
+        }
+
+        /** @var Collection<int, array<string, mixed>> $result */
+        $result = collect($grid);
+
+        return $result;
     }
 
     public function updateStatus(ExamSession $session, string $status): ExamSession

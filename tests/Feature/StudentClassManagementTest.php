@@ -23,7 +23,7 @@ class StudentClassManagementTest extends TestCase
         return Test::create(['title' => 'Assigned SAT', 'test_type' => 'custom_test', 'status' => 'active', 'created_by' => $teacher->id, 'is_public' => false]);
     }
 
-    public function test_index_redirects_to_first_active_classroom(): void
+    public function test_index_shows_active_classrooms_list(): void
     {
         $teacher = $this->teacher();
         $student = $this->student();
@@ -32,7 +32,9 @@ class StudentClassManagementTest extends TestCase
 
         $this->actingAs($student)
             ->get(route('student.classes.index'))
-            ->assertRedirect(route('student.classes.show', $classroom));
+            ->assertOk()
+            ->assertSee($classroom->name)
+            ->assertSee('Enter Classroom');
     }
 
     public function test_join_code_controls_on_all_classes_page_are_inside_an_alpine_root(): void
@@ -43,10 +45,24 @@ class StudentClassManagementTest extends TestCase
         ClassroomMembership::create(['classroom_id' => $classroom->id, 'student_id' => $student->id, 'status' => 'active']);
 
         $this->actingAs($student)
-            ->get(route('student.classes.index', ['all' => 1]))
+            ->get(route('student.classes.index'))
             ->assertOk()
             ->assertSee('<div class="app-shell app-shell--no-list" x-data="{}">', false)
             ->assertSee('@click="$dispatch(\'open-modal\', \'modal-join-class\')"', false);
+    }
+
+    public function test_index_prefills_code_when_present_without_auto_opening_modal(): void
+    {
+        $teacher = $this->teacher();
+        $student = $this->student();
+        $classroom = $this->classroom($teacher);
+        ClassroomMembership::create(['classroom_id' => $classroom->id, 'student_id' => $student->id, 'status' => 'active']);
+
+        $this->actingAs($student)
+            ->get(route('student.classes.index', ['code' => 'ABCDEF12']))
+            ->assertOk()
+            ->assertDontSee('x-init="$dispatch(\'open-modal\'', false)
+            ->assertSee('value="ABCDEF12"', false);
     }
 
     public function test_index_shows_empty_state_when_no_active_classroom(): void

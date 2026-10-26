@@ -6,10 +6,11 @@ use App\Models\User;
 use App\Models\UserTest;
 use Closure;
 use Illuminate\Http\Request;
+use Symfony\Component\HttpFoundation\Response;
 
 class RecordHomeOpening
 {
-    public function handle(Request $request, Closure $next)
+    public function handle(Request $request, Closure $next): Response
     {
         $response = $next($request);
         $user = $request->user();

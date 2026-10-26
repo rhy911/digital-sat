@@ -21,7 +21,7 @@ class SatScoringPipelineTest extends TestCase
         $this->assertInstanceOf(SatScoringPipeline::class, $this->pipeline);
     }
 
-    public function test_rescore_legacy_returns_null_when_not_completed(): void
+    public function test_rescore_legacy_returns_skip_when_not_completed(): void
     {
         $attempt = new UserTest([
             'status' => 'in_progress',
@@ -29,10 +29,10 @@ class SatScoringPipelineTest extends TestCase
             'score_conversion_set_id' => null,
         ]);
 
-        $this->assertNull($this->pipeline->rescoreLegacy($attempt));
+        $this->assertSame(['status' => 'skipped', 'reason' => 'not_completed_or_eligible_generic_score'], $this->pipeline->rescoreLegacy($attempt));
     }
 
-    public function test_rescore_legacy_returns_null_when_not_generic_ds_v1(): void
+    public function test_rescore_legacy_returns_skip_when_not_generic_ds_v1(): void
     {
         $attempt = new UserTest([
             'status' => 'completed',
@@ -40,10 +40,10 @@ class SatScoringPipelineTest extends TestCase
             'score_conversion_set_id' => null,
         ]);
 
-        $this->assertNull($this->pipeline->rescoreLegacy($attempt));
+        $this->assertSame(['status' => 'skipped', 'reason' => 'not_completed_or_eligible_generic_score'], $this->pipeline->rescoreLegacy($attempt));
     }
 
-    public function test_rescore_legacy_returns_null_when_conversion_set_id_present(): void
+    public function test_rescore_legacy_returns_skip_when_conversion_set_id_present(): void
     {
         $attempt = new UserTest([
             'status' => 'completed',
@@ -51,6 +51,6 @@ class SatScoringPipelineTest extends TestCase
             'score_conversion_set_id' => 123,
         ]);
 
-        $this->assertNull($this->pipeline->rescoreLegacy($attempt));
+        $this->assertSame(['status' => 'skipped', 'reason' => 'not_completed_or_eligible_generic_score'], $this->pipeline->rescoreLegacy($attempt));
     }
 }

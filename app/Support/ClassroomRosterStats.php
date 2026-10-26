@@ -37,7 +37,7 @@ class ClassroomRosterStats
 
             $stats[$membership->student_id] = [
                 'completed_ratio' => $attempts->unique('assignment_id')->count()."/{$totalCount}",
-                'latest_score' => $attempts->sortByDesc('completed_at')->first()?->total_score ?? '—',
+                'latest_score' => $attempts->sortByDesc('completed_at')->first()->total_score ?? '—',
             ];
         }
 
@@ -60,7 +60,7 @@ class ClassroomRosterStats
 
             if (is_numeric($score) && (!$top || $score > $top['score'])) {
                 $top = [
-                    'name' => $students->get($studentId)?->student?->name ?? 'Unknown',
+                    'name' => $students->get($studentId)?->student->name ?? 'Unknown',
                     'score' => (int) $score,
                 ];
             }

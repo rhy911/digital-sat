@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class UserTestScoreRevision extends Model
 {
@@ -16,7 +17,8 @@ class UserTestScoreRevision extends Model
         'created_at' => 'datetime',
     ];
 
-    public function userTest()
+    /** @return BelongsTo<UserTest, $this> */
+    public function userTest(): BelongsTo
     {
         return $this->belongsTo(UserTest::class);
     }

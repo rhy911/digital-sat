@@ -3,6 +3,8 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Str;
 
 class ForumThread extends Model
@@ -17,6 +19,10 @@ class ForumThread extends Model
     }
 
     public function getRouteKeyName(): string { return 'ulid'; }
-    public function user() { return $this->belongsTo(User::class); }
-    public function replies() { return $this->hasMany(ForumReply::class, 'thread_id'); }
+
+    /** @return BelongsTo<User, $this> */
+    public function user(): BelongsTo { return $this->belongsTo(User::class); }
+
+    /** @return HasMany<ForumReply, $this> */
+    public function replies(): HasMany { return $this->hasMany(ForumReply::class, 'thread_id'); }
 }

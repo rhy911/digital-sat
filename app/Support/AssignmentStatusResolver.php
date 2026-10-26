@@ -8,6 +8,10 @@ use Illuminate\Support\Collection;
 
 class AssignmentStatusResolver
 {
+    /**
+     * @param Collection<int, \App\Models\UserTest> $attempts
+     * @return array{state: string, variant: string, completed: Collection<int, \App\Models\UserTest>, inProgress: ?\App\Models\UserTest, used: int, canStart: bool, maxAllowed: int, hasBonus: bool, bonusAttempts: int}
+     */
     public static function resolve(Assignment $assignment, Collection $attempts, ?AssignmentRecipient $recipient = null): array
     {
         $completed = $attempts->where('status', 'completed');
@@ -19,7 +23,7 @@ class AssignmentStatusResolver
         }
 
         $maxAllowed = $recipient ? $recipient->maxAllowedAttempts() : (int) ($assignment->attempt_limit ?? 1);
-        $bonusAttempts = (int) ($recipient?->extra_attempts ?? 0);
+        $bonusAttempts = (int) ($recipient->extra_attempts ?? 0);
         $hasBonus = $bonusAttempts > 0;
 
         if ($recipient?->status === 'withdrawn') {

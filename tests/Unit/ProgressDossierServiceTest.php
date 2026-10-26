@@ -53,20 +53,6 @@ class ProgressDossierServiceTest extends TestCase
         $this->assertArrayNotHasKey('ulid', $dossier['history'][0]);
     }
 
-    public function test_it_returns_targeted_study_tip(): void
-    {
-        $service = app(ProgressDossierService::class);
-
-        $emptyTip = $service->studyTip(collect());
-        $this->assertSame('Take your first practice test to unlock a personalized study tip here.', $emptyTip);
-
-        $attempts = collect([
-            $this->attempt(1100, 500, 600, 1, [false, false, false, false]),
-        ]);
-        $tip = $service->studyTip($attempts);
-        $this->assertStringContainsString('Inferences', $tip);
-    }
-
     public function test_home_suggestion_reports_evidence_without_changing_legacy_tip_consumers(): void
     {
         $service = app(ProgressDossierService::class);
@@ -76,7 +62,6 @@ class ProgressDossierServiceTest extends TestCase
         $this->assertSame('Inferences', $suggestion['skill']);
         $this->assertSame(1, $suggestion['correct']);
         $this->assertSame(2, $suggestion['total']);
-        $this->assertStringContainsString('Inferences', $service->studyTip($attempts));
         $this->assertNull($service->studySuggestion(collect()));
         $this->assertNull($service->studySuggestion(collect([$this->attempt(1400, 700, 700, 1, [true, true])])));
     }

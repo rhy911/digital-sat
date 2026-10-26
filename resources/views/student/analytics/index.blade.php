@@ -116,7 +116,7 @@
 
                         <div class="home-head__actions">
                             @include('student.analytics.partials.view-switcher')
-                            <x-ui.button size="sm" :href="route('teacher.classes.index', ['new' => 1])">
+                            <x-ui.button size="sm" :href="route('teacher.classes.index')">
                                 <x-slot:icon><x-ui.icon name="plus-lg" class="w-4 h-4" /></x-slot:icon>
                                 Create a class
                             </x-ui.button>
@@ -137,7 +137,7 @@
                                 </div>
 
                                 @if($teacherStats['pendingRequestsCount'] > 0)
-                                    <a href="{{ route('teacher.classes.index', ['all' => 1]) }}" class="home-stat home-stat--action">
+                                    <a href="{{ route('teacher.classes.index') }}" class="home-stat home-stat--action">
                                         <span class="home-stat__label">Pending approvals</span>
                                         <span class="home-stat__value home-num home-stat__value--warning">{{ $teacherStats['pendingRequestsCount'] }}</span>
                                         <span class="home-stat__note">
@@ -165,7 +165,7 @@
                                 <x-ui.card aria-labelledby="classes-title">
                                     <x-slot:header>
                                         <h2 id="classes-title" class="home-panel__title">Your active classes</h2>
-                                        <a href="{{ route('teacher.classes.index', ['all' => 1]) }}" class="home-link">
+                                        <a href="{{ route('teacher.classes.index') }}" class="home-link">
                                             View all classes
                                             <x-ui.icon name="arrow-right" class="w-3.5 h-3.5" />
                                         </a>
@@ -201,7 +201,7 @@
                                             <x-ui.icon name="people" class="home-empty__icon w-6 h-6" />
                                             <p class="home-empty__title">No active classes yet</p>
                                             <p class="home-empty__body">Create a class to invite students, then assign a test to track their scores.</p>
-                                            <x-ui.button size="sm" variant="secondary" :href="route('teacher.classes.index', ['new' => 1])">
+                                            <x-ui.button size="sm" variant="secondary" :href="route('teacher.classes.index')">
                                                 Create your first class
                                             </x-ui.button>
                                         </div>

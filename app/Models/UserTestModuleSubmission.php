@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class UserTestModuleSubmission extends Model
 {
@@ -19,17 +20,20 @@ class UserTestModuleSubmission extends Model
         'submitted_at' => 'datetime',
     ];
 
-    public function userTest()
+    /** @return BelongsTo<UserTest, $this> */
+    public function userTest(): BelongsTo
     {
         return $this->belongsTo(UserTest::class);
     }
 
-    public function module()
+    /** @return BelongsTo<Module, $this> */
+    public function module(): BelongsTo
     {
         return $this->belongsTo(Module::class);
     }
 
-    public function issuedNextModule()
+    /** @return BelongsTo<Module, $this> */
+    public function issuedNextModule(): BelongsTo
     {
         return $this->belongsTo(Module::class, 'issued_next_module_id');
     }

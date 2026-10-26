@@ -4,6 +4,8 @@ namespace App\Http\Controllers;
 
 use App\Models\ClassroomDocument;
 use Illuminate\Support\Facades\Storage;
+use Symfony\Component\HttpFoundation\BinaryFileResponse;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class ClassroomDocumentAccessController extends Controller
 {
@@ -15,7 +17,7 @@ class ClassroomDocumentAccessController extends Controller
         'image/webp',
     ];
 
-    public function open(ClassroomDocument $document)
+    public function open(ClassroomDocument $document): BinaryFileResponse
     {
         $this->authorize('view', $document);
         abort_unless($document->isFile() && $document->disk && $document->path, 404);
@@ -31,7 +33,7 @@ class ClassroomDocumentAccessController extends Controller
         ]);
     }
 
-    public function download(ClassroomDocument $document)
+    public function download(ClassroomDocument $document): StreamedResponse
     {
         $this->authorize('view', $document);
         abort_unless($document->isFile() && $document->disk && $document->path, 404);

@@ -3,14 +3,17 @@
 namespace App\Http\Controllers\Student;
 
 use App\Http\Controllers\Controller;
-use App\Models\UserTest;
 use App\Models\Test;
+use App\Models\UserTest;
 use App\Services\AttemptEngine;
+use Illuminate\Contracts\View\View;
+use Illuminate\Http\JsonResponse;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Auth;
 
 class PracticeController extends Controller
 {
-    public function index()
+    public function index(): View
     {
         $user = Auth::user();
         $tests = Test::visibleTo($user)
@@ -26,7 +29,7 @@ class PracticeController extends Controller
         return view('student.practice.index', compact('tests', 'user'));
     }
 
-    public function show(UserTest $userTest)
+    public function show(UserTest $userTest): RedirectResponse
     {
         $this->authorize('view', $userTest);
 
@@ -49,7 +52,7 @@ class PracticeController extends Controller
         return redirect()->route('student.scores.show', $userTest);
     }
 
-    public function resume(UserTest $userTest, AttemptEngine $engine)
+    public function resume(UserTest $userTest, AttemptEngine $engine): RedirectResponse
     {
         $this->authorize('view', $userTest);
         abort_unless($userTest->status === 'in_progress', 409, 'This attempt is no longer active.');
@@ -61,14 +64,14 @@ class PracticeController extends Controller
         return redirect()->route('engine.session', ['ulid' => $module->ulid, 'attempt' => $userTest->ulid]);
     }
 
-    public function preview()
+    public function preview(): View
     {
         return view('student.practice.preview', [
             'user' => Auth::user(),
         ]);
     }
 
-    public function destroy(UserTest $userTest)
+    public function destroy(UserTest $userTest): JsonResponse|RedirectResponse
     {
         $this->authorize('delete', $userTest);
 

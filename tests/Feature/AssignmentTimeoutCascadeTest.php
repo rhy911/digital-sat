@@ -158,6 +158,102 @@ class AssignmentTimeoutCascadeTest extends TestCase
         $this->assertSame('completed', $attempt->fresh()->status);
     }
 
+    public function test_assignment_timer_endpoint_returns_the_active_server_deadline(): void
+    {
+        Carbon::setTestNow('2026-06-22 12:00:00');
+        [$student, $modules, $attempt] = $this->assignmentAttempt(moduleCount: 2);
+        $attempt->update(['current_module_started_at' => now()->subSeconds(90)]);
+
+        $this->actingAs($student)
+            ->getJson(route('engine.test.timing', ['user_test_id' => $attempt->id, 'module_id' => $modules[0]->id]))
+            ->assertOk()
+            ->assertJsonPath('module_id', $modules[0]->id)
+            ->assertJsonPath('remaining_seconds', 510)
+            ->assertJsonPath('expired', false)
+            ->assertJsonPath('status', 'active')
+            ->assertHeader('Cache-Control', 'no-store, private');
+    }
+
+    public function test_assignment_timer_recovers_to_the_current_module_after_progression(): void
+    {
+        [$student, $modules, $attempt] = $this->assignmentAttempt(moduleCount: 3);
+        $attempt->update(['current_module_id' => $modules[2]->id]);
+        UserTestModuleSubmission::create([
+            'user_test_id' => $attempt->id,
+            'module_id' => $modules[0]->id,
+            'issued_next_module_id' => $modules[1]->id,
+            'result' => ['status' => 'success'],
+            'submitted_at' => now(),
+        ]);
+        UserTestModuleSubmission::create([
+            'user_test_id' => $attempt->id,
+            'module_id' => $modules[1]->id,
+            'issued_next_module_id' => $modules[2]->id,
+            'result' => ['status' => 'success'],
+            'submitted_at' => now(),
+        ]);
+
+        $this->actingAs($student)
+            ->getJson(route('engine.test.timing', ['user_test_id' => $attempt->id, 'module_id' => $modules[0]->id]))
+            ->assertOk()
+            ->assertJsonPath('status', 'advanced')
+            ->assertJsonPath('navigation_url', route('engine.session', ['ulid' => $modules[2]->ulid, 'attempt' => $attempt->ulid]));
+    }
+
+    public function test_assignment_timer_redirects_completed_attempts_to_their_result(): void
+    {
+        [$student, $modules, $attempt] = $this->assignmentAttempt(moduleCount: 1);
+        $attempt->update(['status' => 'completed', 'current_module_id' => null]);
+
+        $this->actingAs($student)
+            ->getJson(route('engine.test.timing', ['user_test_id' => $attempt->id, 'module_id' => $modules[0]->id]))
+            ->assertOk()
+            ->assertJsonPath('status', 'completed')
+            ->assertJsonPath('redirect_url', route('student.scores.show', $attempt));
+    }
+
+    public function test_assignment_timer_rejects_a_module_that_was_never_issued(): void
+    {
+        [$student, $modules, $attempt] = $this->assignmentAttempt(moduleCount: 2);
+
+        $this->actingAs($student)
+            ->getJson(route('engine.test.timing', ['user_test_id' => $attempt->id, 'module_id' => $modules[1]->id]))
+            ->assertForbidden()
+            ->assertJsonPath('error', 'module_not_issued');
+    }
+
+    public function test_assignment_timer_does_not_disclose_state_to_another_student(): void
+    {
+        [, $modules, $attempt] = $this->assignmentAttempt(moduleCount: 2);
+        $stranger = User::factory()->student()->create(['email_verified_at' => now()]);
+
+        $this->actingAs($stranger)
+            ->getJson(route('engine.test.timing', ['user_test_id' => $attempt->id, 'module_id' => $modules[0]->id]))
+            ->assertForbidden()
+            ->assertJsonPath('error', 'unauthorized_attempt');
+    }
+
+    public function test_client_timeout_cannot_submit_a_module_before_server_deadline(): void
+    {
+        Carbon::setTestNow('2026-06-22 12:00:00');
+        [$student, $modules, $attempt] = $this->assignmentAttempt(moduleCount: 2);
+
+        $this->actingAs($student)
+            ->postJson(route('engine.test.submit-module'), [
+                'user_test_id' => $attempt->id,
+                'module_id' => $modules[0]->id,
+                'answers' => [],
+                'timed_out' => true,
+            ])
+            ->assertStatus(409)
+            ->assertJsonPath('error', 'module_not_expired')
+            ->assertJsonPath('timing.remaining_seconds', 600);
+
+        $this->assertSame('in_progress', $attempt->fresh()->status);
+        $this->assertSame($modules[0]->id, $attempt->fresh()->current_module_id);
+        $this->assertSame(0, UserTestModuleSubmission::where('user_test_id', $attempt->id)->count());
+    }
+
     /**
      * A linear custom test with $moduleCount modules of 10 minutes each, assigned
      * to one student, with an attempt parked on the first module.

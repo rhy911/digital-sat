@@ -17,6 +17,7 @@ class StoreAnnouncementCommentRequest extends FormRequest
             && (int) $announcement->classroom_id === (int) $classroom->id;
     }
 
+    /** @return array<string, mixed> */
     public function rules(): array
     {
         return [

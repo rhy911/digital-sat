@@ -2,16 +2,28 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
+/**
+ * @property string $type
+ * @property-read string $section_type
+ * @property-read ?Test $test
+ */
 class Section extends Model
 {
-    use HasFactory, SoftDeletes;
+    use SoftDeletes;
 
     public const TYPE_RW = 'reading_writing';
     public const TYPE_MATH = 'math';
+
+    public function getSectionTypeAttribute(): string
+    {
+        return (string) ($this->type ?? '');
+    }
 
     protected $fillable = [
         'test_id',
@@ -26,12 +38,18 @@ class Section extends Model
         'is_public' => 'boolean',
     ];
 
-    public function creator()
+    /** @return BelongsTo<User, $this> */
+    public function creator(): BelongsTo
     {
         return $this->belongsTo(User::class, 'created_by');
     }
 
-    public function scopeVisibleTo($query, $user)
+    /**
+     * @param Builder<Section> $query
+     * @param ?User $user
+     * @return Builder<Section>
+     */
+    public function scopeVisibleTo(Builder $query, ?User $user): Builder
     {
         if (!$user) {
             return $query->where('is_public', true);
@@ -50,12 +68,14 @@ class Section extends Model
         });
     }
 
-    public function test()
+    /** @return BelongsTo<Test, $this> */
+    public function test(): BelongsTo
     {
         return $this->belongsTo(Test::class)->withTrashed();
     }
 
-    public function modules()
+    /** @return BelongsToMany<Module, $this> */
+    public function modules(): BelongsToMany
     {
         return $this->belongsToMany(Module::class, 'section_modules')
             ->orderBy('module_number')
@@ -87,7 +107,7 @@ class Section extends Model
                 ? $module->questions
                 : $module->questions()->select(['questions.id', 'questions.is_pretest', 'questions.irt_b'])->get();
 
-            return $questions->filter(fn ($q) => ! (bool) $q->is_pretest && is_numeric($q->irt_b));
+            return $questions->filter(fn ($q) => ! (bool) $q->is_pretest);
         };
 
         $easyScored = $getScored($easy);

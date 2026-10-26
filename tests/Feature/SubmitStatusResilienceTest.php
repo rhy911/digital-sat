@@ -124,7 +124,7 @@ class SubmitStatusResilienceTest extends TestCase
                     'answers' => [],
                 ])
                 ->assertStatus(409)
-                ->assertJsonPath('error', 'submission_in_progress');
+                ->assertJsonPath('error', 'module_progression_conflict');
 
             // Module one is current but uncontended: this is a real conflict.
             $attempt->forceFill(['current_module_id' => $this->easyModule->id])->save();

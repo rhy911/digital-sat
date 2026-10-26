@@ -19,6 +19,10 @@ class ProgressDossierService
 {
     private ?bool $hasReviewStorage = null;
 
+    /**
+     * @param  Collection<int, UserTest>  $completedAttempts
+     * @return array<string, mixed>
+     */
     public function build(Collection $completedAttempts, ?int $targetScore = null): array
     {
         $activityAttempts = $completedAttempts
@@ -37,7 +41,7 @@ class ProgressDossierService
                 'id' => $attempt->id,
                 'date' => $attempt->completed_at?->format('M j, Y') ?? 'Undated',
                 'shortDate' => $attempt->completed_at?->format('M j') ?? '#'.($index + 1),
-                'title' => $attempt->test?->title ?? 'Practice Test',
+                'title' => $attempt->test->title ?? 'Practice Test',
                 'total' => $total,
                 'rw' => (int) $attempt->score_reading_writing,
                 'math' => (int) $attempt->score_math,
@@ -90,27 +94,9 @@ class ProgressDossierService
     }
 
     /**
-     * Compute a single targeted recommendation tip without full dossier psychometrics.
+     * @param  Collection<int, UserTest>  $completedAttempts
+     * @return array{skill: string, domain: string, correct: int, total: int}|null
      */
-    public function studyTip(Collection $completedAttempts): string
-    {
-        $fallback = 'Take your first practice test to unlock a personalized study tip here.';
-        if ($completedAttempts->isEmpty()) {
-            return $fallback;
-        }
-
-        $events = $this->questionEvents($completedAttempts);
-        if (empty($events)) {
-            return $fallback;
-        }
-
-        $weakAreas = $this->weakAreaSummaries($events);
-        $recommendations = $this->recommendations($weakAreas);
-
-        return $recommendations[0] ?? $fallback;
-    }
-
-    /** @return array{skill: string, domain: string, correct: int, total: int}|null */
     public function studySuggestion(Collection $completedAttempts): ?array
     {
         if ($completedAttempts->isEmpty()) {
@@ -142,7 +128,10 @@ class ProgressDossierService
             && $attempt->score_math !== null;
     }
 
-    /** @return list<array<string, mixed>> */
+    /**
+     * @param  Collection<int, UserTest>  $attempts
+     * @return list<array<string, mixed>>
+     */
     private function questionEvents(Collection $attempts): array
     {
         $fallbackPositions = $this->fallbackPositions($attempts);
@@ -156,10 +145,10 @@ class ProgressDossierService
                 }
 
                 $section = ($snapshot['section_type'] ?? $answer->question?->section_type) === 'math' ? 'math' : 'reading_and_writing';
-                $domain = (string) ($snapshot['skill_domain'] ?? $answer->question?->skill_domain ?? 'other');
-                $skill = (string) ($snapshot['skill_subdomain'] ?? $answer->question?->skill_subdomain ?? 'other');
-                $difficulty = strtolower((string) ($snapshot['difficulty'] ?? $answer->question?->difficulty ?? 'unknown'));
-                $expected = (int) ($snapshot['expected_time'] ?? $answer->question?->expected_time ?? 0);
+                $domain = (string) ($snapshot['skill_domain'] ?? $answer->question->skill_domain ?? 'other');
+                $skill = (string) ($snapshot['skill_subdomain'] ?? $answer->question->skill_subdomain ?? 'other');
+                $difficulty = strtolower((string) ($snapshot['difficulty'] ?? $answer->question->difficulty ?? 'unknown'));
+                $expected = (int) ($snapshot['expected_time'] ?? $answer->question->expected_time ?? 0);
                 $expected = $expected > 0 ? $expected : QuestionPacing::expectedSeconds($section, $difficulty);
                 $position = $snapshot['module_position'] ?? $fallbackPositions->get("{$answer->module_id}:{$answer->question_id}");
                 $omitted = $answer->selected_answer === null || $answer->selected_answer === '';
@@ -186,6 +175,9 @@ class ProgressDossierService
         return $events;
     }
 
+    /**
+     * @return array<string, mixed>
+     */
     private function snapshot(UserTestAnswer $answer): array
     {
         $snapshot = $answer->question_snapshot;
@@ -193,6 +185,10 @@ class ProgressDossierService
         return is_array($snapshot) ? $snapshot : [];
     }
 
+    /**
+     * @param  Collection<int, UserTest>  $attempts
+     * @return Collection<string, int>
+     */
     private function fallbackPositions(Collection $attempts): Collection
     {
         $pairs = $attempts->flatMap(fn (UserTest $attempt) => $attempt->userAnswers)
@@ -224,8 +220,8 @@ class ProgressDossierService
 
         $review = $answer->relationLoaded('review') ? $answer->review : null;
 
-        return $review?->teacher_error_type
-            ?? $review?->student_error_type
+        return $review->teacher_error_type
+            ?? $review->student_error_type
             ?? ($omitted ? 'omitted' : 'unclassified');
     }
 
@@ -234,7 +230,10 @@ class ProgressDossierService
         return $this->hasReviewStorage ??= (bool) rescue(fn () => Schema::hasTable('user_test_answer_reviews'), false, false);
     }
 
-    /** @param list<array<string, mixed>> $history */
+    /**
+     * @param list<array<string, mixed>> $history
+     * @return array<string, mixed>
+     */
     private function scoreSummary(array $history, ?int $targetScore): array
     {
         if ($history === []) {
@@ -291,7 +290,10 @@ class ProgressDossierService
         return 'Declining';
     }
 
-    /** @param list<array<string, mixed>> $events */
+    /**
+     * @param list<array<string, mixed>> $events
+     * @return list<array<string, mixed>>
+     */
     private function domainMetrics(array $events): array
     {
         $groups = collect($events)->groupBy(fn (array $event) => $event['section'].'|'.$event['domain']);
@@ -312,7 +314,10 @@ class ProgressDossierService
         })->sortBy([['section', 'asc'], ['accuracy', 'asc']])->values()->all();
     }
 
-    /** @param list<array<string, mixed>> $events */
+    /**
+     * @param list<array<string, mixed>> $events
+     * @return list<array<string, mixed>>
+     */
     private function skillMetrics(array $events, int $attemptCount): array
     {
         $groups = collect($events)->groupBy(fn (array $event) => $event['section'].'|'.$event['domainLabel'].'|'.$event['skillLabel']);
@@ -363,6 +368,9 @@ class ProgressDossierService
         })->sortBy('opportunityIndex')->reverse()->values()->all();
     }
 
+    /**
+     * @param  Collection<int, array<string, mixed>>  $items
+     */
     private function recentAccuracy(Collection $items): int
     {
         $lastIndexes = $items->pluck('attemptIndex')->unique()->sort()->slice(-3)->values();
@@ -391,7 +399,10 @@ class ProgressDossierService
         return 'Declining';
     }
 
-    /** @param list<array<string, mixed>> $events */
+    /**
+     * @param list<array<string, mixed>> $events
+     * @return list<array<string, mixed>>
+     */
     private function difficultyMetrics(array $events): array
     {
         $groups = collect($events)->groupBy(fn (array $event) => $event['section'].'|'.$event['domain']);
@@ -412,6 +423,10 @@ class ProgressDossierService
         })->values()->all();
     }
 
+    /**
+     * @param  list<array<string, mixed>>  $skills
+     * @return list<array<string, mixed>>
+     */
     private function prescriptions(array $skills): array
     {
         return array_map(function (array $skill) {
@@ -431,6 +446,11 @@ class ProgressDossierService
         }, $skills);
     }
 
+    /**
+     * @param  array<string, mixed>  $score
+     * @param  list<array<string, mixed>>  $domains
+     * @param  list<array<string, mixed>>  $prioritySkills
+     */
     private function narrative(array $score, array $domains, array $prioritySkills): string
     {
         if (! $score['latest']) return 'No comparable full-test score is available yet. Complete a scored full test to begin the longitudinal dossier.';
@@ -683,6 +703,9 @@ class ProgressDossierService
         ];
     }
 
+    /**
+     * @param  array<int, int>  $table
+     */
     private function calculatePercentile(?int $score, array $table): int
     {
         if ($score === null) {
@@ -718,6 +741,10 @@ class ProgressDossierService
         return 1;
     }
 
+    /**
+     * @param  list<array<string, mixed>>  $events
+     * @return array<string, int>
+     */
     private function habitsMetrics(array $events): array
     {
         $skipped = 0;
@@ -745,6 +772,10 @@ class ProgressDossierService
         ];
     }
 
+    /**
+     * @param  list<array<string, mixed>>  $events
+     * @return array<string, mixed>
+     */
     private function timeMatrixMetrics(array $events): array
     {
         $matrix = [
@@ -785,6 +816,10 @@ class ProgressDossierService
         ];
     }
 
+    /**
+     * @param  list<array<string, mixed>>  $events
+     * @return list<array<string, mixed>>
+     */
     private function weakAreaSummaries(array $events): array
     {
         $domainStats = [];
@@ -824,11 +859,11 @@ class ProgressDossierService
 
         $rows = [];
         foreach ($domainStats as $data) {
-            $percentCorrect = $data['total'] > 0 ? (int) round(($data['correct'] / $data['total']) * 100) : 0;
+            $percentCorrect = (int) round(($data['correct'] / $data['total']) * 100);
 
             $skillsList = [];
             foreach ($data['skills'] as $skillData) {
-                $skillPercent = $skillData['total'] > 0 ? (int) round(($skillData['correct'] / $skillData['total']) * 100) : 0;
+                $skillPercent = (int) round(($skillData['correct'] / $skillData['total']) * 100);
                 $skillsList[] = [
                     'name' => $skillData['name'],
                     'total' => $skillData['total'],
@@ -855,6 +890,10 @@ class ProgressDossierService
         return $rows;
     }
 
+    /**
+     * @param  list<array<string, mixed>>  $events
+     * @return list<array<string, mixed>>
+     */
     private function difficultyPerformanceSummaries(array $events): array
     {
         $order = ['easy' => 0, 'medium' => 1, 'hard' => 2, 'unknown' => 3];
@@ -873,7 +912,7 @@ class ProgressDossierService
 
         $rows = [];
         foreach ($stats as $difficulty => $data) {
-            $percent = $data['total'] > 0 ? (int) round(($data['correct'] / $data['total']) * 100) : 0;
+            $percent = (int) round(($data['correct'] / $data['total']) * 100);
             $rows[] = [
                 'difficulty' => $difficulty,
                 'label' => ucfirst($difficulty),
@@ -889,6 +928,10 @@ class ProgressDossierService
         return $rows;
     }
 
+    /**
+     * @param  list<array<string, mixed>>  $events
+     * @return list<array<string, mixed>>
+     */
     private function pacingSummaries(array $events): array
     {
         $order = ['easy' => 0, 'medium' => 1, 'hard' => 2, 'unknown' => 3];
@@ -909,8 +952,8 @@ class ProgressDossierService
 
         $rows = [];
         foreach ($stats as $difficulty => $data) {
-            $avgTimeSpent = $data['count'] > 0 ? (int) round($data['timeSpent'] / $data['count']) : 0;
-            $avgExpectedTime = $data['count'] > 0 ? (int) round($data['expectedTime'] / $data['count']) : 0;
+            $avgTimeSpent = (int) round($data['timeSpent'] / $data['count']);
+            $avgExpectedTime = (int) round($data['expectedTime'] / $data['count']);
             $pacePercent = $avgExpectedTime > 0 ? (int) round(($avgTimeSpent / $avgExpectedTime) * 100) : 0;
 
             $rows[] = [
@@ -928,6 +971,10 @@ class ProgressDossierService
         return $rows;
     }
 
+    /**
+     * @param  list<array<string, mixed>>  $weakAreaSummaries
+     * @return list<string>
+     */
     private function recommendations(array $weakAreaSummaries): array
     {
         $flatSkills = [];
@@ -960,6 +1007,10 @@ class ProgressDossierService
         return $recommendations;
     }
 
+    /**
+     * @param  list<array<string, mixed>>  $events
+     * @return array<string, mixed>
+     */
     private function sectionAccuracyMetrics(array $events): array
     {
         $rwCorrect = 0;
@@ -998,6 +1049,10 @@ class ProgressDossierService
         ];
     }
 
+    /**
+     * @param  list<array<string, mixed>>  $events
+     * @return array<string, mixed>
+     */
     private function domainDifficultyMetrics(array $events): array
     {
         $stats = [];
@@ -1018,6 +1073,10 @@ class ProgressDossierService
         return $stats;
     }
 
+    /**
+     * @param  list<array<string, mixed>>  $events
+     * @return array<string, mixed>
+     */
     private function timeBucketsMetrics(array $events): array
     {
         $buckets = [

@@ -2,13 +2,25 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
+/**
+ * @property string $question_type
+ * @property ?int $module_position
+ * @property ?string $section_type
+ * @property-read object{position?: int}|null $pivot
+ * @property-read ?Passage $passage
+ * @property-read ?QuestionExplanation $explanation
+ */
 class Question extends Model
 {
-    use HasFactory, SoftDeletes;
+    use SoftDeletes;
 
     public const TYPE_MCQ = 'multiple_choice';
 
@@ -67,12 +79,18 @@ class Question extends Model
         'irt_c' => 'float',
     ];
 
-    public function creator()
+    /** @return BelongsTo<User, $this> */
+    public function creator(): BelongsTo
     {
         return $this->belongsTo(User::class, 'created_by');
     }
 
-    public function scopeVisibleTo($query, $user)
+    /**
+     * @param Builder<Question> $query
+     * @param ?User $user
+     * @return Builder<Question>
+     */
+    public function scopeVisibleTo(Builder $query, ?User $user): Builder
     {
         if (! $user) {
             return $query->whereHas('modules', function ($m) {
@@ -85,38 +103,45 @@ class Question extends Model
 
         return $query->where(function ($q) use ($user) {
             $q->where('created_by', $user->id)
-                ->orWhereHas('modules', function ($m) use ($user) {
+                ->orWhereHas('modules', function (Builder $m) use ($user) {
+                    /** @var Builder<Module> $m */
                     $m->visibleTo($user);
                 });
         });
     }
 
-    public function passage()
+    /** @return BelongsTo<Passage, $this> */
+    public function passage(): BelongsTo
     {
         return $this->belongsTo(Passage::class);
     }
 
-    public function answerChoices()
+    /** @return HasMany<AnswerChoice, $this> */
+    public function answerChoices(): HasMany
     {
         return $this->hasMany(AnswerChoice::class);
     }
 
-    public function explanation()
+    /** @return HasOne<QuestionExplanation, $this> */
+    public function explanation(): HasOne
     {
         return $this->hasOne(QuestionExplanation::class);
     }
 
-    public function media()
+    /** @return HasMany<QuestionMedia, $this> */
+    public function media(): HasMany
     {
         return $this->hasMany(QuestionMedia::class);
     }
 
-    public function sprCorrectAnswers()
+    /** @return HasMany<SprCorrectAnswer, $this> */
+    public function sprCorrectAnswers(): HasMany
     {
         return $this->hasMany(SprCorrectAnswer::class);
     }
 
-    public function modules()
+    /** @return BelongsToMany<Module, $this> */
+    public function modules(): BelongsToMany
     {
         return $this->belongsToMany(Module::class, 'module_questions')
             ->withPivot('position');

@@ -30,6 +30,7 @@ class UpdateQuestionRequest extends FormRequest
         }
     }
 
+    /** @return array<string, mixed> */
     public function rules(): array
     {
         return [
@@ -62,7 +63,7 @@ class UpdateQuestionRequest extends FormRequest
     /**
      * Custom validation rules checking for SPR answer necessity after basic validation.
      */
-    public function withValidator($validator)
+    public function withValidator(\Illuminate\Validation\Validator $validator): void
     {
         $validator->after(function ($validator) {
             if ($this->input('question_type') === \App\Models\Question::TYPE_SPR && empty($this->input('spr_answers'))) {

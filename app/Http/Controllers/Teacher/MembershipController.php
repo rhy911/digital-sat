@@ -3,13 +3,16 @@
 namespace App\Http\Controllers\Teacher;
 
 use App\Http\Controllers\Controller;
+use App\Models\Classroom;
 use App\Models\ClassroomMembership;
 use App\Notifications\MembershipDecisionNotification;
 use App\Services\ClassroomService;
+use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
 
 class MembershipController extends Controller
 {
-    public function approve(ClassroomMembership $membership, ClassroomService $service)
+    public function approve(ClassroomMembership $membership, ClassroomService $service): RedirectResponse
     {
         $this->authorize('manage', $membership->classroom);
         abort_if($membership->classroom->status === 'archived', 409, 'Archived classes are read-only.');
@@ -17,7 +20,8 @@ class MembershipController extends Controller
         $this->notifyApproved($membership);
         return back()->with('success', 'Student approved.');
     }
-    public function bulkApprove(\Illuminate\Http\Request $request, \App\Models\Classroom $classroom, ClassroomService $service)
+
+    public function bulkApprove(Request $request, Classroom $classroom, ClassroomService $service): RedirectResponse
     {
         $this->authorize('manage', $classroom);
         abort_if($classroom->status === 'archived', 409, 'Archived classes are read-only.');
@@ -54,7 +58,7 @@ class MembershipController extends Controller
         $membership->student->notify(new MembershipDecisionNotification($membership->classroom, true));
     }
 
-    public function reject(ClassroomMembership $membership, ClassroomService $service)
+    public function reject(ClassroomMembership $membership, ClassroomService $service): RedirectResponse
     {
         $this->authorize('manage', $membership->classroom);
         abort_if($membership->classroom->status === 'archived', 409, 'Archived classes are read-only.');
@@ -62,7 +66,8 @@ class MembershipController extends Controller
         $membership->student->notify(new MembershipDecisionNotification($membership->classroom, false));
         return back()->with('success', 'Join request rejected.');
     }
-    public function remove(ClassroomMembership $membership, ClassroomService $service)
+
+    public function remove(ClassroomMembership $membership, ClassroomService $service): RedirectResponse
     {
         $this->authorize('manage', $membership->classroom);
         abort_if($membership->classroom->status === 'archived', 409, 'Archived classes are read-only.');

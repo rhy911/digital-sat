@@ -2,13 +2,11 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class ScoreConversion extends Model
 {
-    use HasFactory;
-
     protected $fillable = [
         'score_conversion_set_id',
         'test_id',
@@ -18,12 +16,14 @@ class ScoreConversion extends Model
         'scaled_score',
     ];
 
-    public function test()
+    /** @return BelongsTo<Test, $this> */
+    public function test(): BelongsTo
     {
         return $this->belongsTo(Test::class);
     }
 
-    public function conversionSet()
+    /** @return BelongsTo<ScoreConversionSet, $this> */
+    public function conversionSet(): BelongsTo
     {
         return $this->belongsTo(ScoreConversionSet::class, 'score_conversion_set_id');
     }

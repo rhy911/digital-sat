@@ -5,13 +5,14 @@ namespace App\Http\Controllers\Teacher;
 use App\Http\Controllers\Controller;
 use App\Models\Classroom;
 use App\Models\ClassroomDocument;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 
 class ClassroomDocumentController extends Controller
 {
-    public function store(Request $request, Classroom $classroom)
+    public function store(Request $request, Classroom $classroom): RedirectResponse
     {
         $this->authorize('manage', $classroom);
         abort_if($classroom->status === 'archived', 409, 'Archived classes are read-only. Restore this class first.');
@@ -64,7 +65,7 @@ class ClassroomDocumentController extends Controller
         return back()->with('success', 'Study document added.');
     }
 
-    public function destroy(Classroom $classroom, ClassroomDocument $document)
+    public function destroy(Classroom $classroom, ClassroomDocument $document): RedirectResponse
     {
         abort_unless((int) $document->classroom_id === (int) $classroom->id, 404);
         $this->authorize('manage', $document);

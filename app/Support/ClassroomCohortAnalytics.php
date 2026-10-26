@@ -13,12 +13,11 @@ class ClassroomCohortAnalytics
      * Compute cohort-wide SAT metrics and domain mastery for a classroom.
      *
      * @return array{
-     *     average_score: ?int,
-     *     average_rw: ?int,
-     *     average_math: ?int,
-     *     total_completed: int,
-     *     highest_score: ?int,
-     *     domain_accuracies: array<string, array{label: string, percentage: int, count: int}>
+     *     composite_avg: ?int,
+     *     rw_avg: ?int,
+     *     math_avg: ?int,
+     *     completed_tests_count: int,
+     *     domain_proficiencies: array<string, array{name: string, accuracy_pct: int, correct: int, total: int}>
      * }
      */
     public static function forClassroom(Classroom $classroom): array
@@ -47,16 +46,10 @@ class ClassroomCohortAnalytics
         $domainAccuracies = self::calculateDomainAccuracies($attemptIds);
 
         return [
-            'average_score' => $scores->isNotEmpty() ? (int) round($scores->average()) : null,
             'composite_avg' => $scores->isNotEmpty() ? (int) round($scores->average()) : null,
-            'average_rw' => $rwScores->isNotEmpty() ? (int) round($rwScores->average()) : null,
             'rw_avg' => $rwScores->isNotEmpty() ? (int) round($rwScores->average()) : null,
-            'average_math' => $mathScores->isNotEmpty() ? (int) round($mathScores->average()) : null,
             'math_avg' => $mathScores->isNotEmpty() ? (int) round($mathScores->average()) : null,
-            'total_completed' => $completedAttempts->count(),
             'completed_tests_count' => $completedAttempts->count(),
-            'highest_score' => $scores->isNotEmpty() ? (int) $scores->max() : null,
-            'domain_accuracies' => $domainAccuracies,
             'domain_proficiencies' => $domainAccuracies,
         ];
     }
@@ -65,7 +58,7 @@ class ClassroomCohortAnalytics
      * Calculate question accuracy across standard SAT skill domains.
      *
      * @param \Illuminate\Support\Collection<int, int> $attemptIds
-     * @return array<string, array{label: string, percentage: int, count: int}>
+     * @return array<string, array{name: string, accuracy_pct: int, correct: int, total: int}>
      */
     private static function calculateDomainAccuracies($attemptIds): array
     {
@@ -80,50 +73,39 @@ class ClassroomCohortAnalytics
             ->groupBy('questions.skill_domain')
             ->get();
 
-        $domainLabels = [
-            'algebra' => 'Algebra',
-            'advanced_math' => 'Advanced Math',
-            'problem_solving' => 'Problem-Solving & Data',
-            'geometry_trigonometry' => 'Geometry & Trig',
-            'craft_structure' => 'Craft & Structure',
-            'information_ideas' => 'Information & Ideas',
-            'standard_english' => 'Standard English',
-            'expression_of_ideas' => 'Expression of Ideas',
-        ];
-
         $results = [];
         foreach ($domainStats as $stat) {
             $key = $stat->skill_domain;
-            $label = $domainLabels[$key] ?? ucwords(str_replace('_', ' ', $key));
+            $label = SatTaxonomy::domainLabel($key);
             $pct = $stat->total_answers > 0 ? (int) round(($stat->correct_answers / $stat->total_answers) * 100) : 0;
 
             $results[$key] = [
                 'name' => $label,
-                'label' => $label,
                 'accuracy_pct' => $pct,
-                'percentage' => $pct,
                 'correct' => (int) $stat->correct_answers,
                 'total' => (int) $stat->total_answers,
-                'count' => (int) $stat->total_answers,
             ];
         }
 
         return $results;
     }
 
+    /**
+     * @return array{
+     *     composite_avg: ?int,
+     *     rw_avg: ?int,
+     *     math_avg: ?int,
+     *     completed_tests_count: int,
+     *     domain_proficiencies: array<string, array{name: string, accuracy_pct: int, correct: int, total: int}>
+     * }
+     */
     private static function emptyStats(): array
     {
         return [
-            'average_score' => null,
             'composite_avg' => null,
-            'average_rw' => null,
             'rw_avg' => null,
-            'average_math' => null,
             'math_avg' => null,
-            'total_completed' => 0,
             'completed_tests_count' => 0,
-            'highest_score' => null,
-            'domain_accuracies' => [],
             'domain_proficiencies' => [],
         ];
     }

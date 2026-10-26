@@ -4,6 +4,8 @@ namespace App\Http\Controllers;
 
 use App\Http\Requests\ProfileUpdateRequest;
 use App\Services\ProfileService;
+use Illuminate\Contracts\View\View;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 
 class ProfileController extends Controller
@@ -15,14 +17,14 @@ class ProfileController extends Controller
         $this->profileService = $profileService;
     }
 
-    public function show(Request $request)
+    public function show(Request $request): View
     {
         return view('profile.show', [
             'user' => $request->user(),
         ]);
     }
 
-    public function update(ProfileUpdateRequest $request)
+    public function update(ProfileUpdateRequest $request): RedirectResponse
     {
         $user = $request->user();
         $this->profileService->updateProfile($user, $request->validated());
@@ -34,7 +36,7 @@ class ProfileController extends Controller
         return redirect()->back()->with('success', 'Profile updated successfully.');
     }
 
-    public function updateSharing(Request $request)
+    public function updateSharing(Request $request): RedirectResponse
     {
         $request->user()->update([
             'share_independent_practice' => $request->boolean('share_independent_practice'),

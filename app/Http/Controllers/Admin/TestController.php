@@ -9,6 +9,7 @@ use App\Models\Test;
 use App\Services\DifficultyDistributionAdvisor;
 use App\Services\TestManagementService;
 use App\Services\TestStructureService;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
@@ -23,7 +24,7 @@ class TestController extends Controller
         $this->testManagement = $testManagement;
     }
 
-    public function store(StoreTestRequest $request)
+    public function store(StoreTestRequest $request): JsonResponse
     {
         $validated = $request->validated();
         if (($validated['status'] ?? 'draft') === 'active') {
@@ -41,7 +42,7 @@ class TestController extends Controller
         ], 201);
     }
 
-    public function update(UpdateTestRequest $request, $id)
+    public function update(UpdateTestRequest $request, int|string $id): JsonResponse
     {
         $test = Test::findOrFail($id);
         $this->authorize('update', $test);
@@ -75,7 +76,7 @@ class TestController extends Controller
         ]);
     }
 
-    public function destroy(Request $request, $id)
+    public function destroy(Request $request, int|string $id): JsonResponse
     {
         $test = Test::findOrFail($id);
         $this->authorize('delete', $test);

@@ -2,7 +2,6 @@
 
 namespace App\Services;
 
-use App\Models\ScoreConversionSet;
 use App\Models\Test;
 use RuntimeException;
 
@@ -84,10 +83,5 @@ class ScoreConversionService
             'estimate_kind' => 'normal_form_specific',
             'estimate_status' => 'estimated_practice_score',
         ];
-    }
-
-    public function approvedSet(Test $test): ?ScoreConversionSet
-    {
-        return $test->approvedScoreConversionSet()->first();
     }
 }

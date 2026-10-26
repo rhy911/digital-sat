@@ -732,6 +732,19 @@ footer * {
     transform: translateY(-1px);
 }
 
+.custom-alert-btn.btn-gold {
+    background-color: #fedb00;
+    color: #1e1e1e;
+    font-weight: 700;
+    border: 1px solid #1e1e1e;
+}
+
+@media (hover: hover) {
+    .custom-alert-btn.btn-gold:hover {
+        background-color: #ebd000;
+    }
+}
+
 .custom-alert-btn.btn-secondary {
     background-color: #f1f5f9;
     color: #475569;

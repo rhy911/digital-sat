@@ -3,6 +3,10 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Support\Str;
 
 class Classroom extends Model
@@ -32,25 +36,43 @@ class Classroom extends Model
     }
 
     public function getRouteKeyName(): string { return 'ulid'; }
-    public function owner() { return $this->belongsTo(User::class, 'owner_id'); }
-    public function coTeachers() { return $this->belongsToMany(User::class, 'classroom_teachers', 'classroom_id', 'teacher_id')->withPivot('added_by')->withTimestamps(); }
-    public function memberships() { return $this->hasMany(ClassroomMembership::class); }
-    public function activeMemberships() { return $this->memberships()->where('status', 'active'); }
-    public function assignments() { return $this->hasMany(Assignment::class); }
-    public function documents() { return $this->hasMany(ClassroomDocument::class); }
-    public function exclusiveTests()
+
+    /** @return BelongsTo<User, $this> */
+    public function owner(): BelongsTo { return $this->belongsTo(User::class, 'owner_id'); }
+
+    /** @return BelongsToMany<User, $this> */
+    public function coTeachers(): BelongsToMany { return $this->belongsToMany(User::class, 'classroom_teachers', 'classroom_id', 'teacher_id')->withPivot('added_by')->withTimestamps(); }
+
+    /** @return HasMany<ClassroomMembership, $this> */
+    public function memberships(): HasMany { return $this->hasMany(ClassroomMembership::class); }
+
+    /** @return HasMany<ClassroomMembership, $this> */
+    public function activeMemberships(): HasMany { return $this->memberships()->where('status', 'active'); }
+
+    /** @return HasMany<Assignment, $this> */
+    public function assignments(): HasMany { return $this->hasMany(Assignment::class); }
+
+    /** @return HasMany<ClassroomDocument, $this> */
+    public function documents(): HasMany { return $this->hasMany(ClassroomDocument::class); }
+
+    /** @return BelongsToMany<Test, $this> */
+    public function exclusiveTests(): BelongsToMany
     {
         return $this->belongsToMany(Test::class, 'classroom_tests')
             ->withPivot('unit_name', 'order')
             ->withTimestamps();
     }
-    public function note() { return $this->hasOne(ClassroomNote::class); }
-    public function announcements() { return $this->hasMany(ClassroomAnnouncement::class); }
+
+    /** @return HasOne<ClassroomNote, $this> */
+    public function note(): HasOne { return $this->hasOne(ClassroomNote::class); }
+
+    /** @return HasMany<ClassroomAnnouncement, $this> */
+    public function announcements(): HasMany { return $this->hasMany(ClassroomAnnouncement::class); }
 
     /**
      * Group documents and exclusive tests into structured study units.
      *
-     * @return array<string, array{title: string, documents: \Illuminate\Support\Collection, tests: \Illuminate\Support\Collection}>
+     * @return array<string, array{title: string, documents: \Illuminate\Support\Collection<int, ClassroomDocument>, tests: \Illuminate\Support\Collection<int, Test>}>
      */
     public function studyUnits(): array
     {

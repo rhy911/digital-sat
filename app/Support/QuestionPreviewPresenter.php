@@ -21,10 +21,6 @@ class QuestionPreviewPresenter
     public static function decorate(array $items): array
     {
         foreach ($items as &$item) {
-            if (! is_array($item)) {
-                continue;
-            }
-
             $item['stem_html'] = QuestionContentRenderer::markdown(self::text($item['stem'] ?? null));
             $item['explanation_html'] = QuestionContentRenderer::markdown(self::text($item['explanation'] ?? null));
             $item['passage_html'] = QuestionContentRenderer::markdown(self::passageContent($item['passage'] ?? null));

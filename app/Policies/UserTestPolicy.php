@@ -14,10 +14,15 @@ class UserTestPolicy
         }
 
         if ($user->role === 'teacher' && $userTest->assignment_id) {
-            return $userTest->assignment()
-                ->whereHas('classroom', fn ($query) => $query
-                    ->where('owner_id', $user->id)
-                    ->orWhereHas('coTeachers', fn ($teachers) => $teachers->whereKey($user->id)))
+            /** @var \Illuminate\Database\Eloquent\Relations\BelongsTo<\App\Models\Assignment, \App\Models\UserTest> $assignmentQuery */
+            $assignmentQuery = $userTest->assignment();
+
+            return $assignmentQuery
+                ->whereHas('classroom', function (\Illuminate\Database\Eloquent\Builder $query) use ($user) {
+                    /** @var \Illuminate\Database\Eloquent\Builder<\App\Models\Classroom> $query */
+                    $query->where('owner_id', $user->id)
+                        ->orWhereHas('coTeachers', fn (\Illuminate\Database\Eloquent\Builder $teachers) => $teachers->whereKey($user->id));
+                })
                 ->exists();
         }
 

@@ -8,6 +8,8 @@ use App\Models\Passage;
 use App\Models\Question;
 use App\Models\Test;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
+use Illuminate\Contracts\View\View;
+use Illuminate\Http\JsonResponse;
 
 class TestBuilderController extends Controller
 {
@@ -16,7 +18,7 @@ class TestBuilderController extends Controller
     /**
      * Display the test data input dashboard.
      */
-    public function index()
+    public function index(): View
     {
         $qQuery = Question::visibleTo(auth()->user());
         if (auth()->user()->role === 'teacher') {
@@ -40,7 +42,7 @@ class TestBuilderController extends Controller
     /**
      * JSON bundle of dashboard data for client-side refresh without a full page reload.
      */
-    public function snapshot()
+    public function snapshot(): JsonResponse
     {
         return response()->json([
             'tests' => $this->testsQuery(),
@@ -49,6 +51,7 @@ class TestBuilderController extends Controller
         ]);
     }
 
+    /** @return LengthAwarePaginator<int, Test> */
     private function testsQuery(): LengthAwarePaginator
     {
         return Test::visibleTo(auth()->user())
@@ -65,11 +68,13 @@ class TestBuilderController extends Controller
             ->paginate(30);
     }
 
+    /** @return LengthAwarePaginator<int, Passage> */
     private function passagesQuery(): LengthAwarePaginator
     {
         return Passage::latest()->paginate(30);
     }
 
+    /** @return LengthAwarePaginator<int, Module> */
     private function modulesQuery(): LengthAwarePaginator
     {
         return Module::visibleTo(auth()->user())

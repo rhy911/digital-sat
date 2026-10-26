@@ -3,6 +3,8 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Str;
 
@@ -27,17 +29,20 @@ class ClassroomAnnouncement extends Model
         return 'ulid';
     }
 
-    public function classroom()
+    /** @return BelongsTo<Classroom, $this> */
+    public function classroom(): BelongsTo
     {
         return $this->belongsTo(Classroom::class);
     }
 
-    public function author()
+    /** @return BelongsTo<User, $this> */
+    public function author(): BelongsTo
     {
         return $this->belongsTo(User::class, 'author_id');
     }
 
-    public function comments()
+    /** @return HasMany<ClassroomAnnouncementComment, $this> */
+    public function comments(): HasMany
     {
         return $this->hasMany(ClassroomAnnouncementComment::class, 'announcement_id');
     }

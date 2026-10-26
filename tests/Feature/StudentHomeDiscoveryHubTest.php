@@ -70,7 +70,7 @@ class StudentHomeDiscoveryHubTest extends TestCase
         $response->assertSee('Join an exam')
             ->assertSee(route('exam-join.entry'), false)
             ->assertSee('Join a class')
-            ->assertSee(route('student.classes.index', ['all' => 1]), false)
+            ->assertSee(route('student.classes.index'), false)
             ->assertDontSee('Join with a code');
 
         // Primary emphasis on Test Preview when neither in-progress attempt nor assignments exist

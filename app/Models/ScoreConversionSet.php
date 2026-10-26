@@ -3,6 +3,8 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class ScoreConversionSet extends Model
 {
@@ -30,17 +32,20 @@ class ScoreConversionSet extends Model
         'approved_at' => 'datetime',
     ];
 
-    public function test()
+    /** @return BelongsTo<Test, $this> */
+    public function test(): BelongsTo
     {
         return $this->belongsTo(Test::class)->withTrashed();
     }
 
-    public function rows()
+    /** @return HasMany<ScoreConversion, $this> */
+    public function rows(): HasMany
     {
         return $this->hasMany(ScoreConversion::class);
     }
 
-    public function approver()
+    /** @return BelongsTo<User, $this> */
+    public function approver(): BelongsTo
     {
         return $this->belongsTo(User::class, 'approved_by');
     }

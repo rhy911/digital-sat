@@ -31,7 +31,7 @@
             <div class="binder-panel">
                 <!-- TOP BAR: BREADCRUMB & CLASS SWITCHER -->
                 <div class="workspace-top-bar">
-                    <a href="{{ route('teacher.classes.index', ['all' => 1]) }}" class="back-nav-link">
+                    <a href="{{ route('teacher.classes.index') }}" class="back-nav-link">
                         <svg class="w-4 h-4 text-slate-500 inline-block mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
                         </svg>
@@ -59,7 +59,7 @@
                                 @endforeach
                             </div>
                             <div class="class-switcher-footer">
-                                <a href="{{ route('teacher.classes.index', ['all' => 1]) }}" class="class-switcher-all">View All Classes →</a>
+                                <a href="{{ route('teacher.classes.index') }}" class="class-switcher-all">View All Classes →</a>
                             </div>
                         </div>
                     </div>
@@ -915,8 +915,8 @@
                                                 <label for="assign_available_at" class="font-semibold text-sm uppercase tracking-wider text-slate-500">{{ __('classroom.available_from') }}</label>
                                                 <button type="button" onclick="window.clearDatePicker?.('assign_available_at')" class="text-sm text-slate-400 hover:text-slate-600 transition cursor-pointer">Clear</button>
                                             </div>
-                                            <input id="assign_available_at" type="text" class="datetime-picker w-full text-sm bg-white border border-slate-300 rounded-lg px-2.5 py-1.5" name="available_at"
-                                                placeholder="{{ __('classroom.open_immediately') }}" autocomplete="off"
+                                            <input id="assign_available_at" type="datetime-local" step="300" class="datetime-picker w-full text-sm bg-white border border-slate-300 rounded-lg px-2.5 py-1.5" name="available_at"
+                                                autocomplete="off"
                                                 data-window-role="start" data-window-pair="assign_due_at">
                                         </div>
                                         <div>
@@ -924,8 +924,8 @@
                                                 <label for="assign_due_at" class="font-semibold text-sm uppercase tracking-wider text-slate-500">{{ __('classroom.due_at') }}</label>
                                                 <button type="button" onclick="window.clearDatePicker?.('assign_due_at')" class="text-sm text-slate-400 hover:text-slate-600 transition cursor-pointer">Clear</button>
                                             </div>
-                                            <input id="assign_due_at" type="text" class="datetime-picker w-full text-sm bg-white border border-slate-300 rounded-lg px-2.5 py-1.5" name="due_at"
-                                                placeholder="{{ __('classroom.no_deadline') }}" autocomplete="off"
+                                            <input id="assign_due_at" type="datetime-local" step="300" class="datetime-picker w-full text-sm bg-white border border-slate-300 rounded-lg px-2.5 py-1.5" name="due_at"
+                                                autocomplete="off"
                                                 data-window-role="end" data-window-pair="assign_available_at">
                                         </div>
                                     </div>

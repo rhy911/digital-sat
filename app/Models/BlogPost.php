@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Support\Str;
 
 class BlogPost extends Model
@@ -22,5 +23,7 @@ class BlogPost extends Model
     }
 
     public function getRouteKeyName(): string { return 'ulid'; }
-    public function teacher() { return $this->belongsTo(User::class, 'teacher_id'); }
+
+    /** @return BelongsTo<User, $this> */
+    public function teacher(): BelongsTo { return $this->belongsTo(User::class, 'teacher_id'); }
 }

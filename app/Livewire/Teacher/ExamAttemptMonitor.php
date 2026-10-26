@@ -43,7 +43,7 @@ class ExamAttemptMonitor extends Component
         abort_unless((int) $this->attempt->exam_session_id === (int) $this->examSession->id, 404);
     }
 
-    public function render(ExamSessionService $service)
+    public function render(ExamSessionService $service): \Illuminate\Contracts\View\View
     {
         $this->assertViewable();
 

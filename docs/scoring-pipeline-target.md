@@ -12,6 +12,11 @@
 
 ## 0. Nền tảng — phương pháp chấm digital SAT thật (đã research)
 
+> Cập nhật audit 2026-10: tài liệu này là thiết kế mục tiêu, không chứng minh kết quả hiện
+> tại khớp điểm College Board. EAP tiếp tục dùng cho routing; production final score tiếp tục
+> dùng EAP 3PL và curve nội bộ. MLE 3PL `mle_3pl_candidate_v2` mới chỉ là ứng viên offline trong `sat:scores-audit`;
+> chưa có bộ điểm tham chiếu đáng tin cậy để bật nó làm mặc định hoặc viết lại điểm lịch sử.
+
 | Thứ | Public? | Hệ quả |
 | --- | --- | --- |
 | Mô hình 3PL IRT, multistage adaptive, routing, cap theo nhánh | **Có** | Ta mô phỏng đúng **phương pháp** |
@@ -115,12 +120,18 @@ normal không có nhánh nên không áp cap.
 - Frontend poll `/submit-status` (cache 300s) tới khi có điểm.
 - **Bắt buộc** `php artisan queue:work` chạy.
 
-### 4.2 Ước lượng năng lực θ (giữ EAP grid — KHÔNG quay lại Newton-Raphson)
-- **EAP grid**, prior chuẩn N(0,1), lưới −4..4 bước 0.05, 3PL.
-- Lý do không dùng Newton-Raphson MLE: MLE **phân kỳ** khi học sinh đúng/sai 100% (θ→±∞). EAP
-  grid luôn cho θ hữu hạn, ổn định biên. Đây là lý do codebase đã chuyển khỏi Newton-Raphson.
+### 4.2 Ước lượng năng lực θ (EAP hiện tại; MLE chỉ là ứng viên đối chiếu)
+- Production hiện dùng **EAP grid**, prior chuẩn N(0,1), lưới −4..4 bước 0.05, 3PL.
+- MLE 3PL candidate v2 quét θ từ −8 tới 8, tinh chỉnh mọi cực đại cục bộ được phát hiện và giữ
+  cực đại likelihood tốt nhất. Extreme patterns vẫn phụ thuộc search bound; kết quả chỉ dùng để
+  đánh giá offline, chưa phải căn cứ để thay điểm production.
 - Trừ pretest trước khi tính.
 - SE = độ lệch chuẩn posterior → dùng cho confidence band.
+
+Lịch sử chỉ được so sánh hoặc rescore khi snapshot từng câu hợp lệ và tập response khớp chính xác
+với toàn bộ module đã trình bày, gồm cả pretest. Attempt thiếu snapshot, sai nhánh adaptive hoặc
+không chứng minh được tính đầy đủ sẽ bị bỏ qua kèm lý do; dữ liệu sống của câu hỏi không thay thế
+tham số lịch sử.
 
 ### 4.3 Routing Module 1 (chỉ đề adaptive) — CHỐT: theta-based
 

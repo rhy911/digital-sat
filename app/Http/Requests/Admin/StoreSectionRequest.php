@@ -11,6 +11,7 @@ class StoreSectionRequest extends FormRequest
         return true; // SectionController::store() calls $this->authorize('update', $test) after resolving test_id
     }
 
+    /** @return array<string, mixed> */
     public function rules(): array
     {
         return [

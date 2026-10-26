@@ -7,10 +7,11 @@ use App\Http\Requests\Teacher\StoreAnnouncementRequest;
 use App\Models\Classroom;
 use App\Models\ClassroomAnnouncement;
 use App\Services\AnnouncementService;
+use Illuminate\Http\RedirectResponse;
 
 class AnnouncementController extends Controller
 {
-    public function store(StoreAnnouncementRequest $request, Classroom $classroom, AnnouncementService $service)
+    public function store(StoreAnnouncementRequest $request, Classroom $classroom, AnnouncementService $service): RedirectResponse
     {
         $this->authorize('manage', $classroom);
         abort_if($classroom->status === 'archived', 409, 'Archived classes are read-only. Restore this class first.');
@@ -20,7 +21,7 @@ class AnnouncementController extends Controller
         return back()->with('success', 'Announcement posted. Students were notified.');
     }
 
-    public function togglePin(Classroom $classroom, ClassroomAnnouncement $announcement, AnnouncementService $service)
+    public function togglePin(Classroom $classroom, ClassroomAnnouncement $announcement, AnnouncementService $service): RedirectResponse
     {
         $this->authorize('manage', $classroom);
         abort_unless((int) $announcement->classroom_id === (int) $classroom->id, 404);
@@ -30,7 +31,7 @@ class AnnouncementController extends Controller
         return back()->with('success', $announcement->pinned ? 'Announcement pinned.' : 'Announcement unpinned.');
     }
 
-    public function destroy(Classroom $classroom, ClassroomAnnouncement $announcement)
+    public function destroy(Classroom $classroom, ClassroomAnnouncement $announcement): RedirectResponse
     {
         $this->authorize('manage', $classroom);
         abort_unless((int) $announcement->classroom_id === (int) $classroom->id, 404);

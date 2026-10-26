@@ -2,13 +2,17 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
+/**
+ * @property ?string $source_title
+ * @property ?string $content
+ * @property-read ?string $title
+ * @property-read ?string $body
+ */
 class Passage extends Model
 {
-    use HasFactory;
-
     protected $fillable = [
         'content',
         'passage_type',
@@ -19,7 +23,18 @@ class Passage extends Model
         'genre',
     ];
 
-    public function questions()
+    public function getTitleAttribute(): ?string
+    {
+        return $this->source_title;
+    }
+
+    public function getBodyAttribute(): ?string
+    {
+        return $this->content;
+    }
+
+    /** @return HasMany<Question, $this> */
+    public function questions(): HasMany
     {
         return $this->hasMany(Question::class);
     }

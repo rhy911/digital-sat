@@ -198,7 +198,8 @@ class StressSubmitBurst extends Command
         $this->line('Acceptance gate:');
         $this->line(sprintf('  %s 0 module_progression_conflict        (got %d)', $conflicts === 0 ? 'PASS' : 'FAIL', $conflicts));
         $this->line(sprintf('  %s 0 students never settled             (got %d)', $unsettled === 0 ? 'PASS' : 'FAIL', $unsettled));
-        $this->line(sprintf('  %s max time-to-result < 120s            (got %.1fs)', ($times->last() ?? 0) < 120 ? 'PASS' : 'FAIL', $times->last() ?? 0));
+        $maxTime = $times->isEmpty() ? 0.0 : (float) $times->last();
+        $this->line(sprintf('  %s max time-to-result < 120s            (got %.1fs)', $maxTime < 120 ? 'PASS' : 'FAIL', $maxTime));
         $this->newLine();
         $this->line('Job timings: grep score_module_job storage/logs/queue-*.log');
         $this->line('`submission_in_progress` is NOT a failure — it means the client was told to keep polling.');

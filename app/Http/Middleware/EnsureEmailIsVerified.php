@@ -12,9 +12,7 @@ class EnsureEmailIsVerified
     {
         $user = $request->user();
 
-        if (!$user ||
-            ($user instanceof \Illuminate\Contracts\Auth\MustVerifyEmail &&
-                !$user->hasVerifiedEmail())) {
+        if (! $user || ! $user->hasVerifiedEmail()) {
             
             return redirect()->route('verify.email.notice')
                 ->with('warning', 'Email của bạn chưa được xác minh. Vui lòng xác minh email để tiếp tục.');

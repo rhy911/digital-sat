@@ -2,7 +2,9 @@
 
 namespace App\Http\Controllers;
 
+use Illuminate\Contracts\View\View;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
@@ -11,7 +13,7 @@ class NotificationController extends Controller
     /**
      * Full notifications feed page.
      */
-    public function index(Request $request)
+    public function index(Request $request): View
     {
         $notifications = $request->user()
             ->notifications()
@@ -65,7 +67,7 @@ class NotificationController extends Controller
     /**
      * Mark all of the current user's notifications read.
      */
-    public function markAllRead(Request $request)
+    public function markAllRead(Request $request): JsonResponse|RedirectResponse
     {
         $request->user()->unreadNotifications->markAsRead();
 

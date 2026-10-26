@@ -7,8 +7,25 @@ use Illuminate\Foundation\Http\FormRequest;
 class StoreAssignmentRequest extends FormRequest
 {
     public function authorize(): bool { return $this->user()?->isApprovedTeacher() || $this->user()?->role === 'admin'; }
+    /** @return array<string, mixed> */
     public function rules(): array
     {
+        if ($this->isMethod('put') || $this->isMethod('patch')) {
+            return [
+                'title' => 'required|string|max:180',
+                'instructions' => 'nullable|string|max:4000',
+                'available_at' => 'nullable|date',
+                'due_at' => 'nullable|date',
+                'attempt_limit' => 'required|integer|min:1|max:10',
+                'test_id' => 'sometimes|integer',
+                'target_audience' => 'prohibited',
+                'student_ids' => 'prohibited',
+                'clock_mode' => 'prohibited',
+                'assign_type' => 'prohibited',
+                'section_type' => 'prohibited',
+            ];
+        }
+
         return [
             'test_id' => 'required|integer|exists:tests,id',
             'title' => 'required|string|max:180',
@@ -25,6 +42,7 @@ class StoreAssignmentRequest extends FormRequest
         ];
     }
 
+    /** @return array<int, callable> */
     public function after(): array
     {
         return [function ($validator) {

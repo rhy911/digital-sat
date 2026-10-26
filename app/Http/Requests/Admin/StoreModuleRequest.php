@@ -11,6 +11,7 @@ class StoreModuleRequest extends FormRequest
         return true; // ModuleController::store() checks parent-test ownership after resolving section_id
     }
 
+    /** @return array<string, mixed> */
     public function rules(): array
     {
         return [

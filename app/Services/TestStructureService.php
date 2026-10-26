@@ -16,6 +16,9 @@ class TestStructureService
 
     public const FLOW_SINGLE = 'single';
 
+    /**
+     * @return array{sections: \Illuminate\Database\Eloquent\Collection<int, Section>, flows: Collection<int, string>}
+     */
     public function validate(Test $test, bool $requireQuestions = true): array
     {
         // loadMissing (not load): callers on the module-submit hot path already eager-load
@@ -37,8 +40,7 @@ class TestStructureService
             'short_test' => $this->validateShortTest($sections, $flows),
             'module_only' => $this->validateModuleOnly($sections),
             'section_only' => $this->validateSectionOnly($sections),
-            'custom_test' => $this->validateCustom($sections, $flows),
-            default => $this->fail('Unsupported test type.'),
+            default => $this->validateCustom($sections, $flows),
         };
 
         if ($requireQuestions) {
@@ -54,6 +56,9 @@ class TestStructureService
         return ['sections' => $sections, 'flows' => $flows];
     }
 
+    /**
+     * @return array{sections: \Illuminate\Database\Eloquent\Collection<int, Section>, flows: Collection<int, string>}
+     */
     public function validateForPublication(Test $test): array
     {
         $shape = $this->validate($test);
@@ -82,9 +87,12 @@ class TestStructureService
         return $shape;
     }
 
+    /**
+     * @param  array<string, mixed>  $blueprint
+     */
     public function validateBlueprint(array $blueprint): void
     {
-        $rows = collect($blueprint['modules'] ?? [])->map(fn (array $row, int $index) => (object) [
+        $rows = collect((array) ($blueprint['modules'] ?? []))->map(fn (array $row, int $index) => (object) [
             'section_type' => $row['section_type'],
             'module_number' => (int) $row['module_number'],
             'difficulty_level' => $row['difficulty_level'],
@@ -169,11 +177,18 @@ class TestStructureService
         $this->fail("{$section->name} has an unsupported or ambiguous module structure.");
     }
 
+    /**
+     * @return Collection<int, Module>
+     */
     public function orderedModules(Section $section): Collection
     {
         return $section->modules->sortBy([['module_number', 'asc'], ['order', 'asc'], ['id', 'asc']])->values();
     }
 
+    /**
+     * @param  Collection<int, Section>  $sections
+     * @param  Collection<int, string>  $flows
+     */
     private function validateFullLength(Collection $sections, Collection $flows): void
     {
         $types = $sections->pluck('type')->sort()->values()->all();
@@ -183,6 +198,10 @@ class TestStructureService
         }
     }
 
+    /**
+     * @param  Collection<int, Section>  $sections
+     * @param  Collection<int, string>  $flows
+     */
     private function validateAdaptiveFullLength(Collection $sections, Collection $flows): void
     {
         $types = $sections->pluck('type')->sort()->values()->all();
@@ -192,6 +211,10 @@ class TestStructureService
         }
     }
 
+    /**
+     * @param  Collection<int, Section>  $sections
+     * @param  Collection<int, string>  $flows
+     */
     private function validateShortTest(Collection $sections, Collection $flows): void
     {
         $types = $sections->pluck('type')->sort()->values()->all();
@@ -202,6 +225,9 @@ class TestStructureService
         }
     }
 
+    /**
+     * @param  Collection<int, Section>  $sections
+     */
     private function validateModuleOnly(Collection $sections): void
     {
         if ($sections->count() !== 1 || $sections->first()->modules->count() !== 1) {
@@ -209,6 +235,9 @@ class TestStructureService
         }
     }
 
+    /**
+     * @param  Collection<int, Section>  $sections
+     */
     private function validateSectionOnly(Collection $sections): void
     {
         if ($sections->count() !== 1) {
@@ -216,6 +245,10 @@ class TestStructureService
         }
     }
 
+    /**
+     * @param  Collection<int, Section>  $sections
+     * @param  Collection<int, string>  $flows
+     */
     private function validateCustom(Collection $sections, Collection $flows): void
     {
         if ($sections->count() > 2 || $flows->contains(fn ($flow) => $flow !== self::FLOW_LINEAR)) {
@@ -223,6 +256,9 @@ class TestStructureService
         }
     }
 
+    /**
+     * @param  Collection<int, mixed>  $modules
+     */
     private function isAdaptiveRows(Collection $modules): bool
     {
         if ($modules->count() < 2 || $modules->count() > 3) {
@@ -239,6 +275,9 @@ class TestStructureService
             && $modules->count() === 1 + $easy->count() + $hard->count();
     }
 
+    /**
+     * @param  Collection<int, mixed>  $modules
+     */
     private function isStrictAdaptiveRows(Collection $modules): bool
     {
         return $modules->count() === 3
@@ -247,6 +286,9 @@ class TestStructureService
             && $modules->where('module_number', 2)->where('difficulty_level', Module::DIFFICULTY_HARD)->count() === 1;
     }
 
+    /**
+     * @param  Collection<int, mixed>  $modules
+     */
     private function isNormalFullRows(Collection $modules): bool
     {
         return $modules->count() === 2
@@ -261,8 +303,7 @@ class TestStructureService
                 $this->fail("{$section->name}, Module {$module->module_number} requires exactly ".Module::PRETEST_QUESTIONS_PER_MODULE.' pretest questions for Adaptive Full.');
             }
             foreach ($module->questions->where('is_pretest', false) as $question) {
-                if (! is_numeric($question->irt_a) || ! is_numeric($question->irt_b) || ! is_numeric($question->irt_c)
-                    || (float) $question->irt_a <= 0.0 || (float) $question->irt_a > 4.0
+                if ((float) $question->irt_a <= 0.0 || (float) $question->irt_a > 4.0
                     || (float) $question->irt_b < -6.0 || (float) $question->irt_b > 6.0
                     || (float) $question->irt_c < 0.0 || (float) $question->irt_c >= 1.0) {
                     $this->fail("Question {$question->id} has invalid IRT parameters for Adaptive Full.");
@@ -271,6 +312,9 @@ class TestStructureService
         }
     }
 
+    /**
+     * @param  Collection<int, mixed>  $modules
+     */
     private function isLinearRows(Collection $modules): bool
     {
         if ($modules->isEmpty() || $modules->contains(fn ($module) => $module->difficulty_level !== Module::DIFFICULTY_STANDARD)) {

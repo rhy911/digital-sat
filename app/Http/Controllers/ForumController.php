@@ -3,13 +3,15 @@
 namespace App\Http\Controllers;
 
 use App\Models\ForumThread;
+use Illuminate\Contracts\View\View;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 
 class ForumController extends Controller
 {
     public const CATEGORIES = ['Math', 'Reading & Writing', 'General', 'Off-topic'];
 
-    public function index(Request $request)
+    public function index(Request $request): View
     {
         $category = $request->query('category');
 
@@ -28,7 +30,7 @@ class ForumController extends Controller
         ]);
     }
 
-    public function show(Request $request, ForumThread $forumThread)
+    public function show(Request $request, ForumThread $forumThread): View
     {
         $forumThread->load('user');
         $replies = $forumThread->replies()->with('user')->oldest()->paginate(20);
@@ -40,7 +42,7 @@ class ForumController extends Controller
         ]);
     }
 
-    public function store(Request $request)
+    public function store(Request $request): RedirectResponse
     {
         $data = $request->validate([
             'title' => 'required|string|max:150',
@@ -53,7 +55,7 @@ class ForumController extends Controller
         return redirect()->route('forum.show', $thread)->with('success', 'Question posted.');
     }
 
-    public function storeReply(Request $request, ForumThread $forumThread)
+    public function storeReply(Request $request, ForumThread $forumThread): RedirectResponse
     {
         $data = $request->validate([
             'body' => 'required|string|max:3000',

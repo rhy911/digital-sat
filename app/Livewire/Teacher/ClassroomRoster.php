@@ -45,7 +45,7 @@ class ClassroomRoster extends Component
         $this->classroom = $classroom;
     }
 
-    public function render()
+    public function render(): \Illuminate\Contracts\View\View
     {
         $pending = $this->classroom->memberships()
             ->where('status', 'pending')

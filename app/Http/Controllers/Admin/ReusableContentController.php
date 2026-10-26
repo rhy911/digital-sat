@@ -7,6 +7,7 @@ use App\Models\Module;
 use App\Models\Section;
 use App\Models\Test;
 use App\Services\TestManagementService;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
 class ReusableContentController extends Controller
@@ -15,7 +16,7 @@ class ReusableContentController extends Controller
         private TestManagementService $testManagement,
     ) {}
 
-    public function catalog(Request $request)
+    public function catalog(Request $request): JsonResponse
     {
         $tests = Test::visibleTo($request->user())
             ->where('title', '!=', 'Test Preview')
@@ -25,7 +26,7 @@ class ReusableContentController extends Controller
         return response()->json(['tests' => $tests]);
     }
 
-    public function deriveSection(Request $request, Section $section)
+    public function deriveSection(Request $request, Section $section): JsonResponse
     {
         $this->authorizeSourceSection($request, $section);
         $validated = $request->validate(['title' => 'required|string|max:255']);
@@ -34,7 +35,7 @@ class ReusableContentController extends Controller
         return response()->json($this->result($test), 201);
     }
 
-    public function deriveModule(Request $request, Module $module)
+    public function deriveModule(Request $request, Module $module): JsonResponse
     {
         $validated = $request->validate([
             'title' => 'required|string|max:255',
@@ -48,7 +49,7 @@ class ReusableContentController extends Controller
         return response()->json($this->result($test), 201);
     }
 
-    public function reuseSection(Request $request, Section $section)
+    public function reuseSection(Request $request, Section $section): JsonResponse
     {
         $this->authorizeSourceSection($request, $section);
         $destination = $this->destination($request);
@@ -57,7 +58,7 @@ class ReusableContentController extends Controller
         return response()->json($this->result($destination, $copy->id), 201);
     }
 
-    public function reuseModule(Request $request, Module $module)
+    public function reuseModule(Request $request, Module $module): JsonResponse
     {
         $validated = $request->validate([
             'destination_test_id' => 'required|integer|exists:tests,id',
@@ -100,6 +101,7 @@ class ReusableContentController extends Controller
         abort_unless($visible, 403, 'Source content is not available to you.');
     }
 
+    /** @return array{status: string, data: Test|null, resource_id: int|null, builder_target: string} */
     private function result(Test $test, ?int $resourceId = null): array
     {
         return [

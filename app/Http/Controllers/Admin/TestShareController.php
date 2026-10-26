@@ -5,12 +5,13 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\Test;
 use App\Models\User;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\ValidationException;
 
 class TestShareController extends Controller
 {
-    public function index(Test $test)
+    public function index(Test $test): JsonResponse
     {
         $this->authorize('manageSharing', $test);
 
@@ -23,14 +24,14 @@ class TestShareController extends Controller
                 ->map(fn ($share) => [
                     'id' => $share->id,
                     'user_id' => $share->user_id,
-                    'name' => $share->teacher?->name ?? $share->teacher?->username ?? $share->teacher?->email,
+                    'name' => $share->teacher->name ?? $share->teacher->username ?? $share->teacher?->email,
                     'email' => $share->teacher?->email,
                     'shared_at' => $share->created_at?->toISOString(),
                 ]),
         ]);
     }
 
-    public function store(Request $request, Test $test)
+    public function store(Request $request, Test $test): JsonResponse
     {
         $this->authorize('manageSharing', $test);
 
@@ -67,7 +68,7 @@ class TestShareController extends Controller
         ], $share->wasRecentlyCreated ? 201 : 200);
     }
 
-    public function destroy(Test $test, User $teacher)
+    public function destroy(Test $test, User $teacher): JsonResponse
     {
         $this->authorize('manageSharing', $test);
 
@@ -79,7 +80,7 @@ class TestShareController extends Controller
         ]);
     }
 
-    public function searchTeachers(Request $request)
+    public function searchTeachers(Request $request): JsonResponse
     {
         $q = trim((string) $request->input('q', ''));
 
@@ -111,6 +112,7 @@ class TestShareController extends Controller
         ]);
     }
 
+    /** @param array<string, mixed> $validated */
     private function resolveTeacher(array $validated): ?User
     {
         if (! empty($validated['teacher_id'])) {
@@ -123,7 +125,7 @@ class TestShareController extends Controller
         return null;
     }
 
-    public function shareableClasses(Request $request, Test $test)
+    public function shareableClasses(Request $request, Test $test): JsonResponse
     {
         $this->authorize('manageSharing', $test);
 
@@ -143,7 +145,7 @@ class TestShareController extends Controller
         ]);
     }
 
-    public function storeForClass(Request $request, Test $test)
+    public function storeForClass(Request $request, Test $test): JsonResponse
     {
         $this->authorize('manageSharing', $test);
 

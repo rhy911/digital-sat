@@ -216,7 +216,8 @@ class HistoricalDataIntegrityTest extends TestCase
 
         $response = $this->actingAs($teacher)->deleteJson(route('home-dashboard.questions.delete', $this->mcqQuestion));
         $response->assertStatus(422);
-        $response->assertJsonFragment(['message' => 'Cannot delete question with existing student attempts.']);
+        $response->assertJsonPath('status', 'error');
+        $this->assertStringContainsString('student attempt(s)', $response->json('message'));
     }
 
     public function test_soft_deletes_on_test_retains_completed_reviews()

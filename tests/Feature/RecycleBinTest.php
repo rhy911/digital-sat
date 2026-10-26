@@ -70,6 +70,54 @@ class RecycleBinTest extends TestCase
         $this->assertDatabaseMissing('tests', ['id' => $test->id]);
     }
 
+    public function test_restoring_a_module_recalculates_the_displayed_test_duration(): void
+    {
+        $owner = User::factory()->create(['role' => 'teacher']);
+        $test = TestModel::create([
+            'title' => 'Module duration display',
+            'test_type' => TestModel::TYPE_FULL,
+            'total_duration_minutes' => 32,
+            'created_by' => $owner->id,
+        ]);
+        $section = Section::create([
+            'test_id' => $test->id,
+            'name' => 'Reading and Writing',
+            'type' => Section::TYPE_RW,
+            'order' => 1,
+            'created_by' => $owner->id,
+        ]);
+        $module = Module::create([
+            'section_id' => $section->id,
+            'key' => 'RESTORE_DURATION_M1',
+            'module_number' => 1,
+            'difficulty_level' => Module::DIFFICULTY_STANDARD,
+            'duration_minutes' => 32,
+            'total_questions' => 27,
+            'order' => 1,
+            'created_by' => $owner->id,
+        ]);
+
+        app(TestManagementService::class)->deleteModule($module->id, false);
+        $this->assertDatabaseHas('tests', ['id' => $test->id, 'total_duration_minutes' => 0]);
+
+        app(RecycleBinService::class)->restoreItem('module', $module->id, $owner);
+
+        $this->assertDatabaseHas('modules', ['id' => $module->id, 'deleted_at' => null]);
+        $this->assertSame(1, $section->modules()->count());
+        $restored = TestModel::findOrFail($test->id)->load('sections.modules');
+        $this->assertSame(1, $restored->sections->count());
+        $this->assertSame(1, $restored->sections->first()->modules->count());
+        $this->assertSame(32, (int) $restored->sections->first()->modules->first()->duration_minutes);
+        $this->assertDatabaseHas('tests', ['id' => $test->id, 'total_duration_minutes' => 32]);
+
+        app(TestManagementService::class)->deleteSection($section->id, true);
+        $this->assertDatabaseHas('tests', ['id' => $test->id, 'total_duration_minutes' => 0]);
+
+        app(RecycleBinService::class)->restoreItem('section', $section->id, $owner);
+
+        $this->assertDatabaseHas('tests', ['id' => $test->id, 'total_duration_minutes' => 32]);
+    }
+
     public function test_emptying_recycle_bin_permanently_deletes_visible_items(): void
     {
         $test = TestModel::create(['title' => 'Clear all', 'test_type' => TestModel::TYPE_FULL]);

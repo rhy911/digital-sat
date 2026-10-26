@@ -19,29 +19,10 @@ use ZipArchive;
 
 class BulkQuestionImportService
 {
-    public function __construct() {}
-
-    /**
-     * Import from a ZIP file containing a data file (json/csv) and images.
-     */
-    public function importFromZip(Request $request): array
-    {
-        @ini_set('memory_limit', '512M');
-        $request->validate([
-            'zip_file' => 'required|file|mimes:zip|max:20480',
-            'module_id' => 'required|exists:modules,id',
-            'start_position' => 'nullable|integer|min:1',
-        ]);
-
-        return $this->importZipFile(
-            $request->file('zip_file'),
-            (int) $request->input('module_id'),
-            (int) $request->input('start_position', 1)
-        );
-    }
-
     /**
      * Decoupled ZIP import logic working directly on native UploadedFile and primitives.
+     *
+     * @return array<string, mixed>
      */
     public function importZipFile(\Illuminate\Http\UploadedFile $file, int $moduleId, int $startPosition = 1): array
     {
@@ -137,7 +118,7 @@ class BulkQuestionImportService
     private function extractZipToTempDir(ZipArchive $zip, string $tempDir): string
     {
         Storage::makeDirectory($tempDir);
-        $tempPath = storage_path('app/' . $tempDir);
+        $tempPath = Storage::path($tempDir);
 
         if (!$zip->extractTo($tempPath)) {
             $zip->close();
@@ -156,6 +137,8 @@ class BulkQuestionImportService
     /**
      * Recursively find every .json/.csv data file inside the extracted ZIP, skipping
      * hidden files and macOS resource-fork junk.
+     *
+     * @return list<array{path: string, base: string, ext: string}>
      */
     private function findZipDataFiles(string $tempPath): array
     {
@@ -208,6 +191,10 @@ class BulkQuestionImportService
         return $names === [] ? '(the ZIP is empty)' : implode(', ', $names);
     }
 
+    /**
+     * @param  array<string, mixed>  $dataFile
+     * @return list<array<string, mixed>>
+     */
     private function parseZipDataFile(array $dataFile): array
     {
         $name = basename($dataFile['path']);
@@ -272,7 +259,10 @@ class BulkQuestionImportService
      * {"items": [...]}, a bare list, a single question object, or a list nested under an
      * unknown key — teachers paste AI-generated JSON in whatever shape came out.
      */
-    private function extractItemsFromDecodedJson($decoded): array
+    /**
+     * @return list<mixed>
+     */
+    private function extractItemsFromDecodedJson(mixed $decoded): array
     {
         if (isset($decoded['items']) && is_array($decoded['items'])) {
             return $decoded['items'];
@@ -369,7 +359,42 @@ class BulkQuestionImportService
                     return $matches[0];
                 }
 
-                $newName = Str::random(20) . '.' . pathinfo($foundSrc, PATHINFO_EXTENSION);
+                if ($ext === 'svg') {
+                    if (preg_match('/<!(?:DOCTYPE|ENTITY)/i', $content)) {
+                        $problems[$itemKey][] = sprintf('%s: SVG "%s" contains unsupported DOCTYPE or ENTITY declarations.', $fieldLabel, $filename);
+
+                        return $matches[0];
+                    }
+                    $dom = new \DOMDocument();
+                    $prev = libxml_use_internal_errors(true);
+                    $loaded = $dom->loadXML($content, LIBXML_NONET | LIBXML_NOERROR | LIBXML_NOWARNING);
+                    libxml_clear_errors();
+                    libxml_use_internal_errors($prev);
+
+                    if (! $loaded || ! $dom->documentElement || strtolower($dom->documentElement->tagName) !== 'svg') {
+                        $problems[$itemKey][] = sprintf('%s: SVG "%s" is malformed or invalid XML.', $fieldLabel, $filename);
+
+                        return $matches[0];
+                    }
+                    $canonicalExt = 'svg';
+                } else {
+                    $finfo = new \finfo(FILEINFO_MIME_TYPE);
+                    $detectedMime = $finfo->buffer($content);
+                    $rasterMimeMap = [
+                        'image/png' => ['png'],
+                        'image/jpeg' => ['jpg', 'jpeg'],
+                        'image/gif' => ['gif'],
+                        'image/webp' => ['webp'],
+                    ];
+                    if (! isset($rasterMimeMap[$detectedMime]) || ! in_array($ext, $rasterMimeMap[$detectedMime], true)) {
+                        $problems[$itemKey][] = sprintf('%s: image "%s" has invalid or mismatched content type.', $fieldLabel, $filename);
+
+                        return $matches[0];
+                    }
+                    $canonicalExt = $ext === 'jpeg' ? 'jpg' : $ext;
+                }
+
+                $newName = Str::random(20) . '.' . $canonicalExt;
 
                 // Ensure directory exists in storage/app/public/media
                 if (! Storage::disk('public')->exists('media')) {
@@ -426,6 +451,8 @@ class BulkQuestionImportService
 
     /**
      * Build the bulk-import payload from JSON body, multipart JSON file, or merged form fields.
+     *
+     * @return array<string, mixed>
      */
     public function buildPayloadFromRequest(Request $request): array
     {
@@ -452,6 +479,9 @@ class BulkQuestionImportService
 
     /**
      * Standardize and build payload from native array, decoupled from HTTP Request.
+     *
+     * @param  array<mixed>  $payload
+     * @return array<string, mixed>
      */
     public function buildPayloadFromArray(array $payload): array
     {
@@ -496,6 +526,9 @@ class BulkQuestionImportService
 
     /**
      * Validate and create questions.
+     *
+     * @param  array<string, mixed>  $payload
+     * @return array<string, mixed>
      */
     public function import(array $payload): array
     {
@@ -597,6 +630,10 @@ class BulkQuestionImportService
         return ['question_ids' => $createdIds, 'passages_created' => $passagesCreated];
     }
 
+    /**
+     * @param  array<string, mixed>  $payload
+     * @return array<string, mixed>
+     */
     public function validate(array $payload): array
     {
         $payload = $this->normalizePassageStringsInItems($payload);
@@ -671,7 +708,7 @@ class BulkQuestionImportService
                 $choicesJson,
             ]));
 
-            if ($itemSignature !== '' && isset($seenSignatures[$itemSignature])) {
+            if (isset($seenSignatures[$itemSignature])) {
                 throw ValidationException::withMessages([
                     $path.'.stem' => [$label.' is an exact duplicate of question '.($seenSignatures[$itemSignature] + 1).' in this import.'],
                 ]);
@@ -753,7 +790,7 @@ class BulkQuestionImportService
             if (count($correct) !== 1) {
                 $labels = implode(', ', array_map(
                     fn ($choice) => (string) ($choice['label'] ?? '?'),
-                    is_array($choices) ? $choices : []
+                    $choices
                 ));
 
                 throw ValidationException::withMessages([
@@ -868,6 +905,10 @@ class BulkQuestionImportService
         return $fields;
     }
 
+    /**
+     * @param  array<string, mixed>  $payload
+     * @return array<string, mixed>
+     */
     private function normalizePassageStringsInItems(array $payload): array
     {
         if (! isset($payload['items'])) return $payload;
@@ -884,7 +925,7 @@ class BulkQuestionImportService
             if (!isset($row['question_type'])) {
                 if (isset($row['type'])) {
                     $payload['items'][$i]['question_type'] = $row['type'];
-                } elseif (!isset($row['choices']) || $row['choices'] === null || $row['choices'] === '') {
+                } elseif (!isset($row['choices']) || $row['choices'] === '') {
                     $payload['items'][$i]['question_type'] = 'student_produced_response';
                 } else {
                     $payload['items'][$i]['question_type'] = 'multiple_choice';
@@ -1034,6 +1075,9 @@ class BulkQuestionImportService
         ];
     }
 
+    /**
+     * @return array<string, mixed>
+     */
     private function bulkItemValidationRules(): array
     {
         return [
@@ -1065,6 +1109,9 @@ class BulkQuestionImportService
         ];
     }
 
+    /**
+     * @param  array<string, mixed>  $passage
+     */
     private function createPassageFromBulkArray(array $passage): Passage
     {
         return Passage::create([
@@ -1080,6 +1127,8 @@ class BulkQuestionImportService
 
     /**
      * Parse an UploadedFile CSV to pipeline payload directly.
+     *
+     * @return array<string, mixed>
      */
     public function parseCsvFileToPayload(UploadedFile $file, int $moduleId, int $startPosition): array
     {
@@ -1186,12 +1235,7 @@ class BulkQuestionImportService
         $questionType = $g('question_type');
         $difficulty = $g('difficulty');
         $skillDomain = $g('skill_domain');
-        $stem = $row['stem'] ?? '';
-        if (is_string($stem)) {
-            $stem = trim($stem);
-        } else {
-            $stem = '';
-        }
+        $stem = trim((string) ($row['stem'] ?? ''));
 
         if ($questionType === '' || $difficulty === '' || $skillDomain === '' || $stem === '') {
             $missing = [];
@@ -1216,7 +1260,7 @@ class BulkQuestionImportService
             'stem' => $stem,
         ];
 
-        $opt = function (string $csvKey, string $itemKey) use (&$item, $g, $row): void {
+        $opt = function (string $csvKey, string $itemKey) use (&$item, $g): void {
             $v = $g($csvKey);
             if ($v !== '') {
                 $item[$itemKey] = $v;

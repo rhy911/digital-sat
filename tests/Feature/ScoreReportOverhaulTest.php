@@ -714,8 +714,11 @@ class ScoreReportOverhaulTest extends TestCase
 
         // 1. Adaptive Full Test
         [$testFull, $attemptFull] = $this->createCompletedAttempt($student, 'Adaptive Full');
+        $testFull->update(['test_type' => Test::TYPE_ADAPTIVE_FULL]);
         $attemptFull->update([
             'attempt_type' => 'full',
+            'rw_m2_path' => 'hard',
+            'math_m2_path' => 'hard',
             'score_estimate_kind' => 'adaptive_irt_provisional',
             'total_score' => 1240,
             'total_score_lower' => 1170,
@@ -729,9 +732,11 @@ class ScoreReportOverhaulTest extends TestCase
 
         // 2. Adaptive Section Only (Math)
         [$testSec, $attemptSec] = $this->createCompletedAttempt($student, 'Adaptive Math Section');
+        $testSec->update(['test_type' => Test::TYPE_ADAPTIVE_FULL]);
         $attemptSec->update([
             'attempt_type' => 'section',
             'section_type' => 'math',
+            'math_m2_path' => 'easy',
             'score_estimate_kind' => 'adaptive_irt_provisional',
             'score_math' => 620,
             'score_math_lower' => 580,
@@ -744,7 +749,30 @@ class ScoreReportOverhaulTest extends TestCase
         $this->assertStringContainsString('This section used an adaptive route', $dataSec['scorePresentation']['calculationDisclosure']);
     }
 
-    public function test_adaptive_attempt_with_partial_or_missing_bounds_gracefully_omits_range_text(): void
+    public function test_irt_report_does_not_claim_adaptive_routing_without_a_recorded_route(): void
+    {
+        $student = User::factory()->student()->create();
+        [, $attempt] = $this->createCompletedAttempt($student, 'Linear IRT Test');
+        $attempt->update([
+            'attempt_type' => 'full',
+            'score_estimate_kind' => 'adaptive_irt_provisional',
+            'total_score' => 1200,
+            'total_score_lower' => 1150,
+            'total_score_upper' => 1250,
+            'rw_m2_path' => null,
+            'math_m2_path' => null,
+        ]);
+
+        $presentation = app(ScoreReportService::class)
+            ->buildReportData($attempt->fresh(['test', 'user', 'userAnswers.module']))['scorePresentation'];
+
+        $this->assertSame('IRT provisional estimate', $presentation['basisLabel']);
+        $this->assertStringContainsString('between 1150 and 1250', $presentation['scoreDisclosure']);
+        $this->assertStringContainsString('EAP 3PL', $presentation['calculationDisclosure']);
+        $this->assertStringNotContainsString('adaptive route', $presentation['calculationDisclosure']);
+    }
+
+    public function test_irt_attempt_with_partial_or_missing_bounds_gracefully_omits_range_text(): void
     {
         $student = User::factory()->student()->create();
         $reportService = app(ScoreReportService::class);
@@ -1018,7 +1046,7 @@ class ScoreReportOverhaulTest extends TestCase
         $response->assertSee('sd-score-context-badge', false);
         $response->assertSee('Estimated practice score');
         $response->assertSee('sd-basis-badge', false);
-        $response->assertSee('Adaptive IRT provisional estimate');
+        $response->assertSee('IRT provisional estimate');
 
         // 2. Explainer popover & actions
         $response->assertSee('sd-score-explainer-popover', false);

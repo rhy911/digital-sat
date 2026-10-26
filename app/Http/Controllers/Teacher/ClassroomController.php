@@ -13,28 +13,21 @@ use App\Services\ClassroomService;
 use App\Support\ClassroomCohortAnalytics;
 use App\Support\ClassroomLeaderboard;
 use App\Support\ClassroomRosterStats;
+use Illuminate\Contracts\View\View;
+use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Validation\ValidationException;
 
 class ClassroomController extends Controller
 {
-    public function index(Request $request)
+    public function index(Request $request): View
     {
         $user = auth()->user();
 
         $visible = fn () => Classroom::query()
             ->when($user->role !== 'admin', fn ($query) => $this->scopeToTeacher($query, $user));
 
-        if (! $request->boolean('all')) {
-            $classroom = $visible()->where('status', 'active')->latest('updated_at')->first()
-                ?? $visible()->latest('updated_at')->first();
-
-            if ($classroom) {
-                return redirect()->route('teacher.classes.show', array_filter([
-                    'classroom' => $classroom,
-                    'new' => $request->boolean('new') ? 1 : null,
-                ]));
-            }
-        }
         $classrooms = $visible()
             ->withCount([
                 'activeMemberships',
@@ -52,7 +45,9 @@ class ClassroomController extends Controller
         return view('teacher.classes.index', compact('user', 'classrooms', 'activeClassrooms', 'archivedClassrooms'));
     }
 
-    private function scopeToTeacher($query, User $user)
+    /** @param Builder<Classroom> $query
+     *  @return Builder<Classroom> */
+    private function scopeToTeacher(Builder $query, User $user): Builder
     {
         return $query->where(fn ($scope) => $scope
             ->where('owner_id', $user->id)
@@ -63,25 +58,25 @@ class ClassroomController extends Controller
      * Kept as a redirect: the embedded workspace pane it used to open is gone,
      * but the route is linked from older mail and bookmarks.
      */
-    public function workspace()
+    public function workspace(): RedirectResponse
     {
         return redirect()->route('teacher.classes.index');
     }
 
-    public function progress()
+    public function progress(): RedirectResponse
     {
         session(['teacher_home.tab' => 'progress']);
 
         return redirect()->route('home');
     }
 
-    public function store(StoreClassroomRequest $request)
+    public function store(StoreClassroomRequest $request): RedirectResponse
     {
         Classroom::create($request->validated() + ['owner_id' => $request->user()->id]);
         return back()->with('success', 'Class created. Share its code when ready.');
     }
 
-    public function show(Classroom $classroom)
+    public function show(Classroom $classroom): View
     {
         $this->authorize('view', $classroom);
         $classroom->load([
@@ -166,7 +161,7 @@ class ClassroomController extends Controller
         ));
     }
 
-    public function linkTest(Request $request, Classroom $classroom)
+    public function linkTest(Request $request, Classroom $classroom): RedirectResponse
     {
         $this->authorize('manage', $classroom);
         abort_if($classroom->status === 'archived', 409, 'Archived classes are read-only.');
@@ -176,9 +171,18 @@ class ClassroomController extends Controller
             'unit_name' => 'nullable|string|max:100',
         ]);
 
+        $user = $request->user();
+        $assignableTeacher = $user->role === 'admin' ? $classroom->owner : $user;
+        $test = Test::assignableTo($assignableTeacher)->whereKey($validated['test_id'])->first();
+        if (! $test) {
+            throw ValidationException::withMessages(['test_id' => 'Select one of your active or shared active tests.']);
+        }
+
+        $unitName = trim((string) ($validated['unit_name'] ?? ''));
+
         $classroom->exclusiveTests()->syncWithoutDetaching([
-            $validated['test_id'] => [
-                'unit_name' => $validated['unit_name'] ? trim($validated['unit_name']) : null,
+            $test->id => [
+                'unit_name' => $unitName !== '' ? $unitName : null,
                 'order' => $classroom->exclusiveTests()->count() + 1,
             ],
         ]);
@@ -186,7 +190,7 @@ class ClassroomController extends Controller
         return back()->with('success', 'Practice test linked to class materials.');
     }
 
-    public function unlinkTest(Classroom $classroom, Test $test)
+    public function unlinkTest(Classroom $classroom, Test $test): RedirectResponse
     {
         $this->authorize('manage', $classroom);
         abort_if($classroom->status === 'archived', 409, 'Archived classes are read-only.');
@@ -196,7 +200,7 @@ class ClassroomController extends Controller
         return back()->with('success', 'Practice test removed from class materials.');
     }
 
-    public function submitFeedback(Request $request, Classroom $classroom, \App\Models\UserTest $attempt)
+    public function submitFeedback(Request $request, Classroom $classroom, \App\Models\UserTest $attempt): RedirectResponse
     {
         $this->authorize('manage', $classroom);
         $isClassAssignmentAttempt = $attempt->assignment_id && $attempt->assignment()->where('classroom_id', $classroom->id)->exists();
@@ -217,7 +221,7 @@ class ClassroomController extends Controller
         return back()->with('success', 'Feedback note saved for student attempt.');
     }
 
-    public function grantRetry(Classroom $classroom, \App\Models\AssignmentRecipient $recipient)
+    public function grantRetry(Classroom $classroom, \App\Models\AssignmentRecipient $recipient): RedirectResponse
     {
         $this->authorize('manage', $classroom);
         abort_if($classroom->status === 'archived', 409, 'Archived classes are read-only.');
@@ -225,7 +229,7 @@ class ClassroomController extends Controller
 
         $recipient->increment('extra_attempts');
 
-        return back()->with('success', '+1 attempt retry granted for ' . ($recipient->student?->name ?? 'student') . '.');
+        return back()->with('success', '+1 attempt retry granted for ' . ($recipient->student->name ?? 'student') . '.');
     }
 
     public function noteUpdate(NoteUpdateRequest $request, Classroom $classroom): \Illuminate\Http\RedirectResponse
@@ -240,7 +244,7 @@ class ClassroomController extends Controller
         return back()->with('success', 'Class note updated.');
     }
 
-    public function update(UpdateClassroomRequest $request, Classroom $classroom)
+    public function update(UpdateClassroomRequest $request, Classroom $classroom): RedirectResponse
     {
         $this->authorize('manage', $classroom);
         abort_if($classroom->status === 'archived', 409, 'Archived classes are read-only. Restore this class first.');
@@ -248,7 +252,7 @@ class ClassroomController extends Controller
         return back()->with('success', 'Class details updated.');
     }
 
-    public function rotateCode(Classroom $classroom)
+    public function rotateCode(Classroom $classroom): RedirectResponse
     {
         $this->authorize('manage', $classroom);
         abort_if($classroom->status === 'archived', 409, 'Archived classes are read-only. Restore this class first.');
@@ -256,14 +260,14 @@ class ClassroomController extends Controller
         return back()->with('success', 'Join code rotated.');
     }
 
-    public function archive(Classroom $classroom, ClassroomService $service)
+    public function archive(Classroom $classroom, ClassroomService $service): RedirectResponse
     {
         $this->authorize('manageTeam', $classroom);
         $service->archive($classroom);
         return redirect()->route('teacher.classes.index')->with('success', 'Class archived. History remains available.');
     }
 
-    public function restore(Classroom $classroom)
+    public function restore(Classroom $classroom): RedirectResponse
     {
         $this->authorize('manageTeam', $classroom);
         $classroom->update(['status' => 'active']);

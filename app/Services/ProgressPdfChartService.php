@@ -7,6 +7,7 @@ class ProgressPdfChartService
     /**
      * Generate canonical SVG trend chart widgets for PDF reports from a dossier.
      *
+     * @param  array<string, mixed>  $dossier
      * @return array{svgTotalTrend: string, svgSectionTrend: string}
      */
     public function forDossier(array $dossier): array
@@ -86,7 +87,7 @@ class ProgressPdfChartService
         }
         if (! in_array($count - 1, $renderedIndices, true)) {
             // Drop penultimate if too close
-            if (! empty($renderedIndices) && ($count - 1 - end($renderedIndices)) < ($step / 2)) {
+            if (($count - 1 - end($renderedIndices)) < ($step / 2)) {
                 array_pop($renderedIndices);
             }
             $renderedIndices[] = $count - 1;

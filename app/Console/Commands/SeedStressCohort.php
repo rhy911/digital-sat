@@ -226,7 +226,7 @@ class SeedStressCohort extends Command
         // Only one module-2 branch is ever presented, so skip the branch the target
         // attempt did not take.
         return $modules->slice(0, $index)->values()->filter(function ($module) use ($target) {
-            if ((int) $module->module_number !== 2 || ! $module->difficulty_level) {
+            if ((int) $module->module_number !== 2) {
                 return true;
             }
 

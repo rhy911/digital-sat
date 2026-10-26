@@ -488,6 +488,19 @@ class ExamSessionTest extends TestCase
             ->assertSee('window.isAssignmentAttempt = true;', false);
     }
 
+    public function test_exam_session_timer_allows_existing_candidate_to_continue_when_session_is_paused(): void
+    {
+        [$guest, $modules, $attempt] = $this->examSessionAttempt(moduleCount: 2);
+        $attempt->examSession()->update(['status' => 'paused']);
+
+        $this->actingAs($guest)
+            ->getJson(route('engine.test.timing', ['user_test_id' => $attempt->id, 'module_id' => $modules[0]->id]))
+            ->assertOk()
+            ->assertJsonPath('status', 'active');
+
+        $this->assertSame('in_progress', $attempt->fresh()->status);
+    }
+
     public function test_sweeper_cascades_an_expired_exam_session_attempt_to_completion(): void
     {
         Carbon::setTestNow('2026-06-22 12:00:00');
@@ -985,7 +998,7 @@ class ExamSessionTest extends TestCase
         $this->assertSame('abandoned', $attempt->fresh()->status);
     }
 
-    public function test_paused_session_blocks_autosave_in_engine(): void
+    public function test_paused_session_allows_existing_candidate_autosave_in_engine(): void
     {
         $teacher = $this->approvedTeacher();
         $test = $this->privateTeacherTest($teacher);
@@ -1014,7 +1027,8 @@ class ExamSessionTest extends TestCase
                 'module_id' => $module->id,
                 'answers' => [$question->id => 'A'],
             ])
-            ->assertStatus(409);
+            ->assertOk()
+            ->assertJsonPath('status', 'success');
     }
 
     public function test_teacher_can_fetch_live_status_json(): void

@@ -2,8 +2,20 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
+/**
+ * @property-read ?User $user
+ * @property-read ?Test $test
+ * @property-read ?Assignment $assignment
+ * @property-read ?ExamSession $examSession
+ * @property-read ?Module $currentModule
+ * @property-read ?ScoreConversionSet $scoreConversionSet
+ * @property-read ?User $feedbackAuthor
+ */
 class UserTest extends Model
 {
     protected $fillable = [
@@ -68,22 +80,26 @@ class UserTest extends Model
         return 'ulid';
     }
 
-    public function user()
+    /** @return BelongsTo<User, $this> */
+    public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
     }
 
-    public function test()
+    /** @return BelongsTo<Test, $this> */
+    public function test(): BelongsTo
     {
         return $this->belongsTo(Test::class)->withTrashed();
     }
 
-    public function assignment()
+    /** @return BelongsTo<Assignment, $this> */
+    public function assignment(): BelongsTo
     {
         return $this->belongsTo(Assignment::class);
     }
 
-    public function examSession()
+    /** @return BelongsTo<ExamSession, $this> */
+    public function examSession(): BelongsTo
     {
         return $this->belongsTo(ExamSession::class);
     }
@@ -108,32 +124,38 @@ class UserTest extends Model
         return (bool) ($this->assignment_id || $this->exam_session_id);
     }
 
-    public function feedbackAuthor()
+    /** @return BelongsTo<User, $this> */
+    public function feedbackAuthor(): BelongsTo
     {
         return $this->belongsTo(User::class, 'feedback_by');
     }
 
-    public function userAnswers()
+    /** @return HasMany<UserTestAnswer, $this> */
+    public function userAnswers(): HasMany
     {
         return $this->hasMany(UserTestAnswer::class);
     }
 
-    public function currentModule()
+    /** @return BelongsTo<Module, $this> */
+    public function currentModule(): BelongsTo
     {
         return $this->belongsTo(Module::class, 'current_module_id');
     }
 
-    public function moduleSubmissions()
+    /** @return HasMany<UserTestModuleSubmission, $this> */
+    public function moduleSubmissions(): HasMany
     {
         return $this->hasMany(UserTestModuleSubmission::class);
     }
 
-    public function scoreConversionSet()
+    /** @return BelongsTo<ScoreConversionSet, $this> */
+    public function scoreConversionSet(): BelongsTo
     {
         return $this->belongsTo(ScoreConversionSet::class);
     }
 
-    public function scoreRevisions()
+    /** @return HasMany<UserTestScoreRevision, $this> */
+    public function scoreRevisions(): HasMany
     {
         return $this->hasMany(UserTestScoreRevision::class);
     }
@@ -145,7 +167,11 @@ class UserTest extends Model
      * assignment-linked section attempt survives and would otherwise show up
      * next to the merged score in student-facing lists.
      */
-    public function scopeExcludingAbsorbedSections($query)
+    /**
+     * @param Builder<UserTest> $query
+     * @return Builder<UserTest>
+     */
+    public function scopeExcludingAbsorbedSections(Builder $query): Builder
     {
         return $query->where(function ($outer) {
             $outer->where('attempt_type', '!=', 'section')
@@ -170,7 +196,12 @@ class UserTest extends Model
      * independent practice attempts, still gated by an active shared classroom.
      * Mirrors the assignment-linked condition already enforced in UserTestPolicy::view.
      */
-    public function scopeVisibleToTeacher($query, User $teacher)
+    /**
+     * @param Builder<UserTest> $query
+     * @param User $teacher
+     * @return Builder<UserTest>
+     */
+    public function scopeVisibleToTeacher(Builder $query, User $teacher): Builder
     {
         return $query->where(function ($outer) use ($teacher) {
             $outer->where(function ($assignmentLinked) use ($teacher) {

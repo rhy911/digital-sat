@@ -7,15 +7,17 @@ use App\Http\Controllers\ForumController;
 use App\Models\BlogPost;
 use App\Models\ForumThread;
 use App\Services\ProgressDossierService;
+use Illuminate\Contracts\View\View;
 use Illuminate\Http\Request;
 
 class AnalyticsController extends Controller
 {
-    public function __invoke(Request $request, ProgressDossierService $dossierService)
+    public function __invoke(Request $request, ProgressDossierService $dossierService): View
     {
         return view('student.analytics.index', $this->homeData($request, $dossierService));
     }
 
+    /** @return array<string, mixed> */
     private function homeData(Request $request, ProgressDossierService $dossierService): array
     {
         $user = $request->user();

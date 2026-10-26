@@ -12,12 +12,13 @@ use App\Services\ProgressPdfChartService;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
-use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Str;
+use Illuminate\View\View;
 
 class StudentProgressController extends Controller
 {
-    public function __invoke(Request $request, Classroom $classroom, User $student, ProgressDossierService $dossierService, ProgressChartService $chartService)
+    public function __invoke(Request $request, Classroom $classroom, User $student, ProgressDossierService $dossierService, ProgressChartService $chartService): View
     {
         $this->authorize('viewStudent', [$classroom, $student]);
         $teacher = $request->user();

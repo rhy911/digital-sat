@@ -11,6 +11,7 @@ use App\Models\UserTest;
 use App\Models\UserTestAnswer;
 use App\Services\SatScoringPipeline;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Tests\Support\ScoringFormBuilder;
 use Tests\TestCase;
 
 class SatScoringPipelineTest extends TestCase
@@ -65,8 +66,16 @@ class SatScoringPipelineTest extends TestCase
     {
         $pipeline = app(SatScoringPipeline::class);
 
-        $rwAttempt = new UserTest(['rw_theta' => 0.5, 'rw_theta_se' => 0.3, 'rw_m2_path' => 'hard']);
-        $mathAttempt = new UserTest(['math_theta' => 0.5, 'math_theta_se' => 0.3, 'math_m2_path' => 'hard']);
+        $rwAttempt = new UserTest([
+            'score_reading_writing' => 600,
+            'score_reading_writing_lower' => 550,
+            'score_reading_writing_upper' => 640,
+        ]);
+        $mathAttempt = new UserTest([
+            'score_math' => 600,
+            'score_math_lower' => 560,
+            'score_math_upper' => 650,
+        ]);
 
         $range = $pipeline->combinedTotalRange($rwAttempt, $mathAttempt, 1200);
 
@@ -74,6 +83,32 @@ class SatScoringPipelineTest extends TestCase
         $this->assertNotNull($range['upper']);
         $this->assertLessThanOrEqual(1200, $range['lower']);
         $this->assertGreaterThanOrEqual(1200, $range['upper']);
+    }
+
+    public function test_combined_total_range_preserves_boundary_adjustments_from_section_scores(): void
+    {
+        $rwAttempt = new UserTest([
+            'score_reading_writing' => 800,
+            'score_reading_writing_lower' => 720,
+            'score_reading_writing_upper' => 800,
+        ]);
+        $mathAttempt = new UserTest([
+            'score_math' => 800,
+            'score_math_lower' => 720,
+            'score_math_upper' => 800,
+        ]);
+
+        $range = app(SatScoringPipeline::class)->combinedTotalRange($rwAttempt, $mathAttempt, 1600);
+
+        $this->assertSame(['lower' => 1490, 'upper' => 1600], $range);
+    }
+
+    public function test_combined_total_range_omits_bounds_if_a_section_band_is_missing(): void
+    {
+        $rwAttempt = new UserTest(['score_reading_writing' => 800, 'score_reading_writing_lower' => 720, 'score_reading_writing_upper' => 800]);
+        $mathAttempt = new UserTest(['score_math' => 800, 'score_math_lower' => null, 'score_math_upper' => 800]);
+
+        $this->assertSame(['lower' => null, 'upper' => null], app(SatScoringPipeline::class)->combinedTotalRange($rwAttempt, $mathAttempt, 1600));
     }
 
     public function test_score_attempt_adaptive_full_produces_scaled_scores_with_bands(): void
@@ -119,7 +154,7 @@ class SatScoringPipelineTest extends TestCase
         $this->assertNotNull($scores['total_score']);
         $this->assertNotNull($scores['total_score_lower']);
         $this->assertNotNull($scores['total_score_upper']);
-        $this->assertSame('irt_curve_v1', $scores['score_conversion_version']);
+        $this->assertSame('irt_curve_v2', $scores['score_conversion_version']);
     }
 
     public function test_score_attempt_normal_full_produces_scaled_scores(): void
@@ -147,7 +182,7 @@ class SatScoringPipelineTest extends TestCase
         $this->assertNotNull($scores['score_reading_writing']);
         $this->assertNotNull($scores['score_math']);
         $this->assertNotNull($scores['total_score']);
-        $this->assertSame('irt_curve_v1', $scores['score_conversion_version']);
+        $this->assertSame('irt_curve_v2', $scores['score_conversion_version']);
     }
 
     public function test_score_attempt_ability_only_when_not_full_test(): void
@@ -188,125 +223,35 @@ class SatScoringPipelineTest extends TestCase
         $this->assertNotNull($scores['math_theta_se']);
     }
 
-    public function test_rescore_legacy_correctly_scores_normal_and_adaptive_attempts(): void
+    public function test_rescore_legacy_correctly_scores_complete_normal_and_adaptive_attempts(): void
     {
         $student = User::factory()->student()->create();
-        $test = Test::create(['title' => 'Legacy Normal', 'test_type' => Test::TYPE_FULL, 'status' => 'active']);
-        $section = Section::create(['test_id' => $test->id, 'name' => 'Reading & Writing', 'type' => Section::TYPE_RW, 'order' => 1]);
-        $module = Module::create(['section_id' => $section->id, 'module_number' => 1, 'difficulty_level' => 'standard', 'duration_minutes' => 32, 'total_questions' => 54, 'order' => 1]);
-
-        $attempt = UserTest::create([
-            'user_id' => $student->id,
-            'test_id' => $test->id,
-            'status' => 'completed',
-            'completed_at' => now(),
-            'score_reading_writing' => 710,
-            'score_math' => 700,
-            'total_score' => 1410,
-            'score_conversion_version' => 'generic_ds_v1',
-            'score_estimate_kind' => 'generic',
-        ]);
-
-        $mathSection = Section::create(['test_id' => $test->id, 'name' => 'Math', 'type' => Section::TYPE_MATH, 'order' => 2]);
-        $mathModule = Module::create(['section_id' => $mathSection->id, 'module_number' => 1, 'difficulty_level' => 'standard', 'duration_minutes' => 35, 'total_questions' => 44, 'order' => 1]);
-
-        for ($i = 0; $i < 54; $i++) {
-            $q = Question::create(['stem' => "RW {$i}", 'question_type' => Question::TYPE_MCQ, 'difficulty' => 'medium', 'section_type' => Section::TYPE_RW, 'skill_domain' => 'fixture', 'is_complete' => true]);
-            UserTestAnswer::create([
-                'user_test_id' => $attempt->id,
-                'module_id' => $module->id,
-                'question_id' => $q->id,
-                'selected_answer' => 'A',
-                'is_correct' => $i < 45,
-            ]);
-        }
-
-        for ($i = 0; $i < 44; $i++) {
-            $q = Question::create(['stem' => "Math {$i}", 'question_type' => Question::TYPE_MCQ, 'difficulty' => 'medium', 'section_type' => Section::TYPE_MATH, 'skill_domain' => 'fixture', 'is_complete' => true]);
-            UserTestAnswer::create([
-                'user_test_id' => $attempt->id,
-                'module_id' => $mathModule->id,
-                'question_id' => $q->id,
-                'selected_answer' => 'A',
-                'is_correct' => $i < 35,
-            ]);
-        }
-
         $pipeline = app(SatScoringPipeline::class);
-        $rescored = $pipeline->rescoreLegacy($attempt);
+        $test = ScoringFormBuilder::normalFull('Legacy Normal');
+        $attempt = ScoringFormBuilder::play($test, $student, fn ($module) => $module->section->type === Section::TYPE_RW
+                ? ((int) $module->module_number === 1 ? 23 : 22)
+                : ((int) $module->module_number === 1 ? 18 : 17));
+        $attempt->update(['score_conversion_version' => 'generic_ds_v1']);
 
-        $this->assertNotNull($rescored);
+        $rescored = $pipeline->rescoreLegacy($attempt);
+        $this->assertSame('ready', $rescored['status']);
         $this->assertSame(630, $rescored['score_reading_writing']);
         $this->assertSame(640, $rescored['score_math']);
         $this->assertSame(1270, $rescored['total_score']);
         $this->assertSame('normal_consensus_v1', $rescored['score_conversion_version']);
 
-        // Adaptive full length legacy rescore test
-        $adaptiveTest = Test::create(['title' => 'Legacy Adaptive', 'test_type' => Test::TYPE_ADAPTIVE_FULL, 'status' => 'active']);
-        $adaptiveAttempt = UserTest::create([
-            'user_id' => $student->id,
-            'test_id' => $adaptiveTest->id,
-            'status' => 'completed',
-            'completed_at' => now(),
-            'score_reading_writing' => 700,
-            'score_math' => 700,
-            'total_score' => 1400,
-            'score_conversion_version' => 'generic_ds_v1',
-            'score_estimate_kind' => 'generic',
-            'rw_m2_path' => 'hard',
-            'math_m2_path' => 'hard',
-        ]);
-
-        for ($i = 0; $i < 54; $i++) {
-            $q = Question::create([
-                'stem' => "Adaptive RW {$i}",
-                'question_type' => Question::TYPE_MCQ,
-                'difficulty' => 'medium',
-                'section_type' => Section::TYPE_RW,
-                'skill_domain' => 'fixture',
-                'is_complete' => true,
-                'irt_a' => 1.0,
-                'irt_b' => 0.0,
-                'irt_c' => 0.0,
-                'is_pretest' => false,
-            ]);
-            UserTestAnswer::create([
-                'user_test_id' => $adaptiveAttempt->id,
-                'module_id' => $module->id,
-                'question_id' => $q->id,
-                'selected_answer' => 'A',
-                'is_correct' => $i < 40,
-            ]);
-        }
-
-        for ($i = 0; $i < 44; $i++) {
-            $q = Question::create([
-                'stem' => "Adaptive Math {$i}",
-                'question_type' => Question::TYPE_MCQ,
-                'difficulty' => 'medium',
-                'section_type' => Section::TYPE_MATH,
-                'skill_domain' => 'fixture',
-                'is_complete' => true,
-                'irt_a' => 1.0,
-                'irt_b' => 0.0,
-                'irt_c' => 0.0,
-                'is_pretest' => false,
-            ]);
-            UserTestAnswer::create([
-                'user_test_id' => $adaptiveAttempt->id,
-                'module_id' => $mathModule->id,
-                'question_id' => $q->id,
-                'selected_answer' => 'A',
-                'is_correct' => $i < 30,
-            ]);
-        }
+        $adaptiveTest = ScoringFormBuilder::adaptiveFull('Legacy Adaptive');
+        $adaptiveAttempt = ScoringFormBuilder::play($adaptiveTest, $student,
+            fn ($module) => $module->questions->where('is_pretest', false)->count());
+        $this->assertSame(1600, $adaptiveAttempt->total_score);
+        $adaptiveAttempt->update(['score_conversion_version' => 'generic_ds_v1']);
 
         $adaptiveRescored = $pipeline->rescoreLegacy($adaptiveAttempt);
-        $this->assertNotNull($adaptiveRescored);
-        $this->assertNotNull($adaptiveRescored['score_reading_writing']);
-        $this->assertNotNull($adaptiveRescored['score_math']);
-        $this->assertNotNull($adaptiveRescored['total_score']);
-        $this->assertSame('irt_curve_v1', $adaptiveRescored['score_conversion_version']);
+        $this->assertSame('ready', $adaptiveRescored['status']);
+        $this->assertSame(800, $adaptiveRescored['score_reading_writing']);
+        $this->assertSame(800, $adaptiveRescored['score_math']);
+        $this->assertSame(1600, $adaptiveRescored['total_score']);
+        $this->assertSame('irt_curve_v2', $adaptiveRescored['score_conversion_version']);
         $this->assertSame('adaptive_irt_provisional', $adaptiveRescored['score_estimate_kind']);
         $this->assertSame('eap_3pl_v1', $adaptiveRescored['scoring_method']);
     }

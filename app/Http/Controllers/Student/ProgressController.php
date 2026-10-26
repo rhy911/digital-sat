@@ -10,12 +10,13 @@ use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
-use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Str;
+use Illuminate\View\View;
 
 class ProgressController extends Controller
 {
-    public function __invoke(Request $request, ProgressDossierService $dossierService, ProgressChartService $chartService)
+    public function __invoke(Request $request, ProgressDossierService $dossierService, ProgressChartService $chartService): View
     {
         $user = $request->user();
 

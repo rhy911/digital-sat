@@ -6,13 +6,14 @@ use App\Http\Controllers\Controller;
 use App\Models\ScoreConversionSet;
 use App\Models\Test;
 use App\Services\FormScoringAuditService;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 
 class ScoreConversionController extends Controller
 {
-    public function store(Request $request, Test $test)
+    public function store(Request $request, Test $test): JsonResponse
     {
         $this->authorize('update', $test);
         if ($test->test_type !== Test::TYPE_FULL) {
@@ -30,7 +31,9 @@ class ScoreConversionController extends Controller
 
         $set = DB::transaction(function () use ($test, $validated) {
             $version = ((int) $test->scoreConversionSets()->lockForUpdate()->max('version')) + 1;
-            $rows = collect($validated['rows'])
+            /** @var array<int, array<string, mixed>> $rawRows */
+            $rawRows = $validated['rows'];
+            $rows = collect($rawRows)
                 ->map(fn ($row) => $row + ['m2_difficulty' => 'standard'])
                 ->sortBy([['section_type', 'asc'], ['raw_score', 'asc']])
                 ->values();
@@ -55,7 +58,7 @@ class ScoreConversionController extends Controller
         return response()->json(['status' => 'success', 'data' => $set], 201);
     }
 
-    public function approve(ScoreConversionSet $scoreConversionSet, FormScoringAuditService $audit)
+    public function approve(ScoreConversionSet $scoreConversionSet, FormScoringAuditService $audit): JsonResponse
     {
         $test = $scoreConversionSet->test;
         $this->authorize('update', $test);

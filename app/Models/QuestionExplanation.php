@@ -2,13 +2,11 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class QuestionExplanation extends Model
 {
-    use HasFactory;
-
     protected $fillable = [
         'question_id',
         'explanation',
@@ -20,7 +18,8 @@ class QuestionExplanation extends Model
         'common_mistakes',
     ];
 
-    public function question()
+    /** @return BelongsTo<Question, $this> */
+    public function question(): BelongsTo
     {
         return $this->belongsTo(Question::class);
     }

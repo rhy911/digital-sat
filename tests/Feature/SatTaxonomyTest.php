@@ -69,4 +69,11 @@ class SatTaxonomyTest extends TestCase
         $this->assertTrue(SatTaxonomy::isValidDomain('algebra', 'math'));
         $this->assertFalse(SatTaxonomy::isValidDomain('made_up_domain'));
     }
+
+    public function test_legacy_domain_keys_keep_their_official_labels(): void
+    {
+        $this->assertSame('Craft and Structure', SatTaxonomy::domainLabel('craft_structure'));
+        $this->assertSame('Information and Ideas', SatTaxonomy::domainLabel('information_ideas'));
+        $this->assertSame('Standard English Conventions', SatTaxonomy::domainLabel('standard_english'));
+    }
 }

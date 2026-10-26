@@ -11,7 +11,7 @@
             @endif
             <x-ui.button href="{{ route('exam-join.entry') }}" variant="secondary" size="sm">Join an exam</x-ui.button>
             @if($user->role === 'student')
-                <x-ui.button href="{{ route('student.classes.index', ['all' => 1]) }}" variant="secondary" size="sm">Join a class</x-ui.button>
+                <x-ui.button href="{{ route('student.classes.index') }}" variant="secondary" size="sm">Join a class</x-ui.button>
             @endif
         </div>
     </header>

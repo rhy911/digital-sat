@@ -11,6 +11,7 @@ use App\Http\Requests\Admin\UpdateQuestionRequest;
 use App\Http\Requests\Admin\AttachQuestionRequest;
 use App\Support\QuestionContentRenderer;
 use App\Support\QuestionPreviewPresenter;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
@@ -20,7 +21,7 @@ class QuestionController extends Controller
 {
     private const QUESTIONS_TABLE_PER_PAGE = 30;
 
-    public function index(Request $request)
+    public function index(Request $request): JsonResponse
     {
         $perPage = min(100, max(5, (int) $request->input('per_page', self::QUESTIONS_TABLE_PER_PAGE)));
         $page = max(1, (int) $request->input('page', 1));
@@ -77,6 +78,10 @@ class QuestionController extends Controller
         ]);
     }
 
+    /**
+     * @param \Illuminate\Support\Collection<int, Question> $rows
+     * @return array<int, array{value: string, text: string}>
+     */
     private function formatQuestionSearchResults(\Illuminate\Support\Collection $rows): array
     {
         return $rows->map(fn (Question $row): array => [
@@ -85,7 +90,7 @@ class QuestionController extends Controller
         ])->values()->all();
     }
 
-    public function search(Request $request)
+    public function search(Request $request): JsonResponse
     {
         $id = $request->input('id');
         $q = trim((string) $request->input('q', ''));
@@ -111,7 +116,7 @@ class QuestionController extends Controller
         }
 
         $take = $limit - ($pinned ? 1 : 0);
-        $rows = $take > 0 ? $query->limit($take)->get() : collect();
+        $rows = $query->limit($take)->get();
 
         $merged = collect();
         if ($pinned) {
@@ -124,7 +129,7 @@ class QuestionController extends Controller
         ]);
     }
 
-    public function show($id)
+    public function show(int|string $id): JsonResponse
     {
         $question = Question::visibleTo(auth()->user())->with(['passage', 'answerChoices', 'explanation', 'sprCorrectAnswers'])->findOrFail($id);
         return response()->json([
@@ -133,7 +138,7 @@ class QuestionController extends Controller
         ]);
     }
 
-    public function update(UpdateQuestionRequest $request, $id)
+    public function update(UpdateQuestionRequest $request, int|string $id): JsonResponse
     {
         $question = Question::with(['passage', 'answerChoices', 'explanation'])->findOrFail($id);
 
@@ -207,7 +212,7 @@ class QuestionController extends Controller
         ]);
     }
 
-    public function attach(AttachQuestionRequest $request)
+    public function attach(AttachQuestionRequest $request): JsonResponse
     {
         $validated = $request->validated();
 
@@ -244,7 +249,7 @@ class QuestionController extends Controller
         });
     }
 
-    public function bulkPreview(Request $request, BulkQuestionImportService $bulkQuestionImport)
+    public function bulkPreview(Request $request, BulkQuestionImportService $bulkQuestionImport): JsonResponse
     {
         $payload = $bulkQuestionImport->buildPayloadFromRequest($request);
         if (!empty($payload['module_id'])) {
@@ -281,7 +286,7 @@ class QuestionController extends Controller
      * engine uses, so the builder's live preview cannot drift from what
      * students will actually see.
      */
-    public function renderPreview(Request $request)
+    public function renderPreview(Request $request): JsonResponse
     {
         $validated = $request->validate([
             'fields' => 'required|array|max:16',
@@ -296,7 +301,7 @@ class QuestionController extends Controller
         return response()->json(['status' => 'success', 'data' => ['fields' => $rendered]]);
     }
 
-    public function bulkStore(Request $request, BulkQuestionImportService $bulkQuestionImport)
+    public function bulkStore(Request $request, BulkQuestionImportService $bulkQuestionImport): JsonResponse
     {
         $payload = $bulkQuestionImport->buildPayloadFromRequest($request);
         if (!empty($payload['module_id'])) {
@@ -307,7 +312,7 @@ class QuestionController extends Controller
         return response()->json(['status' => 'success', 'message' => count($result['question_ids']).' question(s) created.', 'data' => $result], 201);
     }
 
-    public function bulkPreviewCsv(Request $request, BulkQuestionImportService $bulkQuestionImport)
+    public function bulkPreviewCsv(Request $request, BulkQuestionImportService $bulkQuestionImport): JsonResponse
     {
         $request->validate(['csv_file' => 'required|file|max:5120', 'module_id' => 'nullable|exists:modules,id']);
         $file = $request->file('csv_file');
@@ -341,7 +346,7 @@ class QuestionController extends Controller
         return response()->json(['status' => 'success', 'data' => ['items' => QuestionPreviewPresenter::decorate($items)]]);
     }
 
-    public function bulkStoreCsv(Request $request, BulkQuestionImportService $bulkQuestionImport)
+    public function bulkStoreCsv(Request $request, BulkQuestionImportService $bulkQuestionImport): JsonResponse
     {
         $validated = $request->validate([
             'csv_file' => ['required', 'file', 'max:5120', function (string $attribute, mixed $value, \Closure $fail): void {
@@ -369,7 +374,7 @@ class QuestionController extends Controller
         return response()->json(['status' => 'success', 'message' => count($result['question_ids']).' question(s) created.', 'data' => $result], 201);
     }
 
-    public function bulkStoreZip(Request $request, BulkQuestionImportService $bulkQuestionImport)
+    public function bulkStoreZip(Request $request, BulkQuestionImportService $bulkQuestionImport): JsonResponse
     {
         $validated = $request->validate([
             'zip_file' => 'required|file|mimes:zip|max:20480',
@@ -402,7 +407,7 @@ class QuestionController extends Controller
         }
     }
 
-    public function destroy(Request $request, $id): \Illuminate\Http\JsonResponse
+    public function destroy(Request $request, int|string $id): \Illuminate\Http\JsonResponse
     {
         // Scope to visibleTo BEFORE findOrFail to prevent ID enumeration via 403 vs 404.
         $question = Question::visibleTo(auth()->user())->findOrFail($id);

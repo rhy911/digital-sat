@@ -2,13 +2,20 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
+/**
+ * @property-read ?Section $section
+ * @property-read \Illuminate\Database\Eloquent\Collection<int, Question> $questions
+ * @property-read \Illuminate\Database\Eloquent\Collection<int, Section> $sections
+ */
 class Module extends Model
 {
-    use HasFactory, SoftDeletes;
+    use SoftDeletes;
 
     // Digital SAT Official Constants
     const RW_DURATION = 32;
@@ -38,12 +45,18 @@ class Module extends Model
         'is_public' => 'boolean',
     ];
 
-    public function creator()
+    /** @return BelongsTo<User, $this> */
+    public function creator(): BelongsTo
     {
         return $this->belongsTo(User::class, 'created_by');
     }
 
-    public function scopeVisibleTo($query, $user)
+    /**
+     * @param Builder<Module> $query
+     * @param ?User $user
+     * @return Builder<Module>
+     */
+    public function scopeVisibleTo(Builder $query, ?User $user): Builder
     {
         if (!$user) {
             return $query->where('is_public', true);
@@ -54,7 +67,8 @@ class Module extends Model
         return $query->where(function ($q) use ($user) {
             $q->where('created_by', $user->id)
               ->orWhere('is_public', true)
-              ->orWhereHas('sections', function ($s) use ($user) {
+              ->orWhereHas('sections', function (Builder $s) use ($user) {
+                  /** @var Builder<Section> $s */
                   $s->visibleTo($user);
               });
             if ($user->role === 'student') {
@@ -96,39 +110,41 @@ class Module extends Model
         });
     }
 
-    public function section()
+    /**
+     * @return BelongsTo<Section, $this>
+     */
+    public function section(): BelongsTo
     {
-        // For backwards compatibility, return the primary belongsTo relation
-        // or fall back to the first linked section via many-to-many
-        if ($this->section_id) {
-            return $this->belongsTo(Section::class)->withTrashed();
-        }
-        return $this->belongsToMany(Section::class, 'section_modules')->withTrashed()->limit(1);
+        return $this->belongsTo(Section::class, 'section_id')->withTrashed();
     }
 
-    public function getSectionAttribute()
+    public function getSectionAttribute(): ?Section
     {
         if ($this->relationLoaded('section')) {
             $relation = $this->relations['section'];
-            if ($relation instanceof \Illuminate\Database\Eloquent\Collection) {
-                return $relation->first();
+            if ($relation instanceof Section) {
+                return $relation;
             }
-            return $relation;
+        } elseif ($this->section_id) {
+            $resolved = $this->section()->getResults();
+            if ($resolved instanceof Section) {
+                return $resolved;
+            }
         }
 
-        if ($this->section_id) {
-            return $this->belongsTo(Section::class)->getResults();
-        }
+        $fallback = $this->relationLoaded('sections') ? $this->sections->first() : $this->sections()->first();
 
-        return $this->sections()->first();
+        return $fallback instanceof Section ? $fallback : null;
     }
 
-    public function sections()
+    /** @return BelongsToMany<Section, $this> */
+    public function sections(): BelongsToMany
     {
         return $this->belongsToMany(Section::class, 'section_modules')->withTrashed();
     }
 
-    public function questions()
+    /** @return BelongsToMany<Question, $this> */
+    public function questions(): BelongsToMany
     {
         return $this->belongsToMany(Question::class, 'module_questions')
             ->withPivot('position')

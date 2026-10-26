@@ -5,6 +5,8 @@ namespace App\Http\Controllers\Guest;
 use App\Http\Controllers\Controller;
 use App\Models\UserTest;
 use App\Services\ExamSessionService;
+use Illuminate\Contracts\View\View;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Str;
@@ -25,12 +27,12 @@ class GuestExamController extends Controller
      * signed in (a student whose teacher is running a session), so it carries
      * no auth middleware and no role check.
      */
-    public function showCodeEntry()
+    public function showCodeEntry(): View
     {
         return view('guest.enter-code');
     }
 
-    public function submitCode(Request $request)
+    public function submitCode(Request $request): RedirectResponse
     {
         $validated = $request->validate([
             'code' => ['required', 'string', 'size:6', 'alpha_num'],
@@ -49,7 +51,7 @@ class GuestExamController extends Controller
         return redirect()->route('exam-join.show', $session->code);
     }
 
-    public function showJoinForm(string $code)
+    public function showJoinForm(string $code): View
     {
         $session = $this->service->findJoinable($code);
 
@@ -59,7 +61,7 @@ class GuestExamController extends Controller
         ]);
     }
 
-    public function processJoin(Request $request, string $code)
+    public function processJoin(Request $request, string $code): RedirectResponse
     {
         $session = $this->service->findJoinable($code);
 
@@ -88,7 +90,7 @@ class GuestExamController extends Controller
      * rather than middleware-gated: this controller sits outside
      * ['auth','verified'] on purpose, so the check happens here instead.
      */
-    public function showResult(UserTest $userTest)
+    public function showResult(UserTest $userTest): View|RedirectResponse
     {
         abort_unless(Auth::check() && (int) Auth::id() === (int) $userTest->user_id, 403);
 
@@ -117,7 +119,7 @@ class GuestExamController extends Controller
      * LoginController read the stash back after the real account exists and
      * call ExamSessionService::mergeGuestAccount().
      */
-    public function beginAccountLink(string $destination)
+    public function beginAccountLink(string $destination): RedirectResponse
     {
         abort_unless(in_array($destination, ['signup', 'signin'], true), 404);
 

@@ -16,6 +16,7 @@ class UpdateModuleRequest extends FormRequest
         return ! $module || $this->user()->can('update', $module);
     }
 
+    /** @return array<string, mixed> */
     public function rules(): array
     {
         return [

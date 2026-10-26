@@ -12,6 +12,7 @@ class AttachQuestionRequest extends FormRequest
         return $this->user()?->can('update', $module) ?? false;
     }
 
+    /** @return array<string, mixed> */
     public function rules(): array
     {
         return [

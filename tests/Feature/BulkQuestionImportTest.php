@@ -455,9 +455,11 @@ class BulkQuestionImportTest extends TestCase
             ]),
         ]]);
 
+        $validPng = base64_decode('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=');
+
         $response = $this->importZip([
             'questions.json' => $json,
-            'images/q01_graph.png' => 'fake image binary data',
+            'images/q01_graph.png' => $validPng,
         ]);
 
         $response->assertStatus(422);
@@ -504,8 +506,8 @@ class BulkQuestionImportTest extends TestCase
             $this->fail("Could not create test ZIP file.");
         }
 
-        // Add a fake image to the zip
-        $dummyImageContent = 'fake image binary data';
+        // Add a valid image to the zip
+        $dummyImageContent = base64_decode('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=');
         $zip->addFromString('images/choice_a_image.png', $dummyImageContent);
 
         // Add a json file to the zip with questions

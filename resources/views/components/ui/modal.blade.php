@@ -17,10 +17,9 @@
     ][$maxWidth] ?? 'sm:max-w-2xl';
 @endphp
 
-<div x-data="{ show: false, lastActiveEl: null }"
-    x-on:open-modal.window="if ($event.detail === '{{ $id }}') { lastActiveEl = document.activeElement; show = true; setTimeout(() => { const dialog = document.getElementById('{{ $id }}'); if (dialog) { const sc = dialog.querySelector('.overflow-y-auto'); if (sc) sc.scrollTop = 0; const el = dialog.querySelector('[autofocus], button[role=combobox]:not([disabled]), input:not([type=hidden]):not([disabled]), select:not([disabled]), textarea:not([disabled])'); if (el) el.focus({ preventScroll: true }); } }, 60); }"
-    x-on:close-modal.window="if ($event.detail === '{{ $id }}') { show = false; setTimeout(() => { if (lastActiveEl && typeof lastActiveEl.focus === 'function') { lastActiveEl.focus({ preventScroll: true }); } }, 160); }"
-    x-on:keydown.escape.window="if (show) { show = false; setTimeout(() => { if (lastActiveEl && typeof lastActiveEl.focus === 'function') { lastActiveEl.focus({ preventScroll: true }); } }, 160); }">
+<div x-data="{ show: false }"
+    x-on:open-modal.window="if ($event.detail === '{{ $id }}') { show = true; $nextTick(() => { const sc = document.getElementById('{{ $id }}')?.querySelector('.overflow-y-auto'); if (sc) sc.scrollTop = 0; }); }"
+    x-on:close-modal.window="if ($event.detail === '{{ $id }}') { show = false; }">
     <template x-teleport="body">
         <div id="{{ $id }}" data-modal-dialog="{{ $id }}" x-show="show"
             class="fixed inset-0 z-50 overflow-y-auto overflow-x-hidden" aria-labelledby="modal-title-{{ $id }}" role="dialog"

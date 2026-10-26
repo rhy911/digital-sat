@@ -100,7 +100,7 @@
                 @csrf
                 <div>
                     <label for="modal_join_code" class="form-field-label font-semibold">{{ __('classroom.modal_join_code_label') }}</label>
-                    <input id="modal_join_code" name="join_code" minlength="8" maxlength="8" required
+                    <input id="modal_join_code" name="join_code" value="{{ request('code') }}" minlength="8" maxlength="8" required
                         placeholder="AB12CD34" class="settings-input w-full mt-1 uppercase font-mono tracking-widest text-center text-lg"
                         autocomplete="off" autocapitalize="characters" spellcheck="false" autofocus>
                     <span class="text-xs text-slate-500 mt-1 block">Enter the 8-character code given by your teacher.</span>

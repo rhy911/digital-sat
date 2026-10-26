@@ -28,7 +28,7 @@
             <div class="binder-panel">
                 <!-- TOP BAR: BREADCRUMB & CLASS SWITCHER -->
                 <div class="workspace-top-bar">
-                    <a href="{{ route('student.classes.index', ['all' => 1]) }}" class="back-nav-link">
+                    <a href="{{ route('student.classes.index') }}" class="back-nav-link">
                         <svg class="w-4 h-4 text-slate-500 inline-block mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
                         </svg>
@@ -56,7 +56,7 @@
                                 @endforeach
                             </div>
                             <div class="class-switcher-footer">
-                                <a href="{{ route('student.classes.index', ['all' => 1]) }}" class="class-switcher-all">View All My Classes →</a>
+                                <a href="{{ route('student.classes.index') }}" class="class-switcher-all">View All My Classes →</a>
                             </div>
                         </div>
                     </div>

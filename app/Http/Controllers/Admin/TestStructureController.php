@@ -7,6 +7,7 @@ use App\Models\Module;
 use App\Models\Section;
 use App\Models\Test;
 use App\Services\TestManagementService;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Validation\ValidationException;
@@ -20,7 +21,7 @@ class TestStructureController extends Controller
         $this->testManagement = $testManagement;
     }
 
-    public function generateFullSat(Request $request)
+    public function generateFullSat(Request $request): JsonResponse
     {
         $validated = $request->validate([
             'title' => 'required|string|max:255',
@@ -47,7 +48,7 @@ class TestStructureController extends Controller
         }
     }
 
-    public function generateConfigured(Request $request)
+    public function generateConfigured(Request $request): JsonResponse
     {
         $validated = $request->validate([
             'title' => 'required|string|max:255',
@@ -83,7 +84,7 @@ class TestStructureController extends Controller
         }
     }
 
-    public function cloneTest(Request $request, $id)
+    public function cloneTest(Request $request, int|string $id): JsonResponse
     {
         $originalTest = Test::visibleTo(auth()->user())->findOrFail($id);
 
@@ -105,7 +106,7 @@ class TestStructureController extends Controller
         }
     }
 
-    public function convertToNormal(Test $test)
+    public function convertToNormal(Test $test): JsonResponse
     {
         $this->authorize('update', $test);
         if ($test->test_type !== Test::TYPE_ADAPTIVE_FULL) {
@@ -128,7 +129,7 @@ class TestStructureController extends Controller
         return response()->json(['status' => 'success', 'message' => 'Draft converted to Normal Full.', 'data' => $test->fresh()]);
     }
 
-    public function cloneModule(Request $request, $id)
+    public function cloneModule(Request $request, int|string $id): JsonResponse
     {
         $originalModule = Module::visibleTo(auth()->user())->findOrFail($id);
 

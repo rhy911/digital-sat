@@ -1,14 +1,24 @@
 import { state } from './state.js';
-import { getTimerElapsedSeconds, syncTimer } from './timer.js';
+import { getTimerElapsedSeconds, refreshAssignmentTimer, startTimer, syncTimer } from './timer.js';
 import { 
   updateQuestionButtonStates,
+  generateQuestionButtons,
   showLoadingScreen,
   hideLoadingScreen,
   showCustomConfirm,
   showCustomAlert
 } from './ui.js';
 import { pollForScoringResult, describeSubmitError } from './scoring.js';
-import { showInterSectionBreak } from './break.js';
+import { showInterSectionBreak, initializeBreakControls } from './break.js';
+import {
+  initializeHighlightFeature,
+  initializeQuestionTracking,
+  initializeResizablePanels,
+  preventNormalCursorBehavior,
+  initializeSprInputValidation,
+  initializeDesmosCalculator,
+  initializeSimpleFullscreen
+} from './features.js';
 
 let autosaveInitialized = false;
 let autosaveTimer = null;
@@ -63,6 +73,22 @@ export function initSecurity() {
 
 document.addEventListener('test-timer-expired', () => {
   submitModule({ skipConfirm: true, timedOut: true });
+});
+
+document.addEventListener('assignment-module-advanced', event => {
+  if (state.isOnSectionBreak || state.isSubmitting) return;
+  if (event.detail?.url) navigateModule(event.detail.url);
+});
+
+document.addEventListener('assignment-timer-unavailable', () => {
+  showCustomAlert(
+    'We could not verify this test attempt. Return to your assignments and reopen it to continue.',
+    'warning',
+    'Test timer unavailable'
+  ).then(() => {
+    window.isNavigatingLegitimately = true;
+    window.location.href = window.homeUrl || '/home';
+  });
 });
 
 // Ensure initSecurity is called when app starts
@@ -344,7 +370,7 @@ export function initializeAutosave() {
     }
 
     if (document.visibilityState !== 'hidden') return;
-    if (state.isSubmitting || window.isPreview || !window.userTestId || !window.currentModuleId) return;
+    if (state.isSubmitting || window.assignmentModuleRecovery || window.isPreview || !window.userTestId || !window.currentModuleId) return;
 
     syncTimer();
     autosaveAnswers();
@@ -359,14 +385,14 @@ export function initializeAutosave() {
  */
 function startAutosaveInterval() {
   state.autosaveIntervalId = setInterval(() => {
-    if (!state.isSubmitting && !window.isPreview && window.userTestId && window.currentModuleId) {
+    if (!state.isSubmitting && !window.assignmentModuleRecovery && !window.isPreview && window.userTestId && window.currentModuleId) {
       autosaveAnswers();
     }
   }, 15000);
 }
 
 function scheduleAutosave() {
-  if (window.isPreview || !window.userTestId || !window.currentModuleId) return;
+  if (window.assignmentModuleRecovery || window.isPreview || !window.userTestId || !window.currentModuleId) return;
 
   // Assignments still save on the first keystroke (0ms) so answers are durable as
   // close to the deadline as possible; the gap floor only throttles the ones after
@@ -382,7 +408,7 @@ function scheduleAutosave() {
 }
 
 async function autosaveAnswers() {
-  if (window.isPreview || !window.userTestId || !window.currentModuleId) return;
+  if (window.assignmentModuleRecovery || window.isPreview || !window.userTestId || !window.currentModuleId) return;
 
   // From the moment Next is pressed the submission owns these answers. The server
   // rejects a late autosave as well, but not sending one keeps the race off the
@@ -556,7 +582,8 @@ export async function submitModule(options = {}) {
             user_test_id: window.userTestId,
             module_id: submittedModuleId,
             answers: answers,
-            question_times: state.questionTimings
+            question_times: state.questionTimings,
+            timed_out: Boolean(options.timedOut)
           })
         });
       } catch (networkError) {
@@ -575,6 +602,14 @@ export async function submitModule(options = {}) {
         // exact attempt+module. Keep polling; never re-POST.
         if (response.status === 429 || response.status === 409) {
           const body = await response.json().catch(() => ({}));
+
+          if (body.error === 'module_not_expired') {
+            state.isSubmitting = false;
+            hideLoadingScreen();
+            await refreshAssignmentTimer(window.durationMinutes ?? 32);
+            initializeAutosave();
+            return;
+          }
 
           if (response.status === 429 || body.error === 'submission_in_progress') {
             data = await pollForScoringResult(window.userTestUlid, submittedModuleId);
@@ -680,7 +715,18 @@ export async function submitModule(options = {}) {
 
       if (data.is_section_break) {
         hideLoadingScreen();
-        showInterSectionBreak(data.break_duration_seconds || 600, proceedToNextModule);
+        const breakSecs = (data.break_duration_seconds !== undefined && data.break_duration_seconds !== null)
+          ? Number(data.break_duration_seconds)
+          : 600;
+
+        if (breakSecs <= 0) {
+          proceedToNextModule();
+        } else {
+          state.isOnSectionBreak = true;
+          showInterSectionBreak(breakSecs, proceedToNextModule, {
+            nextModuleId: data.next_module_numeric_id || data.next_module_id,
+          });
+        }
       } else if (timedOut) {
         hideLoadingScreen();
         let secondsLeft = 5;
@@ -880,23 +926,12 @@ export async function navigateModule(url) {
       }
     }
 
+    state.isOnSectionBreak = false;
+
     // 7. Update browser history/URL without reloading
     history.pushState(null, '', url);
 
     // 8. Re-initialize elements and state for the new module
-    const { startTimer } = await import('./timer.js');
-    const {
-      initializeHighlightFeature,
-      initializeQuestionTracking,
-      initializeResizablePanels,
-      preventNormalCursorBehavior,
-      initializeSprInputValidation,
-      initializeDesmosCalculator,
-      initializeSimpleFullscreen
-    } = await import('./features.js');
-    const { generateQuestionButtons } = await import('./ui.js');
-    const { initializeBreakControls } = await import('./break.js');
-
     // Reset state variables
     state.currentQuestionIndex = 0;
     state.totalQuestions = 0;

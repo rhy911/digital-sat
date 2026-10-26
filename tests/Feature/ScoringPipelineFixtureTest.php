@@ -53,7 +53,7 @@ class ScoringPipelineFixtureTest extends TestCase
         $this->assertSame(1490, $attempt->total_score);
         $this->assertSame([1430, 1550], [$attempt->total_score_lower, $attempt->total_score_upper]);
         $this->assertSame($attempt->score_reading_writing + $attempt->score_math, $attempt->total_score);
-        $this->assertSame('irt_curve_v1', $attempt->score_conversion_version);
+        $this->assertSame('irt_curve_v2', $attempt->score_conversion_version);
         $this->assertSame('adaptive_irt_provisional', $attempt->score_estimate_kind);
     }
 

@@ -9,6 +9,7 @@ use App\Models\Test;
 use App\Services\TestManagementService;
 use App\Http\Requests\Admin\StoreModuleRequest;
 use App\Http\Requests\Admin\UpdateModuleRequest;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
@@ -23,7 +24,7 @@ class ModuleController extends Controller
         $this->testManagement = $testManagement;
     }
 
-    public function store(StoreModuleRequest $request)
+    public function store(StoreModuleRequest $request): JsonResponse
     {
         $validated = $request->validated();
 
@@ -83,7 +84,7 @@ class ModuleController extends Controller
         ], 201);
     }
 
-    public function update(UpdateModuleRequest $request, $id)
+    public function update(UpdateModuleRequest $request, int|string $id): JsonResponse
     {
         $module = Module::findOrFail($id);
         $this->authorize('update', $module);
@@ -105,7 +106,7 @@ class ModuleController extends Controller
         ]);
     }
 
-    public function destroy(Request $request, $id)
+    public function destroy(Request $request, int|string $id): JsonResponse
     {
         $module = Module::findOrFail($id);
         $this->authorize('delete', $module);

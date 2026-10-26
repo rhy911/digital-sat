@@ -16,6 +16,7 @@ class UpdateTestRequest extends FormRequest
         return ! $test || $this->user()->can('update', $test);
     }
 
+    /** @return array<string, mixed> */
     public function rules(): array
     {
         return [

@@ -7,6 +7,7 @@ use App\Http\Requests\Engine\SubmitModuleRequest;
 use App\Models\UserTest;
 use App\Services\AttemptEngine;
 use Illuminate\Auth\Access\AuthorizationException;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Symfony\Component\HttpKernel\Exception\ConflictHttpException;
 
@@ -14,7 +15,7 @@ class SubmissionController extends Controller
 {
     public function __construct(private AttemptEngine $engine) {}
 
-    public function submit(SubmitModuleRequest $request)
+    public function submit(SubmitModuleRequest $request): JsonResponse
     {
         try {
             [$attempt, $module] = $this->engine->resolveActiveModule(
@@ -29,13 +30,22 @@ class SubmissionController extends Controller
                 $module,
                 $request->input('answers', []),
                 $request->input('question_times', []),
+                clientTimedOut: $request->boolean('timed_out'),
             );
+
+            if (($result['status'] ?? null) === 'not_expired') {
+                return response()->json([
+                    'error' => 'module_not_expired',
+                    'message' => 'The server confirms this module still has time remaining.',
+                    'timing' => $result['timing'],
+                ], 409);
+            }
 
             if (($result['status'] ?? null) === 'in_flight') {
                 return response()->json([
                     'error' => 'submission_in_progress',
                     'message' => 'Submission is processing',
-                ], 409)->header('Retry-After', 2);
+                ], 409)->header('Retry-After', '2');
             }
 
             if (in_array($result['status'] ?? null, ['ready', 'completed'], true)) {
@@ -61,7 +71,7 @@ class SubmissionController extends Controller
         }
     }
 
-    public function checkStatus(Request $request, UserTest $userTest)
+    public function checkStatus(Request $request, UserTest $userTest): JsonResponse
     {
         $this->authorize('view', $userTest);
 

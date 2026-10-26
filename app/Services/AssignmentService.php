@@ -66,6 +66,9 @@ class AssignmentService
         });
     }
 
+    /**
+     * @param  array<int, int|string>|null  $targetStudentIds
+     */
     public function publish(Assignment $assignment, ?array $targetStudentIds = null): Assignment
     {
         return DB::transaction(function () use ($assignment, $targetStudentIds) {
@@ -78,9 +81,20 @@ class AssignmentService
             }
 
             $eligibleMemberships = $assignment->classroom->activeMemberships;
-            if (!empty($targetStudentIds)) {
-                $eligibleMemberships = $eligibleMemberships->whereIn('student_id', $targetStudentIds);
+            if ($assignment->isTargeted()) {
+                $selectedIds = $targetStudentIds ?? $assignment->recipients()->where('status', 'active')->pluck('student_id')->all();
+                $selectedIds = array_values(array_unique(array_map('intval', $selectedIds)));
+                $eligibleMemberships = $eligibleMemberships->whereIn('student_id', $selectedIds);
+                if ($selectedIds === [] || $eligibleMemberships->count() !== count($selectedIds)) {
+                    throw ValidationException::withMessages(['student_ids' => 'Choose one or more students who are active members of this class.']);
+                }
             }
+
+            $eligibleIds = $eligibleMemberships->pluck('student_id');
+            $assignment->recipients()->where('status', 'active')->whereNotIn('student_id', $eligibleIds)->update([
+                'status' => 'withdrawn',
+                'withdrawn_at' => now(),
+            ]);
 
             foreach ($eligibleMemberships as $membership) {
                 AssignmentRecipient::updateOrCreate(

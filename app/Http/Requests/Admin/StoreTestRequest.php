@@ -11,6 +11,7 @@ class StoreTestRequest extends FormRequest
         return in_array(auth()->user()?->role, ['admin', 'teacher']);
     }
 
+    /** @return array<string, mixed> */
     public function rules(): array
     {
         return [

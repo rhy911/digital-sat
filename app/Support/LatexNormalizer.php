@@ -73,7 +73,7 @@ class LatexNormalizer
     {
         return preg_replace_callback('/(\\\\{2,})(.?)/s', function (array $matches): string {
             $run = $matches[1];
-            $next = $matches[2] ?? '';
+            $next = $matches[2];
 
             if ($next === '[') {
                 return $run.$next;

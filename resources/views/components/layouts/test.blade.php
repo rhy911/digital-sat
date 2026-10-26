@@ -334,21 +334,6 @@
         </div>
     </div>
 
-    <div id="sessionPausedGuard" class="screen-size-guard {{ !empty($isSessionPaused) ? '' : 'hidden' }}" role="alertdialog" aria-modal="true" style="z-index: 10000; background: rgba(15, 23, 42, 0.92); backdrop-filter: blur(6px);">
-        <div class="screen-size-guard__box" style="text-align: center; max-width: 440px;">
-            <div style="width: 56px; height: 56px; background: rgba(245, 158, 11, 0.15); color: #f59e0b; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 16px;">
-                <svg width="28" height="28" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M10 9v6m4-6v6m7-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
-                </svg>
-            </div>
-            <h2 style="font-size: 1.35rem; font-weight: 700; color: #0f172a; margin-bottom: 8px;">Exam Session Paused</h2>
-            <p style="font-size: 0.95rem; color: #475569; margin-bottom: 20px; line-height: 1.5;">Your teacher has paused this test session. Please wait for the teacher to resume the test.</p>
-            <div style="display: inline-flex; align-items: center; gap: 8px; font-size: 0.8rem; font-weight: 600; color: #d97706; background: #fef3c7; padding: 6px 14px; border-radius: 9999px;">
-                Waiting for teacher...
-            </div>
-        </div>
-    </div>
-
     @livewireScripts
     @stack('scripts')
 </body>

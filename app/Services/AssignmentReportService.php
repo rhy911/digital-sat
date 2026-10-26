@@ -13,6 +13,9 @@ class AssignmentReportService
 {
     public function __construct(private AttemptEngine $engine) {}
 
+    /**
+     * @return array<string, mixed>
+     */
     public function buildRecipient(Assignment $assignment, AssignmentRecipient $recipient): array
     {
         $attempts = $assignment->attempts()
@@ -44,6 +47,9 @@ class AssignmentReportService
         ];
     }
 
+    /**
+     * @return array<string, mixed>
+     */
     public function build(
         Assignment $assignment,
         ?int $perPage = 15,
@@ -185,6 +191,7 @@ class AssignmentReportService
         }
 
         $recipientsPaginator = null;
+        $pageRecipients = collect();
         if ($perPage === 0) {
             $rows = collect();
         } elseif ($perPage !== null) {
@@ -340,22 +347,23 @@ class AssignmentReportService
             }
 
             // 3. Filter to only show questions that were presented to at least 1 student
+            /** @var array<int|string, array<string, mixed>> $questionsMap */
             $questionAnalysis = collect($questionsMap)
                 ->filter(fn ($item) => $item['total_presented'] > 0)
                 ->map(function ($item) {
                     $incorrectCount = count($item['incorrect_students']);
-                    $item['incorrect_rate'] = $item['total_presented'] > 0 
-                        ? (int) round(($incorrectCount / $item['total_presented']) * 100) 
-                        : 0;
+                    $item['incorrect_rate'] = (int) round(($incorrectCount / $item['total_presented']) * 100);
+
                     return $item;
                 })
                 ->sortBy(function ($item) {
-                    $secWeight = ($item['section_type'] ?? '') === \App\Models\Section::TYPE_MATH ? 2 : 1;
+                    $secWeight = $item['section_type'] === \App\Models\Section::TYPE_MATH ? 2 : 1;
                     $diffWeight = match ($item['difficulty_level']) {
                         'standard' => 1,
                         'easy' => 2,
                         default => 3,
                     };
+
                     return [$secWeight, $item['module_number'], $diffWeight, $item['position']];
                 })
                 ->values()
@@ -395,6 +403,9 @@ class AssignmentReportService
         return (int) $sectionQuery->distinct()->count('module_questions.question_id');
     }
 
+    /**
+     * @return array<string, mixed>
+     */
     public function buildAnalysisSummary(Assignment $assignment): array
     {
         $assignment->loadMissing(['classroom', 'test']);
@@ -471,21 +482,22 @@ class AssignmentReportService
             }
         }
 
+        /** @var array<int|string, array<string, mixed>> $questionsMap */
         $questionList = collect($questionsMap)
             ->filter(fn ($item) => $item['total_presented'] > 0)
             ->map(function ($item) {
-                $item['incorrect_rate'] = $item['total_presented'] > 0
-                    ? (int) round(($item['incorrect_count'] / $item['total_presented']) * 100)
-                    : 0;
+                $item['incorrect_rate'] = (int) round(($item['incorrect_count'] / $item['total_presented']) * 100);
+
                 return $item;
             })
             ->sortBy(function ($item) {
-                $secWeight = ($item['section_type'] ?? '') === \App\Models\Section::TYPE_MATH ? 2 : 1;
+                $secWeight = $item['section_type'] === \App\Models\Section::TYPE_MATH ? 2 : 1;
                 $diffWeight = match ($item['difficulty_level']) {
                     'standard' => 1,
                     'easy' => 2,
                     default => 3,
                 };
+
                 return [$secWeight, $item['module_number'], $diffWeight, $item['position']];
             })
             ->values();
@@ -524,6 +536,9 @@ class AssignmentReportService
         })->exists();
     }
 
+    /**
+     * @return array<string, mixed>
+     */
     public function buildQuestionInspection(Assignment $assignment, \App\Models\Question $question): array
     {
         $assignment->loadMissing(['classroom', 'test']);
@@ -575,8 +590,8 @@ class AssignmentReportService
             'is_pretest' => (bool)$question->is_pretest,
             'stem' => \App\Support\QuestionContentRenderer::markdown($question->stem),
             'passage_title' => $question->passage?->title,
-            'passage_body' => ($question->passage?->content ?? $question->passage?->body)
-                ? \App\Support\QuestionContentRenderer::markdown($question->passage?->content ?? $question->passage?->body)
+            'passage_body' => $question->passage
+                ? \App\Support\QuestionContentRenderer::markdown($question->passage->content ?? $question->passage->body ?? '')
                 : null,
             'choices' => $choices,
             'spr_answers' => $sprAnswers,
@@ -588,7 +603,10 @@ class AssignmentReportService
         ];
     }
 
-    private function applyLiveElapsed($attempts): void
+    /**
+     * @param  \Illuminate\Support\Collection<int, UserTest>  $attempts
+     */
+    private function applyLiveElapsed(\Illuminate\Support\Collection $attempts): void
     {
         $attempts
             ->where('status', 'in_progress')

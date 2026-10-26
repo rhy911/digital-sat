@@ -49,15 +49,10 @@ return [
         ],
     ],
     'adaptive_conversion' => [
-        'version' => 'irt_curve_v1',
+        'version' => 'irt_curve_v2',
         'minimum' => 200,
         'maximum' => 800,
         'round_to' => 10,
-        // Used only to scale the theta standard error into a scaled-score band width
-        // for the total-score quadrature; the point/lower/upper scores come from the
-        // curves below, not from a linear points-per-theta slope.
-        'points_per_theta' => 100,
-
         // Path-aware, section-specific theta -> scaled-score anchor curves.
         // Piecewise-linear between ascending [theta, scaled] anchors; clamped to the
         // first/last anchor outside the range. Calibrated (v1) from public Bluebook

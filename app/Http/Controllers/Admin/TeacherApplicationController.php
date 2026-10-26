@@ -5,16 +5,19 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\User;
 use App\Notifications\TeacherApprovalDecisionNotification;
+use Illuminate\Contracts\View\View;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 
 class TeacherApplicationController extends Controller
 {
-    public function index()
+    public function index(): View
     {
         $applications = User::where('role', 'teacher')->whereNotNull('email_verified_at')->whereIn('teacher_approval_status', ['pending', 'rejected'])->latest()->paginate(30);
         return view('admin.teacher-applications.index', compact('applications'));
     }
-    public function decide(Request $request, User $teacher)
+
+    public function decide(Request $request, User $teacher): RedirectResponse
     {
         abort_unless($teacher->role === 'teacher', 404);
         if (!$teacher->hasVerifiedEmail()) {
