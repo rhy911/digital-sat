@@ -118,7 +118,10 @@ export function showInterSectionBreak(durationSeconds = 600, onComplete, options
   isFinishingBreak = false;
 
   let startPerfMs = performance.now();
-  let initialRemainingSeconds = Number.isFinite(options?.remainingSeconds) ? options.remainingSeconds : null;
+  const waitForExplicitContinue = options.waitForExplicitContinue ?? window.isAssignmentAttempt === false;
+  let initialRemainingSeconds = Number.isFinite(options?.remainingSeconds)
+    ? options.remainingSeconds
+    : (waitForExplicitContinue ? durationSeconds : null);
   const nextModuleId = options?.nextModuleId ?? window.nextModuleId;
 
   const getRemainingSeconds = () => {
@@ -223,7 +226,8 @@ export function showInterSectionBreak(durationSeconds = 600, onComplete, options
           headers: {
             'Content-Type': 'application/json',
             'Accept': 'application/json',
-            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || ''
+            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '',
+            'X-Attempt-Control': state.attemptControlToken || ''
           },
           body: JSON.stringify({
             user_test_id: window.userTestId,
@@ -234,6 +238,8 @@ export function showInterSectionBreak(durationSeconds = 600, onComplete, options
         if (!response.ok) {
           throw new Error('Failed to resume break on server');
         }
+        const timing = await response.json();
+        if (timing.token) state.attemptControlToken = timing.token;
       } catch (err) {
         console.error('Early resume error:', err);
         isFinishingBreak = false;
@@ -272,14 +278,19 @@ export function showInterSectionBreak(durationSeconds = 600, onComplete, options
       if (remaining <= 0) {
         clearInterval(interSectionTimer);
         interSectionTimer = null;
-        syncBreakWithServer();
+        if (waitForExplicitContinue) {
+          const timerDisplay = document.getElementById('breakTimerDisplay');
+          if (timerDisplay) timerDisplay.textContent = formatTime(0);
+        } else {
+          syncBreakWithServer();
+        }
       }
     }, 250);
   };
 
   let syncingBreak = false;
   async function syncBreakWithServer() {
-    if (!interSectionOverlay || isFinishingBreak || syncingBreak || document.visibilityState === 'hidden') return;
+    if (waitForExplicitContinue || !interSectionOverlay || isFinishingBreak || syncingBreak || document.visibilityState === 'hidden') return;
     if (breakSyncRetry) clearTimeout(breakSyncRetry);
     breakSyncRetry = null;
     syncingBreak = true;

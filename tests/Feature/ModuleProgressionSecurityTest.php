@@ -83,11 +83,11 @@ class ModuleProgressionSecurityTest extends TestCase
             'answers' => [(string) $question->id => 'A'],
         ];
 
-        $this->actingAs($this->student)
+        $this->actingAs($this->student)->withAttemptController($attempt)
             ->postJson(route('engine.test.autosave-module'), $payload)
             ->assertStatus(409)
             ->assertJsonPath('error', 'module_progression_conflict');
-        $this->actingAs($this->student)
+        $this->actingAs($this->student)->withAttemptController($attempt)
             ->postJson(route('engine.test.submit-module'), $payload)
             ->assertStatus(409)
             ->assertJsonPath('error', 'module_progression_conflict');
@@ -105,14 +105,14 @@ class ModuleProgressionSecurityTest extends TestCase
             'answers' => [(string) $this->moduleOneQuestion->id => 'A'],
         ];
 
-        $first = $this->actingAs($this->student)
+        $first = $this->actingAs($this->student)->withAttemptController($attempt)
             ->postJson(route('engine.test.submit-module'), $payload)
             ->assertOk();
         $issuedModule = Module::where('ulid', $first->json('next_module_id'))->firstOrFail();
         $this->assertSame($issuedModule->id, $attempt->fresh()->current_module_id);
 
         $payload['answers'][(string) $this->moduleOneQuestion->id] = 'B';
-        $second = $this->actingAs($this->student)
+        $second = $this->actingAs($this->student)->withAttemptController($attempt)
             ->postJson(route('engine.test.submit-module'), $payload)
             ->assertOk();
 
@@ -134,7 +134,7 @@ class ModuleProgressionSecurityTest extends TestCase
             'module_id' => $this->moduleOne->id,
             'answers' => [(string) $this->moduleOneQuestion->id => 'A'],
         ];
-        $first = $this->actingAs($this->student)
+        $first = $this->actingAs($this->student)->withAttemptController($attempt)
             ->postJson(route('engine.test.submit-module'), $firstPayload)
             ->assertOk();
 
@@ -145,13 +145,13 @@ class ModuleProgressionSecurityTest extends TestCase
             ->assertStatus(409);
 
         $issuedQuestion = $issued->questions()->firstOrFail();
-        $this->actingAs($this->student)->postJson(route('engine.test.submit-module'), [
+        $this->actingAs($this->student)->withAttemptController($attempt)->postJson(route('engine.test.submit-module'), [
             'user_test_id' => $attempt->id,
             'module_id' => $issued->id,
             'answers' => [(string) $issuedQuestion->id => 'A'],
         ])->assertOk()->assertJsonPath('test_completed', true);
 
-        $this->actingAs($this->student)
+        $this->actingAs($this->student)->withAttemptController($attempt)
             ->postJson(route('engine.test.submit-module'), $firstPayload)
             ->assertStatus(409)
             ->assertJsonPath('error', 'module_progression_conflict');
@@ -175,7 +175,7 @@ class ModuleProgressionSecurityTest extends TestCase
         // Module 1 submitted for real (sync queue): the job runs, populates
         // scoring_result_{id}, and advances the attempt — production's state at
         // the moment module 1 finished.
-        $first = $this->actingAs($this->student)
+        $first = $this->actingAs($this->student)->withAttemptController($attempt)
             ->postJson(route('engine.test.submit-module'), [
                 'user_test_id' => $attempt->id,
                 'module_id' => $this->moduleOne->id,
@@ -187,7 +187,7 @@ class ModuleProgressionSecurityTest extends TestCase
 
         // Module 2 submitted while a worker has not yet picked the job up.
         Queue::fake();
-        $second = $this->actingAs($this->student)
+        $second = $this->actingAs($this->student)->withAttemptController($attempt)
             ->postJson(route('engine.test.submit-module'), [
                 'user_test_id' => $attempt->id,
                 'module_id' => $issued->id,

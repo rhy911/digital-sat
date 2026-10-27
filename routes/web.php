@@ -9,6 +9,7 @@ use App\Http\Controllers\Auth\ResetPasswordController;
 use App\Http\Controllers\Auth\VerifyEmailController;
 use App\Http\Controllers\Auth\PageController;
 use App\Http\Controllers\Public\LandingController;
+use App\Http\Controllers\Public\PublicTrialController;
 use App\Http\Controllers\Engine\AttemptController;
 use App\Http\Controllers\Engine\SessionController;
 use App\Http\Controllers\Engine\AnswerController;
@@ -18,6 +19,13 @@ use Illuminate\Support\Facades\Route;
 
 // Public routes
 Route::get('/', LandingController::class)->name('landing');
+Route::get('/try', [PublicTrialController::class, 'index'])->name('public-trial.index');
+Route::get('/try/expired', [PublicTrialController::class, 'expired'])->name('public-trial.expired');
+Route::get('/try/screen-size', [PublicTrialController::class, 'screenSize'])->name('public-trial.screen-size');
+Route::post('/try/start', [PublicTrialController::class, 'start'])->middleware('throttle:60,1')->name('public-trial.start');
+Route::get('/try/results/{userTest:ulid}', [PublicTrialController::class, 'result'])->name('public-trial.result');
+Route::post('/try/results/{userTest:ulid}/account/{destination}', [PublicTrialController::class, 'linkAccount'])->middleware('throttle:5,1')->name('public-trial.account');
+Route::get('/try/demo/{section}', [SessionController::class, 'publicPreview'])->whereIn('section', ['reading_writing', 'math'])->name('public-trial.demo');
 Route::get('/media/{filename}', [MediaController::class, 'show'])
     ->where('filename', '[A-Za-z0-9]{20}\.(?:jpe?g|png|gif|webp|svg)')
     ->name('media.show');
@@ -26,7 +34,7 @@ Route::get('/storage/media/{filename}', [MediaController::class, 'show'])
     ->name('storage.media.show');
 
 // Guest auth routes
-Route::middleware('guest')->group(function () {
+Route::middleware([\App\Http\Middleware\HandleGuestAuthAccess::class, 'guest'])->group(function () {
     Route::get('/signin', [PageController::class, 'showSignin'])->name('signin');
     Route::get('/signin/form', [PageController::class, 'showSigninForm'])->name('signin.form');
     Route::post('/signin', LoginController::class)->middleware('throttle:5,1');
@@ -222,6 +230,7 @@ Route::middleware(['auth', 'verified'])->prefix('engine')->group(function () {
     Route::get('/test/{test_id}/attempt-options', [AttemptController::class, 'attemptOptions'])->name('engine.test.attempt-options');
     Route::post('/test/start/{test_id}', [AttemptController::class, 'startTest'])->name('engine.test.start');
     Route::get('/test/timing', [AnswerController::class, 'timing'])->name('engine.test.timing');
+      Route::post('/test/control', [AnswerController::class, 'control'])->name('engine.test.control');
     Route::post('/test/autosave-module', [AnswerController::class, 'autosave'])
         ->middleware('throttle:60,1')
         ->name('engine.test.autosave-module');

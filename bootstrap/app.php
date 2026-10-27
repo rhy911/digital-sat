@@ -12,6 +12,7 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware): void {
+        $middleware->prependToGroup('web', \App\Http\Middleware\GuestTrialSessionCookie::class);
         $middleware->alias([
             'verified' => \App\Http\Middleware\EnsureEmailIsVerified::class,
             'role' => \App\Http\Middleware\EnsureHasRole::class,
@@ -20,9 +21,11 @@ return Application::configure(basePath: dirname(__DIR__))
 
         $middleware->redirectGuestsTo('/signin');
         $middleware->redirectUsersTo(fn (\Illuminate\Http\Request $request) => 
-            ($request->user() && $request->hasCookie(\Illuminate\Support\Facades\Auth::getRecallerName()))
-                ? '/'
-                : '/home'
+            $request->user()?->is_guest
+                ? '/try'
+                : (($request->user() && $request->hasCookie(\Illuminate\Support\Facades\Auth::getRecallerName()))
+                    ? '/'
+                    : '/home')
         );
     })
     ->withExceptions(function (Exceptions $exceptions): void {
@@ -52,5 +55,6 @@ return Application::configure(basePath: dirname(__DIR__))
         // sweep for a day. Concurrency if a slow sweep outlives the lock is safe —
         // per-module submit locks are what actually guard correctness.
         $schedule->command('assignments:finalize-expired')->everyMinute()->withoutOverlapping(5);
+        $schedule->command('public-trial:purge')->everyFiveMinutes()->withoutOverlapping(10);
     })
     ->create();

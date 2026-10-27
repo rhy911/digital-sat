@@ -8,7 +8,7 @@
         $subtitleText = 'System management and configuration.';
     } else {
         $titleText = 'Sign in as student';
-        $subtitleText = "Ready for today's practice?";
+            $subtitleText = "Ready for today's practice?";
     }
 @endphp
 
@@ -21,7 +21,7 @@
                         if (data.token) {
                             localStorage.setItem('api_token', data.token);
                         }
-                        window.location.href = '{{ route('home') }}';
+                        window.location.href = data.redirect || '{{ route('home') }}';
                     }
                 });
             });
@@ -39,8 +39,17 @@
     <!-- Form -->
     <form class="w-full" id="signinForm" action="{{ route('signin') }}" method="POST" novalidate>
         @csrf
-        <input type="hidden" name="role"
-            value="{{ in_array($role, ['student', 'teacher', 'admin']) ? $role : 'student' }}">
+        <div class="auth-form-group">
+            <label for="role" class="form-label">Sign in as</label>
+            <select class="form-control" id="role" name="role">
+                @if ($role === 'admin')
+                    <option value="admin" selected>Administrator</option>
+                @else
+                    <option value="student" @selected($role !== 'teacher')>Student</option>
+                    <option value="teacher" @selected($role === 'teacher')>Teacher</option>
+                @endif
+            </select>
+        </div>
 
         <div class="auth-form-group">
             <label for="email" class="form-label">Email Address</label>

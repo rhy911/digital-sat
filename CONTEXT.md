@@ -7,7 +7,7 @@
 - **Module**: Discrete 27-question (RW) or 22-question (Math) test module.
 - **Attempt (`UserTest`)**: A student's sitting of a test.
   - **Chained Clock**: Continuous timer for assignments and live exam sessions. The next module starts when the previous deadline passes, even if the student leaves.
-  - **Paused Clock**: Pausable timer for student self-study practice (also valid on private assignments).
+  - **Paused Clock**: Pausable timer for student self-study practice. Legacy assignments using this mode are converted to the continuous clock while preserving each active attempt's saved time.
 - **Submission**: Finalizing a module, saving question snapshots, grading answers, and advancing the attempt.
 - **Cascade**: Sweeper process that automatically advances overdue modules on chained-clock attempts when a student is away.
 - **AttemptEngine**: Deep domain service encapsulating attempt timing, progression, answer verification, submission coordination, and cascade sweep timeouts.

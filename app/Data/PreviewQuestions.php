@@ -16,8 +16,7 @@ class PreviewQuestions
         /** @var array<int, array<string, mixed>> $data */
         $data = require __DIR__ . '/preview_rw_questions.php';
 
-        return collect($data)
-            ->map(fn ($item) => (object) $item);
+        return collect($data)->map(fn ($item) => (object) $item);
     }
 
     /** @return Collection<int, \stdClass> */

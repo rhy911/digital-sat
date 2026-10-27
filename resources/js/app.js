@@ -1052,39 +1052,6 @@ export function initScoreDetailsPage() {
 }
 window.initScoreDetailsPage = initScoreDetailsPage;
 
-export function initLandingPage() {
-    const revealEls = document.querySelectorAll('main section, footer');
-
-    revealEls.forEach(el => {
-        el.classList.add('landing-reveal');
-    });
-
-    if (!('IntersectionObserver' in window)) {
-        revealEls.forEach(el => el.classList.add('is-visible'));
-        return;
-    }
-
-    const observerOptions = {
-        root: null,
-        threshold: 0.1,
-        rootMargin: '0px'
-    };
-
-    const observer = new IntersectionObserver((entries) => {
-        entries.forEach(entry => {
-            if (entry.isIntersecting) {
-                entry.target.classList.add('is-visible');
-                observer.unobserve(entry.target);
-            }
-        });
-    }, observerOptions);
-
-    revealEls.forEach(el => {
-        observer.observe(el);
-    });
-}
-window.initLandingPage = initLandingPage;
-
 // Global form submit confirmation interceptor using custom confirm modals
 document.addEventListener('submit', async (e) => {
     const form = e.target;

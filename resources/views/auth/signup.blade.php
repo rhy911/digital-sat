@@ -1,6 +1,4 @@
-@php
-    $defaultRole = 'student';
-@endphp
+@php($defaultRole = $defaultRole ?? old('role', 'student'))
 
 <x-layouts.auth title="Create Account">
     @push('scripts')
@@ -89,8 +87,7 @@
         <div id="step1" class="signup-step active flex-col gap-6">
             <div class="flex flex-col justify-center items-center gap-1">
                 <h2 class="text-2xl sm:text-3xl font-bold text-center m-0 text-slate-900">Create Your Account</h2>
-                <p class="text-sm sm:text-base text-gray-600 text-center">Join our community. Build confidence one test
-                    at a time.
+                <p class="text-sm sm:text-base text-gray-600 text-center">Create an account to save your results and see your full analysis.
                 </p>
             </div>
 
@@ -113,6 +110,9 @@
                         <span class="role-desc">Create classes after administrator approval</span>
                     </label>
                 </div>
+                @if ($defaultRole === 'teacher')
+                    <p class="mt-3 text-sm text-slate-600">Teacher accounts require administrator approval before classroom tools are available.</p>
+                @endif
             </div>
 
             <button type="button" class="primary-btn cursor-pointer w-full text-center" id="nextStepBtn">

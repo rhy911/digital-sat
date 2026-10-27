@@ -152,7 +152,7 @@ class RetakeFlowTest extends TestCase
 
         // 2. Start fresh
         $response = $this->actingAs($this->student)
-            ->post(route('engine.test.start', $this->test->id), ['mode' => 'fresh']);
+            ->post(route('engine.test.start', $this->test->id), ['mode' => 'fresh', 'confirm_fresh' => true]);
 
         $response->assertOk();
         $data = $response->json();

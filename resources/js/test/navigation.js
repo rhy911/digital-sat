@@ -1,5 +1,5 @@
 import { state } from './state.js';
-import { getTimerElapsedSeconds, refreshAssignmentTimer, startTimer, syncTimer } from './timer.js';
+import { pausePracticeAttempt, refreshAssignmentTimer, showAttemptControlOverlay, startTimer, syncTimer, syncTimerFromServer } from './timer.js';
 import { 
   updateQuestionButtonStates,
   generateQuestionButtons,
@@ -22,7 +22,6 @@ import {
 
 let autosaveInitialized = false;
 let autosaveTimer = null;
-let lastAutosavePayload = '';
 
 // Autosave runs single-flight. SPR answers mutate one character at a time, so the
 // old fire-and-forget autosave put 4-5 overlapping POSTs on the wire for a single
@@ -69,6 +68,46 @@ export function initSecurity() {
     history.pushState(null, null, location.href);
     showCustomAlert('You cannot use the Back button during a test.');
   });
+
+  // Intercept engine exit triggers without inline handlers
+  document.addEventListener('click', (e) => {
+    const exitTrigger = e.target.closest('[data-engine-exit]');
+    if (!exitTrigger || exitTrigger.hasAttribute('onclick')) return;
+    e.preventDefault();
+    confirmExitTest(exitTrigger.getAttribute('href') || undefined);
+  });
+}
+
+export function confirmExitTest(targetUrl) {
+  const destination = targetUrl || (typeof window !== 'undefined' ? window.homeUrl : '') || (typeof window !== 'undefined' && window.isGuestPublicTrial ? '/try' : '/home');
+  const isDemo = typeof window !== 'undefined' && Boolean(window.isPublicTrialDemo);
+  const isPublicTrial = typeof window !== 'undefined' && Boolean(window.isPublicTrial);
+  const title = isDemo ? 'Exit Interface Demo' : (isPublicTrial ? 'Exit Practice Test' : 'Exit Exam');
+  const message = isDemo
+    ? 'Are you sure you want to exit the interface demo? Any answers will not be saved.'
+    : 'Are you sure you want to exit? Your progress will be saved.';
+  const confirmText = isDemo ? 'Exit Demo' : 'Exit';
+  const cancelText = 'Stay';
+
+  if (typeof window !== 'undefined' && typeof window.showCustomConfirm === 'function') {
+    return window.showCustomConfirm(message, 'warning', title, confirmText, cancelText).then((confirmed) => {
+      if (confirmed) {
+        window.isNavigatingLegitimately = true;
+        window.location.href = destination;
+      }
+      return Boolean(confirmed);
+    });
+  }
+
+  if (typeof window !== 'undefined') {
+    window.isNavigatingLegitimately = true;
+    window.location.href = destination;
+  }
+  return Promise.resolve(true);
+}
+
+if (typeof window !== 'undefined') {
+  window.confirmExitTest = confirmExitTest;
 }
 
 document.addEventListener('test-timer-expired', () => {
@@ -137,6 +176,14 @@ export function isReviewSectionVisible() {
 }
 
 export function updateNavigationButtons() {
+  const nextButton = document.getElementById('nextButton');
+  if (nextButton) {
+    if (window.isPublicTrialDemo && isReviewSectionVisible() && !window.previewNextUrl) {
+      nextButton.textContent = 'Finish demo';
+    } else {
+      nextButton.textContent = 'Next';
+    }
+  }
   if (state.backButton) {
     const isReviewVisible = isReviewSectionVisible();
     state.backButton.style.display = state.currentQuestionIndex === 0 && !isReviewVisible ? "none" : "block";
@@ -334,13 +381,11 @@ export function initializeAutosave() {
   }
 
   // Per-module bookkeeping. A pending flag left over from the previous module would
-  // fire one pointless save, and a stale lastAutosavePayload could suppress the
-  // first real save of this module.
+  // fire one pointless save.
   clearTimeout(autosaveTimer);
   autosaveInFlight = false;
   autosavePending = false;
   lastAutosaveStartedAtMs = 0;
-  lastAutosavePayload = '';
 
   startAutosaveInterval();
 
@@ -360,7 +405,7 @@ export function initializeAutosave() {
     }
   });
 
-  document.addEventListener('visibilitychange', () => {
+  document.addEventListener('visibilitychange', async () => {
     if (document.visibilityState === 'hidden') {
       updateActiveQuestionTime();
     } else {
@@ -370,10 +415,12 @@ export function initializeAutosave() {
     }
 
     if (document.visibilityState !== 'hidden') return;
+    if (state.isPaused) return;
     if (state.isSubmitting || window.assignmentModuleRecovery || window.isPreview || !window.userTestId || !window.currentModuleId) return;
 
     syncTimer();
-    autosaveAnswers();
+    await autosaveAnswers();
+    if (!window.isAssignmentAttempt) await pausePracticeAttempt();
   });
 }
 
@@ -385,14 +432,26 @@ export function initializeAutosave() {
  */
 function startAutosaveInterval() {
   state.autosaveIntervalId = setInterval(() => {
-    if (!state.isSubmitting && !window.assignmentModuleRecovery && !window.isPreview && window.userTestId && window.currentModuleId) {
+    if (!state.isPaused && !state.isSubmitting && !window.assignmentModuleRecovery && !window.isPreview && window.userTestId && window.currentModuleId) {
       autosaveAnswers();
     }
   }, 15000);
 }
 
+function redirectExpiredTrial() {
+  if (!window.isGuestPublicTrial) return false;
+  const prefix = `sat_state_${window.userTestId}_`;
+  for (const storage of [sessionStorage, localStorage]) {
+    for (const key of Object.keys(storage)) {
+      if (key.startsWith(prefix)) storage.removeItem(key);
+    }
+  }
+  window.location.replace(`/try/expired?attempt=${encodeURIComponent(window.userTestId)}`);
+  return true;
+}
+
 function scheduleAutosave() {
-  if (window.assignmentModuleRecovery || window.isPreview || !window.userTestId || !window.currentModuleId) return;
+  if (state.isPaused || window.assignmentModuleRecovery || window.isPreview || !window.userTestId || !window.currentModuleId) return;
 
   // Assignments still save on the first keystroke (0ms) so answers are durable as
   // close to the deadline as possible; the gap floor only throttles the ones after
@@ -407,13 +466,13 @@ function scheduleAutosave() {
   }, delay);
 }
 
-async function autosaveAnswers() {
+export async function autosaveAnswers() {
   if (window.assignmentModuleRecovery || window.isPreview || !window.userTestId || !window.currentModuleId) return;
 
   // From the moment Next is pressed the submission owns these answers. The server
   // rejects a late autosave as well, but not sending one keeps the race off the
   // wire entirely.
-  if (state.isSubmitting) return;
+  if (state.isSubmitting || state.isPaused) return;
 
   // Coalesce instead of racing: note that something changed and send exactly one
   // follow-up after the in-flight request settles.
@@ -426,23 +485,22 @@ async function autosaveAnswers() {
   lastAutosaveStartedAtMs = Date.now();
 
   try {
-    const elapsed = (window.initialElapsedSeconds || 0) + getTimerElapsedSeconds();
-    const elapsed_seconds = Math.max(0, elapsed);
-
     updateActiveQuestionTime();
     const answers = collectAnswers();
     const payload = JSON.stringify({
       user_test_id: window.userTestId,
       module_id: window.currentModuleId,
       answers: answers,
-      question_times: state.questionTimings,
-      elapsed_seconds: elapsed_seconds
+      question_times: state.questionTimings
     });
 
     // Local state backup
-    localStorage.setItem(`sat_state_${window.userTestId}_${window.currentModuleId}`, JSON.stringify(answers));
-
-    if (payload === lastAutosavePayload) return;
+    try {
+      (window.isGuestPublicTrial ? sessionStorage : localStorage)
+        .setItem(`sat_state_${window.userTestId}_${window.currentModuleId}`, JSON.stringify(answers));
+    } catch (storageError) {
+      console.warn('Could not write the local answer backup:', storageError);
+    }
 
     try {
       const response = await fetch('/engine/test/autosave-module', {
@@ -450,11 +508,16 @@ async function autosaveAnswers() {
         headers: {
           'Content-Type': 'application/json',
           'Accept': 'application/json',
-          'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+          'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+          'X-Attempt-Control': state.attemptControlToken || ''
         },
         body: payload,
-        keepalive: true
+        keepalive: true,
+        signal: AbortSignal.timeout(5000)
       });
+
+      if (response.redirected && redirectExpiredTrial()) return;
+      if ([403, 404, 410].includes(response.status) && redirectExpiredTrial()) return;
 
       if (response.status === 409) {
         const data = await response.json();
@@ -478,7 +541,6 @@ async function autosaveAnswers() {
         throw new Error(`Autosave failed with status ${response.status}`);
       }
 
-      lastAutosavePayload = payload;
     } catch (error) {
       console.warn("Autosave failed:", error);
     }
@@ -500,15 +562,22 @@ export async function submitModule(options = {}) {
 
   const answers = collectAnswers();
   const skipConfirm = options.skipConfirm || false;
-  state.isSubmitting = true;
-
   if (!skipConfirm) {
     const isFinal = Boolean(window.isFinalModule);
-    const title = isFinal ? "Submit Test" : "Submit Module";
-    const message = isFinal
+    const hasNextDemo = window.isPublicTrialDemo && Boolean(window.previewNextUrl);
+    const title = hasNextDemo
+      ? "Continue to Math"
+      : (window.isPublicTrialDemo ? "Finish demo" : (isFinal ? "Submit Test" : "Submit Module"));
+    const message = hasNextDemo
+      ? "Ready to move on to Math? You won't be able to return to Reading and Writing questions."
+      : (window.isPublicTrialDemo
+      ? "Finish this untimed interface demo? Your answers are not saved and no score is created."
+      : (isFinal
       ? "This is the end of the test.\n\nSubmitting will finish your test and calculate your final score. You won't be able to change any answers after you submit."
-      : "Are you sure you want to submit?\n\nYou won't be able to change your answers after you move on.";
-    const confirmBtnText = isFinal ? "Submit Test" : "Submit";
+      : "Are you sure you want to submit?\n\nYou won't be able to change your answers after you move on."));
+    const confirmBtnText = hasNextDemo
+      ? "Continue"
+      : (window.isPublicTrialDemo ? "Finish demo" : (isFinal ? "Submit Test" : "Submit"));
 
     const confirmNext = await showCustomConfirm(
       message,
@@ -518,10 +587,11 @@ export async function submitModule(options = {}) {
       "Cancel"
     );
     if (!confirmNext) {
-      state.isSubmitting = false;
       return;
     }
   }
+
+  state.isSubmitting = true;
 
   if (state.timerInterval) {
     clearInterval(state.timerInterval);
@@ -538,13 +608,13 @@ export async function submitModule(options = {}) {
       return;
     }
     if (window.nextModuleId) {
-      navigateModule(`/engine/session/${window.nextModuleId}`);
+      navigateModule(window.previewNextUrl || `/engine/session/${window.nextModuleId}`);
     } else {
       hideLoadingScreen();
-      await showCustomAlert("Test Preview completed! Redirecting home...", "success", "Test Completed");
+      await showCustomAlert(window.previewExitUrl ? "Interface demo complete. Choose a module or full practice test next." : "Test Preview completed! Redirecting home...", "success", "Test Completed");
       showLoadingScreen("Completing test preview...");
       window.isNavigatingLegitimately = true;
-      window.location.href = window.homeUrl || '/home';
+      window.location.href = window.previewExitUrl || window.homeUrl || '/home';
     }
     return;
   }
@@ -576,7 +646,8 @@ export async function submitModule(options = {}) {
           headers: {
             'Content-Type': 'application/json',
             'Accept': 'application/json',
-            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+            'X-Attempt-Control': state.attemptControlToken || ''
           },
           body: JSON.stringify({
             user_test_id: window.userTestId,
@@ -584,7 +655,8 @@ export async function submitModule(options = {}) {
             answers: answers,
             question_times: state.questionTimings,
             timed_out: Boolean(options.timedOut)
-          })
+          }),
+          signal: AbortSignal.timeout(15000)
         });
       } catch (networkError) {
         // The request may well have reached the server and only the response was
@@ -598,16 +670,26 @@ export async function submitModule(options = {}) {
       }
 
       if (response) {
+        if (response.redirected && redirectExpiredTrial()) return;
+        if ([403, 404, 410].includes(response.status) && redirectExpiredTrial()) return;
         // 409 submission_in_progress means the work is already in flight for this
         // exact attempt+module. Keep polling; never re-POST.
         if (response.status === 429 || response.status === 409) {
           const body = await response.json().catch(() => ({}));
 
+          if (body.error === 'controller_lost' || body.error === 'practice_paused') {
+            state.attemptControlToken = null;
+            state.isPaused = !window.isAssignmentAttempt;
+            state.isSubmitting = false;
+            hideLoadingScreen();
+            showAttemptControlOverlay('lost');
+            return;
+          }
+
           if (body.error === 'module_not_expired') {
             state.isSubmitting = false;
             hideLoadingScreen();
-            await refreshAssignmentTimer(window.durationMinutes ?? 32);
-            initializeAutosave();
+            await restoreAttemptAfterSubmitFailure();
             return;
           }
 
@@ -648,6 +730,7 @@ export async function submitModule(options = {}) {
     }
 
     data = data || {};
+    if (data.error === 'trial_expired' && redirectExpiredTrial()) return;
     const timedOut = Boolean(options.timedOut || data.timed_out);
 
     if (data.test_completed) {
@@ -664,12 +747,18 @@ export async function submitModule(options = {}) {
         window.location.href = homeUrl;
       };
 
+      const isResultTarget = Boolean(window.isPublicTrial || (homeUrl && homeUrl.includes('/result')));
+      const alertMsg = isResultTarget
+        ? `Test completed. Redirecting to your results in <strong id="completion-countdown">5</strong> seconds.`
+        : `Test completed. You will be redirected home in <strong id="completion-countdown">5</strong> seconds.`;
+      const btnLabel = isResultTarget ? "View Results" : "Back to Home";
+
       showCustomAlert(
-        `Test completed. You will be redirected home in <strong id="completion-countdown">5</strong> seconds.`,
+        alertMsg,
         "success",
         "Test Completed",
         true,
-        "Back to Home"
+        btnLabel
       ).then(doNavigateHome);
 
       completionTimer = setInterval(() => {
@@ -719,40 +808,54 @@ export async function submitModule(options = {}) {
           ? Number(data.break_duration_seconds)
           : 600;
 
-        if (breakSecs <= 0) {
+        if (breakSecs <= 0 && window.isAssignmentAttempt) {
           proceedToNextModule();
         } else {
           state.isOnSectionBreak = true;
-          showInterSectionBreak(breakSecs, proceedToNextModule, {
+          showInterSectionBreak(Math.max(0, breakSecs), proceedToNextModule, {
             nextModuleId: data.next_module_numeric_id || data.next_module_id,
+            waitForExplicitContinue: !window.isAssignmentAttempt,
           });
         }
       } else if (timedOut) {
         hideLoadingScreen();
-        let secondsLeft = 5;
-        let continueTimer;
-        let hasNavigated = false;
         const doNavigate = () => {
-          if (hasNavigated) return;
-          hasNavigated = true;
-          if (continueTimer) clearInterval(continueTimer);
           proceedToNextModule();
         };
+        if (!window.isAssignmentAttempt) {
+          showCustomAlert(
+            'Time is up. Your saved answers were submitted. Continue when you are ready.',
+            'warning',
+            'Module Complete',
+            true,
+            'Continue'
+          ).then(doNavigate);
+        } else {
+          let secondsLeft = 5;
+          let continueTimer;
+          let hasNavigated = false;
+          const continueAutomatically = () => {
+            if (hasNavigated) return;
+            hasNavigated = true;
+            if (continueTimer) clearInterval(continueTimer);
+            doNavigate();
+          };
 
-        showCustomAlert(
-          `Time is up. Your saved answers were submitted. Continuing to the next module in <strong id="module-continue-countdown">5</strong> seconds.`,
-          "warning",
-          "Module Complete",
-          true,
-          "Continue Now"
-        ).then(doNavigate);
+          showCustomAlert(
+            `Time is up. Your saved answers were submitted. Continuing to the next module in <strong id="module-continue-countdown">5</strong> seconds.`,
+            'warning',
+            'Module Complete',
+            true,
+            'Continue Now'
+          ).then(continueAutomatically);
 
-        continueTimer = setInterval(() => {
-          secondsLeft--;
-          const counterEl = document.getElementById('module-continue-countdown');
-          if (counterEl) counterEl.textContent = secondsLeft;
-          if (secondsLeft <= 0) doNavigate();
-        }, 1000);
+          continueTimer = setInterval(() => {
+            secondsLeft--;
+            const counterEl = document.getElementById('module-continue-countdown');
+            if (counterEl) counterEl.textContent = secondsLeft;
+            if (secondsLeft <= 0) continueAutomatically();
+          }, 1000);
+        }
       } else {
         proceedToNextModule();
       }
@@ -778,6 +881,7 @@ export async function submitModule(options = {}) {
 
       // 'retry' / 'none': the submission really is over, so let the student act.
       state.isSubmitting = false;
+      await restoreAttemptAfterSubmitFailure();
     }
   } catch (error) {
     hideLoadingScreen();
@@ -785,7 +889,24 @@ export async function submitModule(options = {}) {
     const info = describeSubmitError({ error: 'network_lost' });
     await showCustomAlert(info.message, info.type, info.title);
     state.isSubmitting = false;
+    await restoreAttemptAfterSubmitFailure();
   }
+}
+
+async function restoreAttemptAfterSubmitFailure() {
+  if (window.isAssignmentAttempt) {
+    await refreshAssignmentTimer(window.durationMinutes ?? 32);
+  } else if (state.attemptControlToken) {
+    try {
+      const params = new URLSearchParams({ user_test_id: String(window.userTestId), module_id: String(window.currentModuleId) });
+      const response = await fetch(`/engine/test/timing?${params}`, { cache: 'no-store' });
+      if (response.ok) {
+        const timing = await response.json();
+        if (timing.status === 'active') syncTimerFromServer(timing.remaining_seconds, performance.now());
+      }
+    } catch (_) {}
+  }
+  initializeAutosave();
 }
 
 /**
@@ -856,6 +977,17 @@ export async function navigateModule(url) {
   showLoadingScreen("Saving responses and loading next section...");
   try {
     const response = await fetch(url);
+    if ((response.status === 404 || response.status === 410 || response.redirected)
+        && window.isGuestPublicTrial) {
+      if (response.url.includes('/try/expired')) {
+        window.location.replace(response.url);
+        return 'redirecting';
+      }
+      if (response.status === 404 || response.status === 410) {
+        redirectExpiredTrial();
+        return 'redirecting';
+      }
+    }
     if (!response.ok) {
       throw new Error(`HTTP error! status: ${response.status}`);
     }

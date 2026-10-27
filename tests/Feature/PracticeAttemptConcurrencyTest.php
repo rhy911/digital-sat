@@ -125,7 +125,7 @@ class PracticeAttemptConcurrencyTest extends TestCase
 
         // 2. Simulate start fresh request
         $response = $this->actingAs($this->student)
-            ->post(route('engine.test.start', $this->test->id), ['mode' => 'fresh']);
+            ->post(route('engine.test.start', $this->test->id), ['mode' => 'fresh', 'confirm_fresh' => true]);
 
         $response->assertOk();
         

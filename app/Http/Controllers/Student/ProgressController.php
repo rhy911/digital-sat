@@ -21,6 +21,7 @@ class ProgressController extends Controller
         $user = $request->user();
 
         $completedTests = $user->userTests()
+            ->visibleInGuestAnalytics($user)
             ->whereHas('test', fn ($q) => $q->where('title', '!=', 'Test Preview'))
             ->with(['test', 'scoreConversionSet', 'userAnswers.question'])
             ->where('status', 'completed')
@@ -77,6 +78,7 @@ class ProgressController extends Controller
         $user = $request->user();
 
         $attemptQuery = $user->userTests()
+            ->visibleInGuestAnalytics($user)
             ->whereHas('test', fn ($q) => $q->where('title', '!=', 'Test Preview'))
             ->with(['test', 'userAnswers'])
             ->where('status', 'completed')

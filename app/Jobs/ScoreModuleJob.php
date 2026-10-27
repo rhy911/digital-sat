@@ -3,6 +3,7 @@
 namespace App\Jobs;
 
 use App\Services\AttemptEngine;
+use App\Models\UserTest;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
@@ -66,6 +67,11 @@ class ScoreModuleJob implements ShouldQueue
         $outcome = 'ok';
 
         try {
+            $attempt = UserTest::find($this->userTestId);
+            if (! $attempt || $attempt->isGuestTrialExpired()) {
+                $outcome = 'trial_expired';
+                return;
+            }
             $engine->scoreAndAdvance(
                 $this->userTestId,
                 $this->moduleId,
@@ -106,6 +112,12 @@ class ScoreModuleJob implements ShouldQueue
             'module_id' => $this->moduleId,
             'exception' => $exception,
         ]);
+
+        if (! UserTest::whereKey($this->userTestId)->exists()) {
+            $this->releaseSubmitLock();
+
+            return;
+        }
 
         Cache::put("scoring_result_{$this->userTestId}", [
             'status' => 'error',

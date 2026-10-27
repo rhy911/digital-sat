@@ -2,12 +2,196 @@ import { state } from './state.js';
 
 let latestTimingRequest = 0;
 let timingRetry = null;
+let controlLifecycleInstalled = false;
+
+async function controlRequest(action, token = state.attemptControlToken, keepalive = false) {
+  const response = await fetch('/engine/test/control', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json',
+        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content || '',
+        ...(token ? { 'X-Attempt-Control': token } : {})
+      },
+      body: JSON.stringify({ user_test_id: window.userTestId, module_id: window.currentModuleId, action }),
+      signal: AbortSignal.timeout(5000),
+      keepalive,
+      cache: 'no-store'
+    });
+    const data = await response.json().catch(() => ({}));
+    if (!response.ok) {
+      const error = new Error(data.error || `Attempt control failed (${response.status})`);
+      error.status = response.status;
+      throw error;
+    }
+  return data;
+}
+
+export async function initializeAttemptControl() {
+  if (window.isPreview || !window.userTestId || !window.currentModuleId) return true;
+  installAttemptControlLifecycle();
+  try {
+    const timing = await controlRequest('claim', null);
+    acceptControllerState(timing);
+    if (timing.status === 'paused') {
+      state.isPaused = true;
+      showAttemptControlOverlay('paused');
+    }
+    return true;
+  } catch (error) {
+    state.isPaused = true;
+    stopTimer();
+    if (error.message === 'attempt_in_use') {
+      showAttemptControlOverlay('in_use');
+      return false;
+    }
+    console.error('Could not claim the test attempt:', error);
+    showAttemptControlOverlay('offline');
+    return false;
+  }
+}
+
+function acceptControllerState(data) {
+  if (data.token) state.attemptControlToken = data.token;
+  if (!state.attemptControlHeartbeat) {
+    state.attemptControlHeartbeat = setInterval(async () => {
+      if (!state.attemptControlToken || document.visibilityState === 'hidden' || !navigator.onLine) return;
+      const token = state.attemptControlToken;
+      try {
+        const timing = await controlRequest('heartbeat', token);
+        if (state.attemptControlToken !== token) return;
+        acceptControllerState(timing);
+        if (timing.status === 'paused') {
+          state.isPaused = true;
+          stopTimer();
+          showAttemptControlOverlay('paused');
+        }
+      } catch (error) {
+        if (state.attemptControlToken !== token) return;
+        if (error.message === 'controller_lost' || error.message === 'practice_paused') {
+          state.attemptControlToken = null;
+          if (!window.isAssignmentAttempt) {
+            state.isPaused = true;
+            stopTimer();
+          }
+          showAttemptControlOverlay('lost');
+        }
+      }
+    }, 15000);
+  }
+}
+
+function installAttemptControlLifecycle() {
+  if (controlLifecycleInstalled) return;
+  controlLifecycleInstalled = true;
+  window.addEventListener('offline', () => {
+    if (!window.isAssignmentAttempt) {
+      pausePracticeAttempt();
+      showAttemptControlOverlay('offline');
+    }
+  });
+  window.addEventListener('online', () => {
+    if (window.isAssignmentAttempt) return;
+    if (state.attemptControlToken) {
+      state.isPaused = true;
+      showAttemptControlOverlay('paused');
+      return;
+    }
+    initializeAttemptControl().then(claimed => {
+      if (!claimed) return;
+      if (state.isPaused) showAttemptControlOverlay('paused');
+      else {
+        dismissAttemptControlOverlay();
+        startTimer(window.durationMinutes ?? 32);
+      }
+    });
+  });
+  window.addEventListener('pagehide', () => {
+    if (!state.attemptControlToken) return;
+    controlRequest('release', state.attemptControlToken, true).catch(() => {});
+  });
+}
+
+export async function pausePracticeAttempt() {
+  if (window.isAssignmentAttempt || !state.attemptControlToken || state.isPaused || state.isSubmitting) return;
+  state.isPaused = true;
+  document.dispatchEvent(new CustomEvent('test-timer-paused'));
+  stopTimer();
+  showAttemptControlOverlay(navigator.onLine ? 'pausing' : 'offline');
+  try {
+    const timing = await controlRequest('pause');
+    acceptControllerState(timing);
+    showAttemptControlOverlay('paused');
+  } catch (error) {
+    if (error.message === 'controller_lost') state.attemptControlToken = null;
+    showAttemptControlOverlay('offline');
+  }
+}
+
+export function showAttemptControlOverlay(mode) {
+  if (!state.attemptControlOverlay) {
+    const overlay = document.createElement('div');
+    overlay.id = 'attemptControlOverlay';
+    overlay.setAttribute('role', 'dialog');
+    overlay.setAttribute('aria-modal', 'true');
+    overlay.tabIndex = -1;
+    Object.assign(overlay.style, {
+      position: 'fixed', inset: '0', zIndex: '100000', display: 'grid', placeItems: 'center',
+      background: 'rgba(15, 23, 42, .96)', color: 'white', padding: '24px', textAlign: 'center'
+    });
+    state.attemptControlOverlay = overlay;
+    document.body.appendChild(overlay);
+  }
+  document.querySelector('main')?.setAttribute('inert', '');
+  const copy = {
+    paused: ['Practice paused', 'Reconnect and choose Resume to continue. Your remaining time is saved.'],
+    pausing: ['Pausing practice', 'Saving the timer state…'],
+    offline: ['Connection lost', 'Practice is paused. Reconnect, then resume to continue.'],
+    in_use: ['Attempt open elsewhere', 'Only one tab or device can control this attempt.'],
+    lost: ['Attempt control lost', 'This attempt is controlled elsewhere. Take it over to continue.']
+  }[mode] || ['Test unavailable', 'Reconnect to continue.'];
+  const mayResume = mode === 'paused' && navigator.onLine;
+  const mayTakeOver = ['in_use', 'lost', 'offline'].includes(mode) && navigator.onLine;
+  state.attemptControlOverlay.innerHTML = `<div><h1 style="font-size:1.6rem;margin:0 0 12px">${copy[0]}</h1><p style="max-width:34rem;margin:0 auto 20px">${copy[1]}</p>${mayResume ? '<button type="button" data-attempt-action="resume">Resume</button>' : ''}${mayTakeOver ? '<button type="button" data-attempt-action="takeover">Take over</button>' : ''}</div>`;
+  state.attemptControlOverlay.querySelectorAll('button').forEach(button => {
+    Object.assign(button.style, { padding: '12px 24px', borderRadius: '8px', background: '#f6b93b', color: '#10234a', fontWeight: '700', margin: '4px' });
+    button.addEventListener('click', async () => {
+      button.disabled = true;
+      try {
+        const timing = await controlRequest(button.dataset.attemptAction, button.dataset.attemptAction === 'takeover' ? null : state.attemptControlToken);
+        acceptControllerState(timing);
+        if (timing.status === 'paused') {
+          state.isPaused = true;
+          showAttemptControlOverlay('paused');
+        } else {
+          dismissAttemptControlOverlay();
+          state.isPaused = false;
+          if (!window.isBreakRecoveryView) {
+            syncTimerFromServer(timing.remaining_seconds, performance.now());
+            document.dispatchEvent(new CustomEvent('test-timer-resumed'));
+          }
+        }
+      } catch (error) {
+        button.disabled = false;
+        showAttemptControlOverlay(error.message === 'attempt_in_use' ? 'in_use' : 'offline');
+      }
+    });
+  });
+  (state.attemptControlOverlay.querySelector('button') || state.attemptControlOverlay).focus();
+}
+
+function dismissAttemptControlOverlay() {
+  state.attemptControlOverlay?.remove();
+  state.attemptControlOverlay = null;
+  document.querySelector('main')?.removeAttribute('inert');
+}
 
 /**
  * Initialize and start the countdown timer
  */
 export function startTimer(durationMinutes) {
   stopTimer();
+  if (!window.isAssignmentAttempt && state.isPaused) return;
   state.isPaused = false;
   if (window.isAssignmentAttempt && !window.assignmentTimerSynced) {
     state.isUntimed = false;
@@ -45,8 +229,6 @@ export function startTimer(durationMinutes) {
   state.timeLeft = initialSeconds;
   state.timerInitialSeconds = initialSeconds;
   state.timerStartedAtMs = performance.now();
-  state.timerPausedMs = 0;
-  state.timerPausedStartedAtMs = null;
   installTimerWakeHandlers();
   updateTimerDisplay();
 
@@ -59,8 +241,6 @@ export function syncTimerFromServer(remainingSeconds, requestStartedAtMs, respon
   const roundTripMs = Math.max(0, responseReceivedAtMs - requestStartedAtMs);
   state.timerInitialSeconds = Math.max(0, Math.floor(Number(remainingSeconds) - roundTripMs / 2000));
   state.timerStartedAtMs = performance.now();
-  state.timerPausedMs = 0;
-  state.timerPausedStartedAtMs = null;
   state.timeLeft = getTimerRemainingSeconds();
   updateTimerDisplay();
   if (state.timeLeft <= 0) {
@@ -89,7 +269,8 @@ export async function refreshAssignmentTimer(durationMinutes = 32) {
     });
     const response = await fetch(`${window.timingUrl || '/engine/test/timing'}?${params}`, {
       headers: { Accept: 'application/json' },
-      cache: 'no-store'
+      cache: 'no-store',
+      signal: AbortSignal.timeout(5000)
     });
     if (!response.ok) {
       const error = new Error(`Timing request failed (${response.status})`);
@@ -173,22 +354,19 @@ export function stopTimer() {
 export function pauseTimer() {
   if (window.isAssignmentAttempt || state.isUntimed || state.isSubmitting) return;
   if (state.isPaused) return;
-  state.isPaused = true;
-  state.timerPausedStartedAtMs = performance.now();
-  syncTimer();
-  document.dispatchEvent(new CustomEvent('test-timer-paused'));
+  pausePracticeAttempt();
 }
 
 export function resumeTimer() {
   if (window.isAssignmentAttempt || state.isSubmitting) return;
   if (!state.isPaused) return;
-  if (state.timerPausedStartedAtMs !== null) {
-    state.timerPausedMs += Math.max(0, performance.now() - state.timerPausedStartedAtMs);
-  }
-  state.timerPausedStartedAtMs = null;
-  state.isPaused = false;
-  syncTimer();
-  document.dispatchEvent(new CustomEvent('test-timer-resumed'));
+  controlRequest('resume').then(timing => {
+    acceptControllerState(timing);
+    state.isPaused = false;
+    dismissAttemptControlOverlay();
+    syncTimerFromServer(timing.remaining_seconds, performance.now());
+    document.dispatchEvent(new CustomEvent('test-timer-resumed'));
+  }).catch(() => showAttemptControlOverlay('offline'));
 }
 
 /**
@@ -258,13 +436,7 @@ function getTimerRemainingSeconds() {
 
 function getEffectiveElapsedMs(now = performance.now()) {
   if (state.timerStartedAtMs === null) return 0;
-
-  let pausedMs = state.timerPausedMs || 0;
-  if (state.isPaused && state.timerPausedStartedAtMs !== null) {
-    pausedMs += Math.max(0, now - state.timerPausedStartedAtMs);
-  }
-
-  return Math.max(0, now - state.timerStartedAtMs - pausedMs);
+  return Math.max(0, now - state.timerStartedAtMs);
 }
 
 function installTimerWakeHandlers() {

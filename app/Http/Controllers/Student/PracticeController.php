@@ -19,7 +19,7 @@ class PracticeController extends Controller
         $tests = Test::visibleTo($user)
             ->with([
                 'sections.modules' => fn ($query) => $query->visibleTo($user),
-                'userTests' => fn ($query) => $query->where('user_id', $user->id)->with(['test.sections.modules', 'currentModule.section'])->orderBy('updated_at', 'desc'),
+                'userTests' => fn ($query) => $query->visibleInGuestAnalytics($user)->where('user_id', $user->id)->with(['test.sections.modules', 'currentModule.section'])->orderBy('updated_at', 'desc'),
             ])
             ->where('status', 'active')
             ->where('title', '!=', 'Test Preview')

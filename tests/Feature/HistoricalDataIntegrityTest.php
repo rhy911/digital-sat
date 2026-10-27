@@ -120,7 +120,7 @@ class HistoricalDataIntegrityTest extends TestCase
             'current_module_started_at' => now(),
         ]);
 
-        $response = $this->actingAs($this->student)->postJson(route('engine.test.submit-module'), [
+        $response = $this->actingAs($this->student)->withAttemptController($userTest)->postJson(route('engine.test.submit-module'), [
             'user_test_id' => $userTest->id,
             'module_id' => $this->module->id,
             'answers' => [

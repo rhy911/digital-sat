@@ -16,7 +16,7 @@ class ResendVerificationController extends Controller
 
         if ($user->hasVerifiedEmail()) {
             if ($request->wantsJson() || $request->ajax()) {
-                return response()->json(['message' => 'Email đã được xác minh rồi.']);
+                return response()->json(['message' => 'Your email is already verified.']);
             }
             return redirect()->route('home');
         }
@@ -31,20 +31,25 @@ class ResendVerificationController extends Controller
                     'cooldown' => $seconds
                 ], 429);
             }
-            return back()->withErrors(['error' => "Vui lòng đợi {$seconds} giây trước khi gửi lại."]);
+            return back()->withErrors(['error' => "Please wait {$seconds} seconds before trying again."]);
         }
 
         \Illuminate\Support\Facades\RateLimiter::hit($key, 60);
 
-        $user->notify(new VerifyEmailNotification());
+        $trialUlid = $request->session()->get('link_trial_attempt_ulid');
+        if ($trialUlid && ! \App\Models\UserTest::ownedCompletedPublicTrial($user->id, $trialUlid)->exists()) {
+            $request->session()->forget('link_trial_attempt_ulid');
+            $trialUlid = null;
+        }
+        $user->notify(new VerifyEmailNotification($trialUlid));
 
         if ($request->wantsJson() || $request->ajax()) {
             return response()->json([
-                'message' => 'Email xác minh đã được gửi lại.',
+                'message' => 'Verification email sent. Check your inbox.',
                 'cooldown' => 60
             ]);
         }
 
-        return back()->with('success', 'Email xác minh đã được gửi lại.');
+        return back()->with('success', 'Verification email sent. Check your inbox.');
     }
 }

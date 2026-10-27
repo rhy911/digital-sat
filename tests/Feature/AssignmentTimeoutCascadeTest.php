@@ -56,6 +56,66 @@ class AssignmentTimeoutCascadeTest extends TestCase
         }
     }
 
+    public function test_legacy_paused_assignment_converts_from_saved_clock_and_cascades_overdue_modules(): void
+    {
+        Carbon::setTestNow('2026-06-22 12:00:00');
+        [, $modules, $attempt] = $this->assignmentAttempt(moduleCount: 2);
+        $attempt->assignment->update(['clock_mode' => 'paused']);
+        $attempt->update([
+            'current_module_started_at' => null,
+            'current_module_elapsed_seconds' => 0,
+            'current_module_paused' => false,
+        ]);
+        $attempt->forceFill(['created_at' => now()->subMinutes(25)])->save();
+
+        $this->artisan('assignments:convert-paused-clocks')->assertSuccessful();
+
+        $attempt->refresh();
+        $this->assertTrue($attempt->assignment->isTimedExam());
+        $this->assertTrue($attempt->current_module_started_at->equalTo(now()->subMinutes(25)));
+        $this->assertSame(0, $attempt->current_module_elapsed_seconds);
+
+        $this->artisan('assignments:finalize-expired')->assertSuccessful();
+
+        $attempt->refresh();
+        $this->assertSame('completed', $attempt->status);
+        foreach ($modules as $module) {
+            $this->assertDatabaseHas('user_test_module_submissions', [
+                'user_test_id' => $attempt->id,
+                'module_id' => $module->id,
+            ]);
+        }
+    }
+
+    public function test_legacy_conversion_preserves_a_resumed_module_clock_after_a_section_break(): void
+    {
+        Carbon::setTestNow('2026-06-22 12:05:00');
+        [, $modules, $attempt] = $this->assignmentAttempt(moduleCount: 2);
+        $attempt->assignment->update(['clock_mode' => 'paused']);
+        $attempt->update([
+            'current_module_id' => $modules[1]->id,
+            'current_module_started_at' => Carbon::parse('2026-06-22 12:01:00'),
+            'current_module_elapsed_seconds' => 120,
+        ]);
+        UserTestModuleSubmission::create([
+            'user_test_id' => $attempt->id,
+            'module_id' => $modules[0]->id,
+            'issued_next_module_id' => $modules[1]->id,
+            'result' => [
+                'is_section_break' => true,
+                'break_ends_at' => '2026-06-22T12:10:00+07:00',
+                'break_duration_seconds' => 600,
+            ],
+            'submitted_at' => Carbon::parse('2026-06-22 11:50:00'),
+        ]);
+
+        $this->artisan('assignments:convert-paused-clocks')->assertSuccessful();
+
+        $attempt->refresh();
+        $this->assertTrue($attempt->current_module_started_at->equalTo(Carbon::parse('2026-06-22 11:59:00')));
+        $this->assertSame(0, $attempt->current_module_elapsed_seconds);
+    }
+
     public function test_cascade_materializes_unanswered_questions_as_omitted_and_keeps_autosaved_work(): void
     {
         Carbon::setTestNow('2026-06-22 12:00:00');
@@ -238,7 +298,7 @@ class AssignmentTimeoutCascadeTest extends TestCase
         Carbon::setTestNow('2026-06-22 12:00:00');
         [$student, $modules, $attempt] = $this->assignmentAttempt(moduleCount: 2);
 
-        $this->actingAs($student)
+        $this->actingAs($student)->withAttemptController($attempt)
             ->postJson(route('engine.test.submit-module'), [
                 'user_test_id' => $attempt->id,
                 'module_id' => $modules[0]->id,

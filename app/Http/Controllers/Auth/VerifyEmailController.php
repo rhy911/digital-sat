@@ -19,36 +19,45 @@ class VerifyEmailController extends Controller
 
             if (!$request->hasValidSignature()) {
                 return redirect()->route('signin')
-                    ->with('error', 'Link xác minh không hợp lệ hoặc đã hết hạn.');
+                    ->with('error', 'This verification link is invalid or has expired.');
             }
 
             if (!hash_equals(
                 (string) $request->route('hash'),
                 sha1($user->getEmailForVerification())
             )) {
-                // Invalid hash - redirect to login with error
                 return redirect()->route('signin')
-                    ->with('error', 'Link xác minh không hợp lệ hoặc đã hết hạn.');
+                    ->with('error', 'This verification link is invalid or has expired.');
             }
 
-            if ($user->hasVerifiedEmail()) {
-                // Already verified - login and show success screen
-                Auth::login($user, true);
-                return view('auth.email-verified');
+            if (!$user->hasVerifiedEmail()) {
+                $user->markEmailAsVerified();
+                Log::info('Email verified successfully (Web)', [
+                    'user_id' => $user->id,
+                    'email' => $user->email,
+                ]);
             }
 
-            // Mark email as verified
-            $user->markEmailAsVerified();
-
-            // Login the user
             Auth::login($user, true);
+            $request->session()->forget('link_trial_attempt_ulid');
+            $request->session()->forget('link_guest_user_id');
 
-            Log::info('Email verified successfully (Web)', [
-                'user_id' => $user->id,
-                'email' => $user->email,
+            $trialUlid = $request->query('trial');
+            if ($trialUlid !== null && $trialUlid !== '') {
+                $hasEligibleTrial = \App\Models\UserTest::ownedCompletedPublicTrial($user->id, $trialUlid)->exists();
+                if (!$hasEligibleTrial) {
+                    return redirect()->route('home')
+                        ->with('warning', 'The requested trial report is no longer available. Welcome to your DigiSAT dashboard.');
+                }
+
+                return view('auth.email-verified', [
+                    'continueUrl' => route('student.scores.show', ['userTest' => $trialUlid]),
+                ]);
+            }
+
+            return view('auth.email-verified', [
+                'continueUrl' => route('dashboard'),
             ]);
-
-            return view('auth.email-verified');
         } catch (\Exception $e) {
             Log::error('Email verification error (Web)', [
                 'error' => $e->getMessage(),
@@ -56,7 +65,7 @@ class VerifyEmailController extends Controller
             ]);
 
             return redirect()->route('signin')
-                ->with('error', 'Đã xảy ra lỗi khi xác minh email. Vui lòng thử lại.');
+                ->with('error', 'We could not verify this email. Please try again.');
         }
     }
 }

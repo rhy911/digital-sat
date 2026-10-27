@@ -25,13 +25,14 @@ export const state = {
   timerInterval: null,
   timerStartedAtMs: null,
   timerInitialSeconds: 0,
-  timerPausedMs: 0,
-  timerPausedStartedAtMs: null,
   timerWakeHandlersInitialized: false,
   isUntimed: false,
   isPaused: false,
   isSubmitting: false,
   isOnSectionBreak: false,
+  attemptControlToken: null,
+  attemptControlHeartbeat: null,
+  attemptControlOverlay: null,
 
   // Submission state. isSubmitting must stay true for the WHOLE time a
   // submission is in flight server-side — releasing it while scoring is still

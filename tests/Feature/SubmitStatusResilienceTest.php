@@ -14,6 +14,7 @@ use App\Models\UserTestAnswer;
 use App\Models\UserTestModuleSubmission;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Queue;
 use Tests\TestCase;
 
@@ -82,7 +83,7 @@ class SubmitStatusResilienceTest extends TestCase
         $this->assertTrue($lock->get(), 'Precondition: the test must own the lock.');
 
         try {
-            $response = $this->actingAs($this->student)
+            $response = $this->actingAs($this->student)->withAttemptController($attempt)
                 ->postJson(route('engine.test.submit-module'), [
                     'user_test_id' => $attempt->id,
                     'module_id' => $this->moduleOne->id,
@@ -117,7 +118,7 @@ class SubmitStatusResilienceTest extends TestCase
         $this->assertTrue($otherLock->get());
 
         try {
-            $this->actingAs($this->student)
+            $this->actingAs($this->student)->withAttemptController($attempt)
                 ->postJson(route('engine.test.submit-module'), [
                     'user_test_id' => $attempt->id,
                     'module_id' => $this->easyModule->id,
@@ -129,7 +130,7 @@ class SubmitStatusResilienceTest extends TestCase
             // Module one is current but uncontended: this is a real conflict.
             $attempt->forceFill(['current_module_id' => $this->easyModule->id])->save();
 
-            $this->actingAs($this->student)
+            $this->actingAs($this->student)->withAttemptController($attempt)
                 ->postJson(route('engine.test.submit-module'), [
                     'user_test_id' => $attempt->id,
                     'module_id' => $this->moduleOne->id,
@@ -164,7 +165,7 @@ class SubmitStatusResilienceTest extends TestCase
             'submitted_at' => now(),
         ]);
 
-        $this->actingAs($this->student)
+        $this->actingAs($this->student)->withAttemptController($attempt)
             ->getJson(route('engine.submit-status', $attempt).'?module_id='.$this->moduleOne->id)
             ->assertOk()
             ->assertJsonPath('status', 'success')
@@ -186,7 +187,7 @@ class SubmitStatusResilienceTest extends TestCase
             'scored_module_id' => $this->easyModule->id,
         ], 300);
 
-        $this->actingAs($this->student)
+        $this->actingAs($this->student)->withAttemptController($attempt)
             ->getJson(route('engine.submit-status', $attempt).'?module_id='.$this->moduleOne->id)
             ->assertOk()
             ->assertJsonPath('status', 'scoring')
@@ -207,7 +208,7 @@ class SubmitStatusResilienceTest extends TestCase
             'next_module_id' => $this->easyModule->ulid,
         ], 300);
 
-        $this->actingAs($this->student)
+        $this->actingAs($this->student)->withAttemptController($attempt)
             ->getJson(route('engine.submit-status', $attempt).'?module_id='.$this->moduleOne->id)
             ->assertOk()
             ->assertJsonPath('status', 'success');
@@ -226,7 +227,7 @@ class SubmitStatusResilienceTest extends TestCase
             'scored_module_id' => $this->easyModule->id,
         ], 300);
 
-        $this->actingAs($this->student)
+        $this->actingAs($this->student)->withAttemptController($attempt)
             ->getJson(route('engine.submit-status', $attempt))
             ->assertOk()
             ->assertJsonPath('status', 'success');
@@ -241,7 +242,7 @@ class SubmitStatusResilienceTest extends TestCase
         $attempt = $this->attempt();
         Cache::forget("scoring_result_{$attempt->id}");
 
-        $this->actingAs($this->student)
+        $this->actingAs($this->student)->withAttemptController($attempt)
             ->getJson(route('engine.submit-status', $attempt).'?module_id='.$this->moduleOne->id)
             ->assertOk()
             ->assertJsonPath('status', 'scoring');
@@ -275,7 +276,7 @@ class SubmitStatusResilienceTest extends TestCase
         Queue::fake();
         $attempt = $this->attempt();
 
-        $this->actingAs($this->student)
+        $this->actingAs($this->student)->withAttemptController($attempt)
             ->postJson(route('engine.test.submit-module'), [
                 'user_test_id' => $attempt->id,
                 'module_id' => $this->moduleOne->id,
@@ -305,7 +306,7 @@ class SubmitStatusResilienceTest extends TestCase
         Queue::fake();
         $attempt = $this->attempt();
 
-        $this->actingAs($this->student)
+        $this->actingAs($this->student)->withAttemptController($attempt)
             ->postJson(route('engine.test.submit-module'), [
                 'user_test_id' => $attempt->id,
                 'module_id' => $this->moduleOne->id,
@@ -326,7 +327,7 @@ class SubmitStatusResilienceTest extends TestCase
         $attempt = $this->attempt();
 
         // Advance to module 2 (terminal for this single-section fixture).
-        $this->actingAs($this->student)
+        $this->actingAs($this->student)->withAttemptController($attempt)
             ->postJson(route('engine.test.submit-module'), [
                 'user_test_id' => $attempt->id,
                 'module_id' => $this->moduleOne->id,
@@ -336,11 +337,14 @@ class SubmitStatusResilienceTest extends TestCase
         $issued = Module::whereKey($attempt->fresh()->current_module_id)->firstOrFail();
 
         Queue::fake();
-        $this->actingAs($this->student)
+        $issuedQuestionId = DB::table('module_questions')
+            ->where('module_id', $issued->id)
+            ->value('question_id');
+        $this->actingAs($this->student)->withAttemptController($attempt)
             ->postJson(route('engine.test.submit-module'), [
                 'user_test_id' => $attempt->id,
                 'module_id' => $issued->id,
-                'answers' => [(string) $issued->questions()->firstOrFail()->id => 'A'],
+                'answers' => [(string) $issuedQuestionId => 'A'],
             ])
             ->assertOk()
             ->assertJsonPath('status', 'scoring');

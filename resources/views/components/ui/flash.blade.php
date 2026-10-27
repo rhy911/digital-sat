@@ -19,6 +19,9 @@ x-init="
     @if (session('error'))
         addToast('error', @js(session('error')));
     @endif
+    @if (session('warning'))
+        addToast('info', @js(session('warning')));
+    @endif
     @if ($errors->any())
         addToast('error', 'Please check the form for errors:', @js($errors->all()));
     @endif

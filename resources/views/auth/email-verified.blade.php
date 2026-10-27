@@ -32,7 +32,7 @@
         </div>
 
         <!-- Direct button just in case -->
-        <a href="{{ route('dashboard') }}" class="primary-btn no-underline text-center w-full active mt-2">
+        <a href="{{ $continueUrl ?? route('dashboard') }}" class="primary-btn no-underline text-center w-full active mt-2">
             Continue now
         </a>
     </div>
@@ -47,7 +47,7 @@
                     if (countdownEl) countdownEl.textContent = seconds;
                     if (seconds <= 0) {
                         clearInterval(interval);
-                        window.location.href = "{{ route('dashboard') }}";
+                        window.location.href = @json($continueUrl ?? route('dashboard'));
                     }
                 }, 1000);
             });

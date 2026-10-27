@@ -106,8 +106,12 @@
         window.userTestUlid = @json($userTestUlid ?? null);
         window.currentModuleId = @json($testData->module_id ?? null);
         window.isPreview = @json($testData->is_preview ?? false);
+        window.isPublicTrialDemo = @json($testData->is_public_trial_demo ?? false);
+        window.previewNextUrl = @json($testData->preview_next_url ?? null);
+        window.previewExitUrl = @json($testData->preview_exit_url ?? $testData->exit_url ?? null);
         window.isTeacherPreview = @json($isTeacherPreview ?? false);
         window.isAssignmentAttempt = @json($isAssignmentAttempt ?? false);
+        window.isPracticeClockPaused = @json($isPracticeClockPaused ?? false);
         window.assignmentTimerSynced = false;
         window.timingUrl = @json(route('engine.test.timing'));
         window.isFinalModule = @json($isFinalModule ?? false);

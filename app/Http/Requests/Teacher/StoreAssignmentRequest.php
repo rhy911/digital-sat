@@ -6,7 +6,11 @@ use Illuminate\Foundation\Http\FormRequest;
 
 class StoreAssignmentRequest extends FormRequest
 {
-    public function authorize(): bool { return $this->user()?->isApprovedTeacher() || $this->user()?->role === 'admin'; }
+    public function authorize(): bool
+    {
+        return $this->user()?->isApprovedTeacher() || $this->user()?->role === 'admin';
+    }
+
     /** @return array<string, mixed> */
     public function rules(): array
     {
@@ -38,7 +42,7 @@ class StoreAssignmentRequest extends FormRequest
             'target_audience' => 'nullable|string|in:all,specific',
             'student_ids' => 'required_if:target_audience,specific|nullable|array',
             'student_ids.*' => 'integer|exists:users,id',
-            'clock_mode' => 'nullable|string|in:chained,paused',
+            'clock_mode' => 'nullable|string|in:chained',
         ];
     }
 

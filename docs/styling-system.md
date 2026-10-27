@@ -5,7 +5,7 @@ This file documents implementation boundaries for the approved shared product di
 ## Active migration rules
 
 - `components/layouts/student.blade.php` accepts `ui="product"`; the default stays on the legacy presentation. Explicitly migrated student and teacher views opt in. The Content Suite opts in through `components/layouts/admin.blade.php` for both author roles.
-- `resources/css/product-ui.css` is imported once by `resources/css/app.css`. Page-surface selectors are scoped under `.product-ui`; shared authenticated navigation uses `.icon-rail--product` across student, teacher, and admin roles. The product surface must not alter the test engine or marketing pages.
+- `resources/css/product-ui.css` is imported once by `resources/css/app.css`. Page-surface selectors are scoped under `.product-ui`; shared authenticated navigation uses `.icon-rail--product` across student, teacher, and admin roles. The test engine remains outside this scope. Public landing and trial pages use a separate `.public-site` scope with the same approved tokens and Plus Jakarta Sans.
 - `resources/css/design-tokens.css` remains the token source. Product scope maps the existing semantic roles to the approved navy, canvas, blue, gold and neutral palette. Brand/link blue and action gold are separate roles.
 - `x-ui.button` and `x-ui.card` keep their current public API. Product scope changes appearance through scoped roles; unopted consumers retain the legacy result.
 - Use 16px body/control text, 14px supporting/compact text, Jakarta Sans, tabular numerals, and task-specific guided/workspace/reading widths.

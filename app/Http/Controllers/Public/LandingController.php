@@ -12,12 +12,14 @@ class LandingController extends Controller
 {
     public function __invoke(Request $request): View|RedirectResponse
     {
-        if (Auth::check()) {
+        if (Auth::check() && ! Auth::user()->is_guest) {
             if ($request->hasCookie(Auth::getRecallerName())) {
                 return view('auth.remembered', ['user' => Auth::user()]);
             }
+
             return redirect()->route('home');
         }
+
         return view('public.landing');
     }
 }

@@ -50,7 +50,113 @@ class AssignmentModuleTimingTest extends TestCase
         $this->assertTrue($attempt->fresh()->current_module_started_at->equalTo($startedAt));
     }
 
-    public function test_own_practice_still_pauses_while_away_and_resumes_saved_elapsed(): void
+    public function test_practice_autosave_cannot_reduce_server_elapsed_time(): void
+    {
+        Carbon::setTestNow('2026-06-22 12:00:00');
+        [$student, $module, $attempt] = $this->assignmentAttempt(20);
+        $attempt->update([
+            'assignment_id' => null,
+            'current_module_elapsed_seconds' => 600,
+            'current_module_started_at' => now()->subMinute(),
+        ]);
+
+        $this->actingAs($student)->withAttemptController($attempt)->postJson(route('engine.test.autosave-module'), [
+            'user_test_id' => $attempt->id,
+            'module_id' => $module->id,
+            'answers' => [],
+            'elapsed_seconds' => 60,
+        ])->assertOk();
+
+        $attempt->refresh();
+        $this->assertSame(660, $attempt->current_module_elapsed_seconds);
+        $this->assertTrue($attempt->current_module_started_at->equalTo(now()));
+    }
+
+    public function test_practice_client_timeout_is_rejected_before_the_server_deadline(): void
+    {
+        Carbon::setTestNow('2026-06-22 12:00:00');
+        [$student, $module, $attempt] = $this->assignmentAttempt(20);
+        $attempt->update(['assignment_id' => null, 'current_module_started_at' => now()]);
+
+        $this->actingAs($student)->withAttemptController($attempt)->postJson(route('engine.test.submit-module'), [
+            'user_test_id' => $attempt->id,
+            'module_id' => $module->id,
+            'answers' => [],
+            'timed_out' => true,
+        ])->assertStatus(409)
+            ->assertJsonPath('error', 'module_not_expired')
+            ->assertJsonPath('timing.remaining_seconds', 1200);
+
+        $this->assertSame('in_progress', $attempt->fresh()->status);
+    }
+
+    public function test_practice_pause_resume_and_takeover_are_owned_by_one_controller(): void
+    {
+        Carbon::setTestNow('2026-06-22 12:00:00');
+        [$student, $module, $attempt] = $this->assignmentAttempt(20);
+        $attempt->update([
+            'assignment_id' => null,
+            'current_module_elapsed_seconds' => 120,
+            'current_module_started_at' => now()->subMinute(),
+        ]);
+        $endpoint = route('engine.test.control');
+
+        $claim = $this->actingAs($student)->postJson($endpoint, [
+            'user_test_id' => $attempt->id,
+            'module_id' => $module->id,
+            'action' => 'claim',
+        ])->assertOk()->assertJsonPath('status', 'active');
+        $claimToken = $claim->json('token');
+
+        $pause = $this->withHeader('X-Attempt-Control', $claimToken)->postJson($endpoint, [
+            'user_test_id' => $attempt->id,
+            'module_id' => $module->id,
+            'action' => 'pause',
+        ])->assertOk()->assertJsonPath('status', 'paused')
+            ->assertJsonPath('remaining_seconds', 1020);
+        $pausedToken = $pause->json('token');
+
+        $attempt->refresh();
+        $this->assertNull($attempt->current_module_started_at);
+        $this->assertTrue($attempt->current_module_paused);
+        $this->assertSame(180, $attempt->current_module_elapsed_seconds);
+
+        Carbon::setTestNow(now()->addHour());
+        $this->getJson(route('engine.test.timing', [
+            'user_test_id' => $attempt->id,
+            'module_id' => $module->id,
+        ]))->assertOk()->assertJsonPath('status', 'paused')
+            ->assertJsonPath('remaining_seconds', 1020);
+
+        $this->postJson($endpoint, [
+            'user_test_id' => $attempt->id,
+            'module_id' => $module->id,
+            'action' => 'claim',
+        ])->assertStatus(409)->assertJsonPath('error', 'attempt_in_use');
+
+        $resume = $this->withHeader('X-Attempt-Control', $pausedToken)->postJson($endpoint, [
+            'user_test_id' => $attempt->id,
+            'module_id' => $module->id,
+            'action' => 'resume',
+        ])->assertOk()->assertJsonPath('status', 'active');
+        $resumedToken = $resume->json('token');
+        $this->assertNotSame($pausedToken, $resumedToken);
+
+        $takeover = $this->postJson($endpoint, [
+            'user_test_id' => $attempt->id,
+            'module_id' => $module->id,
+            'action' => 'takeover',
+        ])->assertOk();
+        $this->assertNotSame($resumedToken, $takeover->json('token'));
+
+        $this->withHeader('X-Attempt-Control', $resumedToken)->postJson(route('engine.test.autosave-module'), [
+            'user_test_id' => $attempt->id,
+            'module_id' => $module->id,
+            'answers' => [],
+        ])->assertStatus(409)->assertJsonPath('error', 'controller_lost');
+    }
+
+    public function test_reopening_paused_practice_does_not_restart_or_refund_its_clock(): void
     {
         Carbon::setTestNow('2026-06-22 12:00:00');
         [$student, $module, $attempt] = $this->assignmentAttempt(20);
@@ -62,17 +168,20 @@ class AssignmentModuleTimingTest extends TestCase
         $attempt->update([
             'assignment_id' => null,
             'attempt_number' => null,
-            'current_module_started_at' => now()->subMinutes(10),
+            'current_module_started_at' => null,
             'current_module_elapsed_seconds' => 120,
+            'current_module_paused' => true,
         ]);
 
         $url = route('engine.session', $module->ulid).'?attempt='.$attempt->ulid;
         $this->actingAs($student)->get($url)
             ->assertOk()
             ->assertSee('window.isAssignmentAttempt = false', false)
+            ->assertSee('window.isPracticeClockPaused = true', false)
             ->assertSee('window.durationMinutes = 18', false);
 
-        $this->assertTrue($attempt->fresh()->current_module_started_at->equalTo(now()));
+        $this->assertNull($attempt->fresh()->current_module_started_at);
+        $this->assertTrue($attempt->fresh()->current_module_paused);
         $this->assertSame(120, $attempt->fresh()->current_module_elapsed_seconds);
     }
 
@@ -93,7 +202,7 @@ class AssignmentModuleTimingTest extends TestCase
         [$student, $module, $attempt, $question] = $this->assignmentAttempt(20);
         $attempt->update(['current_module_started_at' => now()->subMinute()]);
 
-        $this->actingAs($student)->postJson(route('engine.test.autosave-module'), [
+        $this->actingAs($student)->withAttemptController($attempt)->postJson(route('engine.test.autosave-module'), [
             'user_test_id' => $attempt->id,
             'module_id' => $module->id,
             'answers' => [(string) $question->id => 'A'],
@@ -108,7 +217,7 @@ class AssignmentModuleTimingTest extends TestCase
         ]);
 
         Carbon::setTestNow('2026-06-22 12:21:00');
-        $this->actingAs($student)->postJson(route('engine.test.autosave-module'), [
+        $this->actingAs($student)->withAttemptController($attempt)->postJson(route('engine.test.autosave-module'), [
             'user_test_id' => $attempt->id,
             'module_id' => $module->id,
             'answers' => [(string) $question->id => 'B'],
@@ -157,7 +266,7 @@ class AssignmentModuleTimingTest extends TestCase
             'is_correct' => true,
         ]);
 
-        $this->actingAs($student)->postJson(route('engine.test.submit-module'), [
+        $this->actingAs($student)->withAttemptController($attempt)->postJson(route('engine.test.submit-module'), [
             'user_test_id' => $attempt->id,
             'module_id' => $module->id,
             'answers' => [(string) $question->id => 'B'],
@@ -171,6 +280,7 @@ class AssignmentModuleTimingTest extends TestCase
         $this->assertSame('completed', $attempt->fresh()->status);
     }
 
+    /** @return array{0: User, 1: Module, 2: UserTest, 3: Question} */
     private function assignmentAttempt(int $durationMinutes): array
     {
         $teacher = User::factory()->teacher()->create();

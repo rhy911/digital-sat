@@ -753,7 +753,6 @@
         <div x-data="{
             assignType: 'full',
             audience: 'all',
-            clockMode: 'chained',
             assignmentTitle: '{{ old('title', '') }}',
             tests: {{ Js::from($formattedTests) }},
             students: {{ Js::from($studentRoster) }},
@@ -867,36 +866,8 @@
                                 </div>
                             </div>
 
-                            <!-- COLUMN 2: Clock Mode, Schedule & Audience Targeting -->
+                            <!-- COLUMN 2: Schedule & Audience Targeting -->
                             <div class="w-full lg:w-[350px] shrink-0 flex flex-col justify-between p-3.5 rounded-xl bg-slate-50/80 border border-slate-200/90 space-y-3 min-h-[380px] mt-3.5 lg:mt-0 lg:ml-3.5">
-                                <div class="space-y-2.5">
-                                    <div class="flex items-center gap-1.5 font-bold text-sm uppercase tracking-wider text-slate-500">
-                                        <x-ui.icon name="clock" class="w-3.5 h-3.5 text-slate-400" />
-                                        <span>Test Clock Mode</span>
-                                    </div>
-
-                                    <div class="grid grid-cols-2 gap-2">
-                                        <label class="flex items-start gap-1.5 p-2 rounded-lg border cursor-pointer transition text-sm"
-                                            :class="clockMode === 'chained' ? 'border-brand bg-blue-50/80 text-brand ring-1 ring-brand' : 'border-slate-200 bg-white text-slate-700 hover:border-slate-300'">
-                                            <input type="radio" name="clock_mode" value="chained" x-model="clockMode" class="sr-only">
-                                            <x-ui.icon name="clock" class="w-3.5 h-3.5 text-brand shrink-0 mt-0.5" />
-                                            <div class="leading-tight">
-                                                <div class="font-bold text-sm">Strict Exam</div>
-                                                <div class="text-sm text-slate-500 font-normal">Continuous clock</div>
-                                            </div>
-                                        </label>
-                                        <label class="flex items-start gap-1.5 p-2 rounded-lg border cursor-pointer transition text-sm"
-                                            :class="clockMode === 'paused' ? 'border-brand bg-blue-50/80 text-brand ring-1 ring-brand' : 'border-slate-200 bg-white text-slate-700 hover:border-slate-300'">
-                                            <input type="radio" name="clock_mode" value="paused" x-model="clockMode" class="sr-only">
-                                            <x-ui.icon name="play" class="w-3.5 h-3.5 text-slate-600 shrink-0 mt-0.5" />
-                                            <div class="leading-tight">
-                                                <div class="font-bold text-sm">Homework</div>
-                                                <div class="text-sm text-slate-500 font-normal">Pause &amp; resume</div>
-                                            </div>
-                                        </label>
-                                    </div>
-                                </div>
-
                                 <div class="space-y-2.5 pt-2 border-t border-slate-200/70">
                                     <div class="flex items-center justify-between font-bold text-sm uppercase tracking-wider text-slate-500">
                                         <div class="flex items-center gap-1.5">

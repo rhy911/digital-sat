@@ -1021,7 +1021,7 @@ class ExamSessionTest extends TestCase
             'current_module_id' => $module->id,
         ]);
 
-        $this->actingAs($guest)
+        $this->actingAs($guest)->withAttemptController($attempt)
             ->postJson(route('engine.test.autosave-module'), [
                 'user_test_id' => $attempt->id,
                 'module_id' => $module->id,

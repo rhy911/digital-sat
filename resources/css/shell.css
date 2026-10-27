@@ -250,14 +250,13 @@
     min-width: 16px;
     height: 16px;
     padding: 0 4px;
-    border-radius: 999px;
+    border-radius: 50%;
     background: var(--ds-danger, #dc2626);
     color: #ffffff;
-    font-size: 9.5px;
+    font-size: 9px;
     font-weight: 700;
     line-height: 16px;
     text-align: center;
-    border: 2px solid var(--rail-bg, #0b1626);
 }
 
 .rail-avatar__btn {

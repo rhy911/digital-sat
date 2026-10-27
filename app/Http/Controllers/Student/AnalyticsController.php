@@ -23,6 +23,7 @@ class AnalyticsController extends Controller
         $user = $request->user();
 
         $inProgressAttempt = $user->userTests()
+            ->visibleInGuestAnalytics($user)
             ->where('status', 'in_progress')
             ->with(['test.sections.modules', 'currentModule.section'])
             ->orderBy('updated_at', 'desc')
@@ -30,6 +31,7 @@ class AnalyticsController extends Controller
 
         // 1. Comparable cohort: completed, non-preview, non-section attempts with both section scores and total score
         $baseComparableQuery = $user->userTests()
+            ->visibleInGuestAnalytics($user)
             ->where('status', 'completed')
             ->where('attempt_type', '!=', 'section')
             ->whereNotNull('total_score')
@@ -61,6 +63,7 @@ class AnalyticsController extends Controller
 
         // 2. Recent completed work (up to 3 completed attempts including section attempts)
         $recentWorkAttempts = $user->userTests()
+            ->visibleInGuestAnalytics($user)
             ->where('status', 'completed')
             ->whereHas('test', fn ($q) => $q->where('title', '!=', 'Test Preview'))
             ->excludingAbsorbedSections()
@@ -74,6 +77,7 @@ class AnalyticsController extends Controller
 
         // Total practice completed count (all qualifying attempts)
         $completedCount = $user->userTests()
+            ->visibleInGuestAnalytics($user)
             ->where('status', 'completed')
             ->whereHas('test', fn ($q) => $q->where('title', '!=', 'Test Preview'))
             ->excludingAbsorbedSections()
@@ -86,6 +90,7 @@ class AnalyticsController extends Controller
         $endOfWeek = (clone $startOfWeek)->addWeek();
 
         $weeklyAttemptsQuery = $user->userTests()
+            ->visibleInGuestAnalytics($user)
             ->where('status', 'completed')
             ->whereHas('test', fn ($q) => $q->where('title', '!=', 'Test Preview'))
             ->excludingAbsorbedSections()

@@ -47,4 +47,10 @@ class UserTestPolicy
 
         return (int) $userTest->user_id === (int) $user->id && $userTest->status === 'in_progress';
     }
+
+    public function viewAnalysis(User $user, UserTest $userTest): bool
+    {
+        return $this->view($user, $userTest)
+            && ! ($user->is_guest && $userTest->is_public_trial);
+    }
 }

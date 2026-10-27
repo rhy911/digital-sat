@@ -103,6 +103,9 @@ class GuestExamController extends Controller
         }
 
         abort_unless($userTest->status === 'completed', 404);
+        if ($userTest->is_public_trial) {
+            return redirect()->route('public-trial.result', $userTest);
+        }
 
         $userTest->loadMissing('test');
 

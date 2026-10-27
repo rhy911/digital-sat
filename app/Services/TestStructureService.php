@@ -88,6 +88,82 @@ class TestStructureService
     }
 
     /**
+     * Shared validator for public trial experiences:
+     * - RW: active/public module_only with 1 RW module (27 questions, 32 minutes)
+     * - Math: active/public module_only with 1 Math module (22 questions, 35 minutes)
+     * - Full: active/public adaptive_full_length passing publication checks (98 questions, 134 minutes) + configured break
+     *
+     * @return array{sections: \Illuminate\Database\Eloquent\Collection<int, Section>, flows: Collection<int, string>}
+     */
+    public function validatePublicTrial(Test $test, ?string $key = null): array
+    {
+        if ($test->status !== 'active' || ! $test->is_public) {
+            $this->fail('Public trial tests must be active and public.');
+        }
+
+        $test->loadMissing('sections.modules.questions');
+        $resolvedKey = $key;
+        if (! $resolvedKey) {
+            if ($test->test_type === Test::TYPE_ADAPTIVE_FULL) {
+                $resolvedKey = 'full';
+            } elseif ($test->test_type === Test::TYPE_MODULE_ONLY) {
+                $firstSection = $test->sections->first();
+                $resolvedKey = $firstSection?->type === Section::TYPE_RW ? 'reading_writing' : ($firstSection?->type === Section::TYPE_MATH ? 'math' : null);
+            }
+        }
+
+        if (! in_array($resolvedKey, ['reading_writing', 'math', 'full'], true)) {
+            $this->fail('Unsupported or invalid public trial test configuration.');
+        }
+
+        if ($resolvedKey === 'full') {
+            if ($test->test_type !== Test::TYPE_ADAPTIVE_FULL) {
+                $this->fail('Full practice trial requires an adaptive full-length test.');
+            }
+            $shape = $this->validateForPublication($test);
+            if ((int) $test->break_duration_minutes <= 0) {
+                $this->fail('Full practice trial requires a configured break duration.');
+            }
+
+            return $shape;
+        }
+
+        if ($test->test_type !== Test::TYPE_MODULE_ONLY) {
+            $this->fail('Module practice trial requires a module-only test.');
+        }
+
+        $shape = $this->validate($test);
+        $sections = $shape['sections'];
+        if ($sections->count() !== 1) {
+            $this->fail('Module trial tests require exactly one section.');
+        }
+
+        $section = $sections->first();
+        $expectedSectionType = $resolvedKey === 'reading_writing' ? Section::TYPE_RW : Section::TYPE_MATH;
+        if ($section->type !== $expectedSectionType) {
+            $this->fail("Section type mismatch for public trial: expected {$expectedSectionType}.");
+        }
+
+        if ($section->modules->count() !== 1) {
+            $this->fail('Module trial tests require exactly one module.');
+        }
+
+        $module = $section->modules->first();
+        $expectedCount = $resolvedKey === 'reading_writing' ? Module::RW_QUESTIONS : Module::MATH_QUESTIONS;
+        $expectedDuration = $resolvedKey === 'reading_writing' ? Module::RW_DURATION : Module::MATH_DURATION;
+
+        if ($module->questions->count() !== $expectedCount || (int) $module->total_questions !== $expectedCount) {
+            $this->fail("Module trial requires exactly {$expectedCount} questions (found {$module->questions->count()}).");
+        }
+
+        if ((int) $module->duration_minutes !== $expectedDuration) {
+            $this->fail("Module trial requires {$expectedDuration} minutes duration (configured {$module->duration_minutes}).");
+        }
+
+        return $shape;
+    }
+
+    /**
      * @param  array<string, mixed>  $blueprint
      */
     public function validateBlueprint(array $blueprint): void

@@ -101,6 +101,9 @@ export async function pollForScoringResult(userTestUlid, moduleId) {
     if (response.status === 401 || response.status === 419) {
       return { error: 'session_expired' };
     }
+    if ((response.status === 404 || response.status === 410) && window.isGuestPublicTrial) {
+      return { error: 'trial_expired' };
+    }
 
     if (!response.ok) {
       if (++transportFailures >= MAX_TRANSPORT_FAILURES) return { error: 'network_lost' };

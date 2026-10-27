@@ -19,7 +19,7 @@ CI runs dependency audits only; verify locally before finishing any code change:
 
 - **PHP changes**: Run affected tests (`php artisan test --filter=...`; `--testsuite=Unit` for fast DB-free checks; full suite on engine, scoring, or auth refactors), `vendor/bin/phpstan analyse <touched-paths>`, and scoped `pint`.
 - **Frontend / Blade / CSS / JS changes**: Run `node --test tests/JavaScript/*.test.{js,mjs}` when touching JS, timers, or Home interactions, plus `npm run build`.
-- **Database safety**: PHPUnit uses MySQL `sat_app_testing` (`phpunit.xml`), while `.env` targets local `digital_sat`. Run destructive schema commands (`migrate:fresh`, `migrate:refresh`, `db:wipe`, `db:seed`) exclusively with `--env=testing`.
+- **Database safety**: PHPUnit supplies its database overrides (`sat_app_testing` via `phpunit.xml`), while `.env` targets local `digital_sat`. Destructive schema commands (`migrate:fresh`, `migrate:refresh`, `migrate:reset`, `migrate:rollback`, `db:wipe`, `db:seed`) are guarded in `AppServiceProvider` and require an explicitly verified testing connection (`APP_ENV=testing` and target MySQL `sat_app_testing`). Passing `--env=testing` or `--force` alone will not bypass the guard.
 
 ## Platform, Language & Output
 

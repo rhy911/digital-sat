@@ -14,7 +14,8 @@ import {
   initializeAutosave,
   nextQuestion,
   prevQuestion,
-  preprocessQuestionMedia
+  preprocessQuestionMedia,
+  confirmExitTest
 } from './test/navigation.js';
 import {
   initializeHighlightFeature,
@@ -25,7 +26,7 @@ import {
   initializeDesmosCalculator,
   initializeSimpleFullscreen
 } from './test/features.js';
-import { startTimer } from './test/timer.js';
+import { initializeAttemptControl, startTimer } from './test/timer.js';
 import { initializeBreakControls, initializeBreakRecoveryView } from './test/break.js';
 import { initializeScreenSizeGuard } from './test/screen-guard.js';
 
@@ -37,6 +38,7 @@ window.showQuestion = showQuestion;
 window.showReviewSection = showReviewSection;
 window.showLoadingScreen = showLoadingScreen;
 window.hideLoadingScreen = hideLoadingScreen;
+window.confirmExitTest = confirmExitTest;
 
 // ============================================================================
 // INITIALIZATION
@@ -86,6 +88,7 @@ function handleReviewButtonClick(e) {
 
 document.addEventListener("DOMContentLoaded", async () => {
   if (window.isBreakRecoveryView) {
+    await initializeAttemptControl();
     hideLoadingScreen();
     initializeBreakRecoveryView();
     return;
@@ -103,6 +106,8 @@ document.addEventListener("DOMContentLoaded", async () => {
   initializeBreakControls();
   initializeAutosave();
   initializeScreenSizeGuard();
+
+  await initializeAttemptControl();
 
   // Initialize Timer
   const duration = window.durationMinutes ?? 32;

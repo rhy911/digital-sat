@@ -6,6 +6,8 @@
             window.isBreakRecoveryView = true;
             window.userTestId = {{ $userTest->id }};
             window.nextModuleId = {{ $module->id }};
+            window.currentModuleId = window.nextModuleId;
+            window.isAssignmentAttempt = @json($isAssignmentAttempt);
             window.nextModuleUrl = "{{ $nextModuleUrl }}";
             window.breakDurationSeconds = {{ $breakDurationSeconds }};
             window.remainingBreakSeconds = {{ $remainingBreakSeconds }};

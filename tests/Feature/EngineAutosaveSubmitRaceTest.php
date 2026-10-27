@@ -17,6 +17,7 @@ use App\Models\UserTestAnswer;
 use App\Services\AttemptEngine;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Carbon;
+use Illuminate\Testing\TestResponse;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Queue;
@@ -94,7 +95,7 @@ class EngineAutosaveSubmitRaceTest extends TestCase
         $this->autosave($attempt, '5')->assertOk();
         $this->assertStoredAnswer($attempt, '5', false);
 
-        $this->actingAs($this->student)
+        $this->actingAs($this->student)->withAttemptController($attempt)
             ->postJson(route('engine.test.submit-module'), [
                 'user_test_id' => $attempt->id,
                 'module_id' => $this->moduleOne->id,
@@ -112,7 +113,7 @@ class EngineAutosaveSubmitRaceTest extends TestCase
         Queue::fake();
         $attempt = $this->attempt();
 
-        $this->actingAs($this->student)
+        $this->actingAs($this->student)->withAttemptController($attempt)
             ->postJson(route('engine.test.submit-module'), [
                 'user_test_id' => $attempt->id,
                 'module_id' => $this->moduleOne->id,
@@ -162,7 +163,7 @@ class EngineAutosaveSubmitRaceTest extends TestCase
         $attempt = $this->attempt();
 
         // Sync queue: scoring runs to completion inside the request.
-        $this->actingAs($this->student)
+        $this->actingAs($this->student)->withAttemptController($attempt)
             ->postJson(route('engine.test.submit-module'), [
                 'user_test_id' => $attempt->id,
                 'module_id' => $this->moduleOne->id,
@@ -234,7 +235,7 @@ class EngineAutosaveSubmitRaceTest extends TestCase
         $this->assertTrue($result['expired']);
     }
 
-    public function test_autosave_paused_clock_records_client_elapsed_and_resets_started_at(): void
+    public function test_autosave_paused_clock_checkpoints_elapsed_from_the_server(): void
     {
         $past = Carbon::now()->subMinutes(10);
         $attempt = $this->attempt();
@@ -245,17 +246,18 @@ class EngineAutosaveSubmitRaceTest extends TestCase
         ]);
         $this->moduleOne->update(['duration_minutes' => 30]);
 
-        $result = app(AttemptEngine::class)->autosave($attempt, $this->moduleOne, [], [], 120);
+        $result = app(AttemptEngine::class)->autosave($attempt, $this->moduleOne, []);
 
         $attempt->refresh();
         $this->assertSame('success', $result['status']);
-        $this->assertSame(120, $attempt->current_module_elapsed_seconds);
+        $this->assertSame(600, $attempt->current_module_elapsed_seconds);
         $this->assertTrue($attempt->current_module_started_at->greaterThan($past));
     }
 
-    private function autosave(UserTest $attempt, string $answer)
+    /** @return TestResponse<\Symfony\Component\HttpFoundation\Response> */
+    private function autosave(UserTest $attempt, string $answer): TestResponse
     {
-        return $this->actingAs($this->student)
+        return $this->actingAs($this->student)->withAttemptController($attempt)
             ->postJson(route('engine.test.autosave-module'), [
                 'user_test_id' => $attempt->id,
                 'module_id' => $this->moduleOne->id,

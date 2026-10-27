@@ -23,11 +23,12 @@ class SessionController extends Controller
 
     public function show(?string $ulid = null): \Illuminate\Contracts\View\View|\Illuminate\Http\RedirectResponse
     {
+        $isGuest = (bool) Auth::user()?->is_guest;
         if ($ulid === null || $ulid === 'preview-rw') {
-            return $this->showStaticPreview('reading_writing');
+            return $this->showStaticPreview('reading_writing', publicTrial: $isGuest);
         }
         if ($ulid === 'preview-math') {
-            return $this->showStaticPreview('math');
+            return $this->showStaticPreview('math', publicTrial: $isGuest);
         }
 
         $attemptUlid = request()->query('attempt');
@@ -38,6 +39,9 @@ class SessionController extends Controller
         $user = Auth::user();
         $requestedAttempt = UserTest::where('ulid', $attemptUlid)->firstOrFail();
         abort_unless((int) $requestedAttempt->user_id === (int) Auth::id(), 403, 'Unauthorized.');
+        if ($requestedAttempt->isGuestTrialExpired()) {
+            return redirect()->route('public-trial.expired', ['attempt' => $requestedAttempt->id]);
+        }
 
         // Second catch-up point, for a student who returns by URL (bookmark, back
         // into a stale tab) instead of through the assignment page. Reopening a
@@ -57,7 +61,7 @@ class SessionController extends Controller
 
         abort_unless($requestedAttempt->status === 'in_progress', 409, 'This attempt is no longer active.');
 
-        $hasIssuedContentEntitlement = $requestedAttempt->assignment_id || $requestedAttempt->exam_session_id;
+        $hasIssuedContentEntitlement = $requestedAttempt->assignment_id || $requestedAttempt->exam_session_id || $requestedAttempt->is_public_trial;
         $moduleQuery = Module::query();
         if (! $hasIssuedContentEntitlement) {
             $moduleQuery->visibleTo($user);
@@ -107,6 +111,7 @@ class SessionController extends Controller
                 'sectionType' => $section->type,
                 'module' => $module,
                 'userTest' => $requestedAttempt,
+                'isAssignmentAttempt' => $requestedAttempt->runsOnChainedClock(),
                 'breakDurationSeconds' => $pendingBreak['duration_seconds'],
                 'remainingBreakSeconds' => $pendingBreak['remaining_seconds'],
                 'nextModuleUrl' => route('engine.session', [
@@ -144,14 +149,16 @@ class SessionController extends Controller
         $savedAnswers = collect();
         $runsOnChainedClock = false;
         $serverRemainingSeconds = null;
+        $isPracticeClockPaused = false;
         if (Auth::check()) {
             $userTest = $requestedAttempt;
             if ((int) $userTest->test_id !== (int) $test->id) {
                 abort(400, 'Attempt does not belong to this test.');
             }
 
-            $timing = $this->engine->startOrResumeModule($userTest, $module, $isPreview);
+            $timing = $this->engine->startOrResumeModule($userTest, $module);
             $runsOnChainedClock = $userTest->runsOnChainedClock();
+            $isPracticeClockPaused = ! $runsOnChainedClock && ($timing['status'] ?? null) === 'paused';
 
             if (! $isPreview) {
                 $runsOnChainedClock
@@ -179,6 +186,8 @@ class SessionController extends Controller
             'module_id' => $module->id,
             'username' => ($user = Auth::user()) ? ($user->name ?? $user->username ?? 'Guest') : 'Guest',
             'is_preview' => $isPreview,
+            'is_public_trial' => (bool) $requestedAttempt->is_public_trial,
+            'exit_url' => $requestedAttempt->is_public_trial ? route('public-trial.index') : null,
             'duration_minutes' => $durationMinutes,
         ];
 
@@ -201,6 +210,7 @@ class SessionController extends Controller
             'savedAnswers' => $savedAnswers,
             'savedQuestionTimes' => $savedQuestionTimes,
             'isAssignmentAttempt' => $runsOnChainedClock,
+            'isPracticeClockPaused' => $isPracticeClockPaused,
             'serverRemainingSeconds' => $serverRemainingSeconds,
             'isFinalModule' => $isFinalModule,
         ]);
@@ -336,7 +346,14 @@ class SessionController extends Controller
         ]);
     }
 
-    private function showStaticPreview(string $type): \Illuminate\Contracts\View\View
+    public function publicPreview(string $section): \Illuminate\Contracts\View\View
+    {
+        abort_unless(in_array($section, ['reading_writing', 'math'], true), 404);
+
+        return $this->showStaticPreview($section, true);
+    }
+
+    private function showStaticPreview(string $type, bool $publicTrial = false): \Illuminate\Contracts\View\View
     {
         $testData = (object) [
             'id' => 99999,
@@ -348,6 +365,10 @@ class SessionController extends Controller
             'username' => ($user = Auth::user()) ? ($user->name ?? $user->username ?? 'Guest') : 'Guest',
             'is_preview' => true,
             'duration_minutes' => 0,
+            'is_public_trial_demo' => $publicTrial,
+            'exit_url' => $publicTrial ? route('public-trial.index') : null,
+            'preview_next_url' => $publicTrial && $type === 'reading_writing' ? route('public-trial.demo', 'math') : null,
+            'preview_exit_url' => $publicTrial ? route('public-trial.index') : null,
         ];
 
         $questions = $this->getStaticPreviewQuestions($type);

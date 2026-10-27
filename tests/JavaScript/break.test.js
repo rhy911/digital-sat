@@ -148,3 +148,44 @@ test('section break follows server navigation when another tab advanced or compl
     assert.equal(page.intervalCallbacks.size, 0);
   }
 });
+
+test('practice break expiry waits for explicit continuation instead of starting the next module', async () => {
+  let now = 10_000;
+  let countdown;
+  let requests = 0;
+  const timerDisplay = { textContent: '' };
+  const resumeButton = { addEventListener() {} };
+  const overlay = {
+    style: {},
+    set id(value) { this._id = value; },
+    set innerHTML(value) { this._html = value; },
+    get innerHTML() { return this._html; },
+    querySelector: () => resumeButton,
+    remove() {},
+  };
+  globalThis.performance = { now: () => now };
+  globalThis.window = { isAssignmentAttempt: false, nextModuleId: 9, addEventListener() {}, removeEventListener() {} };
+  globalThis.document = {
+    visibilityState: 'visible',
+    body: { appendChild() {} },
+    createElement: () => overlay,
+    getElementById: id => id === 'breakTimerDisplay' ? timerDisplay : null,
+    addEventListener() {},
+    removeEventListener() {},
+  };
+  globalThis.setInterval = callback => { countdown = callback; return 1; };
+  globalThis.clearInterval = () => {};
+  globalThis.setTimeout = () => 1;
+  globalThis.clearTimeout = () => {};
+  globalThis.fetch = async () => { requests++; throw new Error('practice must wait for explicit continue'); };
+  state.isOnSectionBreak = false;
+
+  const { showInterSectionBreak } = await import('../../resources/js/test/break.js');
+  showInterSectionBreak(60, () => {}, { nextModuleId: 9, waitForExplicitContinue: true });
+  now += 61_000;
+  countdown();
+
+  assert.equal(timerDisplay.textContent, '00:00');
+  assert.equal(requests, 0);
+  assert.equal(state.isOnSectionBreak, true);
+});

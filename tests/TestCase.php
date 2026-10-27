@@ -2,10 +2,14 @@
 
 namespace Tests;
 
+use App\Models\UserTest;
 use Illuminate\Foundation\Testing\TestCase as BaseTestCase;
 
 abstract class TestCase extends BaseTestCase
 {
+    /** @var array<int, string> */
+    private array $attemptControllerTokens = [];
+
     /**
      * @return array<string, mixed>
      */
@@ -28,5 +32,20 @@ abstract class TestCase extends BaseTestCase
                 $db
             ));
         }
+    }
+
+    protected function withAttemptController(UserTest $attempt): static
+    {
+        $attempt->refresh();
+        $token = $this->attemptControllerTokens[$attempt->id] ??= bin2hex(random_bytes(32));
+        if (! $attempt->runsOnChainedClock() && ! $attempt->current_module_paused && ! $attempt->current_module_started_at) {
+            $attempt->current_module_started_at = now();
+        }
+        $attempt->forceFill([
+            'attempt_controller_token_hash' => hash('sha256', $token),
+            'attempt_controller_last_seen_at' => now(),
+        ])->save();
+
+        return $this->withHeader('X-Attempt-Control', $token);
     }
 }

@@ -19,7 +19,7 @@
         window.SCREEN_MIN_HEIGHT = 500;
         (function () {
             if (window.innerWidth < window.SCREEN_MIN_WIDTH || window.innerHeight < window.SCREEN_MIN_HEIGHT) {
-                window.location.replace("{{ route('engine.mobile-blocked') }}");
+                window.location.replace("{{ !empty($testData->is_public_trial_demo) ? route('public-trial.screen-size') : route('engine.mobile-blocked') }}");
             }
         })();
     </script>
@@ -33,7 +33,10 @@
         href="https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&family=Noto+Serif:ital,wght@0,100..900;1,100..900&display=swap"
         rel="stylesheet">
     <script>
-        window.homeUrl = "{{ route('home') }}";
+        window.homeUrl = @json($testData->exit_url ?? (auth()->user()?->is_guest ? route('public-trial.index') : route('home')));
+        window.isPublicTrial = @json((bool) (!empty($testData->is_public_trial) || !empty($testData->is_public_trial_demo)));
+        window.isPublicTrialDemo = @json((bool) (!empty($testData->is_public_trial_demo)));
+        window.isGuestPublicTrial = @json((bool) (!empty($testData->is_public_trial) && auth()->user()?->is_guest));
     </script>
     @vite(['resources/css/app.css', 'resources/css/engine/main.css', 'resources/js/app.js', 'resources/js/test.js', 'resources/js/question-renderer.js'])
     @livewireStyles
@@ -43,11 +46,41 @@
 </head>
 
 <body translate="no" class="notranslate">
+    @if (!empty($testData->is_public_trial) || !empty($testData->is_public_trial_demo))
+        <a href="#test-main-content" class="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-[100] focus:rounded-lg focus:bg-[#F6B93B] focus:px-4 focus:py-2 focus:font-bold focus:text-[#10234A]">Skip to test questions</a>
+    @endif
     @if (!empty($testData->is_teacher_preview))
         <div class="bg-indigo-600 text-white text-xs font-bold py-2 px-4 flex justify-between items-center w-full relative z-50">
             <span>Teacher Preview Mode — Reviewing test questions. Timer and submission are disabled.</span>
             <a href="{{ route('home-dashboard.index') }}" class="underline hover:text-indigo-100">Exit Preview</a>
         </div>
+    @endif
+    @if (!empty($testData->is_public_trial) || !empty($testData->is_public_trial_demo))
+        <div class="relative z-50 flex min-h-10 items-center justify-between gap-4 bg-[#10234A] px-4 py-2 text-sm text-white">
+            <span>{{ !empty($testData->is_public_trial_demo) ? 'Interface demo · Untimed · Answers are not saved' : 'Practice test · Your work saves as you go' }}</span>
+            <a class="shrink-0 font-bold text-[#F6B93B] underline cursor-pointer"
+               id="exitTestBtn"
+               data-engine-exit
+               href="{{ $testData->exit_url ?? route('public-trial.index') }}"
+               onclick="event.preventDefault(); (window.confirmExitTest ? window.confirmExitTest(this.href) : window.showCustomConfirm('Are you sure you want to exit? Your progress will be saved.', 'warning', 'Exit Practice Test', 'Exit', 'Stay').then(confirmed => { if(confirmed) { window.isNavigatingLegitimately = true; window.location.href = this.href; } }));">Exit to DigiSAT</a>
+        </div>
+    @endif
+    @if (!empty($testData->is_public_trial) || !empty($testData->is_public_trial_demo))
+        <script>
+            document.addEventListener('DOMContentLoaded', () => {
+                document.querySelectorAll('#backButton, #nextButton, #timerToggle, #highlightNotesBtn, #calculatorBtn, .bookmark, #exitTestBtn')
+                    .forEach((control) => {
+                        control.setAttribute('role', 'button');
+                        control.tabIndex = 0;
+                        control.addEventListener('keydown', (event) => {
+                            if (event.key === 'Enter' || event.key === ' ') {
+                                event.preventDefault();
+                                control.click();
+                            }
+                        });
+                    });
+            });
+        </script>
     @endif
     <!-- Secure Test Loading Screen -->
     <div id="loadingScreen" class="loading-screen flex flex-col items-center justify-center">
@@ -148,8 +181,9 @@
                  into (see ExamSessionService::provisionGuest) — the completion
                  flow sends them straight to their result instead, so this menu
                  (its only real item is "Exit the exam") is dropped entirely
-                 rather than left open onto an empty dropdown. --}}
-            @unless (auth()->user()?->is_guest)
+                 rather than left open onto an empty dropdown.
+                 Public trial guests, however, exit back to the trial selector. --}}
+            @unless (auth()->user()?->is_guest && empty($testData->is_public_trial) && empty($testData->is_public_trial_demo))
                 <div class="relative inline-block text-left" x-data="{ open: false }" @click.outside="open = false">
                     <div class="icon-container" id="moreBtn" :class="open ? 'highlight-mode-active' : ''"
                         @click="open = !open">
@@ -168,7 +202,7 @@
                                 Take a break
                             </button>
                             <button class="block w-full text-left px-4 py-3 text-sm text-red-600 hover:bg-red-50"
-                                @click="open = false; window.showCustomConfirm('Are you sure you want to exit the exam? Your progress will be saved.', 'warning', 'Exit Exam').then(confirmed => { if(confirmed) { window.isNavigatingLegitimately = true; window.location.href = '{{ route('home') }}'; } })">
+                                @click="open = false; (window.confirmExitTest ? window.confirmExitTest() : window.showCustomConfirm('Are you sure you want to exit the exam? Your progress will be saved.', 'warning', 'Exit Exam').then(confirmed => { if(confirmed) { window.isNavigatingLegitimately = true; window.location.href = window.homeUrl || '{{ route('home') }}'; } }))">
                                 Exit the exam
                             </button>
                         </div>
@@ -177,7 +211,7 @@
             @endunless
         </div>
     </header>
-    <main translate="no" class="notranslate">
+    <main id="test-main-content" translate="no" class="notranslate">
         {{ $slot }}
     </main>
     <footer translate="no" class="notranslate">

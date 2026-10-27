@@ -34,18 +34,22 @@
             opened from an old link. <strong class="font-semibold text-slate-800">Your answers are saved.</strong>
         </p>
 
+        @php
+            $dashboardUrl = auth()->user()?->is_guest ? route('public-trial.index') : route('home');
+            $dashboardLabel = auth()->user()?->is_guest ? 'Back to DigiSAT' : 'Back to dashboard';
+        @endphp
         @if ($resumeUrl)
             <a href="{{ $resumeUrl }}"
                 class="mt-8 inline-flex min-h-11 items-center rounded-xl bg-brand px-5 py-2.5 text-sm font-bold text-white transition hover:bg-blue-800">
                 Continue where you left off
             </a>
-            <a href="{{ route('home') }}" class="mt-3 text-sm font-medium text-slate-500 underline hover:text-slate-700">
-                Back to dashboard
+            <a href="{{ $dashboardUrl }}" class="mt-3 text-sm font-medium text-slate-500 underline hover:text-slate-700">
+                {{ $dashboardLabel }}
             </a>
         @else
-            <a href="{{ route('home') }}"
+            <a href="{{ $dashboardUrl }}"
                 class="mt-8 inline-flex min-h-11 items-center rounded-xl bg-brand px-5 py-2.5 text-sm font-bold text-white transition hover:bg-blue-800">
-                Back to dashboard
+                {{ $dashboardLabel }}
             </a>
         @endif
     </div>

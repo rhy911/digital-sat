@@ -1,229 +1,151 @@
-<x-layouts.landing>
-    <section class="landing-hero px-5 sm:px-6">
-        <div class="mx-auto grid max-w-7xl items-center gap-12 lg:grid-cols-[0.92fr_1.08fr]">
-            <div class="max-w-2xl">
-                <p
-                    class="mb-5 inline-flex items-center gap-2 rounded-full border border-blue-200 bg-blue-50 px-4 py-2 text-sm font-semibold text-blue-900">
-                    <span class="h-2 w-2 rounded-full bg-brand"></span>
-                    High-fidelity Digital SAT practice
-                </p>
-                <h1
-                    class="max-w-2xl text-4xl font-bold leading-[1.04] tracking-tight text-slate-950 text-balance sm:text-6xl lg:text-7xl">
-                    Test day should feel familiar.
-                </h1>
-                <p class="mt-7 max-w-xl text-lg leading-8 text-slate-700 text-pretty">
-                    DigiSAT gives students a Bluebook-like testing environment and gives educators the tools to assign,
-                    monitor, and score practice with confidence.
-                </p>
-                <div class="mt-9 flex flex-col gap-3 sm:flex-row">
-                    <a href="/signup"
-                        class="inline-flex min-h-12 items-center justify-center rounded-xl bg-brand px-7 py-3.5 text-base font-bold text-white transition hover:bg-brand-hover focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-brand active:scale-[0.96]">
-                        Start a practice test
-                    </a>
-                    <a href="#features"
-                        class="inline-flex min-h-12 items-center justify-center rounded-xl border border-slate-300 bg-white px-7 py-3.5 text-base font-bold text-slate-900 transition hover:border-slate-400 hover:bg-slate-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-brand active:scale-[0.96]">
-                        See platform tools
-                    </a>
+<x-layouts.landing title="DigiSAT — Digital SAT practice for students and tutors">
+    <section class="public-hero">
+        <div class="public-wrap public-hero__grid">
+            <div class="public-hero__copy">
+                <h1>Practice with focus.<br><span>Know what to do next.</span></h1>
+                <p class="public-lede">Take Digital SAT practice in a calm, test-like workspace. See your result right away, then make a plan from the questions you missed.</p>
+                <div class="public-actions">
+                    <x-ui.button href="{{ route('public-trial.index') }}" class="min-h-[3.15rem] rounded-xl px-5 text-base">Try DigiSAT</x-ui.button>
+                    <x-ui.button variant="secondary" href="#score-reports" class="min-h-[3.15rem] rounded-xl px-5 text-base">See a sample report</x-ui.button>
                 </div>
+                <p class="public-note">Start without an account &middot; Timed practice requires 900 &times; 500 screen &middot; Demo, module, or full test</p>
             </div>
-
-            <div class="landing-device" role="region" aria-label="Digital SAT practice interface preview">
-                <div class="landing-device__topbar">
-                    <div>
-                        <span class="block text-xs font-bold text-slate-500">Reading and Writing</span>
-                        <span class="text-sm font-semibold text-slate-950">Module 1, Question 14</span>
+            <figure class="public-device-wrap">
+                <div class="public-device" aria-label="Sample Reading and Writing test interface">
+                    <div class="public-device__bar"><span>Reading and Writing</span><span>Module 1 <i>31:48</i></span></div>
+                    <div class="public-device__body">
+                        <div class="public-device__passage" aria-hidden="true">
+                            <span class="public-tool">Highlights &amp; Notes</span>
+                            <h2>Migration Patterns in Urban Transit</h2>
+                            <p>Researchers compared weekday rail usage against revised municipal zoning data. <mark>Commute density shifted most sharply near mixed-use commercial corridors where residential development expanded alongside rapid transit.</mark> This finding suggests that integrating housing with transit infrastructure directly reduces single-occupancy vehicle travel in metropolitan centers.</p>
+                        </div>
+                        <div class="public-device__question" aria-hidden="true">
+                            <div class="public-device__meta"><span>Question 14</span><span>Mark for Review</span></div>
+                            <p>Which choice best describes the function of the highlighted sentence in the overall structure of the text?</p>
+                            <div class="public-answer is-selected"><b>A</b><span>It introduces the empirical finding that the rest of the text contextualizes.</span></div>
+                            <div class="public-answer"><b>B</b><span>It questions the reliability of the municipal zoning records examined.</span></div>
+                            <div class="public-answer"><b>C</b><span>It defines a transit metric introduced in the opening sentence.</span></div>
+                            <div class="public-answer"><b>D</b><span>It provides an exception to the general trend observed by the researchers.</span></div>
+                        </div>
                     </div>
-                    <div class="landing-timer tabular-nums">31:48</div>
+                    <div class="public-device__footer"><span>Question review</span><span>Highlights &amp; Notes</span><span aria-hidden="true">Next question</span></div>
                 </div>
-                <div class="landing-device__body">
-                    <aside class="landing-passage" aria-hidden="true">
-                        <span class="landing-tool-pill">Notes</span>
-                        <h2>Migration Patterns in Urban Transit</h2>
-                        <p>
-                            Researchers compared weekday rail usage against revised zoning data and found that commute
-                            density shifted most sharply near mixed-use corridors.
-                        </p>
-                        <div class="landing-highlight">commute density shifted most sharply</div>
-                    </aside>
-                    <div class="landing-question" aria-hidden="true">
-                        <div class="landing-question__meta">
-                            <span>14</span>
+                <figcaption>Sample interface. Shown for illustration.</figcaption>
+            </figure>
+        </div>
+    </section>
+
+    <section id="students" class="public-section public-section--white">
+        <div class="public-wrap public-split">
+            <div>
+                <h2>Make practice feel clear from the first question.</h2>
+                <p class="public-copy">Move through passages and questions, flag items to revisit, and use the tools available in each section. Your answers and timing stay together through the test.</p>
+                <a href="{{ route('public-trial.index') }}" class="public-text-link">Explore the test experience <span aria-hidden="true">→</span></a>
+            </div>
+            <div class="public-tool-col">
+                <div class="public-marking-card" aria-label="Preview of question marking and navigator tools">
+                    <div class="public-marking-card__header">
+                        <div class="public-marking-card__status">
+                            <span class="public-marking-ribbon" aria-hidden="true">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="#F6B93B" stroke="#10234A" stroke-width="2"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg>
+                            </span>
+                            <strong>Question 14</strong>
+                            <span class="public-marking-badge">Marked for Review</span>
+                        </div>
+                        <div class="public-marking-btn" aria-hidden="true">
+                            <svg width="13" height="13" viewBox="0 0 24 24" fill="#F6B93B" stroke="currentColor" stroke-width="2"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg>
                             <span>Mark for Review</span>
                         </div>
-                        <p class="landing-question__stem">
-                            Which choice best describes the function of the highlighted sentence?
-                        </p>
-                        <div class="landing-choice is-selected">It introduces the finding the passage explains.</div>
-                        <div class="landing-choice">It challenges the study’s central assumption.</div>
-                        <div class="landing-choice">It defines a term used later in the passage.</div>
-                        <div class="landing-choice">It compares two unrelated transit models.</div>
+                    </div>
+                    <div class="public-marking-card__body">
+                        <p class="public-marking-sub">Question Navigator &middot; Section 1</p>
+                        <div class="public-marking-grid" aria-hidden="true">
+                            <span class="is-answered">11</span>
+                            <span class="is-answered">12</span>
+                            <span class="is-answered">13</span>
+                            <span class="is-current is-flagged">14<i>★</i></span>
+                            <span class="is-unanswered">15</span>
+                            <span class="is-answered">16</span>
+                        </div>
                     </div>
                 </div>
-                <div class="landing-device__footer">
-                    <span>Calculator</span>
-                    <span>Annotation</span>
-                    <span>Question Review</span>
-                    <button type="button" tabindex="-1" aria-hidden="true">Next</button>
+                <div class="public-tool-list" aria-label="Practice tools">
+                    <div><p><strong>Stay oriented</strong><span>See your section, module, timer, and question position.</span></p></div>
+                    <div><p><strong>Work your way</strong><span>Mark questions, navigate back, and review before you submit.</span></p></div>
+                    <div><p><strong>Use section tools</strong><span>Annotate Reading and Writing passages and open the calculator in Math.</span></p></div>
                 </div>
             </div>
         </div>
     </section>
 
-    <section class="border-y border-slate-200 bg-white px-5 py-10 sm:px-6">
-        <div class="mx-auto grid max-w-7xl gap-5 sm:grid-cols-2 lg:grid-cols-4">
-            <div class="landing-stat">
-                <strong>Bluebook-like</strong>
-                <span>Testing flow, tools, review screen, and timing behavior.</span>
-            </div>
-            <div class="landing-stat">
-                <strong>Adaptive</strong>
-                <span>Module routing supports easier and harder second modules.</span>
-            </div>
-            <div class="landing-stat">
-                <strong>IRT scoring</strong>
-                <span>3PL parameters and theta estimation for realistic score bands.</span>
-            </div>
-            <div class="landing-stat">
-                <strong>Teacher-ready</strong>
-                <span>Item banks, assigned tests, progress views, and import tools.</span>
-            </div>
-        </div>
-    </section>
-
-    <section id="features" class="bg-slate-50 px-5 py-24 sm:px-6 lg:py-28">
-        <div class="mx-auto max-w-7xl">
-            <div class="max-w-3xl">
-                <h2 class="text-4xl font-bold tracking-tight text-slate-950 text-balance sm:text-5xl">
-                    Built around real practice, not extra noise.
-                </h2>
-                <p class="mt-5 text-lg leading-8 text-slate-700 text-pretty">
-                    Everything you need for authentic exam preparation: faithful student testing, practical educator
-                    control, and defensible scoring.
-                </p>
-            </div>
-
-            <div class="mt-12 grid gap-5 lg:grid-cols-12">
-                <article id="fidelity" class="landing-feature landing-feature--primary lg:col-span-7">
-                    <div>
-                        <span class="landing-feature__label">Student experience</span>
-                        <h3 class="text-balance">Every tool sits where students expect it.</h3>
-                        <p class="text-pretty">
-                            The test surface keeps timing, review, annotations, Desmos access, and passage/question
-                            layout close to the official exam so practice transfers cleanly to test day.
-                        </p>
-                    </div>
-                    <div class="landing-mini-browser" aria-hidden="true">
-                        <div class="landing-mini-browser__bar">
-                            <span></span><span></span><span></span>
-                        </div>
-                        <div class="grid gap-3 sm:grid-cols-2">
-                            <div class="rounded-lg border border-blue-200 bg-white p-4">
-                                <div class="mb-3 h-2 w-24 rounded bg-blue-200"></div>
-                                <div class="space-y-2">
-                                    <div class="h-2 rounded bg-slate-200"></div>
-                                    <div class="h-2 w-5/6 rounded bg-slate-200"></div>
-                                    <div class="h-2 w-3/4 rounded bg-slate-200"></div>
-                                </div>
-                            </div>
-                            <div class="space-y-2">
-                                <div
-                                    class="rounded-lg border-2 border-brand bg-blue-50 p-3 text-sm font-semibold text-blue-950">
-                                    A</div>
-                                <div
-                                    class="rounded-lg border border-slate-200 bg-white p-3 text-sm font-semibold text-slate-600">
-                                    B</div>
-                                <div
-                                    class="rounded-lg border border-slate-200 bg-white p-3 text-sm font-semibold text-slate-600">
-                                    C</div>
-                            </div>
-                        </div>
-                    </div>
-                </article>
-
-                <article id="teachers" class="landing-feature lg:col-span-5">
-                    <span class="landing-feature__label">Educator workflow</span>
-                    <h3 class="text-balance">Assign, import, monitor, and adjust.</h3>
-                    <p class="text-pretty">
-                        Teachers can build tests from item banks, import questions in bulk, send private links, and
-                        keep classroom progress visible without turning the product into a game layer.
-                    </p>
-                    <ul class="landing-checklist">
-                        <li>Bulk question import with validation</li>
-                        <li>Private and public test assignments</li>
-                        <li>Progress tracking for active practice</li>
-                    </ul>
-                </article>
-
-                <article id="scoring" class="landing-feature lg:col-span-5">
-                    <span class="landing-feature__label">Scoring model</span>
-                    <h3 class="text-balance">IRT signals stay visible.</h3>
-                    <p class="text-pretty">
-                        Scoring views can explain ability estimates, domain performance, and score bands so teachers
-                        know what changed and students know what to practice next.
-                    </p>
-                    <div class="landing-score-card" aria-hidden="true">
-                        <div class="flex items-center justify-between">
-                            <span>Theta estimate</span>
-                            <strong class="tabular-nums">0.64</strong>
-                        </div>
-                        <div class="landing-score-bar"><span style="width: 68%"></span></div>
-                        <div class="grid grid-cols-3 gap-2 text-center tabular-nums">
-                            <span>RW 610</span>
-                            <span>Math 670</span>
-                            <span>Total 1280</span>
-                        </div>
-                    </div>
-                </article>
-
-                <article class="landing-feature landing-feature--dark lg:col-span-7">
-                    <span class="landing-feature__label">Reliability</span>
-                    <h3 class="text-balance">Practice stays calm under exam pressure.</h3>
-                    <p class="text-pretty">
-                        The interface favors predictable navigation, legible states, keyboard focus, and restrained
-                        motion. Students can concentrate on the question instead of decoding the product.
-                    </p>
-                    <div class="mt-8 grid gap-3 sm:grid-cols-3">
-                        <div>Stable layouts</div>
-                        <div>Clear focus states</div>
-                        <div>Reduced motion</div>
-                    </div>
-                </article>
-            </div>
-        </div>
-    </section>
-
-    <section class="bg-white px-5 py-24 sm:px-6">
-        <div
-            class="mx-auto grid max-w-7xl items-center gap-10 rounded-2xl border border-slate-200 bg-slate-950 p-8 text-white sm:p-10 lg:grid-cols-[1fr_auto] lg:p-14">
+    <section id="score-reports" class="public-section public-section--canvas">
+        <div class="public-wrap public-report-grid">
             <div>
-                <h2 class="max-w-3xl text-4xl font-bold tracking-tight text-balance sm:text-5xl">
-                    Give students a practice room that behaves like the real one.
-                </h2>
-                <p class="mt-5 max-w-2xl text-lg leading-8 text-slate-300 text-pretty">
-                    Start with a practice test, then use teacher tools and score details when your classroom needs
-                    deeper control.
-                </p>
+                <h2>A score is a starting point. The next step matters more.</h2>
+                <p class="public-copy">Get a quick view of your practice performance, then open the full answer review and skill analysis with an account. Parents and tutors can use the report to talk through what to practice next.</p>
+                <p class="public-note">Any scores shown in this sample are illustrative, not a student result.</p>
+                <a href="{{ route('public-trial.index') }}" class="public-text-link">Try a test and see your result <span aria-hidden="true">→</span></a>
             </div>
-            <div class="flex flex-col gap-3 sm:flex-row lg:flex-col">
-                <a href="/signup"
-                    class="inline-flex min-h-12 items-center justify-center rounded-xl bg-white px-7 py-3.5 text-base font-bold text-slate-950 transition hover:bg-slate-100 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-white active:scale-[0.96]">
-                    Start a practice test
-                </a>
-                <a href="/signin"
-                    class="inline-flex min-h-12 items-center justify-center rounded-xl border border-slate-700 px-7 py-3.5 text-base font-bold text-white transition hover:border-slate-500 hover:bg-slate-900 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-white active:scale-[0.96]">
-                    Sign in
-                </a>
+            <figure class="public-report">
+                <figcaption><span>Sample report</span><span>Illustrative data</span></figcaption>
+                <div class="public-report__score"><span>Estimated total score</span><strong>1280</strong><small>Practice estimate &middot; 400&ndash;1600 scale &middot; Not official</small></div>
+                <div class="public-report__subjects"><div><span>Reading and Writing</span><strong>610</strong></div><div><span>Math</span><strong>670</strong></div></div>
+                <div class="public-report__sample-question">
+                    <div class="public-report__sample-head">
+                        <span class="public-report__sample-tag">Missed question review</span>
+                        <span class="public-report__sample-domain">Craft and Structure</span>
+                    </div>
+                    <p class="public-report__sample-prompt">Which choice best describes the function of the highlighted sentence in the overall structure of the text?</p>
+                    <div class="public-report__sample-answers">
+                        <div class="answer-chip is-student">Your answer: <strong>C</strong> (Defines a transit metric)</div>
+                        <div class="answer-chip is-correct">Correct answer: <strong>A</strong> (Introduces the empirical finding)</div>
+                    </div>
+                    <p class="public-report__sample-expl">The sentence reports the primary empirical observation regarding commute shifts; subsequent sentences discuss its implications.</p>
+                </div>
+                <div class="public-report__skills">
+                    <span class="public-report__skills-title">Skill mastery snapshot</span>
+                    <div class="public-skill-bar">
+                        <div class="public-skill-bar__meta"><span>Craft and Structure</span><strong>6 / 8 (75%)</strong></div>
+                        <div class="public-skill-bar__track"><div class="public-skill-bar__fill" style="width: 75%;"></div></div>
+                    </div>
+                    <div class="public-skill-bar">
+                        <div class="public-skill-bar__meta"><span>Standard English Conventions</span><strong>8 / 10 (80%)</strong></div>
+                        <div class="public-skill-bar__track"><div class="public-skill-bar__fill" style="width: 80%;"></div></div>
+                    </div>
+                    <div class="public-skill-bar">
+                        <div class="public-skill-bar__meta"><span>Advanced Math</span><strong>9 / 12 (75%)</strong></div>
+                        <div class="public-skill-bar__track"><div class="public-skill-bar__fill" style="width: 75%;"></div></div>
+                    </div>
+                </div>
+                <div class="public-report__locked"><svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="4" y="10" width="16" height="11" rx="2"/><path d="M8 10V7a4 4 0 1 1 8 0v3"/></svg><p><strong>See what to work on next with an account</strong><span>Unlock all 98 question reviews, complete explanations, and mistake classification.</span></p></div>
+            </figure>
+        </div>
+    </section>
+
+    <section id="tutors" class="public-section public-section--navy">
+        <div class="public-wrap public-tutor-grid">
+            <div>
+                <h2>Bring practice and student progress into one place.</h2>
+            </div>
+            <div>
+                <p class="public-copy">Assign practice, follow student results, and review performance with tools built for tutoring. Teacher access is approved before classroom features become available.</p>
+                <x-ui.button href="{{ route('signup', ['role' => 'teacher']) }}" class="mt-6 rounded-xl px-5">Apply for teacher access</x-ui.button>
             </div>
         </div>
     </section>
 
-    @push('scripts')
-        <script>
-            document.addEventListener('DOMContentLoaded', () => {
-                if (typeof window.initLandingPage === 'function') {
-                    window.initLandingPage();
-                }
-            });
-        </script>
-    @endpush
+    <section id="faq" class="public-section public-section--white">
+        <div class="public-wrap public-faq">
+            <div><h2>Good to know.</h2></div>
+            <div class="public-faq__items">
+                <details><summary>Can I try DigiSAT without creating an account?</summary><p>Yes. Explore the interface demo, complete one module, or take a full adaptive practice test. You can see a partial result as soon as you finish.</p></details>
+                <details><summary>What does an account add?</summary><p>An account saves your result and opens full answer review, skill analysis, and mistake patterns.</p></details>
+                <details><summary>Is the estimated score official?</summary><p>No. DigiSAT practice estimates are for practice guidance and are not official College Board scores.</p></details>
+                <details><summary>What device do I need for a practice test?</summary><p>The test engine workspace requires a laptop, desktop, or landscape tablet with a screen at least 900 by 500 pixels. Landing pages and score guides are mobile-friendly.</p></details>
+                <details><summary>How do tutors get access?</summary><p>Apply as a teacher. An administrator reviews teacher accounts before classroom tools are available.</p></details>
+            </div>
+        </div>
+    </section>
+
+    <section class="public-final-cta"><div class="public-wrap"><h2>See how practice feels before you decide.</h2><p>Start with the interface demo or choose a complete practice experience.</p><x-ui.button href="{{ route('public-trial.index') }}" class="mt-6 rounded-xl px-5">Try DigiSAT</x-ui.button></div></section>
 </x-layouts.landing>

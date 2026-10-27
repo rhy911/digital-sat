@@ -24,6 +24,8 @@ class SubmissionController extends Controller
                 $request->user()?->id,
                 allowReceipt: true,
             );
+            $controllerToken = $request->header('X-Attempt-Control');
+            $this->engine->assertAttemptController($attempt, $controllerToken);
 
             $result = $this->engine->submitModule(
                 $attempt,
@@ -31,6 +33,7 @@ class SubmissionController extends Controller
                 $request->input('answers', []),
                 $request->input('question_times', []),
                 clientTimedOut: $request->boolean('timed_out'),
+                controllerToken: $controllerToken,
             );
 
             if (($result['status'] ?? null) === 'not_expired') {
@@ -65,7 +68,9 @@ class SubmissionController extends Controller
             ], 403);
         } catch (ConflictHttpException $e) {
             return response()->json([
-                'error' => 'module_progression_conflict',
+                'error' => in_array($e->getMessage(), ['controller_lost', 'practice_paused'], true)
+                    ? $e->getMessage()
+                    : 'module_progression_conflict',
                 'message' => $e->getMessage(),
             ], 409);
         }
@@ -74,6 +79,7 @@ class SubmissionController extends Controller
     public function checkStatus(Request $request, UserTest $userTest): JsonResponse
     {
         $this->authorize('view', $userTest);
+        abort_if($userTest->isGuestTrialExpired(), 410, 'This guest practice trial has expired.');
 
         $ready = $this->engine->readyResultFor($userTest->id, (int) $request->query('module_id', 0));
 

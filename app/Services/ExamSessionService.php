@@ -164,15 +164,22 @@ class ExamSessionService
      */
     public function mergeGuestAccount(int $guestUserId, User $realUser): int
     {
-        $guest = User::where('id', $guestUserId)->where('is_guest', true)->first();
-        if (! $guest || (int) $guest->id === (int) $realUser->id) {
+        if ((int) $guestUserId === (int) $realUser->id) {
             return 0;
         }
 
-        return DB::transaction(function () use ($guest, $realUser) {
+        return DB::transaction(function () use ($guestUserId, $realUser) {
+            $guest = User::whereKey($guestUserId)->where('is_guest', true)->lockForUpdate()->first();
+            if (! $guest) {
+                return 0;
+            }
+            User::whereKey($realUser->id)->lockForUpdate()->first();
             $merged = 0;
 
             foreach (UserTest::where('user_id', $guest->id)->lockForUpdate()->get() as $attempt) {
+                if ($attempt->isGuestTrialExpired()) {
+                    continue;
+                }
                 if ($attempt->status === 'in_progress' && ! $attempt->assignment_id) {
                     // The real account may already be mid-attempt on this exact
                     // test — uq_user_test_active_practice allows only one such
@@ -189,7 +196,11 @@ class ExamSessionService
                     }
                 }
 
-                $attempt->update(['user_id' => $realUser->id]);
+                $attempt->update([
+                    'user_id' => $realUser->id,
+                    'guest_trial_expires_at' => null,
+                    'guest_trial_absolute_expires_at' => null,
+                ]);
                 $merged++;
             }
 

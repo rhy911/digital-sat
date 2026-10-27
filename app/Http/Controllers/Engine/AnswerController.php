@@ -18,7 +18,7 @@ class AnswerController extends Controller
     public function timing(Request $request): JsonResponse
     {
         $validated = $request->validate([
-            'user_test_id' => 'required|exists:user_tests,id',
+            'user_test_id' => 'required|integer',
             'module_id' => 'required|exists:modules,id',
         ]);
 
@@ -39,9 +39,11 @@ class AnswerController extends Controller
         }
 
         if ($attempt->status === 'completed') {
-            $resultUrl = $attempt->user?->is_guest
+            $resultUrl = $attempt->is_public_trial && $attempt->user?->is_guest
+                ? route('public-trial.result', $attempt)
+                : ($attempt->user?->is_guest
                 ? route('exam-join.result', $attempt)
-                : route('student.scores.show', $attempt);
+                : route('student.scores.show', $attempt));
 
             return response()->json(['status' => 'completed', 'redirect_url' => $resultUrl])
                 ->header('Cache-Control', 'no-store, private');
@@ -89,8 +91,38 @@ class AnswerController extends Controller
             ])->header('Cache-Control', 'no-store, private');
         }
 
+        if (! $attempt->runsOnChainedClock() && $attempt->current_module_paused) {
+            return response()->json($this->engine->timingSnapshot($attempt, $module) + ['status' => 'paused'])
+                ->header('Cache-Control', 'no-store, private');
+        }
+
         return response()->json($this->engine->timingSnapshot($attempt, $module) + ['status' => 'active'])
             ->header('Cache-Control', 'no-store, private');
+    }
+
+    public function control(Request $request): JsonResponse
+    {
+        $validated = $request->validate([
+            'user_test_id' => 'required|integer',
+            'module_id' => 'required|integer',
+            'action' => 'required|in:claim,heartbeat,pause,resume,takeover,release',
+        ]);
+
+        try {
+            $result = $this->engine->controlAttempt(
+                (int) $validated['user_test_id'],
+                (int) $validated['module_id'],
+                (int) $request->user()->id,
+                $validated['action'],
+                $request->header('X-Attempt-Control'),
+            );
+
+            return response()->json($result)->header('Cache-Control', 'no-store, private');
+        } catch (AuthorizationException $e) {
+            return response()->json(['error' => 'unauthorized_attempt', 'message' => $e->getMessage()], 403);
+        } catch (ConflictHttpException $e) {
+            return response()->json(['error' => $e->getMessage()], 409);
+        }
     }
 
     public function resumeBreak(Request $request): JsonResponse
@@ -109,11 +141,22 @@ class AnswerController extends Controller
             return response()->json(['error' => 'module_not_found'], 404);
         }
 
+        $attempt = UserTest::query()
+            ->whereKey($validated['user_test_id'])
+            ->where('user_id', $request->user()?->id)
+            ->first();
+        if (! $attempt) {
+            return response()->json(['error' => 'unauthorized_attempt'], 403);
+        }
+
         try {
+            $controllerToken = $request->header('X-Attempt-Control');
+            $this->engine->assertAttemptController($attempt, $controllerToken);
             $timing = $this->engine->resumeBreak(
                 (int) $validated['user_test_id'],
                 (int) $module->id,
-                $request->user()?->id
+                $request->user()?->id,
+                $controllerToken,
             );
 
             return response()->json($timing)->header('Cache-Control', 'no-store, private');
@@ -127,13 +170,12 @@ class AnswerController extends Controller
     public function autosave(Request $request): JsonResponse
     {
         $validated = $request->validate([
-            'user_test_id' => 'required|exists:user_tests,id',
+            'user_test_id' => 'required|integer',
             'module_id' => 'required|exists:modules,id',
             'answers' => 'present|array|max:100',
             'answers.*' => 'nullable|string|max:100',
             'question_times' => 'nullable|array|max:100',
             'question_times.*' => 'nullable|integer|min:0',
-            'elapsed_seconds' => 'nullable|integer|min:0',
         ]);
 
         try {
@@ -142,13 +184,15 @@ class AnswerController extends Controller
                 (int) $validated['module_id'],
                 $request->user()?->id,
             );
+            $controllerToken = $request->header('X-Attempt-Control');
+            $this->engine->assertAttemptController($attempt, $controllerToken);
 
             $result = $this->engine->autosave(
                 $attempt,
                 $module,
                 $validated['answers'],
                 $validated['question_times'] ?? [],
-                $validated['elapsed_seconds'] ?? null,
+                $controllerToken,
             );
 
             if ($result['expired'] ?? false) {
@@ -177,7 +221,9 @@ class AnswerController extends Controller
             ], 403);
         } catch (ConflictHttpException $e) {
             return response()->json([
-                'error' => 'module_progression_conflict',
+                'error' => in_array($e->getMessage(), ['controller_lost', 'practice_paused'], true)
+                    ? $e->getMessage()
+                    : 'module_progression_conflict',
                 'message' => $e->getMessage(),
             ], 409);
         }

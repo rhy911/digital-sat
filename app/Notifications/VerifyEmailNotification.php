@@ -12,6 +12,8 @@ class VerifyEmailNotification extends Notification
 {
     use Queueable;
 
+    public function __construct(private readonly ?string $trialAttemptUlid = null) {}
+
     /** @return array<int, string> */
     public function via(object $notifiable): array
     {
@@ -24,23 +26,28 @@ class VerifyEmailNotification extends Notification
         $name = str_replace(["\r", "\n"], ' ', $notifiable->name);
 
         return (new MailMessage)
-            ->subject('Xác minh địa chỉ email của bạn')
-            ->greeting('Xin chào ' . $name . ',')
-            ->line('Vui lòng nhấp vào nút bên dưới để xác minh địa chỉ email của bạn.')
-            ->action('Xác minh email', $verificationUrl)
-            ->line('Nếu bạn không tạo tài khoản, vui lòng bỏ qua email này.')
-            ->line('Link này sẽ hết hạn trong 60 phút.');
+            ->subject('Verify your DigiSAT email address')
+            ->greeting('Hello ' . $name . ',')
+            ->line('Select the button below to verify your email address.')
+            ->action('Verify email', $verificationUrl)
+            ->line('If you did not create an account, you can ignore this email.')
+            ->line('This link expires in 60 minutes.');
     }
 
     protected function verificationUrl(object $notifiable): string
     {
+        $parameters = [
+            'id' => $notifiable->getKey(),
+            'hash' => sha1($notifiable->getEmailForVerification()),
+        ];
+        if ($this->trialAttemptUlid) {
+            $parameters['trial'] = $this->trialAttemptUlid;
+        }
+
         return URL::temporarySignedRoute(
             'verification.verify',
             Carbon::now()->addMinutes(60),
-            [
-                'id' => $notifiable->getKey(),
-                'hash' => sha1($notifiable->getEmailForVerification()),
-            ]
+            $parameters
         );
     }
 }

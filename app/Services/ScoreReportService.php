@@ -65,6 +65,160 @@ class ScoreReportService
         ];
     }
 
+    /** @return array<string, mixed> */
+    public function buildPublicTrialSummary(UserTest $userTest): array
+    {
+        $userTest->loadMissing('test');
+        $answers = $userTest->userAnswers()->orderBy('id')->get();
+        $stats = $this->computeStats($answers);
+        $presentation = $this->buildScorePresentation($userTest, $stats);
+
+        $eligibleMissed = $answers->first(fn (UserTestAnswer $answer) =>
+            (! $answer->is_correct || $answer->selected_answer === null || $answer->selected_answer === '')
+            && $this->hasSufficientSnapshot($answer)
+        );
+
+        $sampleAnswer = $eligibleMissed ?? $answers->first(fn (UserTestAnswer $answer) => $this->hasSufficientSnapshot($answer));
+
+        $sample = null;
+        if ($sampleAnswer) {
+            $sample = $this->formatSingleAnswer($sampleAnswer);
+        }
+
+        $summaryKeys = ['total', 'correct', 'incorrect', 'omitted', 'unscored'];
+        $publicStats = [
+            'total' => array_intersect_key($stats['total'], array_flip([...$summaryKeys, 'questions'])),
+            'sections' => [
+                'reading_and_writing' => array_intersect_key($stats['sections']['reading_and_writing'], array_flip($summaryKeys)),
+                'math' => array_intersect_key($stats['sections']['math'], array_flip($summaryKeys)),
+            ],
+        ];
+
+        return [
+            'userTest' => $userTest,
+            'stats' => $publicStats,
+            'scorePresentation' => $presentation,
+            'sampleReview' => $sample,
+        ];
+    }
+
+    public function hasSufficientSnapshot(UserTestAnswer $answer): bool
+    {
+        $raw = $answer->question_snapshot;
+        $snapshot = is_array($raw) ? $raw : (is_string($raw) ? json_decode($raw, true) : null);
+        if (! is_array($snapshot) || empty($snapshot)) {
+            return false;
+        }
+
+        $type = $snapshot['question_type'] ?? null;
+        if (! $type || empty(trim((string) ($snapshot['stem'] ?? '')))) {
+            return false;
+        }
+
+        $expl = $snapshot['explanation'] ?? null;
+        $explText = is_array($expl) ? ($expl['explanation'] ?? '') : (is_string($expl) ? $expl : '');
+        if (empty(trim((string) $explText))) {
+            return false;
+        }
+
+        $requiresPassage = ($answer->question && $answer->question->passage_id !== null)
+            || in_array(($snapshot['section_type'] ?? $answer->question?->section_type), ['reading_writing', 'reading', 'rw', 'Reading and Writing'], true);
+        if ($requiresPassage && empty(trim((string) ($snapshot['passage']['content'] ?? '')))) {
+            return false;
+        }
+
+        if ($type === 'multiple_choice') {
+            $choices = $snapshot['choices'] ?? null;
+            if (! is_array($choices) || empty($choices)) {
+                return false;
+            }
+            $hasCorrect = collect($choices)->contains(fn ($c) => ! empty($c['is_correct']));
+            if (! $hasCorrect) {
+                return false;
+            }
+        } elseif ($type === 'student_produced_response') {
+            $sprAnswers = $snapshot['spr_answers'] ?? null;
+            if (! is_array($sprAnswers) || empty($sprAnswers)) {
+                return false;
+            }
+            $hasValidSpr = collect($sprAnswers)->contains(fn ($a) => isset($a['answer']) && trim((string) $a['answer']) !== '');
+            if (! $hasValidSpr) {
+                return false;
+            }
+        } else {
+            return false;
+        }
+
+        return true;
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    public function formatSingleAnswer(UserTestAnswer $answer): array
+    {
+        $raw = $answer->question_snapshot;
+        $snapshot = is_array($raw) ? $raw : (is_string($raw) ? json_decode($raw, true) : []);
+        $snapshot = is_array($snapshot) ? $snapshot : [];
+
+        $type = (string) ($snapshot['question_type'] ?? 'multiple_choice');
+        $rawPassage = $snapshot['passage']['content'] ?? null;
+        $passage = ! empty(trim((string) $rawPassage)) ? QuestionContentRenderer::markdown((string) $rawPassage) : null;
+        $stem = QuestionContentRenderer::markdown((string) ($snapshot['stem'] ?? ''));
+
+        $choices = [];
+        $correctAnswer = 'N/A';
+        if ($type === 'multiple_choice') {
+            /** @var array<int, array<string, mixed>> $rawChoices */
+            $rawChoices = is_array($snapshot['choices'] ?? null) ? $snapshot['choices'] : [];
+            $choices = collect($rawChoices)
+                ->sortBy('order')
+                ->map(fn ($c) => [
+                    'label' => (string) ($c['label'] ?? ''),
+                    'content' => QuestionContentRenderer::markdown((string) ($c['content'] ?? '')),
+                    'is_correct' => (bool) ($c['is_correct'] ?? false),
+                ])
+                ->values()
+                ->toArray();
+
+            $correctChoice = collect($choices)->firstWhere('is_correct', true);
+            $correctAnswer = (string) ($correctChoice['label'] ?? 'N/A');
+        } elseif ($type === 'student_produced_response') {
+            /** @var array<int, array<string, mixed>> $rawSpr */
+            $rawSpr = is_array($snapshot['spr_answers'] ?? null) ? $snapshot['spr_answers'] : [];
+            $imploded = collect($rawSpr)
+                ->pluck('answer')
+                ->filter(fn ($v) => $v !== null && (string) $v !== '')
+                ->implode(', ');
+            $correctAnswer = $imploded !== '' ? $imploded : 'N/A';
+        }
+
+        $rawExplanation = is_array($snapshot['explanation'] ?? null)
+            ? ($snapshot['explanation']['explanation'] ?? null)
+            : ($snapshot['explanation'] ?? null);
+        $explanationHtml = ! empty(trim((string) $rawExplanation))
+            ? QuestionContentRenderer::markdown((string) $rawExplanation)
+            : null;
+
+        $isOmitted = $answer->selected_answer === null || (string) $answer->selected_answer === '';
+        $selectedAnswer = $isOmitted ? null : (string) $answer->selected_answer;
+
+        return [
+            'question_type' => $type,
+            'passage' => $passage,
+            'stem' => $stem,
+            'choices' => $choices,
+            'selected_answer' => $selectedAnswer,
+            'correct_answer' => $correctAnswer,
+            'is_correct' => (bool) $answer->is_correct,
+            'is_omitted' => $isOmitted,
+            'explanation' => $explanationHtml,
+            'skill_domain' => $snapshot['skill_domain'] ?? null,
+            'domain_label' => $this->domainLabel($snapshot['skill_domain'] ?? 'other'),
+            'section_type' => $snapshot['section_type'] ?? null,
+        ];
+    }
+
     // -------------------------------------------------------------------------
     // Internals
     // -------------------------------------------------------------------------

@@ -10,6 +10,8 @@ use App\Models\Test;
 use App\Models\User;
 use App\Models\UserTest;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Testing\TestResponse;
 use Tests\TestCase;
 
 class TestTypeProgressionTest extends TestCase
@@ -64,11 +66,11 @@ class TestTypeProgressionTest extends TestCase
 
         $rwNext = $this->submit($student, $attempt, $rwModules['standard'][0], $rwModules['standard'][1])->assertOk();
         $rwIssued = Module::where('ulid', $rwNext->json('next_module_id'))->firstOrFail();
-        $this->submit($student, $attempt, $rwIssued, $rwIssued->questions()->firstOrFail())->assertOk();
+        $this->submit($student, $attempt, $rwIssued, $this->firstQuestion($rwIssued))->assertOk();
         $this->resumeBreak($student, $attempt, $mathModules['standard'][0]);
         $mathNext = $this->submit($student, $attempt, $mathModules['standard'][0], $mathModules['standard'][1])->assertOk();
         $mathIssued = Module::where('ulid', $mathNext->json('next_module_id'))->firstOrFail();
-        $this->submit($student, $attempt, $mathIssued, $mathIssued->questions()->firstOrFail())->assertOk();
+        $this->submit($student, $attempt, $mathIssued, $this->firstQuestion($mathIssued))->assertOk();
 
         $attempt->refresh();
         $this->assertSame('adaptive_irt_provisional', $attempt->score_estimate_kind);
@@ -129,7 +131,7 @@ class TestTypeProgressionTest extends TestCase
         $this->question($hardModule, Section::TYPE_MATH);
         $attempt = $this->attempt($student, $test, $moduleOne);
 
-        $this->actingAs($student)->postJson(route('engine.test.submit-module'), [
+        $this->actingAs($student)->withAttemptController($attempt)->postJson(route('engine.test.submit-module'), [
             'user_test_id' => $attempt->id,
             'module_id' => $moduleOne->id,
             'answers' => [(string) $moduleOneQuestion->id => 'B'],
@@ -183,7 +185,7 @@ class TestTypeProgressionTest extends TestCase
             'current_module_started_at' => null,
         ]);
 
-        $this->actingAs($student)->postJson(route('engine.test.resume-break'), [
+        $this->actingAs($student)->withAttemptController($attempt)->postJson(route('engine.test.resume-break'), [
             'user_test_id' => $attempt->id,
             'module_id' => $module->id,
         ])->assertOk()->assertJsonPath('status', 'active');
@@ -251,6 +253,7 @@ class TestTypeProgressionTest extends TestCase
         ])->assertUnprocessable()->assertJsonValidationErrors('test_structure');
     }
 
+    /** @return array{0: User, 1: Test} */
     private function base(string $type): array
     {
         $student = User::factory()->student()->create(['email_verified_at' => now()]);
@@ -269,6 +272,7 @@ class TestTypeProgressionTest extends TestCase
         return Module::create(['section_id' => $section->id, 'module_number' => $number, 'difficulty_level' => $difficulty, 'duration_minutes' => 10, 'total_questions' => 1, 'order' => $order, 'is_public' => true]);
     }
 
+    /** @return array{standard: array{0: Module, 1: Question}, easy: Module, hard: Module} */
     private function adaptiveModules(Section $section, string $type, int $startOrder): array
     {
         $standard = $this->module($section, 1, Module::DIFFICULTY_STANDARD, $startOrder);
@@ -293,6 +297,13 @@ class TestTypeProgressionTest extends TestCase
         return $question;
     }
 
+    private function firstQuestion(Module $module): Question
+    {
+        $questionId = DB::table('module_questions')->where('module_id', $module->id)->orderBy('position')->value('question_id');
+
+        return Question::findOrFail($questionId);
+    }
+
     private function fillModule(Module $module, string $type, int $count): Question
     {
         $first = $this->question($module, $type);
@@ -308,14 +319,15 @@ class TestTypeProgressionTest extends TestCase
         return UserTest::create(['user_id' => $student->id, 'test_id' => $test->id, 'status' => 'in_progress', 'current_module_id' => $module->id, 'current_module_started_at' => now()]);
     }
 
-    private function submit(User $student, UserTest $attempt, Module $module, Question $question)
+    /** @return TestResponse<\Symfony\Component\HttpFoundation\Response> */
+    private function submit(User $student, UserTest $attempt, Module $module, Question $question): TestResponse
     {
-        return $this->actingAs($student)->postJson(route('engine.test.submit-module'), ['user_test_id' => $attempt->id, 'module_id' => $module->id, 'answers' => [(string) $question->id => 'A']]);
+        return $this->actingAs($student)->withAttemptController($attempt)->postJson(route('engine.test.submit-module'), ['user_test_id' => $attempt->id, 'module_id' => $module->id, 'answers' => [(string) $question->id => 'A']]);
     }
 
     private function resumeBreak(User $student, UserTest $attempt, Module $module): void
     {
-        $this->actingAs($student)->postJson(route('engine.test.resume-break'), [
+        $this->actingAs($student)->withAttemptController($attempt)->postJson(route('engine.test.resume-break'), [
             'user_test_id' => $attempt->id,
             'module_id' => $module->id,
         ])->assertOk();

@@ -1,10 +1,12 @@
 # DigiSAT Product Interface Direction
 
-Status: approved visual authority for the migrated student journey and teacher workspaces, including the teacher/admin Content Suite. This replaces the prior Roboto-first and paper/binder visual directives on those surfaces. Functional requirements in older page briefs remain in force unless this document explicitly supersedes their visual treatment.
+Status: approved visual authority for the migrated student journey and teacher workspaces, the teacher/admin Content Suite, and the public landing and trial-selection surfaces. This replaces the prior Roboto-first and paper/binder visual directives on those surfaces. Functional requirements in older page briefs remain in force unless this document explicitly supersedes their visual treatment.
 
 ## Product register
 
 The authenticated student and teacher product uses Plus Jakarta Sans, navy `#10234A`, canvas `#F6F8FC`, blue `#2F5BEA`, gold `#F6B93B`, secondary text `#566175`, and white surfaces. Gold marks the main active action with navy text. Blue is for links, focus, and selected controls. Destructive and warning states keep their distinct semantic colors and labels. The shared authenticated navigation rail uses this navy/blue treatment for student, teacher, and admin roles.
+
+The public landing, trial selector, and partial trial result use the same palette and Plus Jakarta Sans in a separate `.public-site` scope. Public CTAs may start a real trial without an account. Keep demo preview content static, clearly label illustrative report data, and preserve the test engine's dedicated typography and layout.
 
 The warmer Home is the visual reference. Other pages share its type, palette, navigation, control states, and surface language while adapting layout to the user’s task. The rollout is scoped with `.product-ui` through `x-layouts.student ui="product"` and `x-layouts.admin ui="product"`; legacy pages retain the existing presentation until migrated. Do not switch this scope into a user setting or general theme service.
 
@@ -36,7 +38,7 @@ Use short transitions for purposeful state changes, guard hover styling by point
 
 The classroom paper, binder, corkboard, pin, tape, and handwritten decoration is retired on migrated student and teacher pages. Preserve the classroom’s actual notes, materials, announcements, classmates, settings, assignment eligibility, deadlines, and navigation. Do not remove functional content with decorative wrappers.
 
-The exam engine remains isolated: no engine view/CSS/JS, timing, submission, mobile gate, renderer, passage typography, or scoring behavior is changed by this product scope. The Content Suite uses the product presentation for both teachers and admins while retaining its authoring navigation. Other admin-only, authentication and marketing surfaces remain outside this rollout. Shared reports use the same presentation across roles; viewer permissions and teacher/student actions remain distinct. Print/PDF layouts retain their export-specific typography and geometry.
+The exam engine remains isolated from product-surface styling: no engine palette, passage typography, renderer, timer, submission, or scoring behavior is changed. Public-trial navigation may enter the existing engine through the static demo and marked practice attempts. The Content Suite uses the product presentation for both teachers and admins while retaining its authoring navigation. Authentication and remaining legacy marketing surfaces stay outside the `.product-ui` migration. Shared reports use the same presentation across roles; viewer permissions and teacher/student actions remain distinct. Print/PDF layouts retain their export-specific typography and geometry.
 
 Preserve Home’s authoritative next-action priorities, guide and goal behavior, score basis/disclosures, history data, assignment constraints, ownership checks, and existing readiness flows. Styling must not invent scores, eligibility, personalization, mastery, or duration claims.
 
@@ -46,4 +48,4 @@ Student delivery: Home → Test Library and Preview information → Classes and 
 
 Teacher delivery: Home and personal practice → Classes and classroom management → Assignments/results/analysis/settings → student progress and shared score reports → live exam management → Content Suite for teachers and admins. All use the same tokens and component states. Teacher tables and metadata use 14px text; standard controls/body use 16px. Workspace density changes spacing and arrangement, never the visual identity.
 
-Keep the default legacy layout only for remaining unreviewed consumers: Blog, Forum, Profile, Notifications, admin Teacher Applications and authentication/marketing. Remove unused teacher-specific legacy rules and duplicated chart theme branches now. Shared legacy classroom rules stay until their remaining consumers migrate; protect the exam engine and shared question-content typography throughout.
+Keep the default legacy layout only for remaining unreviewed consumers: Blog, Forum, Profile, Notifications, admin Teacher Applications and authentication. Public marketing uses `.public-site`; authenticated product views use `.product-ui`. Remove unused teacher-specific legacy rules and duplicated chart theme branches now. Shared legacy classroom rules stay until their remaining consumers migrate; protect the exam engine and shared question-content typography throughout.

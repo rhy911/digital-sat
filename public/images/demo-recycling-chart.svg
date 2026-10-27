@@ -1,0 +1,59 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 480 280" width="480" height="280" role="img" aria-label="Recycling Collection Rates across two years">
+    <rect width="100%" height="100%" fill="#ffffff" />
+    <text x="240" y="22" text-anchor="middle" font-family="'Plus Jakarta Sans', system-ui, sans-serif" font-size="13" font-weight="700" fill="#10234a">Recycling Collection Rates (Year 1 vs. Year 2)</text>
+
+    <!-- Legend -->
+    <rect x="155" y="32" width="12" height="10" fill="#10234a" rx="2" />
+    <text x="172" y="41" font-family="'Plus Jakarta Sans', system-ui, sans-serif" font-size="11" fill="#475569">Year 1</text>
+    <rect x="255" y="32" width="12" height="10" fill="#f6b93b" rx="2" />
+    <text x="272" y="41" font-family="'Plus Jakarta Sans', system-ui, sans-serif" font-size="11" fill="#475569">Year 2</text>
+
+    <!-- Grid lines & Y labels -->
+    <g font-family="'Plus Jakarta Sans', system-ui, sans-serif" font-size="10" fill="#64748b" text-anchor="end">
+        <line x1="48" y1="50" x2="455" y2="50" stroke="#e2e8f0" stroke-width="1" />
+        <text x="42" y="54">80%</text>
+
+        <line x1="48" y1="95" x2="455" y2="95" stroke="#e2e8f0" stroke-width="1" />
+        <text x="42" y="99">60%</text>
+
+        <line x1="48" y1="140" x2="455" y2="140" stroke="#e2e8f0" stroke-width="1" />
+        <text x="42" y="144">40%</text>
+
+        <line x1="48" y1="185" x2="455" y2="185" stroke="#e2e8f0" stroke-width="1" />
+        <text x="42" y="189">20%</text>
+
+        <line x1="48" y1="230" x2="455" y2="230" stroke="#94a3b8" stroke-width="1.2" />
+        <text x="42" y="234">0%</text>
+    </g>
+
+    <!-- Aluminum: 45% (h=101.25, y=128.75), 65% (h=146.25, y=83.75) -->
+    <rect x="73" y="128.8" width="26" height="101.2" fill="#10234a" rx="2" />
+    <text x="86" y="124" text-anchor="middle" font-family="'Plus Jakarta Sans', system-ui, sans-serif" font-size="9.5" font-weight="600" fill="#10234a">45%</text>
+    <rect x="103" y="83.8" width="26" height="146.2" fill="#f6b93b" rx="2" />
+    <text x="116" y="79" text-anchor="middle" font-family="'Plus Jakarta Sans', system-ui, sans-serif" font-size="9.5" font-weight="700" fill="#b45309">65%</text>
+    <text x="101" y="247" text-anchor="middle" font-family="'Plus Jakarta Sans', system-ui, sans-serif" font-size="11" font-weight="600" fill="#1e293b">Aluminum</text>
+
+    <!-- Glass: 52% (h=117, y=113), 54% (h=121.5, y=108.5) -->
+    <rect x="175" y="113" width="26" height="117" fill="#10234a" rx="2" />
+    <text x="188" y="108" text-anchor="middle" font-family="'Plus Jakarta Sans', system-ui, sans-serif" font-size="9.5" font-weight="600" fill="#10234a">52%</text>
+    <rect x="205" y="108.5" width="26" height="121.5" fill="#f6b93b" rx="2" />
+    <text x="218" y="104" text-anchor="middle" font-family="'Plus Jakarta Sans', system-ui, sans-serif" font-size="9.5" font-weight="700" fill="#b45309">54%</text>
+    <text x="203.5" y="247" text-anchor="middle" font-family="'Plus Jakarta Sans', system-ui, sans-serif" font-size="11" font-weight="600" fill="#1e293b">Glass</text>
+
+    <!-- Paper: 70% (h=157.5, y=72.5), 72% (h=162, y=68) -->
+    <rect x="278" y="72.5" width="26" height="157.5" fill="#10234a" rx="2" />
+    <text x="291" y="68" text-anchor="middle" font-family="'Plus Jakarta Sans', system-ui, sans-serif" font-size="9.5" font-weight="600" fill="#10234a">70%</text>
+    <rect x="308" y="68" width="26" height="162" fill="#f6b93b" rx="2" />
+    <text x="321" y="63" text-anchor="middle" font-family="'Plus Jakarta Sans', system-ui, sans-serif" font-size="9.5" font-weight="700" fill="#b45309">72%</text>
+    <text x="306" y="247" text-anchor="middle" font-family="'Plus Jakarta Sans', system-ui, sans-serif" font-size="11" font-weight="600" fill="#1e293b">Paper</text>
+
+    <!-- Plastic: 30% (h=67.5, y=162.5), 38% (h=85.5, y=144.5) -->
+    <rect x="380" y="162.5" width="26" height="67.5" fill="#10234a" rx="2" />
+    <text x="393" y="158" text-anchor="middle" font-family="'Plus Jakarta Sans', system-ui, sans-serif" font-size="9.5" font-weight="600" fill="#10234a">30%</text>
+    <rect x="410" y="144.5" width="26" height="85.5" fill="#f6b93b" rx="2" />
+    <text x="423" y="140" text-anchor="middle" font-family="'Plus Jakarta Sans', system-ui, sans-serif" font-size="9.5" font-weight="700" fill="#b45309">38%</text>
+    <text x="408.5" y="247" text-anchor="middle" font-family="'Plus Jakarta Sans', system-ui, sans-serif" font-size="11" font-weight="600" fill="#1e293b">Plastic</text>
+
+    <!-- X-axis baseline -->
+    <line x1="48" y1="230" x2="455" y2="230" stroke="#cbd5e1" stroke-width="1.5" />
+</svg>

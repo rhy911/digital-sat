@@ -97,3 +97,24 @@
     --density-spacious-gap: 1.5rem;
 }
 
+/* --- Approved Shared Identity Palette (Navy / Gold / Blue / Canvas / Muted) --- */
+.product-ui,
+.public-site {
+    --brand-navy: #10234a;
+    --brand-gold: #f6b93b;
+    --brand-gold-hover: #f9c85e;
+    --brand-blue: #2f5bea;
+    --brand-canvas: #f6f8fc;
+    --brand-muted: #566175;
+
+    --public-navy: var(--brand-navy);
+    --public-gold: var(--brand-gold);
+    --public-blue: var(--brand-blue);
+    --public-canvas: var(--brand-canvas);
+    --public-muted: var(--brand-muted);
+
+    --ui-action-bg: var(--brand-gold);
+    --ui-action-fg: var(--brand-navy);
+    --ui-action-hover: var(--brand-gold-hover);
+}
+

@@ -18,9 +18,9 @@ class PageController extends Controller
         return view('auth.signin');
     }
 
-    public function showSignup(): View
+    public function showSignup(Request $request): View
     {
-        return view('auth.signup');
+        return view('auth.signup', ['defaultRole' => old('role', $request->query('role') === 'teacher' ? 'teacher' : 'student')]);
     }
 
     public function showForgot(): View

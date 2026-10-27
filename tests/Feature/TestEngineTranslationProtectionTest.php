@@ -19,11 +19,12 @@ class TestEngineTranslationProtectionTest extends TestCase
         $response = $this->actingAs($student)->get(route('engine.session', 'preview-rw'));
 
         $response->assertOk();
-        $response->assertSee('<html lang="en" translate="no" class="notranslate">', false);
+        $content = $response->getContent();
         $response->assertSee('<meta name="google" content="notranslate">', false);
-        $response->assertSee('<body translate="no" class="notranslate">', false);
-        $response->assertSee('<header translate="no" class="notranslate">', false);
-        $response->assertSee('<main translate="no" class="notranslate">', false);
-        $response->assertSee('<footer translate="no" class="notranslate">', false);
+
+        foreach (['html', 'body', 'header', 'main', 'footer'] as $tag) {
+            $this->assertMatchesRegularExpression("/<{$tag}[^>]*translate=\"no\"/i", $content);
+            $this->assertMatchesRegularExpression("/<{$tag}[^>]*class=\"[^\"]*notranslate/i", $content);
+        }
     }
 }

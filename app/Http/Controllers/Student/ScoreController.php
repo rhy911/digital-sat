@@ -16,14 +16,16 @@ class ScoreController extends Controller
 
     public function index(): \Illuminate\Http\RedirectResponse|\Illuminate\View\View
     {
-        $latest = UserTest::where('user_id', Auth::id())
+        $user = Auth::user();
+        $latest = UserTest::where('user_id', $user->id)
+            ->visibleInGuestAnalytics($user)
             ->where('status', 'completed')
             ->excludingAbsorbedSections()
             ->orderBy('completed_at', 'desc')
             ->first();
 
         if (! $latest) {
-            return view('student.scores.empty', ['user' => Auth::user()]);
+            return view('student.scores.empty', ['user' => $user]);
         }
 
         return redirect()->route('student.scores.show', $latest);
@@ -33,6 +35,13 @@ class ScoreController extends Controller
     {
         $authUser = Auth::user();
         $this->authorize('view', $userTest);
+        if (\Illuminate\Support\Facades\Gate::denies('viewAnalysis', $userTest)) {
+            if (request()->wantsJson()) {
+                abort(403, 'An account is required to view full question analysis.');
+            }
+
+            return redirect()->route('public-trial.result', $userTest);
+        }
 
         if ($userTest->status !== 'completed') {
             if ($authUser->role === 'student') {
@@ -53,6 +62,7 @@ class ScoreController extends Controller
         $userTest->loadMissing(['user', 'assignment.classroom', 'examSession']);
 
         $attemptsQuery = UserTest::with(['test', 'assignment.classroom', 'examSession'])
+            ->visibleInGuestAnalytics($authUser)
             ->where('user_id', $userTest->user_id)
             ->where('status', 'completed')
             ->excludingAbsorbedSections()
@@ -104,6 +114,7 @@ class ScoreController extends Controller
     public function exportPdf(UserTest $userTest): \Symfony\Component\HttpFoundation\StreamedResponse|\Illuminate\Http\Response
     {
         $this->authorize('view', $userTest);
+        $this->authorize('viewAnalysis', $userTest);
         abort_if($userTest->status !== 'completed', 409, 'Score report PDF is unavailable until the attempt is completed.');
 
         $report   = $this->reportService->buildReportData($this->loadForReport($userTest));

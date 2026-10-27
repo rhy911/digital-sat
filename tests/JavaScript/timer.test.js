@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { state } from '../../resources/js/test/state.js';
-import { getTimerElapsedSeconds, refreshAssignmentTimer, startTimer, stopTimer, syncTimer, syncTimerFromServer } from '../../resources/js/test/timer.js';
+import { getTimerElapsedSeconds, initializeAttemptControl, pausePracticeAttempt, refreshAssignmentTimer, startTimer, stopTimer, syncTimer, syncTimerFromServer } from '../../resources/js/test/timer.js';
 
 test('countdown uses a monotonic clock and cannot expire from a wall-clock jump', () => {
   let now = 10_000;
@@ -242,4 +242,90 @@ test('a local countdown reaching zero verifies the server again before submittin
   assert.equal(state.timeLeft, 30);
   assert.equal(events.some(event => event.type === 'test-timer-expired'), false);
   stopTimer();
+});
+
+test('a paused practice attempt never starts a local countdown', () => {
+  let intervalStarts = 0;
+  globalThis.window = { isAssignmentAttempt: false };
+  globalThis.document = {
+    getElementById: () => ({ textContent: '', classList: { add() {}, remove() {} } }),
+    addEventListener() {}
+  };
+  globalThis.setInterval = () => { intervalStarts++; return 1; };
+  globalThis.clearInterval = () => {};
+  state.isPaused = true;
+  state.timerStartedAtMs = null;
+
+  startTimer(10);
+
+  assert.equal(intervalStarts, 0);
+  assert.equal(state.timerStartedAtMs, null);
+  state.isPaused = false;
+  stopTimer();
+});
+
+test('a stale heartbeat failure cannot clear the token installed by a newer pause', async () => {
+  let heartbeat;
+  let resolveHeartbeat;
+  globalThis.performance = { now: () => 10_000 };
+  globalThis.window = {
+    userTestId: 4,
+    currentModuleId: 8,
+    isAssignmentAttempt: false,
+    addEventListener() {},
+  };
+  Object.defineProperty(globalThis, 'navigator', { configurable: true, value: { onLine: true } });
+  globalThis.document = {
+    visibilityState: 'visible',
+    querySelector: () => null,
+    querySelectorAll: () => [],
+    createElement: () => ({
+      style: {},
+      setAttribute() {},
+      querySelectorAll: () => [],
+      querySelector: () => null,
+      focus() {},
+      remove() {},
+    }),
+    body: { appendChild() {} },
+    querySelectorMain: null,
+    querySelector(selector) {
+      return selector === 'main' ? { setAttribute() {}, removeAttribute() {} } : null;
+    },
+    dispatchEvent() {},
+  };
+  globalThis.CustomEvent = class { constructor(type) { this.type = type; } };
+  globalThis.setInterval = callback => { heartbeat = callback; return 71; };
+  globalThis.clearInterval = () => {};
+  globalThis.fetch = async (_url, options) => {
+    const action = JSON.parse(options.body).action;
+    if (action === 'claim') {
+      return { ok: true, json: async () => ({ token: 'old-token', status: 'active', remaining_seconds: 300 }) };
+    }
+    if (action === 'heartbeat') {
+      return new Promise(resolve => { resolveHeartbeat = resolve; });
+    }
+    if (action === 'pause') {
+      return { ok: true, json: async () => ({ token: 'new-token', status: 'paused', remaining_seconds: 300 }) };
+    }
+    throw new Error(`Unexpected action ${action}`);
+  };
+  state.attemptControlToken = null;
+  state.attemptControlHeartbeat = null;
+  state.attemptControlOverlay = null;
+  state.isPaused = false;
+  state.isSubmitting = false;
+  state.timerInterval = null;
+
+  assert.equal(await initializeAttemptControl(), true);
+  const oldHeartbeat = heartbeat();
+  await pausePracticeAttempt();
+  assert.equal(state.attemptControlToken, 'new-token');
+
+  resolveHeartbeat({ ok: false, status: 409, json: async () => ({ error: 'controller_lost' }) });
+  await oldHeartbeat;
+
+  assert.equal(state.attemptControlToken, 'new-token');
+  assert.match(state.attemptControlOverlay.innerHTML, /Practice paused/);
+  state.attemptControlHeartbeat = null;
 });

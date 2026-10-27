@@ -421,7 +421,8 @@
                             'X-CSRF-TOKEN': csrfToken,
                         },
                         body: JSON.stringify({
-                            mode: 'fresh'
+                            mode: 'fresh',
+                            confirm_fresh: true
                         }),
                     });
 

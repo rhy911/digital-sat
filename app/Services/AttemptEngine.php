@@ -121,17 +121,181 @@ class AttemptEngine
     /**
      * @return array<string, mixed>
      */
-    public function startOrResumeModule(UserTest $attempt, Module $module, bool $isPreview = false): array
+    public function startOrResumeModule(UserTest $attempt, Module $module): array
     {
-        if (! $attempt->current_module_started_at || (! $isPreview && ! $attempt->runsOnChainedClock())) {
+        abort_if($attempt->isGuestTrialExpired(), 410, 'This guest practice trial has expired.');
+        $attempt->renewGuestTrialActivity();
+
+        if (! $attempt->runsOnChainedClock() && $attempt->current_module_paused) {
+            return $this->timing($attempt, $module) + ['status' => 'paused'];
+        }
+
+        if (! $attempt->current_module_started_at) {
             $attempt->current_module_started_at = now();
             $attempt->current_module_elapsed_seconds ??= 0;
+            $attempt->current_module_paused = false;
             if ($attempt->exists) {
                 $attempt->save();
             }
         }
 
         return $this->timing($attempt, $module);
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    public function controlAttempt(int $userTestId, int $moduleId, int $userId, string $action, ?string $token = null): array
+    {
+        return DB::transaction(function () use ($userTestId, $moduleId, $userId, $action, $token) {
+            $attempt = UserTest::whereKey($userTestId)->where('user_id', $userId)->lockForUpdate()->first();
+            if (! $attempt || $attempt->status !== 'in_progress') {
+                throw new AuthorizationException('This test attempt is no longer available.');
+            }
+            abort_if($attempt->isGuestTrialExpired(), 410, 'This guest practice trial has expired.');
+            if ((int) $attempt->current_module_id !== $moduleId && $action !== 'release') {
+                throw new ConflictHttpException('This module is not active for the test attempt.');
+            }
+
+            $module = Module::findOrFail($attempt->current_module_id ?: $moduleId);
+            $isChained = $attempt->runsOnChainedClock();
+            $newToken = null;
+
+            if ($action === 'claim') {
+                if ($attempt->attempt_controller_token_hash !== null) {
+                    if (! $this->hasActiveControllerLease($attempt) && ! $isChained && $attempt->current_module_started_at) {
+                        $this->pausePracticeClockForControl($attempt, $module);
+                    }
+                    throw new ConflictHttpException('attempt_in_use');
+                }
+                if (! $isChained && ! $attempt->current_module_paused && ! $attempt->current_module_started_at
+                    && $this->pendingBreak($attempt, $module) === null) {
+                    $attempt->current_module_started_at = now();
+                    $attempt->current_module_elapsed_seconds ??= 0;
+                    $attempt->save();
+                }
+                $newToken = $this->rotateAttemptController($attempt);
+            } elseif ($action === 'takeover') {
+                if (! $isChained && $attempt->current_module_started_at) {
+                    $this->pausePracticeClockForControl($attempt, $module);
+                }
+                $newToken = $this->rotateAttemptController($attempt);
+            } else {
+                $this->assertAttemptController($attempt, $token);
+
+                if ($action === 'pause') {
+                    if ($isChained) {
+                        throw new ConflictHttpException('continuous_clock');
+                    }
+                    $this->pausePracticeClockForControl($attempt, $module);
+                    $newToken = $this->rotateAttemptController($attempt);
+                } elseif ($action === 'resume') {
+                    $leaseExpired = ! $isChained && ! $attempt->current_module_paused
+                        && (! $attempt->attempt_controller_last_seen_at
+                            || $attempt->attempt_controller_last_seen_at->lt(now()->subSeconds(45)));
+                    if ($leaseExpired) {
+                        $attempt->current_module_started_at = null;
+                        $attempt->current_module_paused = true;
+                        $newToken = $this->rotateAttemptController($attempt);
+                    } elseif (! $isChained && $attempt->current_module_paused) {
+                        $attempt->current_module_started_at = now();
+                        $attempt->current_module_paused = false;
+                        $newToken = $this->rotateAttemptController($attempt);
+                    }
+                    $attempt->attempt_controller_last_seen_at = now();
+                    $attempt->save();
+                } elseif ($action === 'heartbeat') {
+                    if (! $isChained && ! $attempt->current_module_paused
+                        && $attempt->attempt_controller_last_seen_at
+                        && $attempt->attempt_controller_last_seen_at->lt(now()->subSeconds(45))) {
+                        $attempt->current_module_started_at = null;
+                        $attempt->current_module_paused = true;
+                        $newToken = $this->rotateAttemptController($attempt);
+                    } elseif (! $isChained && ! $attempt->current_module_paused) {
+                        $this->syncElapsed($attempt, $module);
+                    }
+                    $attempt->attempt_controller_last_seen_at = now();
+                    $attempt->save();
+                } elseif ($action === 'release') {
+                    if (! $isChained && (int) $attempt->current_module_id === $moduleId) {
+                        $this->pausePracticeClockForControl($attempt, $module);
+                    }
+                    $attempt->attempt_controller_token_hash = null;
+                    $attempt->attempt_controller_last_seen_at = null;
+                    $attempt->save();
+                }
+            }
+
+            return $this->timingSnapshot($attempt, $module) + [
+                'status' => ! $isChained && $attempt->current_module_paused ? 'paused' : 'active',
+                'token' => $newToken,
+            ];
+        });
+    }
+
+    public function assertAttemptController(UserTest $attempt, ?string $token): void
+    {
+        if (! $token || ! $attempt->attempt_controller_token_hash
+            || ! hash_equals($attempt->attempt_controller_token_hash, hash('sha256', $token))) {
+            throw new ConflictHttpException('controller_lost');
+        }
+    }
+
+    private function assertCurrentPracticeLease(UserTest $attempt, string $token): void
+    {
+        $this->assertAttemptController($attempt, $token);
+        if ($attempt->runsOnChainedClock()) {
+            return;
+        }
+        if ($attempt->current_module_paused || ! $attempt->current_module_started_at) {
+            throw new ConflictHttpException('practice_paused');
+        }
+        if (! $attempt->attempt_controller_last_seen_at
+            || $attempt->attempt_controller_last_seen_at->lt(now()->subSeconds(45))) {
+            $attempt->current_module_started_at = null;
+            $attempt->current_module_paused = true;
+            $attempt->save();
+            throw new ConflictHttpException('practice_paused');
+        }
+    }
+
+    private function hasActiveControllerLease(UserTest $attempt): bool
+    {
+        return $attempt->attempt_controller_token_hash !== null
+            && $attempt->attempt_controller_last_seen_at?->greaterThan(now()->subSeconds(45));
+    }
+
+    private function rotateAttemptController(UserTest $attempt): string
+    {
+        $token = bin2hex(random_bytes(32));
+        $attempt->attempt_controller_token_hash = hash('sha256', $token);
+        $attempt->attempt_controller_last_seen_at = now();
+        $attempt->save();
+
+        return $token;
+    }
+
+    private function pausePracticeClock(UserTest $attempt, Module $module): void
+    {
+        if (! $attempt->runsOnChainedClock() && $attempt->current_module_started_at) {
+            $this->syncElapsed($attempt, $module);
+        }
+
+        $attempt->current_module_started_at = null;
+        $attempt->current_module_paused = ! $attempt->runsOnChainedClock();
+        $attempt->save();
+    }
+
+    private function pausePracticeClockForControl(UserTest $attempt, Module $module): void
+    {
+        if ($this->hasActiveControllerLease($attempt)) {
+            $this->pausePracticeClock($attempt, $module);
+            return;
+        }
+
+        $attempt->current_module_started_at = null;
+        $attempt->current_module_paused = true;
+        $attempt->save();
     }
 
     /**
@@ -174,24 +338,6 @@ class AttemptEngine
         }
 
         return $timing;
-    }
-
-    public function isPastGraceDeadline(UserTest $attempt, Module $module, int $graceSeconds = 300): bool
-    {
-        if (! $attempt->current_module_started_at) {
-            return false;
-        }
-
-        if ($this->durationSeconds($module) <= 0) {
-            return false;
-        }
-
-        $deadline = $this->deadline($attempt, $module);
-        if (! $deadline) {
-            return false;
-        }
-
-        return now()->greaterThan($deadline->copy()->addSeconds($graceSeconds));
     }
 
     /**
@@ -257,9 +403,9 @@ class AttemptEngine
     /**
      * @return array<string, mixed>
      */
-    public function resumeBreak(int $userTestId, int $moduleId, ?int $userId = null): array
+    public function resumeBreak(int $userTestId, int $moduleId, ?int $userId = null, ?string $controllerToken = null): array
     {
-        return DB::transaction(function () use ($userTestId, $moduleId, $userId) {
+        return DB::transaction(function () use ($userTestId, $moduleId, $userId, $controllerToken) {
             $query = UserTest::where('id', $userTestId);
             if ($userId !== null) {
                 $query->where('user_id', $userId);
@@ -269,6 +415,11 @@ class AttemptEngine
             if (! $attempt || $attempt->status !== 'in_progress') {
                 throw new AuthorizationException('This test attempt is no longer available.');
             }
+            if ($controllerToken !== null) {
+                $this->assertAttemptController($attempt, $controllerToken);
+            }
+            abort_if($attempt->isGuestTrialExpired(), 410, 'This guest practice trial has expired.');
+            $attempt->renewGuestTrialActivity();
 
             $module = Module::findOrFail($moduleId);
             $belongsToAttemptTest = $module->sections()->where('sections.test_id', $attempt->test_id)->exists()
@@ -287,6 +438,7 @@ class AttemptEngine
                 $attempt->forceFill([
                     'current_module_started_at' => now(),
                     'current_module_elapsed_seconds' => 0,
+                    'current_module_paused' => false,
                 ])->save();
             } elseif ($attempt->current_module_started_at === null) {
                 $attempt->forceFill([
@@ -295,7 +447,9 @@ class AttemptEngine
                 ])->save();
             }
 
-            return $this->timingSnapshot($attempt, $module) + ['status' => 'active'];
+            return $this->timingSnapshot($attempt, $module) + [
+                'status' => ! $attempt->runsOnChainedClock() && $attempt->current_module_paused ? 'paused' : 'active',
+            ];
         });
     }
 
@@ -528,6 +682,7 @@ class AttemptEngine
         if (! $attempt || ($attempt->status !== 'in_progress' && ! $allowReceipt)) {
             throw new AuthorizationException('This test attempt is no longer available.');
         }
+        abort_if($attempt->isGuestTrialExpired(), 410, 'This guest practice trial has expired.');
 
         $module = Module::with(['section.test', 'questions'])->findOrFail($moduleId);
         $section = $module->section;
@@ -697,18 +852,24 @@ class AttemptEngine
         Module $module,
         array $answers = [],
         array $questionTimes = [],
-        ?int $clientElapsedSeconds = null
+        ?string $controllerToken = null
     ): array {
-        return DB::transaction(function () use ($attempt, $module, $answers, $questionTimes, $clientElapsedSeconds) {
+        return DB::transaction(function () use ($attempt, $module, $answers, $questionTimes, $controllerToken) {
             $lockedAttempt = $attempt;
             if ($attempt->exists) {
                 $lockedAttempt = UserTest::where('id', $attempt->id)->lockForUpdate()->first();
                 if (! $lockedAttempt || $lockedAttempt->status !== 'in_progress') {
                     throw new AuthorizationException('This test attempt is no longer available.');
                 }
+                abort_if($lockedAttempt->isGuestTrialExpired(), 410, 'This guest practice trial has expired.');
 
                 if ((int) $lockedAttempt->current_module_id !== (int) $module->id) {
                     throw new ConflictHttpException('This module is not active for the test attempt.');
+                }
+
+                if ($controllerToken !== null) {
+                    $this->assertAttemptController($lockedAttempt, $controllerToken);
+                    $this->assertCurrentPracticeLease($lockedAttempt, $controllerToken);
                 }
 
                 if ($this->isPendingBreak($lockedAttempt, $module)) {
@@ -720,17 +881,9 @@ class AttemptEngine
                 return ['status' => 'submitting', 'expired' => false, 'saved_count' => 0];
             }
 
-            if ($lockedAttempt->runsOnChainedClock()) {
-                $timing = $this->syncElapsed($lockedAttempt, $module);
-                if ($timing['expired']) {
-                    return ['status' => 'expired', 'expired' => true, 'saved_count' => 0];
-                }
-            } elseif ($clientElapsedSeconds !== null) {
-                $lockedAttempt->current_module_elapsed_seconds = max(0, $clientElapsedSeconds);
-                $lockedAttempt->current_module_started_at = now();
-                if ($lockedAttempt->exists) {
-                    $lockedAttempt->save();
-                }
+            $timing = $this->syncElapsed($lockedAttempt, $module);
+            if ($timing['expired']) {
+                return ['status' => 'expired', 'expired' => true, 'saved_count' => 0];
             }
 
             $savedCount = 0;
@@ -738,6 +891,11 @@ class AttemptEngine
                 $this->validateAnswers($module, $answers);
                 $savedCount = $this->saveModuleAnswers($lockedAttempt, $module, $answers, $questionTimes);
             }
+            if ($controllerToken !== null) {
+                $lockedAttempt->attempt_controller_last_seen_at = now();
+                $lockedAttempt->save();
+            }
+            $lockedAttempt->renewGuestTrialActivity();
 
             return [
                 'status' => 'success',
@@ -782,6 +940,7 @@ class AttemptEngine
         array $answers = [],
         array $questionTimes = [],
         bool $clientTimedOut = false,
+        ?string $controllerToken = null,
     ): array {
         $attemptId = (int) $attempt->id;
         $moduleId = (int) $module->id;
@@ -814,7 +973,7 @@ class AttemptEngine
                 'module_id' => $moduleId,
             ]);
 
-            $outcome = DB::transaction(function () use ($attempt, $module, $answers, $questionTimes, $clientTimedOut) {
+            $outcome = DB::transaction(function () use ($attempt, $module, $answers, $questionTimes, $clientTimedOut, $controllerToken) {
                 $lockedAttempt = $attempt;
                 if ($attempt->exists) {
                     $lockedAttempt = UserTest::where('id', $attempt->id)->lockForUpdate()->first();
@@ -850,6 +1009,12 @@ class AttemptEngine
                 if ($lockedAttempt->status !== 'in_progress') {
                     throw new AuthorizationException('This test attempt is no longer available.');
                 }
+                if ($controllerToken !== null) {
+                    $this->assertAttemptController($lockedAttempt, $controllerToken);
+                    $this->assertCurrentPracticeLease($lockedAttempt, $controllerToken);
+                }
+                abort_if($lockedAttempt->isGuestTrialExpired(), 410, 'This guest practice trial has expired.');
+                $lockedAttempt->renewGuestTrialActivity();
 
                 if ($this->isPendingBreak($lockedAttempt, $module)) {
                     throw new ConflictHttpException('break_pending');
@@ -861,18 +1026,12 @@ class AttemptEngine
                 $timedOut = false;
                 $nextStartsAt = null;
 
-                if ($lockedAttempt->runsOnChainedClock()) {
-                    $timedOut = $this->syncElapsed($lockedAttempt, $module)['expired'];
-                    if ($clientTimedOut && ! $timedOut) {
-                        return ['status' => 'not_expired', 'timing' => $this->timingSnapshot($lockedAttempt, $module)];
-                    }
-                    if ($timedOut) {
-                        $nextStartsAt = $this->deadline($lockedAttempt, $module);
-                    }
-                } elseif ($lockedAttempt->current_module_started_at) {
-                    if ($this->isPastGraceDeadline($lockedAttempt, $module)) {
-                        throw new AuthorizationException('Module submission time has expired.');
-                    }
+                $timedOut = $this->syncElapsed($lockedAttempt, $module)['expired'];
+                if ($clientTimedOut && ! $timedOut) {
+                    return ['status' => 'not_expired', 'timing' => $this->timingSnapshot($lockedAttempt, $module)];
+                }
+                if ($timedOut && $lockedAttempt->runsOnChainedClock()) {
+                    $nextStartsAt = $this->deadline($lockedAttempt, $module);
                 }
 
                 $this->saveModuleAnswers(
@@ -906,7 +1065,7 @@ class AttemptEngine
 
             if (config('scoring.inline_non_final')) {
                 try {
-                    if (! $this->isTerminalSubmission($attempt, $module)) {
+                    if (! $this->isTerminalSubmission($attempt, $module) || $attempt->is_public_trial) {
                         $result = $this->scoreAndAdvance(
                             $outcome['user_test_id'],
                             $outcome['module_id'],
@@ -1316,6 +1475,15 @@ class AttemptEngine
      */
     protected function completionDestination(UserTest $attempt): array
     {
+        if ($attempt->is_public_trial) {
+            $url = route('public-trial.result', $attempt);
+
+            return [
+                'redirect_url' => $url,
+                'results_url' => optional($attempt->user)->is_guest ? $url : route('student.scores.show', $attempt),
+            ];
+        }
+
         if (optional($attempt->user)->is_guest) {
             $url = route('exam-join.result', $attempt);
 

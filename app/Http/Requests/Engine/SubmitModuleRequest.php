@@ -15,7 +15,7 @@ class SubmitModuleRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'user_test_id' => 'required|exists:user_tests,id',
+            'user_test_id' => 'required|integer',
             'module_id' => 'required|exists:modules,id',
             'answers' => 'present|array|max:100',
             'answers.*' => 'nullable|string|max:100',

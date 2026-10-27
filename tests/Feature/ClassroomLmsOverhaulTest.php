@@ -17,9 +17,21 @@ class ClassroomLmsOverhaulTest extends TestCase
 {
     use RefreshDatabase;
 
-    private function teacher(): User { return User::factory()->teacher()->create(); }
-    private function student(): User { return User::factory()->student()->create(); }
-    private function classroom(User $teacher): Classroom { return Classroom::create(['owner_id' => $teacher->id, 'name' => 'SAT Prep']); }
+    private function teacher(): User
+    {
+        return User::factory()->teacher()->create();
+    }
+
+    private function student(): User
+    {
+        return User::factory()->student()->create();
+    }
+
+    private function classroom(User $teacher): Classroom
+    {
+        return Classroom::create(['owner_id' => $teacher->id, 'name' => 'SAT Prep']);
+    }
+
     private function activeTest(User $teacher): Test
     {
         return Test::create([
@@ -31,7 +43,7 @@ class ClassroomLmsOverhaulTest extends TestCase
         ]);
     }
 
-    public function test_user_test_runs_on_chained_clock_respects_assignment_clock_mode(): void
+    public function test_legacy_paused_assignment_is_converted_to_the_continuous_clock(): void
     {
         $teacher = $this->teacher();
         $student = $this->student();
@@ -58,14 +70,37 @@ class ClassroomLmsOverhaulTest extends TestCase
             'status' => 'published',
         ]);
 
+        $this->artisan('assignments:convert-paused-clocks')->assertSuccessful();
+
         $chainedAttempt = new UserTest(['assignment_id' => $chainedAssignment->id]);
         $chainedAttempt->setRelation('assignment', $chainedAssignment);
-
-        $pausedAttempt = new UserTest(['assignment_id' => $pausedAssignment->id]);
-        $pausedAttempt->setRelation('assignment', $pausedAssignment);
+        $convertedAttempt = new UserTest(['assignment_id' => $pausedAssignment->id]);
+        $convertedAttempt->setRelation('assignment', $pausedAssignment->fresh());
 
         $this->assertTrue($chainedAttempt->runsOnChainedClock());
-        $this->assertFalse($pausedAttempt->runsOnChainedClock());
+        $this->assertTrue($convertedAttempt->runsOnChainedClock());
+    }
+
+    public function test_teacher_cannot_create_a_new_paused_clock_assignment(): void
+    {
+        $teacher = $this->teacher();
+        $classroom = $this->classroom($teacher);
+        $test = $this->activeTest($teacher);
+
+        $this->actingAs($teacher)
+            ->post(route('teacher.assignments.store', $classroom), [
+                'test_id' => $test->id,
+                'title' => 'Paused assignment',
+                'attempt_limit' => 1,
+                'target_audience' => 'all',
+                'clock_mode' => 'paused',
+            ])
+            ->assertSessionHasErrors('clock_mode');
+
+        $this->assertDatabaseMissing('assignments', [
+            'classroom_id' => $classroom->id,
+            'title' => 'Paused assignment',
+        ]);
     }
 
     public function test_assignment_recipient_factors_in_extra_attempts(): void

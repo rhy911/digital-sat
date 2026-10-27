@@ -3,9 +3,11 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Support\Carbon;
 
 /**
  * @property-read ?User $user
@@ -15,6 +17,8 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  * @property-read ?Module $currentModule
  * @property-read ?ScoreConversionSet $scoreConversionSet
  * @property-read ?User $feedbackAuthor
+ * @property ?Carbon $guest_trial_expires_at
+ * @property ?Carbon $guest_trial_absolute_expires_at
  */
 class UserTest extends Model
 {
@@ -25,6 +29,9 @@ class UserTest extends Model
         'assignment_id',
         'exam_session_id',
         'guest_name',
+        'is_public_trial',
+        'guest_trial_expires_at',
+        'guest_trial_absolute_expires_at',
         'attempt_type',
         'section_type',
         'attempt_number',
@@ -52,6 +59,9 @@ class UserTest extends Model
         'current_module_id',
         'current_module_started_at',
         'current_module_elapsed_seconds',
+        'current_module_paused',
+        'attempt_controller_token_hash',
+        'attempt_controller_last_seen_at',
         'teacher_feedback',
         'feedback_at',
         'feedback_by',
@@ -63,7 +73,10 @@ class UserTest extends Model
         'current_module_started_at' => 'datetime',
         'current_module_id' => 'integer',
         'current_module_elapsed_seconds' => 'integer',
+        'current_module_paused' => 'boolean',
+        'attempt_controller_last_seen_at' => 'datetime',
         'attempt_number' => 'integer',
+        'is_public_trial' => 'boolean',
     ];
 
     protected static function booted()
@@ -78,6 +91,96 @@ class UserTest extends Model
     public function getRouteKeyName(): string
     {
         return 'ulid';
+    }
+
+    public function isEligibleGuestPublicTrial(): bool
+    {
+        return $this->is_public_trial
+            && $this->assignment_id === null
+            && $this->exam_session_id === null
+            && (bool) $this->user()->withTrashed()->value('is_guest');
+    }
+
+    /** @return Attribute<Carbon|null, Carbon|string|null> */
+    protected function guestTrialExpiresAt(): Attribute
+    {
+        return Attribute::make(
+            get: fn ($value) => $value === null ? null : Carbon::parse($value, 'UTC')->setTimezone(config('app.timezone')),
+            set: fn ($value) => $value === null ? null : Carbon::parse($value)->utc()->format('Y-m-d H:i:s'),
+        );
+    }
+
+    /** @return Attribute<Carbon|null, Carbon|string|null> */
+    protected function guestTrialAbsoluteExpiresAt(): Attribute
+    {
+        return Attribute::make(
+            get: fn ($value) => $value === null ? null : Carbon::parse($value, 'UTC')->setTimezone(config('app.timezone')),
+            set: fn ($value) => $value === null ? null : Carbon::parse($value)->utc()->format('Y-m-d H:i:s'),
+        );
+    }
+
+    public function isGuestTrialExpired(): bool
+    {
+        return $this->isEligibleGuestPublicTrial() && (
+            ($this->guest_trial_expires_at !== null && $this->guest_trial_expires_at->lessThanOrEqualTo(now()))
+            || ($this->guest_trial_absolute_expires_at !== null && $this->guest_trial_absolute_expires_at->lessThanOrEqualTo(now()))
+        );
+    }
+
+    public function renewGuestTrialActivity(): bool
+    {
+        $absolute = $this->guest_trial_absolute_expires_at;
+        if ($absolute === null) {
+            return false;
+        }
+        $now = now()->utc();
+        $deadline = $now->copy()->addMinutes((int) config('public_trial.retention.idle_minutes', 30));
+        $deadline = $deadline->min($absolute->copy()->utc());
+
+        $renewed = \Illuminate\Support\Facades\DB::table('user_tests')
+            ->where('id', $this->id)
+            ->where('is_public_trial', true)
+            ->whereNull('assignment_id')
+            ->whereNull('exam_session_id')
+            ->whereNotNull('guest_trial_expires_at')
+            ->where('guest_trial_expires_at', '>', $now)
+            ->where('guest_trial_absolute_expires_at', '>', $now)
+            ->whereExists(fn ($owner) => $owner->selectRaw('1')->from('users')
+                ->whereColumn('users.id', 'user_tests.user_id')->where('users.is_guest', true))
+            ->update(['guest_trial_expires_at' => \Illuminate\Support\Facades\DB::raw(
+                "LEAST(guest_trial_absolute_expires_at, GREATEST(guest_trial_expires_at, '{$deadline->format('Y-m-d H:i:s')}'))"
+            )]);
+
+        if ($renewed) {
+            $this->guest_trial_expires_at = $deadline;
+        }
+
+        return (bool) $renewed;
+    }
+
+    /**
+     * @param Builder<UserTest> $query
+     * @return Builder<UserTest>
+     */
+    public function scopeEligibleGuestPublicTrials(Builder $query): Builder
+    {
+        return $query->where('is_public_trial', true)
+            ->whereNull('assignment_id')
+            ->whereNull('exam_session_id')
+            ->whereIn('user_id', User::withTrashed()->where('is_guest', true)->select('id'));
+    }
+
+    /**
+     * @param Builder<UserTest> $query
+     * @return Builder<UserTest>
+     */
+    public function scopeExpiredGuestPublicTrials(Builder $query): Builder
+    {
+        return $query->eligibleGuestPublicTrials()->whereNotNull('guest_trial_expires_at')
+            ->where(function (Builder $expired) {
+                $expired->where('guest_trial_expires_at', '<=', now()->utc())
+                    ->orWhere('guest_trial_absolute_expires_at', '<=', now()->utc());
+            });
     }
 
     /** @return BelongsTo<User, $this> */
@@ -188,6 +291,38 @@ class UserTest extends Model
                         ->whereColumn('merged_attempt.completed_at', '>=', 'user_tests.completed_at');
                 });
         });
+    }
+
+    /**
+     * @param  Builder<UserTest>  $query
+     * @return Builder<UserTest>
+     */
+    public function scopeVisibleInGuestAnalytics(Builder $query, User $viewer): Builder
+    {
+        if (! $viewer->is_guest) {
+            return $query;
+        }
+
+        return $query->where('is_public_trial', false);
+    }
+
+    /**
+     * Scope to completed public trial attempts owned by a given user.
+     *
+     * @param  Builder<UserTest>  $query
+     * @return Builder<UserTest>
+     */
+    public function scopeOwnedCompletedPublicTrial(Builder $query, int|string $userId, ?string $ulid = null): Builder
+    {
+        $query->where('user_id', $userId)
+            ->where('status', 'completed')
+            ->where('is_public_trial', true);
+
+        if ($ulid !== null) {
+            $query->where('ulid', $ulid);
+        }
+
+        return $query;
     }
 
     /**

@@ -13,9 +13,9 @@
             display — most tablets and all laptops/desktops work fine — to start or continue your test.
         </p>
 
-        <a href="{{ route('home') }}"
+        <a href="{{ auth()->user()?->is_guest ? route('public-trial.index') : route('home') }}"
             class="mt-8 inline-flex min-h-11 items-center rounded-xl bg-brand px-5 py-2.5 text-sm font-bold text-white transition hover:bg-blue-800">
-            Back to dashboard
+            {{ auth()->user()?->is_guest ? 'Back to DigiSAT' : 'Back to dashboard' }}
         </a>
     </div>
 </x-layouts.landing>

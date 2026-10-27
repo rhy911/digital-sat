@@ -240,27 +240,6 @@ class AttemptEngineTest extends TestCase
         $this->engine->issueInitialModule($attempt, $test);
     }
 
-    public function test_is_past_grace_deadline_evaluates_correctly(): void
-    {
-        $module = new Module(['duration_minutes' => 30]);
-        $attempt = new UserTest();
-
-        // Not started
-        $this->assertFalse($this->engine->isPastGraceDeadline($attempt, $module));
-
-        // Started 10 minutes ago (duration 30m, grace 5m -> deadline is in 20m)
-        $attempt->current_module_started_at = Carbon::now()->subMinutes(10);
-        $this->assertFalse($this->engine->isPastGraceDeadline($attempt, $module));
-
-        // Started 32 minutes ago (past 30m duration, but within 5m grace -> 35m total)
-        $attempt->current_module_started_at = Carbon::now()->subMinutes(32);
-        $this->assertFalse($this->engine->isPastGraceDeadline($attempt, $module));
-
-        // Started 36 minutes ago (past 30m duration + 5m grace)
-        $attempt->current_module_started_at = Carbon::now()->subMinutes(36);
-        $this->assertTrue($this->engine->isPastGraceDeadline($attempt, $module));
-    }
-
     public function test_cascade_expire_returns_zero_when_not_in_progress_or_clock_future(): void
     {
         $attempt = new UserTest([
