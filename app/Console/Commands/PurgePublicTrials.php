@@ -247,7 +247,10 @@ class PurgePublicTrials extends Command
         return $guests->reject(fn (User $guest): bool => $this->hasProtectedGuestReference($guest, $references, $artifactTables))->count();
     }
 
-    /** @param array<int, object{TABLE_NAME: string, COLUMN_NAME: string}> $references */
+    /**
+     * @param array<int, object{TABLE_NAME: string, COLUMN_NAME: string}> $references
+     * @param array<int, string> $artifactTables
+     */
     private function hasProtectedGuestReference(User $guest, array $references, array $artifactTables): bool
     {
         foreach ($references as $reference) {
