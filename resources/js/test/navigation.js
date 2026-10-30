@@ -738,7 +738,13 @@ export async function submitModule(options = {}) {
       let secondsLeft = 5;
       let completionTimer;
       let hasNavigated = false;
-      const homeUrl = data.redirect_url || window.homeUrl || '/home';
+      let homeUrl = data.redirect_url || window.homeUrl || '/home';
+      try {
+        if (homeUrl.startsWith('http://') || homeUrl.startsWith('https://')) {
+          const parsed = new URL(homeUrl);
+          homeUrl = parsed.pathname + parsed.search + parsed.hash;
+        }
+      } catch {}
       const doNavigateHome = () => {
         if (hasNavigated) return;
         hasNavigated = true;
@@ -807,6 +813,11 @@ export async function submitModule(options = {}) {
         const breakSecs = (data.break_duration_seconds !== undefined && data.break_duration_seconds !== null)
           ? Number(data.break_duration_seconds)
           : 600;
+        const remainingBreakSecs = Number.isFinite(data.remaining_break_seconds)
+          ? Number(data.remaining_break_seconds)
+          : (data.break_ends_at
+            ? Math.max(0, Math.ceil((new Date(data.break_ends_at).getTime() - Date.now()) / 1000))
+            : Math.max(0, breakSecs));
 
         if (breakSecs <= 0 && window.isAssignmentAttempt) {
           proceedToNextModule();
@@ -815,6 +826,7 @@ export async function submitModule(options = {}) {
           showInterSectionBreak(Math.max(0, breakSecs), proceedToNextModule, {
             nextModuleId: data.next_module_numeric_id || data.next_module_id,
             waitForExplicitContinue: !window.isAssignmentAttempt,
+            remainingSeconds: remainingBreakSecs,
           });
         }
       } else if (timedOut) {

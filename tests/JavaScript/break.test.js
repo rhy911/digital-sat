@@ -53,6 +53,7 @@ function installBreakPage(fetchTiming) {
 
   return {
     display,
+    overlay,
     intervalCallbacks,
     timeoutCallbacks,
     listeners,
@@ -76,6 +77,17 @@ test('section break uses server remaining time after a delayed submit response',
   page.advance(1_000);
   page.intervalCallbacks.values().next().value();
   assert.equal(page.display.textContent, '04:59');
+});
+
+test('section break renders provided remainingSeconds immediately without SYNC', () => {
+  const page = installBreakPage(async () => timingResponse({ status: 'break', remaining_break_seconds: 600 }));
+  state.isOnSectionBreak = false;
+
+  showInterSectionBreak(600, () => 'redirecting', { nextModuleId: 9, remainingSeconds: 600 });
+  assert.match(page.overlay.innerHTML, /id="breakTimerDisplay"[^>]*>10:00<\/div>/);
+  assert.equal(page.intervalCallbacks.size, 1);
+  page.intervalCallbacks.values().next().value();
+  assert.equal(page.display.textContent, '10:00');
 });
 
 test('section break leaves for the next module when another tab resumed it', async () => {

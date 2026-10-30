@@ -1136,6 +1136,7 @@ class AttemptEngine
             $breakAnchor = ($timedOut && $startNextAt) ? $startNextAt->copy() : now();
             $breakEndsAt = $breakAnchor->copy()->addSeconds($breakDurationSeconds);
             $result['break_ends_at'] = $breakEndsAt->toIso8601String();
+            $result['remaining_break_seconds'] = max(0, (int) ceil($breakEndsAt->getTimestamp() - now()->getTimestamp()));
             if ($userTest->runsOnChainedClock()) {
                 $startNextAt = $breakEndsAt;
             }
@@ -1476,23 +1477,23 @@ class AttemptEngine
     protected function completionDestination(UserTest $attempt): array
     {
         if ($attempt->is_public_trial) {
-            $url = route('public-trial.result', $attempt);
+            $url = route('public-trial.result', $attempt, false);
 
             return [
                 'redirect_url' => $url,
-                'results_url' => optional($attempt->user)->is_guest ? $url : route('student.scores.show', $attempt),
+                'results_url' => optional($attempt->user)->is_guest ? $url : route('student.scores.show', $attempt, false),
             ];
         }
 
         if (optional($attempt->user)->is_guest) {
-            $url = route('exam-join.result', $attempt);
+            $url = route('exam-join.result', $attempt, false);
 
             return ['redirect_url' => $url, 'results_url' => $url];
         }
 
         return [
-            'redirect_url' => route('home'),
-            'results_url' => route('student.scores.show', $attempt),
+            'redirect_url' => route('home', [], false),
+            'results_url' => route('student.scores.show', $attempt, false),
         ];
     }
 
