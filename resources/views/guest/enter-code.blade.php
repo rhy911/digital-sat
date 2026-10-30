@@ -19,7 +19,7 @@
     </div>
 
     @if ($errors->any())
-        <div class="auth-notice auth-notice--error" role="alert">
+        <div class="auth-notice auth-notice--error" id="authFormError" role="alert">
             <svg class="auth-notice__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
                 stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
                 <circle cx="12" cy="12" r="10" />
@@ -44,7 +44,7 @@
             <input type="text" class="form-control text-center font-mono tracking-[0.35em] uppercase" id="code"
                 name="code" value="{{ old('code') }}" maxlength="6" minlength="6" required autofocus
                 autocomplete="off" autocapitalize="characters" spellcheck="false" placeholder="X7K9P2"
-                inputmode="latin" @if ($errors->any()) aria-invalid="true" @endif>
+                inputmode="latin" @if ($errors->any()) aria-invalid="true" aria-describedby="authFormError" @endif>
         </div>
 
         <button type="submit" class="submit-btn" id="examCodeSubmit">Continue</button>
@@ -52,7 +52,7 @@
 
     @unless ($signedIn)
         <div class="links text-center">
-            <a href="{{ route('signin.form', ['role' => 'student']) }}">Have an account? Sign in</a>
+            <a href="{{ route('signin') }}">Have an account? Sign in</a>
         </div>
     @endunless
 

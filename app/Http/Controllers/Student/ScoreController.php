@@ -44,6 +44,16 @@ class ScoreController extends Controller
         }
 
         if ($userTest->status !== 'completed') {
+            if ($authUser->is_guest) {
+                if ($userTest->status === 'in_progress' && $userTest->current_module_id && $userTest->currentModule) {
+                    return redirect()->to(
+                        route('engine.session', ['ulid' => $userTest->currentModule->ulid]).'?attempt='.$userTest->ulid
+                    );
+                }
+
+                return redirect()->route('exam-join.entry');
+            }
+
             if ($authUser->role === 'student') {
                 if ($userTest->status === 'in_progress') {
                     return redirect()->route('my-practice', $userTest);
@@ -61,31 +71,35 @@ class ScoreController extends Controller
 
         $userTest->loadMissing(['user', 'assignment.classroom', 'examSession']);
 
-        $attemptsQuery = UserTest::with(['test', 'assignment.classroom', 'examSession'])
-            ->visibleInGuestAnalytics($authUser)
-            ->where('user_id', $userTest->user_id)
-            ->where('status', 'completed')
-            ->excludingAbsorbedSections()
-            ->orderBy('completed_at', 'desc');
+        if ($authUser->is_guest) {
+            $attempts = collect([$userTest->loadMissing('test')]);
+        } else {
+            $attemptsQuery = UserTest::with(['test', 'assignment.classroom', 'examSession'])
+                ->visibleInGuestAnalytics($authUser)
+                ->where('user_id', $userTest->user_id)
+                ->where('status', 'completed')
+                ->excludingAbsorbedSections()
+                ->orderBy('completed_at', 'desc');
 
-        if ($authUser->role === 'teacher') {
-            $attemptsQuery->where(function ($query) use ($authUser) {
-                $query->whereHas('assignment.classroom', function ($cq) use ($authUser) {
-                    $cq->where('owner_id', $authUser->id)
-                        ->orWhereHas('coTeachers', fn ($teachers) => $teachers->whereKey($authUser->id));
-                })->orWhereHas('examSession', function ($eq) use ($authUser) {
-                    $eq->where('teacher_id', $authUser->id);
+            if ($authUser->role === 'teacher') {
+                $attemptsQuery->where(function ($query) use ($authUser) {
+                    $query->whereHas('assignment.classroom', function ($cq) use ($authUser) {
+                        $cq->where('owner_id', $authUser->id)
+                            ->orWhereHas('coTeachers', fn ($teachers) => $teachers->whereKey($authUser->id));
+                    })->orWhereHas('examSession', function ($eq) use ($authUser) {
+                        $eq->where('teacher_id', $authUser->id);
+                    });
                 });
-            });
-        }
+            }
 
-        $attempts = $attemptsQuery->get();
+            $attempts = $attemptsQuery->get();
 
-        // An absorbed section attempt is hidden from the list but can still be
-        // opened directly (e.g. from an assignment report) — keep it visible so
-        // the sidebar always contains the attempt being shown.
-        if (! $attempts->contains('id', $userTest->id)) {
-            $attempts = $attempts->push($userTest->loadMissing('test'))->sortByDesc('completed_at')->values();
+            // An absorbed section attempt is hidden from the list but can still be
+            // opened directly (e.g. from an assignment report) — keep it visible so
+            // the sidebar always contains the attempt being shown.
+            if (! $attempts->contains('id', $userTest->id)) {
+                $attempts = $attempts->push($userTest->loadMissing('test'))->sortByDesc('completed_at')->values();
+            }
         }
 
         $classroom = $userTest->assignment?->classroom;

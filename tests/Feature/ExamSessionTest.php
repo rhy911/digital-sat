@@ -12,9 +12,12 @@ use App\Models\Test;
 use App\Models\User;
 use App\Models\UserTest;
 use App\Models\UserTestAnswer;
+use App\Models\UserTestAnswerReview;
+use App\Models\UserTestModuleSubmission;
 use App\Livewire\Teacher\ExamAttemptMonitor;
 use App\Services\AttemptEngine;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Cache;
 use Livewire\Livewire;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Str;
@@ -143,6 +146,14 @@ class ExamSessionTest extends TestCase
         ]);
         $student = User::factory()->create(['role' => 'student', 'email_verified_at' => now()]);
 
+        // Screen shows active button without name input for signed-in students
+        $this->actingAs($student)
+            ->get(route('exam-join.show', $session->code))
+            ->assertOk()
+            ->assertDontSee('id="display_name"', false)
+            ->assertDontSee('id="examJoinSubmit" aria-disabled="true"', false)
+            ->assertSee('class="submit-btn active"', false);
+
         $this->actingAs($student)
             ->post(route('exam-join.process', $session->code))
             ->assertRedirect();
@@ -152,6 +163,24 @@ class ExamSessionTest extends TestCase
         $this->assertSame($student->id, $attempt->user_id);
         // A real account keeps its own name; guest_name is only for throwaway users.
         $this->assertNull($attempt->guest_name);
+    }
+
+    public function test_exam_join_screen_dims_start_exam_button_when_name_is_required_for_guest(): void
+    {
+        $teacher = $this->approvedTeacher();
+        $test = $this->privateTeacherTest($teacher);
+        $session = ExamSession::create([
+            'teacher_id' => $teacher->id,
+            'test_id' => $test->id,
+            'title' => 'Guest Join Exam',
+        ]);
+
+        // Unauthenticated guest must provide a name; button is initially dimmed with aria-disabled="true"
+        $response = $this->get(route('exam-join.show', $session->code));
+        $response->assertOk();
+        $response->assertSee('id="display_name"', false);
+        $response->assertSee('id="examJoinSubmit" aria-disabled="true"', false);
+        $response->assertDontSee('class="submit-btn active"', false);
     }
 
     public function test_private_test_blocks_an_unrelated_student_without_exam_session(): void
@@ -342,10 +371,17 @@ class ExamSessionTest extends TestCase
 
         $response = $this->actingAs($guest)->get(route('exam-join.result', $attempt));
 
-        $response->assertOk();
-        $response->assertSee('1200');
-        $response->assertSee('This result is not saved yet', false);
-        $response->assertSee(route('exam-join.link-account', ['destination' => 'signup']), false);
+        $response->assertRedirect(route('student.scores.show', $attempt));
+
+        $reportResponse = $this->actingAs($guest)->get(route('student.scores.show', $attempt));
+        $reportResponse->assertOk();
+        $reportResponse->assertSee('1200');
+        $reportResponse->assertSee('This result is not saved yet', false);
+        $reportResponse->assertSee(route('exam-join.link-account', ['destination' => 'signup']), false);
+        $reportResponse->assertSee(route('exam-join.link-account', ['destination' => 'signin']), false);
+        $reportResponse->assertDontSee('View Progress');
+        $reportResponse->assertDontSee('sidebar-col');
+        $reportResponse->assertDontSee('icon-rail');
     }
 
     public function test_guest_cannot_view_another_guests_result(): void
@@ -376,7 +412,7 @@ class ExamSessionTest extends TestCase
 
         $this->actingAs($guest)
             ->get(route('exam-join.link-account', ['destination' => 'signup']))
-            ->assertRedirect(route('signup', ['role' => 'student']));
+            ->assertRedirect(route('signup'));
 
         $this->assertGuest();
         $this->assertSame($guest->id, session('link_guest_user_id'));
@@ -715,7 +751,7 @@ class ExamSessionTest extends TestCase
 
         $response->assertSee('Actions');
         $response->assertSee('Force submit');
-        $response->assertSee('Reset attempt');
+        $response->assertSee('Delete attempt');
         // The poll skips its swap on this hook; without it an open menu would be
         // destroyed within 4 seconds.
         $response->assertSee('data-menu-open', false);
@@ -973,29 +1009,253 @@ class ExamSessionTest extends TestCase
             ->assertForbidden();
     }
 
-    public function test_reset_attempt_allows_a_retake(): void
+    public function test_host_can_permanently_delete_attempt_in_any_state_and_candidate_can_rejoin(): void
     {
-        $teacher = $this->approvedTeacher();
-        $test = $this->privateTeacherTest($teacher);
-        $session = ExamSession::create([
-            'teacher_id' => $teacher->id,
-            'test_id' => $test->id,
-            'title' => 'Mock Exam',
+        [, $modules, $attempt] = $this->examSessionAttempt(moduleCount: 1);
+        $session = $attempt->examSession;
+        $teacher = $session->teacher;
+        $guest = $attempt->user;
+        $test = $session->test;
+        $module = $modules[0];
+        $question = $module->questions()->first();
+
+        // Add dependent records to verify cascade deletion
+        $answer = UserTestAnswer::create([
+            'user_test_id' => $attempt->id,
+            'module_id' => $module->id,
+            'question_id' => $question->id,
+            'selected_answer' => 'B',
+            'is_correct' => false,
         ]);
-        $guest = $this->makeGuest();
-        $attempt = UserTest::create([
-            'user_id' => $guest->id,
-            'test_id' => $test->id,
-            'exam_session_id' => $session->id,
-            'guest_name' => 'Guest',
-            'status' => 'in_progress',
+        $submission = UserTestModuleSubmission::create([
+            'user_test_id' => $attempt->id,
+            'module_id' => $module->id,
+            'result' => ['status' => 'success'],
+            'submitted_at' => now(),
+        ]);
+        $review = UserTestAnswerReview::create([
+            'user_test_answer_id' => $answer->id,
+            'student_error_type' => 'careless',
         ]);
 
         $this->actingAs($teacher)
-            ->post(route('teacher.exam-sessions.attempts.reset', [$session, $attempt]))
-            ->assertRedirect();
+            ->delete(route('teacher.exam-sessions.attempts.destroy', [$session, $attempt]))
+            ->assertRedirect(route('teacher.exam-sessions.show', $session))
+            ->assertSessionHas('success');
 
-        $this->assertSame('abandoned', $attempt->fresh()->status);
+        // Verify attempt and cascaded dependent records are removed
+        $this->assertDatabaseMissing('user_tests', ['id' => $attempt->id]);
+        $this->assertDatabaseMissing('user_test_answers', ['id' => $answer->id]);
+        $this->assertDatabaseMissing('user_test_module_submissions', ['id' => $submission->id]);
+        $this->assertDatabaseMissing('user_test_answer_reviews', ['id' => $review->id]);
+
+        // User account and test content must be preserved
+        $this->assertDatabaseHas('users', ['id' => $guest->id]);
+        $this->assertDatabaseHas('tests', ['id' => $test->id]);
+
+        // Old attempt detail and score report links become 404
+        $this->actingAs($teacher)
+            ->get(route('teacher.exam-sessions.attempts.show', [$session, $attempt]))
+            ->assertNotFound();
+        $this->actingAs($guest)
+            ->get(route('student.scores.show', $attempt))
+            ->assertNotFound();
+
+        // Candidate can rejoin open session and receives a fresh in-progress attempt
+        $rejoin = $this->actingAs($guest)
+            ->post(route('exam-join.process', $session->code));
+        $rejoin->assertRedirect();
+        $newAttempt = UserTest::where('user_id', $guest->id)
+            ->where('exam_session_id', $session->id)
+            ->first();
+        $this->assertNotNull($newAttempt);
+        $this->assertNotSame($attempt->id, $newAttempt->id);
+        $this->assertSame('in_progress', $newAttempt->status);
+
+        // Host can also delete completed attempts
+        $newAttempt->update(['status' => 'completed', 'completed_at' => now(), 'total_score' => 1000]);
+        $this->actingAs($teacher)
+            ->delete(route('teacher.exam-sessions.attempts.destroy', [$session, $newAttempt]))
+            ->assertRedirect(route('teacher.exam-sessions.show', $session));
+        $this->assertDatabaseMissing('user_tests', ['id' => $newAttempt->id]);
+
+        // Host can also delete abandoned attempts for registered students
+        $student = User::factory()->create(['role' => 'student', 'email_verified_at' => now()]);
+        $studentAttempt = UserTest::create([
+            'user_id' => $student->id,
+            'test_id' => $test->id,
+            'exam_session_id' => $session->id,
+            'status' => 'abandoned',
+        ]);
+        $this->actingAs($teacher)
+            ->delete(route('teacher.exam-sessions.attempts.destroy', [$session, $studentAttempt]))
+            ->assertRedirect(route('teacher.exam-sessions.show', $session));
+        $this->assertDatabaseMissing('user_tests', ['id' => $studentAttempt->id]);
+        $this->assertDatabaseHas('users', ['id' => $student->id]);
+    }
+
+    public function test_admin_can_delete_attempt_and_unauthorized_teacher_is_denied(): void
+    {
+        [, , $attempt] = $this->examSessionAttempt(moduleCount: 1);
+        $session = $attempt->examSession;
+
+        // Unrelated teacher is denied with 403
+        $otherTeacher = $this->approvedTeacher();
+        $this->actingAs($otherTeacher)
+            ->delete(route('teacher.exam-sessions.attempts.destroy', [$session, $attempt]))
+            ->assertForbidden();
+        $this->assertDatabaseHas('user_tests', ['id' => $attempt->id]);
+
+        // Attempt from another session returns 404
+        $otherSession = ExamSession::create([
+            'teacher_id' => $otherTeacher->id,
+            'test_id' => $attempt->test_id,
+            'title' => 'Other Session',
+        ]);
+        $this->actingAs($otherTeacher)
+            ->delete(route('teacher.exam-sessions.attempts.destroy', [$otherSession, $attempt]))
+            ->assertNotFound();
+
+        // Admin can delete attempt
+        $admin = User::factory()->create(['role' => 'admin', 'email_verified_at' => now()]);
+        $this->actingAs($admin)
+            ->delete(route('teacher.exam-sessions.attempts.destroy', [$session, $attempt]))
+            ->assertRedirect(route('teacher.exam-sessions.show', $session));
+        $this->assertDatabaseMissing('user_tests', ['id' => $attempt->id]);
+    }
+
+    public function test_active_scoring_lock_or_marker_blocks_deletion_without_data_loss(): void
+    {
+        [, $modules, $attempt] = $this->examSessionAttempt(moduleCount: 1);
+        $session = $attempt->examSession;
+        $teacher = $session->teacher;
+        $guest = $attempt->user;
+        $moduleId = (int) $modules[0]->id;
+        $attempt->current_module_id = $moduleId;
+        $attempt->save();
+
+        // 1. Scoring lock blocks deletion with 409
+        $submitLock = Cache::lock("module_submit_lock_{$attempt->id}_{$moduleId}", 240);
+        $this->assertTrue($submitLock->get());
+
+        $this->actingAs($teacher)
+            ->delete(route('teacher.exam-sessions.attempts.destroy', [$session, $attempt]))
+            ->assertStatus(409);
+        $this->assertDatabaseHas('user_tests', ['id' => $attempt->id]);
+
+        $submitLock->release();
+
+        // 2. Submit marker blocks deletion with 409
+        Cache::put(AttemptEngine::submitMarkerKey((int) $attempt->id, $moduleId), 1, 240);
+
+        $this->actingAs($teacher)
+            ->delete(route('teacher.exam-sessions.attempts.destroy', [$session, $attempt]))
+            ->assertStatus(409);
+        $this->assertDatabaseHas('user_tests', ['id' => $attempt->id]);
+
+        Cache::forget(AttemptEngine::submitMarkerKey((int) $attempt->id, $moduleId));
+
+        // 3. Deletion succeeds and clears cached results
+        Cache::put("scoring_result_{$attempt->id}", ['dummy' => 'payload'], 300);
+
+        $this->actingAs($teacher)
+            ->delete(route('teacher.exam-sessions.attempts.destroy', [$session, $attempt]))
+            ->assertRedirect(route('teacher.exam-sessions.show', $session));
+
+        $this->assertDatabaseMissing('user_tests', ['id' => $attempt->id]);
+        $this->assertNull(Cache::get("scoring_result_{$attempt->id}"));
+
+        // 4. Later saves are prevented (autosave returns 403 because attempt is gone)
+        $this->actingAs($guest)
+            ->postJson(route('engine.test.autosave-module'), [
+                'user_test_id' => $attempt->id,
+                'module_id' => $moduleId,
+                'answers' => [1 => 'A'],
+            ])
+            ->assertStatus(403);
+    }
+
+    public function test_guest_can_access_full_detailed_report_pdf_and_mistake_reflection(): void
+    {
+        [, $modules, $attempt] = $this->examSessionAttempt(moduleCount: 1);
+        $guest = $attempt->user;
+        $attempt->test->update(['test_type' => 'full_length']);
+        $module = $modules[0];
+        $question = $module->questions()->first();
+
+        $answer = UserTestAnswer::create([
+            'user_test_id' => $attempt->id,
+            'module_id' => $module->id,
+            'question_id' => $question->id,
+            'selected_answer' => 'B',
+            'is_correct' => false,
+        ]);
+        UserTestModuleSubmission::create([
+            'user_test_id' => $attempt->id,
+            'module_id' => $module->id,
+            'result' => ['status' => 'success'],
+            'submitted_at' => now(),
+        ]);
+        $attempt->update([
+            'status' => 'completed',
+            'completed_at' => now(),
+            'total_score' => 1100,
+            'score_reading_writing' => 550,
+            'score_math' => 550,
+        ]);
+
+        // 1. Full detailed report shows analysis and question review without account navigation
+        $response = $this->actingAs($guest)->get(route('student.scores.show', $attempt));
+        $response->assertOk();
+        $response->assertSee('1100');
+        $response->assertSee($question->stem);
+        $response->assertSee(route('exam-join.link-account', ['destination' => 'signup']), false);
+        $response->assertSee(route('exam-join.link-account', ['destination' => 'signin']), false);
+        $response->assertDontSee('View Progress');
+        $response->assertDontSee('sidebar-col');
+        $response->assertDontSee('icon-rail');
+
+        // 2. PDF download works for guest
+        $pdfResponse = $this->actingAs($guest)->get(route('student.scores.export-pdf', $attempt));
+        $pdfResponse->assertOk();
+        $pdfResponse->assertHeader('content-type', 'application/pdf');
+
+        // 3. Mistake reflection classification works for guest
+        $this->actingAs($guest)
+            ->patchJson(route('student.scores.answers.review', [$attempt, $answer]), [
+                'error_type' => 'conceptual_gap',
+            ])
+            ->assertOk()
+            ->assertJsonPath('student_error_type', 'conceptual_gap');
+
+        $this->assertDatabaseHas('user_test_answer_reviews', [
+            'user_test_answer_id' => $answer->id,
+            'student_error_type' => 'conceptual_gap',
+        ]);
+
+        // 4. Signed-out viewer is redirected to signin
+        $this->post(route('logout'));
+        $this->get(route('student.scores.show', $attempt))
+            ->assertRedirect(route('signin'));
+
+        // 5. Unrelated guest is forbidden
+        $intruder = $this->makeGuest();
+        $this->actingAs($intruder)
+            ->get(route('student.scores.show', $attempt))
+            ->assertForbidden();
+
+        // 6. Public trial attempt denies detailed analysis and bounces to trial result
+        $publicTrialAttempt = UserTest::create([
+            'user_id' => $intruder->id,
+            'test_id' => $attempt->test_id,
+            'status' => 'completed',
+            'total_score' => 900,
+            'completed_at' => now(),
+            'is_public_trial' => true,
+        ]);
+        $this->actingAs($intruder)
+            ->get(route('student.scores.show', $publicTrialAttempt))
+            ->assertRedirect(route('public-trial.result', $publicTrialAttempt));
     }
 
     public function test_paused_session_allows_existing_candidate_autosave_in_engine(): void

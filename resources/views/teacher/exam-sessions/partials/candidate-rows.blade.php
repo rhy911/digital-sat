@@ -31,6 +31,7 @@
                     : null;
 
                 $isInProgress = $attempt->status === 'in_progress';
+                $candidateName = $attempt->guest_name ?: $attempt->user->name;
                 $answered = (int) ($attempt->answered_count ?? 0);
                 $percent = $totalQuestions > 0
                     ? min(100, (int) round($answered / $totalQuestions * 100))
@@ -130,11 +131,12 @@
                             @endif
 
                             <form method="POST"
-                                action="{{ route('teacher.exam-sessions.attempts.reset', [$examSession, $attempt]) }}"
-                                data-confirm="Reset this attempt? The candidate can retake the exam from the start.">
+                                action="{{ route('teacher.exam-sessions.attempts.destroy', [$examSession, $attempt]) }}"
+                                data-confirm="Permanently delete the attempt for {{ $candidateName }}? All answers, scores, and saved history will be permanently removed.">
                                 @csrf
+                                @method('DELETE')
                                 <button type="submit" class="exam-menuitem exam-menuitem--danger" role="menuitem">
-                                    Reset attempt
+                                    Delete attempt
                                 </button>
                             </form>
                         </x-slot:content>

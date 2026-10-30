@@ -287,10 +287,48 @@ class ExamSessionService
         return $session;
     }
 
-    public function resetAttempt(UserTest $attempt): void
+    public function deleteAttempt(UserTest $attempt): void
     {
         abort_unless((bool) $attempt->exam_session_id, 422, 'Not an exam-session attempt.');
-        $attempt->update(['status' => 'abandoned']);
+
+        DB::transaction(function () use ($attempt) {
+            User::whereKey($attempt->user_id)->lockForUpdate()->first();
+            $lockedAttempt = UserTest::whereKey($attempt->id)->lockForUpdate()->first();
+            abort_unless((bool) $lockedAttempt, 404, 'Attempt not found.');
+
+            $modules = $lockedAttempt->moduleSubmissions()
+                ->pluck('module_id')
+                ->push($lockedAttempt->current_module_id)
+                ->filter()
+                ->unique();
+
+            $locks = [];
+            try {
+                foreach ($modules as $moduleId) {
+                    $lock = Cache::lock("module_submit_lock_{$lockedAttempt->id}_{$moduleId}", (int) config('scoring.lock_ttl', 240));
+                    if (! $lock->get()) {
+                        abort(409, 'This attempt is currently submitting or scoring. Please retry in a few moments.');
+                    }
+                    $locks[] = $lock;
+
+                    if (Cache::has(AttemptEngine::submitMarkerKey((int) $lockedAttempt->id, (int) $moduleId))) {
+                        abort(409, 'This attempt is currently submitting or scoring. Please retry in a few moments.');
+                    }
+                }
+
+                $attemptId = (int) $lockedAttempt->id;
+                $lockedAttempt->delete();
+
+                Cache::forget("scoring_result_{$attemptId}");
+                foreach ($modules as $moduleId) {
+                    Cache::forget(AttemptEngine::submitMarkerKey($attemptId, (int) $moduleId));
+                }
+            } finally {
+                foreach ($locks as $held) {
+                    $held->release();
+                }
+            }
+        });
     }
 
     /**

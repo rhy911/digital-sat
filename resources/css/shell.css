@@ -43,6 +43,11 @@
     grid-template-columns: 74px 1fr;
 }
 
+.app-shell--guest,
+.app-shell:not(:has(.icon-rail)) {
+    grid-template-columns: 1fr !important;
+}
+
 @media (min-width: 1280px) {
     .app-shell:has(.icon-rail--product),
     .app-shell.app-shell--student {

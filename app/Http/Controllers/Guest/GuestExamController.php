@@ -85,12 +85,10 @@ class GuestExamController extends Controller
     }
 
     /**
-     * Minimal, nav-free result page a guest lands on after finishing an exam
-     * (see AttemptEngine::completionDestination). Ownership-gated
-     * rather than middleware-gated: this controller sits outside
-     * ['auth','verified'] on purpose, so the check happens here instead.
+     * Redirect the guest completion/result route to the shared detailed report,
+     * preserving ownership checks, active-attempt resume and public-trial restrictions.
      */
-    public function showResult(UserTest $userTest): View|RedirectResponse
+    public function showResult(UserTest $userTest): RedirectResponse
     {
         abort_unless(Auth::check() && (int) Auth::id() === (int) $userTest->user_id, 403);
 
@@ -107,9 +105,7 @@ class GuestExamController extends Controller
             return redirect()->route('public-trial.result', $userTest);
         }
 
-        $userTest->loadMissing('test');
-
-        return view('guest.result', ['attempt' => $userTest]);
+        return redirect()->route('student.scores.show', $userTest);
     }
 
     /**
@@ -132,6 +128,6 @@ class GuestExamController extends Controller
             session(['link_guest_user_id' => $user->id]);
         }
 
-        return redirect()->route($destination === 'signup' ? 'signup' : 'signin.form', ['role' => 'student']);
+        return redirect()->route($destination === 'signup' ? 'signup' : 'signin');
     }
 }

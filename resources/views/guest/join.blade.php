@@ -9,7 +9,7 @@
     </div>
 
     @if (session('error') || $errors->any())
-        <div class="auth-notice auth-notice--error" role="alert">
+        <div class="auth-notice auth-notice--error" id="authFormError" role="alert">
             <svg class="auth-notice__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
                 stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
                 <circle cx="12" cy="12" r="10" />
@@ -46,16 +46,23 @@
                 <label for="display_name" class="form-label">Your Name</label>
                 <input type="text" class="form-control" id="display_name" name="display_name" maxlength="100"
                     value="{{ old('display_name') }}" autofocus required
-                    @if ($errors->any()) aria-invalid="true" @endif>
+                    @if ($errors->any()) aria-invalid="true" aria-describedby="authFormError" @endif>
             </div>
         @endif
 
-        <button type="submit" class="submit-btn" id="examJoinSubmit">Start Exam</button>
+        @php
+            $nameRequired = ! $alreadySignedIn;
+            $hasInitialName = ! $nameRequired || ! empty(old('display_name'));
+        @endphp
+
+        <button type="submit"
+            @class(['submit-btn', 'active' => $hasInitialName])
+            id="examJoinSubmit"@if (! $hasInitialName) aria-disabled="true"@endif>Start Exam</button>
     </form>
 
     @unless ($alreadySignedIn)
         <div class="links text-center">
-            <a href="{{ route('signin.form', ['role' => 'student']) }}">Already have an account? Sign in, then come back to this link.</a>
+            <a href="{{ route('signin') }}">Already have an account? Sign in, then come back to this link.</a>
         </div>
     @endunless
 
@@ -105,19 +112,33 @@
                     }
                 };
 
-                // .submit-btn is grey/not-allowed until .active is added. The
-                // sign-in screens get that from AuthForm; this page posts a
-                // plain form, so it has to drive the state itself.
+                // .submit-btn is dimmed with aria-disabled="true" until .active is added
+                // when name input is required.
                 const syncState = () => {
-                    submit.classList.toggle('active', !name || name.value.trim().length > 0);
+                    const hasValidName = !name || name.value.trim().length > 0;
+                    submit.classList.toggle('active', hasValidName);
+                    if (hasValidName) {
+                        submit.removeAttribute('aria-disabled');
+                    } else {
+                        submit.setAttribute('aria-disabled', 'true');
+                    }
                 };
 
-                name?.addEventListener('input', syncState);
+                name?.addEventListener('input', () => {
+                    if (name.value.trim().length > 0) {
+                        name.removeAttribute('aria-invalid');
+                    }
+                    syncState();
+                });
 
                 form.addEventListener('submit', (event) => {
                     if (name && name.value.trim().length === 0) {
                         event.preventDefault();
+                        name.setAttribute('aria-invalid', 'true');
                         name.focus();
+                        if (typeof name.reportValidity === 'function') {
+                            name.reportValidity();
+                        }
                         return;
                     }
 

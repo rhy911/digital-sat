@@ -364,6 +364,66 @@
     border: 1.5px solid rgba(255, 255, 255, 0.32);
 }
 
+/* Guest header and account-link buttons */
+.sd-guest-top-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    flex-wrap: wrap;
+    margin-bottom: 1.5rem;
+    padding-bottom: 1rem;
+    border-bottom: 1px solid var(--ds-border-default, #e2e8f0);
+}
+
+.sd-guest-banner {
+    background: #eff6ff;
+    border: 1px solid #bfdbfe;
+    border-radius: 8px;
+    padding: 0.875rem 1.25rem;
+    margin-bottom: 1.5rem;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.sd-guest-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0.45rem 1rem;
+    border-radius: 8px;
+    font-size: 0.85rem;
+    font-weight: 700;
+    text-decoration: none;
+    white-space: nowrap;
+    transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+}
+
+.sd-guest-btn-primary {
+    background: #f6b93b;
+    color: #10234a;
+    border: 1px solid #f6b93b;
+}
+
+.sd-guest-btn-primary:hover {
+    background: #ffca58;
+    border-color: #ffca58;
+    color: #10234a;
+}
+
+.sd-guest-btn-secondary {
+    background: #ffffff;
+    color: #10234a;
+    border: 1px solid #7c8aa3;
+}
+
+.sd-guest-btn-secondary:hover {
+    background: #eaf0ff;
+    border-color: #2f5bea;
+    color: #10234a;
+}
+
 /* ---------- Layout Container ---------- */
 .sd-container {
     padding: 2.5rem 0 2rem;

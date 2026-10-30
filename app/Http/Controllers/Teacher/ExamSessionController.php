@@ -109,14 +109,15 @@ class ExamSessionController extends Controller
         return back()->with('success', 'Session status updated.');
     }
 
-    public function resetAttempt(ExamSession $examSession, UserTest $userTest): RedirectResponse
+    public function destroyAttempt(ExamSession $examSession, UserTest $userTest): RedirectResponse
     {
         $this->authorize('manage', $examSession);
         abort_unless((int) $userTest->exam_session_id === (int) $examSession->id, 404);
 
-        $this->service->resetAttempt($userTest);
+        $this->service->deleteAttempt($userTest);
 
-        return back()->with('success', 'Attempt reset. The candidate can retake the exam.');
+        return redirect()->route('teacher.exam-sessions.show', $examSession)
+            ->with('success', 'Attempt deleted permanently.');
     }
 
     public function forceSubmit(ExamSession $examSession, UserTest $userTest): RedirectResponse
