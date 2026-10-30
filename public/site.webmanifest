@@ -1,6 +1,6 @@
 {
-  "name": "DigiSAT — Luyện thi Digital SAT",
-  "short_name": "DigiSAT",
+  "name": "DFET SAT — Digital SAT Practice",
+  "short_name": "DFET SAT",
   "icons": [
     { "src": "/brand/icon-192.png", "sizes": "192x192", "type": "image/png" },
     { "src": "/brand/icon-512.png", "sizes": "512x512", "type": "image/png" },

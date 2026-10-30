@@ -1,4 +1,4 @@
-<x-layouts.landing title="Try DigiSAT — Practice without an account">
+<x-layouts.landing title="Try DFET SAT — Practice without an account">
 @php
     $rwTestUlid = (string) config('public_trial.tests.reading_writing');
     $mathTestUlid = (string) config('public_trial.tests.math');
@@ -41,7 +41,7 @@
     <div x-data="trialLauncher({ activeAttempts: {{ Js::from($activeAttemptsConfig) }} })">
     <section class="bg-[#F6F8FC] px-5 py-16 sm:px-6 lg:py-24">
         <div class="mx-auto max-w-6xl">
-            <a href="/" class="text-sm font-semibold text-blue-700 hover:underline">← Back to DigiSAT</a>
+            <a href="/" class="text-sm font-semibold text-blue-700 hover:underline">← Back to DFET SAT</a>
             <div class="mt-8 max-w-3xl">
                 <p class="font-bold uppercase tracking-[.16em] text-blue-700">Try before you sign up</p>
                 <h1 class="mt-3 text-4xl font-extrabold tracking-tight text-[#10234A] sm:text-5xl">Choose how much you want to try.</h1>
@@ -453,5 +453,5 @@
             };
         }
     </script>
-    <p id="trial-screen-message" hidden role="alert" class="mx-auto max-w-6xl px-5 py-4 font-semibold text-amber-900">Open DigiSAT on a screen at least 900 × 500 pixels to start a practice test or demo.</p>
+    <p id="trial-screen-message" hidden role="alert" class="mx-auto max-w-6xl px-5 py-4 font-semibold text-amber-900">Open DFET SAT on a screen at least 900 × 500 pixels to start a practice test or demo.</p>
 </x-layouts.landing>

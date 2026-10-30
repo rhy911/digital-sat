@@ -19,7 +19,7 @@
                         return passwordsMatch;
                     },
                     onSuccess: (data) => {
-                        window.location.href = '{{ route('signin') }}';
+                        window.location.href = data.redirect || '{{ route('signin') }}';
                     }
                 });
             });
@@ -45,14 +45,13 @@
         <div class="auth-form-group">
             <x-auth.password-field input-id="password" name="password" label="New Password"
                 placeholder="Enter new password" autocomplete="new-password" toggle-id="passwordToggle"
-                target-id="password" required />
+                target-id="password" required minlength="8" />
         </div>
 
         <div class="auth-form-group">
             <x-auth.password-field input-id="password_confirmation" name="password_confirmation"
                 label="Re-enter Password" placeholder="Confirm new password" autocomplete="new-password"
-                toggle-id="rePasswordToggle" target-id="password_confirmation" required />
-            <div class="invalid-feedback" id="passwordMismatch" role="alert" aria-live="polite">Passwords do not match.</div>
+                toggle-id="rePasswordToggle" target-id="password_confirmation" error-id="passwordMismatch" required />
         </div>
 
         <x-auth.alerts />

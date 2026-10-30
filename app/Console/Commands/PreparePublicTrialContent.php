@@ -34,8 +34,8 @@ class PreparePublicTrialContent extends Command
         }
 
         foreach ([
-            'reading_writing' => ['01KW8MCQY5ZR61M7WEY42JRR8A', 'DigiSAT Trial — Reading and Writing'],
-            'math' => ['01KW8MCQYF2XTYJSSPH745KS0R', 'DigiSAT Trial — Math'],
+            'reading_writing' => ['01KW8MCQY5ZR61M7WEY42JRR8A', 'DFET SAT Trial — Reading and Writing'],
+            'math' => ['01KW8MCQYF2XTYJSSPH745KS0R', 'DFET SAT Trial — Math'],
         ] as $key => [$sourceModuleUlid, $title]) {
             $targetUlid = config("public_trial.tests.{$key}");
             $target = Test::where('ulid', $targetUlid)->first();

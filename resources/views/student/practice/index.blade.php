@@ -258,7 +258,7 @@
 
     @push('scripts')
         <script>
-            function triggerLoadingScreen(message = 'Preparing your test...') {
+            function triggerLoadingScreen(message = 'Preparing your test…') {
                 const loadingScreen = document.getElementById('loadingScreen');
                 const loadingStatusText = document.getElementById('loadingStatusText');
 

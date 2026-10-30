@@ -28,6 +28,7 @@
     --ds-border-subtle: oklch(93% 0.015 255);
     --ds-border-default: oklch(88% 0.025 255);
     --ds-border-strong: oklch(76% 0.045 255);
+    --ds-border-control: #7889a2;
     --ds-border: var(--ds-border-default);
 
     /* --- Brand Actions --- */
@@ -99,7 +100,8 @@
 
 /* --- Approved Shared Identity Palette (Navy / Gold / Blue / Canvas / Muted) --- */
 .product-ui,
-.public-site {
+.public-site,
+.auth-body {
     --brand-navy: #10234a;
     --brand-gold: #f6b93b;
     --brand-gold-hover: #f9c85e;

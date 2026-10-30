@@ -74,6 +74,7 @@ class RegisterController extends Controller
 
             // Return JSON for AJAX requests
             if ($request->wantsJson()) {
+                $request->session()->flash('warning', $noticeMessage);
                 return response()->json([
                     'message' => $noticeMessage,
                     'user' => $user,
@@ -96,14 +97,16 @@ class RegisterController extends Controller
 
             // Return JSON for AJAX requests
             if ($request->wantsJson()) {
-                return response()->json([
-                    'message' => $message
-                ], 422);
+                $response = ['message' => $message];
+                if ($isValidationError) {
+                    $response['errors'] = $e->errors();
+                }
+                return response()->json($response, 422);
             }
 
             return redirect()->back()
                 ->withInput($request->except('password', 'password_confirmation'))
-                ->withErrors(['error' => $message]);
+                ->withErrors($isValidationError ? $e->errors() : ['error' => $message]);
         }
     }
 }

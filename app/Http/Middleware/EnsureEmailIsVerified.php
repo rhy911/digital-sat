@@ -18,7 +18,7 @@ class EnsureEmailIsVerified
                 ->with('warning', 'Email của bạn chưa được xác minh. Vui lòng xác minh email để tiếp tục.');
         }
 
-        if ($user->is_guest && ! $request->is('engine', 'engine/*', 'student/scores/*')) {
+        if ($user->is_guest && ! $request->is('engine', 'engine/*', 'student/scores', 'student/scores/*')) {
             $trialAttempt = UserTest::ownedCompletedPublicTrial($user->id)
                 ->latest('completed_at')
                 ->first();

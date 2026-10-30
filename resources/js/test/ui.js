@@ -96,12 +96,13 @@ export function updateQuestionButtonStates() {
 // SECURE LOADING SCREEN
 // ============================================================================
 
-export function showLoadingScreen(message = "Loading...", subtext = "Please wait, this can take up to 5 minutes...") {
+export function showLoadingScreen(message = "Loading…", subtext = "Keep this page open. This can take up to 5 minutes.") {
   const overlay = document.getElementById('loadingScreen');
   const textEl = document.getElementById('loadingStatusText');
   const subtextEl = document.getElementById('loadingSubtext');
   if (overlay) {
-    if (textEl) textEl.textContent = message;
+    // Scoring polls re-send the same message; rewriting it would re-announce the role="status" line each poll.
+    if (textEl && textEl.textContent !== message) textEl.textContent = message;
     if (subtextEl) {
       if (subtext) {
         subtextEl.textContent = subtext;
@@ -111,6 +112,8 @@ export function showLoadingScreen(message = "Loading...", subtext = "Please wait
       }
     }
     overlay.classList.remove('hidden');
+    // A focused SPR input keeps its caret blinking under the overlay, which makes Chrome repaint (flash) the screen.
+    document.activeElement?.blur();
   }
 }
 

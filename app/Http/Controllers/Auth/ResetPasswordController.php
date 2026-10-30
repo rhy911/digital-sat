@@ -21,7 +21,6 @@ class ResetPasswordController extends Controller
             'password' => 'required|min:8|confirmed',
         ]);
 
-        // Thực hiện đặt lại mật khẩu
         $status = Password::reset(
             $request->only('email', 'password', 'password_confirmation', 'token'),
             function ($user, $password) {
@@ -36,14 +35,16 @@ class ResetPasswordController extends Controller
         );
 
         if ($status === Password::PASSWORD_RESET) {
+            $message = 'Your password has been reset. Sign in with your new password.';
             if ($request->wantsJson()) {
+                $request->session()->flash('success', $message);
                 return response()->json([
-                    'message' => 'Password reset successfully!',
+                    'message' => $message,
                     'status' => $status,
-                    'redirect' => route('signin')
+                    'redirect' => route('signin'),
                 ], 200);
             }
-            return redirect()->route('signin')->with('status', __($status));
+            return redirect()->route('signin')->with('success', $message);
         } else {
             if ($request->wantsJson()) {
                 return response()->json([

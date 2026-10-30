@@ -1,4 +1,4 @@
-<x-layouts.landing title="Open DigiSAT on a larger screen">
+<x-layouts.landing title="Open DFET SAT on a larger screen">
     <section class="bg-[#F6F8FC] px-5 py-20 sm:px-6">
         <div class="mx-auto max-w-5xl rounded-2xl border border-slate-200 bg-white p-7 sm:p-10">
             <p class="font-bold uppercase tracking-wide text-blue-700">A larger screen is needed</p>

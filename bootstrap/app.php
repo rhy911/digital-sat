@@ -20,12 +20,8 @@ return Application::configure(basePath: dirname(__DIR__))
         ]);
 
         $middleware->redirectGuestsTo('/signin');
-        $middleware->redirectUsersTo(fn (\Illuminate\Http\Request $request) => 
-            $request->user()?->is_guest
-                ? '/try'
-                : (($request->user() && $request->hasCookie(\Illuminate\Support\Facades\Auth::getRecallerName()))
-                    ? '/'
-                    : '/home')
+        $middleware->redirectUsersTo(fn (\Illuminate\Http\Request $request) =>
+            $request->user()?->is_guest ? '/try' : '/dashboard'
         );
     })
     ->withExceptions(function (Exceptions $exceptions): void {

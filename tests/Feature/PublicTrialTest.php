@@ -218,7 +218,7 @@ class PublicTrialTest extends TestCase
         ]);
 
         $this->actingAs($guest)->post(route('public-trial.account', [$attempt, 'signup']))
-            ->assertRedirect(route('signup', ['role' => 'student']));
+            ->assertRedirect(route('signup'));
         $this->assertGuest();
 
         $this->post(route('signup'), [
@@ -501,7 +501,7 @@ class PublicTrialTest extends TestCase
             now()->addMinutes(60),
             ['id' => $student->id, 'hash' => sha1($student->getEmailForVerification()), 'trial' => 'nonexistentulid']
         );
-        $this->get($staleTrialUrl)->assertRedirect(route('home'))->assertSessionHas('warning');
+        $this->get($staleTrialUrl)->assertRedirect(route('dashboard'))->assertSessionHas('warning');
 
         $student2 = User::factory()->create(['role' => 'student', 'email_verified_at' => null]);
         $ordinaryUrl = URL::temporarySignedRoute(
@@ -524,7 +524,7 @@ class PublicTrialTest extends TestCase
         $this->assertSame('pending', $teacher->teacher_approval_status);
         Auth::logout();
 
-        // Pending teacher signin routes to application status
+        // Pending teachers enter the shared dashboard role router.
         $pendingTeacher = User::factory()->create([
             'role' => 'teacher',
             'teacher_approval_status' => 'pending',
@@ -534,10 +534,11 @@ class PublicTrialTest extends TestCase
         $this->post(route('signin'), [
             'email' => $pendingTeacher->email,
             'password' => 'password123',
-        ])->assertRedirect(route('teacher.application.status'));
+        ])->assertRedirect(route('dashboard'));
+        $this->get(route('dashboard'))->assertRedirect(route('teacher.application.status'));
         Auth::logout();
 
-        // Approved teacher signin routes to home
+        // Approved teachers use the same dashboard role router.
         $approvedTeacher = User::factory()->create([
             'role' => 'teacher',
             'teacher_approval_status' => 'approved',
@@ -547,7 +548,7 @@ class PublicTrialTest extends TestCase
         $this->post(route('signin'), [
             'email' => $approvedTeacher->email,
             'password' => 'password123',
-        ])->assertRedirect(route('home'));
+        ])->assertRedirect(route('dashboard'));
     }
 
     public function test_demo_flow_complete_navigation(): void
@@ -559,7 +560,7 @@ class PublicTrialTest extends TestCase
             ->assertSee('Reading and Writing')
             ->assertSee('isPublicTrialDemo')
             ->assertSee('previewNextUrl')
-            ->assertSee('Exit to DigiSAT')
+            ->assertSee('Exit to DFET SAT')
             ->assertSee('id="exitTestBtn"', false)
             ->assertSee('data-engine-exit', false)
             ->assertSee('confirmExitTest', false);
@@ -569,7 +570,7 @@ class PublicTrialTest extends TestCase
             ->assertSee('Math')
             ->assertSee('isPublicTrialDemo')
             ->assertSee('previewExitUrl')
-            ->assertSee('Exit to DigiSAT')
+            ->assertSee('Exit to DFET SAT')
             ->assertSee('id="exitTestBtn"', false)
             ->assertSee('data-engine-exit', false)
             ->assertSee('confirmExitTest', false);
@@ -590,7 +591,7 @@ class PublicTrialTest extends TestCase
         $this->get('/dashboard')->assertRedirect(route('public-trial.index'));
 
         // If guest has completed a public trial, they are redirected to their trial result
-        [$test] = $this->moduleTest('DigiSAT Trial — Reading and Writing', Section::TYPE_RW);
+        [$test] = $this->moduleTest('DFET SAT Trial — Reading and Writing', Section::TYPE_RW);
         $attempt = UserTest::create([
             'user_id' => $guest->id,
             'test_id' => $test->id,
@@ -614,7 +615,7 @@ class PublicTrialTest extends TestCase
         $this->actingAs($guest)
             ->get(route('landing'))
             ->assertOk()
-            ->assertSee('DigiSAT');
+            ->assertSee('DFET SAT');
     }
 
     public function test_guest_visiting_auth_routes_is_logged_out_with_session_stashed(): void
@@ -626,7 +627,7 @@ class PublicTrialTest extends TestCase
             'email_verified_at' => now(),
         ]);
 
-        [$test] = $this->moduleTest('DigiSAT Trial — Math', Section::TYPE_MATH);
+        [$test] = $this->moduleTest('DFET SAT Trial — Math', Section::TYPE_MATH);
         $attempt = UserTest::create([
             'user_id' => $guest->id,
             'test_id' => $test->id,
@@ -646,7 +647,7 @@ class PublicTrialTest extends TestCase
 
     public function test_terminal_single_module_trial_scores_inline_without_queue(): void
     {
-        [$test, $module] = $this->moduleTest('DigiSAT Trial — Reading and Writing', Section::TYPE_RW);
+        [$test, $module] = $this->moduleTest('DFET SAT Trial — Reading and Writing', Section::TYPE_RW);
         config(['scoring.inline_non_final' => true]);
 
         $guest = User::factory()->create([
@@ -693,7 +694,7 @@ class PublicTrialTest extends TestCase
             ->assertSee('Cancel');
 
         // Exam join also prompts confirmation modal
-        [$test] = $this->moduleTest('DigiSAT Trial — Reading and Writing', Section::TYPE_RW);
+        [$test] = $this->moduleTest('DFET SAT Trial — Reading and Writing', Section::TYPE_RW);
         $teacher = User::factory()->create(['role' => 'teacher']);
         $session = ExamSession::create([
             'test_id' => $test->id,
@@ -712,7 +713,7 @@ class PublicTrialTest extends TestCase
 
     public function test_public_trial_displays_continue_options_when_in_progress_attempt_exists(): void
     {
-        [$test, $module] = $this->moduleTest('DigiSAT Trial — Reading and Writing', Section::TYPE_RW);
+        [$test, $module] = $this->moduleTest('DFET SAT Trial — Reading and Writing', Section::TYPE_RW);
         config(['public_trial.tests.reading_writing' => $test->ulid]);
         $guest = User::factory()->create(['is_guest' => true, 'role' => 'student', 'email_verified_at' => now()]);
 
@@ -732,7 +733,7 @@ class PublicTrialTest extends TestCase
         $response->assertOk()
             ->assertSee('You have an in-progress practice attempt')
             ->assertSee('Continue Reading &amp; Writing', false)
-            ->assertDontSee('DigiSAT Trial — Reading and Writing')
+            ->assertDontSee('DFET SAT Trial — Reading and Writing')
             ->assertDontSee('Start over and replace the in-progress attempt')
             ->assertSee($sessionUrl, false);
 

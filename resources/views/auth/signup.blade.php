@@ -1,169 +1,113 @@
-@php($defaultRole = $defaultRole ?? old('role', 'student'))
+@php($defaultRole = $defaultRole ?? 'student')
 
-<x-layouts.auth title="Create Account">
+<x-layouts.auth title="Create account">
+    <x-auth.back-link :href="route('signin')">Sign in</x-auth.back-link>
+
+    <div class="auth-heading">
+        <h1>Create your account</h1>
+        <p>Save your results and see your full analysis.</p>
+    </div>
+
+    <form class="w-full" id="signupForm" action="{{ route('signup') }}" method="POST">
+        @csrf
+
+        <fieldset class="auth-form-group auth-role-group">
+            <legend class="form-label">Account type</legend>
+            <div class="role-selector-container">
+                <label class="role-option-card {{ $defaultRole === 'student' ? 'selected' : '' }}" for="roleStudent">
+                    <input type="radio" name="role" id="roleStudent" value="student" required
+                        @checked($defaultRole === 'student')>
+                    <span class="role-title">Student</span>
+                    <span class="role-desc">Practice and track your progress</span>
+                </label>
+                <label class="role-option-card {{ $defaultRole === 'teacher' ? 'selected' : '' }}" for="roleTeacher">
+                    <input type="radio" name="role" id="roleTeacher" value="teacher"
+                        @checked($defaultRole === 'teacher')>
+                    <span class="role-title">Teacher</span>
+                    <span class="role-desc">Request access to classroom tools</span>
+                </label>
+            </div>
+            <p class="auth-role-note" id="teacherApprovalNote" @if ($defaultRole !== 'teacher') hidden @endif>
+                Teacher accounts need administrator approval before classroom tools are available.
+            </p>
+            <div class="invalid-feedback" id="role-error"></div>
+        </fieldset>
+
+        <div class="auth-form-group">
+            <label for="username" class="form-label">Username</label>
+            <input type="text" class="form-control" id="username" name="username" autocomplete="username"
+                value="{{ old('username') }}" maxlength="255" required aria-describedby="username-error"
+                @error('username') aria-invalid="true" @enderror>
+            <div class="invalid-feedback" id="username-error">@error('username'){{ $message }}@enderror</div>
+        </div>
+
+        <div class="auth-form-group">
+            <label for="email" class="form-label">Email address</label>
+            <input type="email" class="form-control" id="email" name="email" autocomplete="email"
+                value="{{ old('email') }}" maxlength="255" required aria-describedby="email-error"
+                @error('email') aria-invalid="true" @enderror>
+            <div class="invalid-feedback" id="email-error">@error('email'){{ $message }}@enderror</div>
+        </div>
+
+        <div class="auth-form-group">
+            <x-auth.password-field label="Password" input-id="password" name="password" autocomplete="new-password"
+                toggle-id="passwordToggle" target-id="password" minlength="8" required
+                aria-describedby="password-hint password-error" />
+            <p class="auth-field-hint" id="password-hint">Use at least 8 characters.</p>
+        </div>
+
+        <div class="auth-form-group">
+            <x-auth.password-field label="Confirm password" input-id="password_confirmation"
+                name="password_confirmation" autocomplete="new-password" toggle-id="rePasswordToggle"
+                target-id="password_confirmation" required aria-describedby="password_confirmation-error" />
+        </div>
+
+        <x-auth.alerts />
+
+        <button type="submit" class="submit-btn w-full" id="submitBtn"
+            data-processing-text="Creating account…">Create account</button>
+    </form>
+
+    <div class="links text-center">
+        <a href="{{ route('signin') }}">Already have an account? Sign in</a>
+    </div>
+
     @push('scripts')
         <script>
             document.addEventListener('DOMContentLoaded', () => {
-                const signupForm = document.getElementById('signupForm');
-                const passwordInput = document.getElementById('password');
-                const passwordConfirmInput = document.getElementById('password_confirmation');
-                const mismatchMsg = document.getElementById('passwordMismatch');
+                const form = document.getElementById('signupForm');
+                const password = document.getElementById('password');
+                const confirmation = document.getElementById('password_confirmation');
+                const roleNote = document.getElementById('teacherApprovalNote');
+                const roleInputs = form.querySelectorAll('input[name="role"]');
 
-                const step1 = document.getElementById('step1');
-                const step2 = document.getElementById('step2');
-                const nextStepBtn = document.getElementById('nextStepBtn');
-                const backBtn = document.getElementById('backBtn');
-
-                // Step Navigation
-                nextStepBtn.addEventListener('click', () => {
-                    step1.classList.remove('active');
-                    step2.classList.add('active');
-                    document.getElementById('username')?.focus();
-                });
-
-                backBtn.addEventListener('click', (e) => {
-                    if (step2.classList.contains('active')) {
-                        e.preventDefault();
-                        step2.classList.remove('active');
-                        step1.classList.add('active');
-                        nextStepBtn?.focus();
-                    }
-                });
-
-                // Toggle Role Cards
-                const roleRadios = document.querySelectorAll('input[name="role"]');
-                const updateRoleCards = () => {
-                    document.querySelectorAll('.role-option-card').forEach(card => {
-                        const radio = card.querySelector('input[type="radio"]');
-                        card.classList.toggle('selected', radio && radio.checked);
+                const updateRole = () => {
+                    roleInputs.forEach(input => {
+                        input.closest('.role-option-card').classList.toggle('selected', input.checked);
                     });
+                    roleNote.hidden = form.querySelector('input[name="role"]:checked')?.value !== 'teacher';
                 };
-                roleRadios.forEach(radio => {
-                    radio.addEventListener('change', updateRoleCards);
-                });
 
-                const validatePasswords = () => {
-                    const passwordsMatch = passwordInput.value === passwordConfirmInput.value;
-                    const hasConfirmValue = passwordConfirmInput.value.trim() !== '';
-
-                    if (hasConfirmValue) {
-                        if (!passwordsMatch) {
-                            passwordConfirmInput.classList.add('is-invalid');
-                            passwordConfirmInput.classList.remove('is-valid');
-                            mismatchMsg.style.display = 'block';
-                        } else {
-                            passwordConfirmInput.classList.remove('is-invalid');
-                            passwordConfirmInput.classList.add('is-valid');
-                            mismatchMsg.style.display = 'none';
-                        }
-                    } else {
-                        passwordConfirmInput.classList.remove('is-invalid', 'is-valid');
-                        mismatchMsg.style.display = 'none';
-                    }
-                    return passwordsMatch;
+                roleInputs.forEach(input => input.addEventListener('change', updateRole));
+                const validateConfirmation = () => {
+                    confirmation.setCustomValidity(confirmation.value && confirmation.value !== password.value
+                        ? 'Passwords must match.' : '');
                 };
+                [password, confirmation].forEach(input => input.addEventListener('input', validateConfirmation));
 
                 new AuthForm('signupForm', {
-                    validate: validatePasswords,
+                    validate: () => {
+                        validateConfirmation();
+                        return confirmation.checkValidity();
+                    },
                     onSuccess: (data) => {
                         if (data.token) {
-                            localStorage.setItem('api_token', data.token);
+                            try { localStorage.setItem('api_token', data.token); } catch {}
                         }
-                        if (data.redirect) {
-                            window.location.href = data.redirect;
-                        }
+                        window.location.href = data.redirect || '{{ route('verify.email.notice') }}';
                     }
                 });
             });
         </script>
     @endpush
-    <!-- Back -->
-    <x-auth.back-link id="backBtn" />
-
-    <form class="w-full" id="signupForm" action="{{ route('signup') }}" method="POST" novalidate>
-        @csrf
-
-        <!-- STEP 1: ROLE SELECTION -->
-        <div id="step1" class="signup-step active flex-col gap-6">
-            <div class="flex flex-col justify-center items-center gap-1">
-                <h2 class="text-2xl sm:text-3xl font-bold text-center m-0 text-slate-900">Create Your Account</h2>
-                <p class="text-sm sm:text-base text-gray-600 text-center">Create an account to save your results and see your full analysis.
-                </p>
-            </div>
-
-            <!-- Role Selector -->
-            <div class="auth-form-group">
-                <label class="form-label mb-2">I am registering as a...</label>
-                <div class="role-selector-container">
-                    <label class="role-option-card cursor-pointer {{ $defaultRole !== 'teacher' ? 'selected' : '' }}"
-                        id="roleCardStudent" for="roleStudent">
-                        <input type="radio" name="role" id="roleStudent" value="student"
-                            {{ $defaultRole !== 'teacher' ? 'checked' : '' }}>
-                        <span class="role-icon">📖</span>
-                        <span class="role-title">Student</span>
-                        <span class="role-desc">Practice tests & track your progress</span>
-                    </label>
-                    <label class="role-option-card cursor-pointer" id="roleCardTeacher" for="roleTeacher">
-                        <input type="radio" name="role" id="roleTeacher" value="teacher">
-                        <span class="role-icon">🎓</span>
-                        <span class="role-title">Teacher</span>
-                        <span class="role-desc">Create classes after administrator approval</span>
-                    </label>
-                </div>
-                @if ($defaultRole === 'teacher')
-                    <p class="mt-3 text-sm text-slate-600">Teacher accounts require administrator approval before classroom tools are available.</p>
-                @endif
-            </div>
-
-            <button type="button" class="primary-btn cursor-pointer w-full text-center" id="nextStepBtn">
-                <span>Continue</span>
-            </button>
-
-            <!-- Sign in link -->
-            <div class="links text-center mt-2">
-                <a href="{{ route('signin.form', ['role' => $defaultRole]) }}" class="text-sm font-semibold">Already have an account? Sign
-                    in</a>
-            </div>
-        </div>
-
-        <!-- STEP 2: CREDENTIALS -->
-        <div id="step2" class="signup-step flex-col">
-            <div class="flex flex-col justify-center items-center gap-1 mb-1">
-                <h2 class="text-2xl sm:text-3xl font-bold text-center m-0 text-slate-900">Account Details</h2>
-                <p class="text-sm sm:text-base text-gray-600 text-center">Set up your username and password.</p>
-            </div>
-
-            <div class="auth-form-group">
-                <label for="username" class="form-label">Username</label>
-                <input type="text" class="form-control" id="username" name="username" autocomplete="username"
-                    required>
-            </div>
-
-            <div class="auth-form-group">
-                <label for="email" class="form-label">Email Address</label>
-                <input type="email" class="form-control" id="email" name="email" autocomplete="email" required>
-            </div>
-
-            <div class="auth-form-group">
-                <x-auth.password-field label="Password" input-id="password" name="password" autocomplete="new-password"
-                    toggle-id="passwordToggle" target-id="password" required />
-            </div>
-
-            <div class="auth-form-group">
-                <x-auth.password-field label="Re-enter Password" input-id="password_confirmation"
-                    name="password_confirmation" autocomplete="new-password" toggle-id="rePasswordToggle"
-                    target-id="password_confirmation" required />
-                <div class="invalid-feedback" id="passwordMismatch" role="alert" aria-live="polite">Passwords do not match.</div>
-            </div>
-
-            <x-auth.alerts />
-
-            <div class="w-full mt-2">
-                <button type="submit" class="submit-btn w-full text-center" id="submitBtn"
-                    data-processing-text="Processing...">Create account</button>
-            </div>
-        </div>
-    </form>
-
-    <x-auth.encouraging-notice class="mt-2" />
 </x-layouts.auth>

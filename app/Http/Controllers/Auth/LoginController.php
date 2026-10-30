@@ -28,7 +28,6 @@ class LoginController extends Controller
                 'email' => 'required|string|email',
                 'password' => 'required|string',
                 'remember' => 'boolean',
-                'role' => 'nullable|string|in:student,teacher,admin',
             ]);
 
             $credentials = $request->only('email', 'password');
@@ -42,30 +41,6 @@ class LoginController extends Controller
 
             /** @var User $user */
             $user = Auth::user();
-
-            $expectedRole = $request->input('role');
-            if ($expectedRole && in_array($expectedRole, ['student', 'teacher', 'admin'], true)) {
-                if ($user->role !== $expectedRole) {
-                    Auth::logout();
-
-                    $roleLabels = [
-                        'student' => 'Student',
-                        'teacher' => 'Teacher',
-                        'admin' => 'Administrator',
-                    ];
-
-                    $actualLabel = $roleLabels[$user->role];
-                    $article = ($user->role === 'admin') ? 'an' : 'a';
-                    $targetUrl = route('signin.form', ['role' => $user->role]);
-
-                    $message = "This account is registered as {$article} ".strtolower($actualLabel).'. '.
-                               "<a href=\"{$targetUrl}\">Sign in as {$article} {$actualLabel} instead</a>.";
-
-                    throw ValidationException::withMessages([
-                        'email' => [$message],
-                    ]);
-                }
-            }
 
             $request->session()->regenerate();
 
@@ -89,6 +64,10 @@ class LoginController extends Controller
 
             // Check if email is verified
             if (! $user->hasVerifiedEmail()) {
+                $request->session()->flash(
+                    'warning',
+                    trim('Verify your email address to continue. '.($trialNotice ?? ''))
+                );
                 // Return JSON for AJAX requests or redirect for form submissions
                 if ($request->wantsJson()) {
                     return response()->json([
@@ -101,25 +80,25 @@ class LoginController extends Controller
                     ->with('warning', trim('Verify your email address to continue. '.($trialNotice ?? '')));
             }
 
-            $defaultTarget = match ($user->role) {
-                'teacher' => $user->isApprovedTeacher() ? route('home') : route('teacher.application.status'),
-                'admin' => route('admin.teacher-applications.index'),
-                default => route('home'),
-            };
+            $defaultTarget = route('dashboard');
 
             // Return JSON response for AJAX or redirect for web
             if ($request->wantsJson()) {
-                $target = $request->session()->pull('url.intended', $defaultTarget);
+                $target = $user->role === 'teacher' && ! $user->isApprovedTeacher()
+                    ? $defaultTarget
+                    : $request->session()->pull('url.intended', $defaultTarget);
 
                 return response()->json([
-                    'message' => $trialNotice ? trim('Sign-in successful. '.$trialNotice) : 'Đăng nhập thành công.',
+                    'message' => trim('Sign-in successful.'.($trialNotice ? ' '.$trialNotice : '')),
                     'user' => $user,
                     'email_verified' => $user->hasVerifiedEmail(),
                     'redirect' => $target,
                 ], 200);
             }
 
-            $response = redirect()->intended($defaultTarget);
+            $response = $user->role === 'teacher' && ! $user->isApprovedTeacher()
+                ? redirect()->route('dashboard')
+                : redirect()->intended($defaultTarget);
 
             return $trialNotice ? $response->with('warning', $trialNotice) : $response;
         } catch (\Exception $e) {
@@ -135,14 +114,16 @@ class LoginController extends Controller
 
             // Return JSON for AJAX requests
             if ($request->wantsJson()) {
-                return response()->json([
-                    'message' => $message,
-                ], 422);
+                $response = ['message' => $message];
+                if ($e instanceof ValidationException) {
+                    $response['errors'] = $e->errors();
+                }
+                return response()->json($response, 422);
             }
 
             return redirect()->back()
                 ->withInput($request->except('password'))
-                ->withErrors(['error' => $message]);
+                ->withErrors($e instanceof ValidationException ? $e->errors() : ['error' => $message]);
         }
     }
 }

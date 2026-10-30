@@ -14,21 +14,28 @@ export class AuthForm {
         this.config = Object.assign({
             onSuccess: null,
             onError: null,
+            onCooldown: null,
             prepareData: (formData) => formData,
             validate: () => true,
         }, config);
+        this.cooldownUntil = 0;
 
         this.init();
     }
 
     init() {
+        this.form.noValidate = true;
         this.form.addEventListener('submit', (e) => this.handleSubmit(e));
         
         // Setup validation listeners for all inputs
         const inputs = this.form.querySelectorAll('input:not([type="hidden"]), select, textarea');
         inputs.forEach(input => {
             input.addEventListener('input', () => {
-                input.classList.remove('is-invalid');
+                this.clearFieldError(input);
+                if (this.errorMsg) {
+                    this.errorMsg.textContent = '';
+                    this.errorMsg.style.display = 'none';
+                }
                 this.checkFormValidity();
             });
         });
@@ -42,22 +49,15 @@ export class AuthForm {
         }
     }
 
-    getInvalidRequiredInput() {
-        const inputs = Array.from(this.form.querySelectorAll('input[required], select[required], textarea[required]'));
-        return inputs.find(input => {
-            if (input.type === 'checkbox') return !input.checked;
-            if (input.type === 'radio') {
-                return !this.form.querySelector(`input[type="radio"][name="${input.name}"]:checked`);
-            }
-            if (input.type === 'submit' || input.type === 'button') return false;
-            return input.value.trim() === '';
-        });
+    getInvalidInput() {
+        return Array.from(this.form.querySelectorAll('input:not([type="hidden"]), select, textarea'))
+            .find(input => !input.checkValidity());
     }
 
     checkFormValidity() {
         if (!this.submitBtn) return true;
 
-        const isValid = !this.getInvalidRequiredInput() && this.config.validate();
+        const isValid = this.config.validate() && this.form.checkValidity();
         this.submitBtn.classList.toggle("active", isValid);
         
         return isValid;
@@ -65,13 +65,14 @@ export class AuthForm {
 
     async handleSubmit(e) {
         e.preventDefault();
+        if (this.submitting || Date.now() < this.cooldownUntil) return;
 
         if (!this.checkFormValidity()) {
-            const invalidInput = this.getInvalidRequiredInput();
+            const invalidInput = this.getInvalidInput();
             if (invalidInput) {
                 invalidInput.focus();
-                invalidInput.classList.add('is-invalid');
-                this.showError('Please fill in all required fields.');
+                this.markFieldError(invalidInput, invalidInput.validationMessage || 'Check this field.');
+                this.showError(invalidInput.validationMessage || 'Check the highlighted field.');
             } else {
                 const firstInvalid = this.form.querySelector('.is-invalid, :invalid');
                 if (firstInvalid) firstInvalid.focus();
@@ -81,6 +82,7 @@ export class AuthForm {
         }
 
         const originalBtnText = this.submitBtn.textContent;
+        this.submitting = true;
         this.submitBtn.textContent = this.submitBtn.dataset.processingText || 'Processing...';
         this.submitBtn.disabled = true;
         this.submitBtn.classList.add('is-busy');
@@ -113,7 +115,19 @@ export class AuthForm {
             }
 
             const response = await fetch(url, fetchOptions);
-            const data = await response.json();
+            let data;
+            try {
+                data = await response.json();
+            } catch {
+                throw new Error(response.status === 419
+                    ? 'Your session expired. Reload this page and try again.'
+                    : 'We could not read the response. Please try again.');
+            }
+
+            if (response.status === 419) {
+                this.showError('Your session expired. Reload this page and try again.');
+                return;
+            }
 
             if (response.ok) {
                 if (this.config.onSuccess) {
@@ -130,40 +144,69 @@ export class AuthForm {
                 this.handleError(data, response.status);
             }
         } catch (error) {
-            console.error('Form submission error:', error);
             this.showError('A connection error occurred. Please try again.');
         } finally {
+            this.submitting = false;
             this.submitBtn.textContent = originalBtnText;
-            this.submitBtn.disabled = false;
+            this.submitBtn.disabled = Date.now() < this.cooldownUntil;
             this.submitBtn.classList.remove('is-busy');
             this.checkFormValidity();
         }
     }
 
     handleError(data, status) {
-        let message = data.message || 'An error occurred. Please try again.';
-        
-        if (data.errors) {
-            message = Object.values(data.errors).flat().join('. ');
-        }
+        const message = data.message || 'We could not complete this request. Please try again.';
 
         if (status === 403 && data.redirect) {
             window.location.href = data.redirect;
             return;
         }
 
+        if (data.errors) {
+            Object.entries(data.errors).forEach(([name, messages]) => {
+                const input = this.form.querySelector(`[name="${CSS.escape(name)}"]`);
+                if (input) this.markFieldError(input, Array.isArray(messages) ? messages[0] : messages);
+            });
+        }
         this.showError(message);
+        const firstInvalid = this.form.querySelector('[aria-invalid="true"]');
+        firstInvalid?.focus();
+    }
+
+    markFieldError(input, message) {
+        input.classList.add('is-invalid');
+        input.setAttribute('aria-invalid', 'true');
+        const describedBy = input.getAttribute('aria-describedby') || '';
+        const feedbackId = input.name === 'role'
+            ? 'role-error'
+            : describedBy.split(/\s+/).find(id => id.endsWith('-error')) || `${input.id}-error`;
+        const feedback = this.form.querySelector(`#${CSS.escape(feedbackId)}`);
+        if (feedback) feedback.textContent = message;
+    }
+
+    clearFieldError(input) {
+        input.classList.remove('is-invalid');
+        input.removeAttribute('aria-invalid');
+        const feedback = input.id && this.form.querySelector(`#${CSS.escape(input.id)}-error`);
+        if (feedback) feedback.textContent = '';
+        if (input.type === 'password' && input.id === 'password_confirmation') input.setCustomValidity('');
+    }
+
+    setCooldown(seconds) {
+        this.cooldownUntil = Date.now() + Math.max(0, Number(seconds)) * 1000;
+        this.submitBtn.disabled = true;
+        this.config.onCooldown?.(seconds);
     }
 
     showError(message) {
         if (this.errorMsg) {
-            this.errorMsg.innerHTML = message;
+            this.errorMsg.textContent = message;
             this.errorMsg.style.display = '';
         } else {
             alert(message);
         }
     }
-    
+
     showSuccess(message) {
         if (this.successMsg) {
             this.successMsg.textContent = message;
@@ -196,7 +239,7 @@ window.initPasswordToggles = function () {
         toggleEl.setAttribute('aria-pressed', 'false');
 
         function syncToggleVisibility() {
-            const hasValue = inputEl.value.trim() !== '';
+            const hasValue = inputEl.value !== '';
             toggleEl.classList.toggle('visible', hasValue);
             
             if (!hasValue) {
@@ -211,6 +254,7 @@ window.initPasswordToggles = function () {
             inputEl.type = isHidden ? 'text' : 'password';
             toggleEl.innerHTML = isHidden ? eyeIcon : eyeOffIcon;
             toggleEl.setAttribute('aria-pressed', isHidden ? 'true' : 'false');
+            toggleEl.setAttribute('aria-label', `${isHidden ? 'Hide' : 'Show'} ${inputEl.labels?.[0]?.textContent.trim().toLowerCase() || 'password'}`);
             inputEl.focus();
         });
 

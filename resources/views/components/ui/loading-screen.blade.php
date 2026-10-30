@@ -1,25 +1,14 @@
 @props([
     'cancelRoute' => null,
     'cancelText' => 'Return to progress',
-    'title' => 'Digital SAT Test Engine',
-    'statusText' => 'Preparing your test...',
+    'statusText' => 'Preparing your test…',
     'recoveryStatusText' => 'Still preparing. You can return and try again.',
 ])
 
 <div id="loadingScreen" class="loading-screen hidden" aria-hidden="true">
-    <div class="loading-container text-center">
-        <div class="loading-spinner-wrapper mb-4">
-            <div class="loading-spinner"></div>
-            <div class="loading-spinner-inner">
-                <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none"
-                    stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                    <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
-                </svg>
-            </div>
-        </div>
-        <h4 class="loading-title fw-bold mb-2">{{ $title }}</h4>
-        <p id="loadingStatusText" class="loading-status">{{ $statusText }}</p>
-        <p id="loadingSubtext" class="loading-subtext text-xs text-slate-400 mt-2">Please wait, this can take up to 5 minutes...</p>
+    <div class="loading-container">
+        <div class="loading-spinner" aria-hidden="true"></div>
+        <p id="loadingStatusText" class="loading-status" role="status">{{ $statusText }}</p>
         @if ($cancelRoute)
             <a id="loadingCancelLink" href="{{ $cancelRoute }}" class="loading-cancel hidden">{{ $cancelText }}</a>
         @endif

@@ -27,9 +27,10 @@
         @csrf
         <div class="auth-form-group">
             <label for="email" class="form-label">Email Address</label>
-            <input type="email" class="form-control" id="email" name="email"
-                placeholder="Enter your email address" required>
-            <div class="invalid-feedback" role="alert" aria-live="polite">Please enter your email address.</div>
+        <input type="email" class="form-control" id="email" name="email" autocomplete="email"
+                value="{{ old('email') }}" maxlength="255" required aria-describedby="email-error"
+                @error('email') aria-invalid="true" @enderror>
+            <div class="invalid-feedback" id="email-error">@error('email'){{ $message }}@enderror</div>
         </div>
 
         <x-auth.alerts :show-success="true" />

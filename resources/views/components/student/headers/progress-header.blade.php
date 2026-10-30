@@ -69,7 +69,7 @@
 
 <header class="ds-topbar">
     <div class="ds-topbar__inner">
-        <x-brand.wordmark href="{{ route('home') }}" size="md" tone="dark" label="DigiSAT progress home" />
+        <x-brand.wordmark href="{{ route('home') }}" size="md" tone="dark" label="DFET SAT progress home" />
 
         <nav class="ds-topbar__nav" aria-label="Primary" @if($isTeacherHome) x-data="{ tab: '{{ $teacherHomeTab }}' }" @teacher-home-tab-requested.window="tab = $event.detail.tab" @teacher-home-tab-changed.window="tab = $event.detail.tab" @endif>
             @foreach($navItems as $item)

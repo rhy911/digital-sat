@@ -2,7 +2,7 @@
     'href' => null,
     'size' => 'md',
     'tone' => 'brand',
-    'label' => 'DigiSAT',
+    'label' => 'DFET SAT',
     'showIcon' => true,
 ])
 
@@ -12,7 +12,7 @@
         ? '<img src="/brand/icon-primary.svg" alt="" aria-hidden="true" class="brand-wordmark__icon">'
         : '';
     $content = $icon . <<<'HTML'
-    <span class="brand-wordmark__text"><span class="brand-wordmark__prefix">Digi</span><span class="brand-wordmark__suffix">SAT</span></span>
+    <span class="brand-wordmark__text">DFET SAT</span>
     HTML;
 @endphp
 

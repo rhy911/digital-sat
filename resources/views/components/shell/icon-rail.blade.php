@@ -58,9 +58,9 @@
 @endif
 
 <aside class="icon-rail icon-rail--product {{ $isStudent ? 'icon-rail--student' : '' }}" aria-label="Sidebar navigation">
-    <a href="{{ $logoHref }}" class="rail-logo" aria-label="{{ in_array($logoLabel, ['D', 'DFET'], true) ? 'DigiSAT home' : $logoLabel }}">
+    <a href="{{ $logoHref }}" class="rail-logo" aria-label="{{ in_array($logoLabel, ['D', 'DFET'], true) ? 'DFET SAT home' : $logoLabel }}">
         <img src="/brand/icon-light.svg" alt="" aria-hidden="true" class="rail-logo__img">
-        <span class="rail-logo__text">DigiSAT</span>
+        <span class="rail-logo__text">DFET SAT</span>
     </a>
 
     <nav class="rail-nav" aria-label="Primary navigation">

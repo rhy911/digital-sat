@@ -1,4 +1,4 @@
-<x-layouts.landing title="Switch devices to continue — DigiSAT">
+<x-layouts.landing title="Switch devices to continue — DFET SAT">
     <div class="mx-auto flex min-h-[60vh] max-w-lg flex-col items-center justify-center px-5 py-16 text-center sm:px-6">
         <div class="mb-6 flex h-16 w-16 items-center justify-center rounded-2xl bg-blue-50 text-brand">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" class="h-8 w-8" aria-hidden="true">
@@ -15,7 +15,7 @@
 
         <a href="{{ auth()->user()?->is_guest ? route('public-trial.index') : route('home') }}"
             class="mt-8 inline-flex min-h-11 items-center rounded-xl bg-brand px-5 py-2.5 text-sm font-bold text-white transition hover:bg-blue-800">
-            {{ auth()->user()?->is_guest ? 'Back to DigiSAT' : 'Back to dashboard' }}
+            {{ auth()->user()?->is_guest ? 'Back to DFET SAT' : 'Back to dashboard' }}
         </a>
     </div>
 </x-layouts.landing>

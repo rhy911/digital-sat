@@ -1,6 +1,6 @@
 @props([
     'user',
-    'title' => 'Digital SAT',
+    'title' => 'DFET SAT',
     'headerType' => 'none', // 'progress' or 'none'
     'bodyClass' => null,
     'ui' => 'legacy', // 'product' applies the shared authenticated product presentation

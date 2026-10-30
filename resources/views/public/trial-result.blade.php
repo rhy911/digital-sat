@@ -1,4 +1,4 @@
-<x-layouts.landing title="Your DigiSAT practice result">
+<x-layouts.landing title="Your DFET SAT practice result">
     <section class="bg-[#F6F8FC] px-5 py-14 sm:px-6">
         <div class="mx-auto max-w-4xl">
             <a href="{{ route('public-trial.index') }}" class="font-semibold text-blue-700 underline">← Try another experience</a>

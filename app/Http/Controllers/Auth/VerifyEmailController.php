@@ -46,12 +46,14 @@ class VerifyEmailController extends Controller
             if ($trialUlid !== null && $trialUlid !== '') {
                 $hasEligibleTrial = \App\Models\UserTest::ownedCompletedPublicTrial($user->id, $trialUlid)->exists();
                 if (!$hasEligibleTrial) {
-                    return redirect()->route('home')
-                        ->with('warning', 'The requested trial report is no longer available. Welcome to your DigiSAT dashboard.');
+                    return redirect()->route('dashboard')
+                        ->with('warning', 'The requested trial report is no longer available. Welcome to your DFET SAT dashboard.');
                 }
 
                 return view('auth.email-verified', [
-                    'continueUrl' => route('student.scores.show', ['userTest' => $trialUlid]),
+                    'continueUrl' => $user->role === 'teacher' && ! $user->isApprovedTeacher()
+                        ? route('dashboard')
+                        : route('student.scores.show', ['userTest' => $trialUlid]),
                 ]);
             }
 

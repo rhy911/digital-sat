@@ -36,7 +36,7 @@ Route::get('/storage/media/{filename}', [MediaController::class, 'show'])
 // Guest auth routes
 Route::middleware([\App\Http\Middleware\HandleGuestAuthAccess::class, 'guest'])->group(function () {
     Route::get('/signin', [PageController::class, 'showSignin'])->name('signin');
-    Route::get('/signin/form', [PageController::class, 'showSigninForm'])->name('signin.form');
+    Route::redirect('/signin/form', '/signin')->name('signin.form');
     Route::post('/signin', LoginController::class)->middleware('throttle:5,1');
 
     Route::get('/signup', [PageController::class, 'showSignup'])->name('signup');
@@ -203,7 +203,7 @@ Route::middleware(['auth', 'verified', 'role:admin,teacher'])->prefix('teacher')
         Route::post('/exam-sessions', [\App\Http\Controllers\Teacher\ExamSessionController::class, 'store'])->name('exam-sessions.store');
         Route::get('/exam-sessions/{examSession}', [\App\Http\Controllers\Teacher\ExamSessionController::class, 'show'])->name('exam-sessions.show');
         Route::put('/exam-sessions/{examSession}/status', [\App\Http\Controllers\Teacher\ExamSessionController::class, 'updateStatus'])->name('exam-sessions.status.update');
-        Route::post('/exam-sessions/{examSession}/attempts/{userTest}/reset', [\App\Http\Controllers\Teacher\ExamSessionController::class, 'resetAttempt'])->name('exam-sessions.attempts.reset');
+        Route::delete('/exam-sessions/{examSession}/attempts/{userTest}', [\App\Http\Controllers\Teacher\ExamSessionController::class, 'destroyAttempt'])->name('exam-sessions.attempts.destroy');
         Route::post('/exam-sessions/{examSession}/attempts/{userTest}/force-submit', [\App\Http\Controllers\Teacher\ExamSessionController::class, 'forceSubmit'])->name('exam-sessions.attempts.force-submit');
         Route::get('/exam-sessions/{examSession}/live-status', [\App\Http\Controllers\Teacher\ExamSessionController::class, 'liveStatus'])->name('exam-sessions.live-status');
         Route::get('/exam-sessions/{examSession}/export.csv', [\App\Http\Controllers\Teacher\ExamSessionController::class, 'exportCsv'])->name('exam-sessions.export.csv');

@@ -26,7 +26,7 @@ class VerifyEmailNotification extends Notification
         $name = str_replace(["\r", "\n"], ' ', $notifiable->name);
 
         return (new MailMessage)
-            ->subject('Verify your DigiSAT email address')
+            ->subject('Verify your DFET SAT email address')
             ->greeting('Hello ' . $name . ',')
             ->line('Select the button below to verify your email address.')
             ->action('Verify email', $verificationUrl)

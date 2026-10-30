@@ -27,7 +27,7 @@ class ResendVerificationController extends Controller
             $seconds = \Illuminate\Support\Facades\RateLimiter::availableIn($key);
             if ($request->wantsJson() || $request->ajax()) {
                 return response()->json([
-                    'message' => "Vui lòng đợi {$seconds} giây trước khi gửi lại.",
+                    'message' => "Please wait {$seconds} seconds before trying again.",
                     'cooldown' => $seconds
                 ], 429);
             }

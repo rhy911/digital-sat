@@ -418,7 +418,7 @@ class TeacherClassManagementTest extends TestCase
     {
         $teacher = $this->teacher();
         $response = $this->postJson(route('signin'), ['email' => $teacher->email, 'password' => 'password', 'role' => 'teacher']);
-        $response->assertOk()->assertJsonPath('redirect', route('home'));
+        $response->assertOk()->assertJsonPath('redirect', route('dashboard'));
     }
 
     public function test_join_link_survives_ajax_login_and_prefills_code(): void

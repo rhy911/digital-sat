@@ -10,11 +10,6 @@ class PageController extends Controller
 {
     public function showSignin(): View
     {
-        return view('auth.role-select');
-    }
-
-    public function showSigninForm(): View
-    {
         return view('auth.signin');
     }
 

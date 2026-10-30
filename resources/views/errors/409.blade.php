@@ -18,7 +18,7 @@
     }
 @endphp
 
-<x-layouts.landing title="This page has moved on — DigiSAT">
+<x-layouts.landing title="This page has moved on — DFET SAT">
     <div class="mx-auto flex min-h-[60vh] max-w-lg flex-col items-center justify-center px-5 py-16 text-center sm:px-6">
         <div class="mb-6 flex h-16 w-16 items-center justify-center rounded-2xl bg-amber-50 text-amber-600">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" class="h-8 w-8" aria-hidden="true">
@@ -36,7 +36,7 @@
 
         @php
             $dashboardUrl = auth()->user()?->is_guest ? route('public-trial.index') : route('home');
-            $dashboardLabel = auth()->user()?->is_guest ? 'Back to DigiSAT' : 'Back to dashboard';
+            $dashboardLabel = auth()->user()?->is_guest ? 'Back to DFET SAT' : 'Back to dashboard';
         @endphp
         @if ($resumeUrl)
             <a href="{{ $resumeUrl }}"

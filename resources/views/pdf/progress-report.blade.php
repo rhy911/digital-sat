@@ -2,7 +2,7 @@
 <html>
 <head>
 <meta charset="utf-8">
-<title>Digital SAT Student Progress Report</title>
+<title>DFET SAT Student Progress Report</title>
 <style>
     @include('pdf.progress-report-styles')
 </style>
@@ -31,7 +31,7 @@
             <tr>
                 <td style="width: 68%;">
                     @if($logoInverseBase64)
-                        <img src="{{ $logoInverseBase64 }}" alt="Logo" style="height: 22px; margin-bottom: 5px; display: block;">
+                        <img src="{{ $logoInverseBase64 }}" alt="DFET SAT" style="height: 22px; margin-bottom: 5px; display: block;">
                     @endif
                     <div class="eyebrow">Digital SAT • Student Progress Report</div>
                     <h1>{{ $student->name }}</h1>

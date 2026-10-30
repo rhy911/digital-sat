@@ -1,11 +1,11 @@
-<x-layouts.landing title="DigiSAT — Digital SAT practice for students and tutors">
+<x-layouts.landing title="DFET SAT — Digital SAT Practice & Progress Tracking">
     <section class="public-hero">
         <div class="public-wrap public-hero__grid">
             <div class="public-hero__copy">
                 <h1>Practice with focus.<br><span>Know what to do next.</span></h1>
                 <p class="public-lede">Take Digital SAT practice in a calm, test-like workspace. See your result right away, then make a plan from the questions you missed.</p>
                 <div class="public-actions">
-                    <x-ui.button href="{{ route('public-trial.index') }}" class="min-h-[3.15rem] rounded-xl px-5 text-base">Try DigiSAT</x-ui.button>
+                    <x-ui.button href="{{ route('public-trial.index') }}" class="min-h-[3.15rem] rounded-xl px-5 text-base">Try DFET SAT</x-ui.button>
                     <x-ui.button variant="secondary" href="#score-reports" class="min-h-[3.15rem] rounded-xl px-5 text-base">See a sample report</x-ui.button>
                 </div>
                 <p class="public-note">Start without an account &middot; Timed practice requires 900 &times; 500 screen &middot; Demo, module, or full test</p>
@@ -138,14 +138,14 @@
         <div class="public-wrap public-faq">
             <div><h2>Good to know.</h2></div>
             <div class="public-faq__items">
-                <details><summary>Can I try DigiSAT without creating an account?</summary><p>Yes. Explore the interface demo, complete one module, or take a full adaptive practice test. You can see a partial result as soon as you finish.</p></details>
+                <details><summary>Can I try DFET SAT without creating an account?</summary><p>Yes. Explore the interface demo, complete one module, or take a full adaptive practice test. You can see a partial result as soon as you finish.</p></details>
                 <details><summary>What does an account add?</summary><p>An account saves your result and opens full answer review, skill analysis, and mistake patterns.</p></details>
-                <details><summary>Is the estimated score official?</summary><p>No. DigiSAT practice estimates are for practice guidance and are not official College Board scores.</p></details>
+                <details><summary>Is the estimated score official?</summary><p>No. DFET SAT practice estimates are for practice guidance and are not official College Board scores.</p></details>
                 <details><summary>What device do I need for a practice test?</summary><p>The test engine workspace requires a laptop, desktop, or landscape tablet with a screen at least 900 by 500 pixels. Landing pages and score guides are mobile-friendly.</p></details>
                 <details><summary>How do tutors get access?</summary><p>Apply as a teacher. An administrator reviews teacher accounts before classroom tools are available.</p></details>
             </div>
         </div>
     </section>
 
-    <section class="public-final-cta"><div class="public-wrap"><h2>See how practice feels before you decide.</h2><p>Start with the interface demo or choose a complete practice experience.</p><x-ui.button href="{{ route('public-trial.index') }}" class="mt-6 rounded-xl px-5">Try DigiSAT</x-ui.button></div></section>
+    <section class="public-final-cta"><div class="public-wrap"><h2>See how practice feels before you decide.</h2><p>Start with the interface demo or choose a complete practice experience.</p><x-ui.button href="{{ route('public-trial.index') }}" class="mt-6 rounded-xl px-5">Try DFET SAT</x-ui.button></div></section>
 </x-layouts.landing>

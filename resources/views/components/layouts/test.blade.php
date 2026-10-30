@@ -62,7 +62,7 @@
                id="exitTestBtn"
                data-engine-exit
                href="{{ $testData->exit_url ?? route('public-trial.index') }}"
-               onclick="event.preventDefault(); (window.confirmExitTest ? window.confirmExitTest(this.href) : window.showCustomConfirm('Are you sure you want to exit? Your progress will be saved.', 'warning', 'Exit Practice Test', 'Exit', 'Stay').then(confirmed => { if(confirmed) { window.isNavigatingLegitimately = true; window.location.href = this.href; } }));">Exit to DigiSAT</a>
+               onclick="event.preventDefault(); (window.confirmExitTest ? window.confirmExitTest(this.href) : window.showCustomConfirm('Are you sure you want to exit? Your progress will be saved.', 'warning', 'Exit Practice Test', 'Exit', 'Stay').then(confirmed => { if(confirmed) { window.isNavigatingLegitimately = true; window.location.href = this.href; } }));">Exit to DFET SAT</a>
         </div>
     @endif
     @if (!empty($testData->is_public_trial) || !empty($testData->is_public_trial_demo))
@@ -83,21 +83,11 @@
         </script>
     @endif
     <!-- Secure Test Loading Screen -->
-    <div id="loadingScreen" class="loading-screen flex flex-col items-center justify-center">
-        <div class="loading-container text-center">
-            <div class="loading-spinner-wrapper mb-4">
-                <div class="loading-spinner"></div>
-                <div class="loading-spinner-inner">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24"
-                        fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"
-                        stroke-linejoin="round">
-                        <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
-                    </svg>
-                </div>
-            </div>
-            <h4 class="loading-title fw-bold mb-2">Digital SAT Test Engine</h4>
-            <p id="loadingStatusText" class="loading-status">Initializing secure test environment...</p>
-            <p id="loadingSubtext" class="loading-subtext text-xs text-slate-400 mt-2">Please wait, this can take up to 5 minutes...</p>
+    <div id="loadingScreen" class="loading-screen">
+        <div class="loading-container">
+            <div class="loading-spinner" aria-hidden="true"></div>
+            <p id="loadingStatusText" class="loading-status" role="status">Initializing secure test environment…</p>
+            <p id="loadingSubtext" class="loading-subtext">Keep this page open. This can take up to 5 minutes.</p>
         </div>
     </div>
 

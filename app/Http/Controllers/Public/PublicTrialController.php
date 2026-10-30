@@ -171,7 +171,7 @@ class PublicTrialController extends Controller
         Auth::logout();
         session()->regenerate();
 
-        return redirect()->route($destination === 'signup' ? 'signup' : 'signin.form', ['role' => 'student']);
+        return redirect()->route($destination === 'signup' ? 'signup' : 'signin');
     }
 
     /** @return array<string, array{available: bool}> */

@@ -14,7 +14,6 @@ class ForgotPasswordController extends Controller
     {
         $request->validate(['email' => 'required|email']);
 
-        // Gửi link reset mật khẩu
         $status = Password::sendResetLink(
             $request->only('email')
         );
@@ -23,11 +22,11 @@ class ForgotPasswordController extends Controller
             // Return JSON for AJAX requests
             if ($request->wantsJson()) {
                 return response()->json([
-                    'message' => 'Password reset link sent! Check your email.',
+                    'message' => 'If that email address is registered, a password reset link will be sent.',
                     'status' => $status
                 ], 200);
             }
-            return back()->with(['status' => __($status)]);
+            return back()->with(['success' => 'If that email address is registered, a password reset link will be sent.']);
         } else {
             // Return JSON for AJAX requests
             if ($request->wantsJson()) {
